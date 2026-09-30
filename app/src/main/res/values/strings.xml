@@ -1,0 +1,11 @@
+<resources>
+    <string name="app_name">Tiny Us</string>
+    <string name="app_tagline">Our tiny world for two</string>
+    <string name="settings">Settings</string>
+    <string name="memories">Memories</string>
+    <string name="letters">Love Notes</string>
+    <string name="tiny_moments">Tiny Moments</string>
+    <string name="sound_toggle">Toggle ambient sounds</string>
+    <string name="replay_scene">Replay scene</string>
+    <string name="next_scene">Next surprise scene</string>
+</resources>

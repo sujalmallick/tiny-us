@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- Pixel Heart Floating at Top Center (x: 48-60, y: 24-34) -->
+    <!-- Top left and right lobes -->
+    <path android:fillColor="#FF4D6D" android:pathData="M48,27 h4 v4 h-4 z M56,27 h4 v4 h-4 z" />
+    <path android:fillColor="#FF4D6D" android:pathData="M46,29 h16 v4 h-16 z" />
+    <path android:fillColor="#FF4D6D" android:pathData="M48,33 h12 v3 h-12 z" />
+    <path android:fillColor="#FF4D6D" android:pathData="M51,36 h6 v3 h-6 z" />
+    <path android:fillColor="#FF4D6D" android:pathData="M53,39 h2 v2 h-2 z" />
+    <!-- Heart highlight shine -->
+    <path android:fillColor="#FFFFFF" android:pathData="M48,28 h2 v2 h-2 z" />
+
+    <!-- BOYFRIEND (Left: x: 34 to 48, y: 44 to 78) -->
+    <!-- Hair (dark navy/brown) -->
+    <path android:fillColor="#2D283E" android:pathData="M36,44 h10 v4 h-10 z M34,46 h14 v6 h-14 z M34,52 h4 v4 h-4 z" />
+    <!-- Face (soft peach) -->
+    <path android:fillColor="#FFE0BD" android:pathData="M38,50 h8 v8 h-8 z M36,54 h10 v4 h-10 z" />
+    <!-- Eyes (looking right towards her) -->
+    <path android:fillColor="#2D283E" android:pathData="M43,54 h2 v3 h-2 z M40,54 h2 v3 h-2 z" />
+    <!-- Blush -->
+    <path android:fillColor="#FFB3BA" android:pathData="M42,57 h3 v2 h-3 z" />
+    <!-- Boy Sweater (Cozy Teal / Sage) -->
+    <path android:fillColor="#4E878C" android:pathData="M36,60 h10 v10 h-10 z M34,62 h14 v6 h-14 z" />
+    <!-- Arm reaching toward girlfriend with flower -->
+    <path android:fillColor="#4E878C" android:pathData="M46,64 h6 v3 h-6 z" />
+    <path android:fillColor="#FFE0BD" android:pathData="M51,64 h3 v3 h-3 z" />
+    <!-- Boy Pants (Dark charcoal) -->
+    <path android:fillColor="#3A3B43" android:pathData="M36,70 h10 v5 h-10 z M35,74 h5 v3 h-5 z M42,74 h4 v3 h-4 z" />
+    <!-- Shoes -->
+    <path android:fillColor="#655D5D" android:pathData="M34,76 h5 v3 h-5 z M42,76 h5 v3 h-5 z" />
+
+    <!-- GIRLFRIEND (Right: x: 56 to 70, y: 45 to 78) -->
+    <!-- Long Chestnut Brown Hair -->
+    <path android:fillColor="#5A3825" android:pathData="M58,45 h10 v4 h-10 z M56,47 h14 v8 h-14 z M66,54 h4 v14 h-4 z M56,54 h3 v12 h-3 z" />
+    <!-- Cute Hair Flower / Clip -->
+    <path android:fillColor="#FF6584" android:pathData="M66,47 h3 v3 h-3 z" />
+    <path android:fillColor="#FFF" android:pathData="M67,48 h1 v1 h-1 z" />
+    <!-- Face -->
+    <path android:fillColor="#FFE3C6" android:pathData="M58,51 h8 v7 h-8 z" />
+    <!-- Eyes (happy closed arc smile / looking at him) -->
+    <path android:fillColor="#5A3825" android:pathData="M60,54 h2 v2 h-2 z M63,54 h2 v2 h-2 z" />
+    <!-- Happy blush -->
+    <path android:fillColor="#FFAAA6" android:pathData="M59,56 h3 v2 h-3 z M63,56 h3 v2 h-3 z" />
+    <!-- Girl Cozy Sweater (Pastel Rose Coral) -->
+    <path android:fillColor="#E07A5F" android:pathData="M57,60 h10 v9 h-10 z M55,62 h13 v6 h-13 z" />
+    <!-- Arm holding the flower together -->
+    <path android:fillColor="#E07A5F" android:pathData="M54,64 h4 v3 h-4 z" />
+    <path android:fillColor="#FFE3C6" android:pathData="M53,64 h3 v3 h-3 z" />
+    <!-- Girl Skirt / Cozy Bottom (Warm Cream / Terracotta) -->
+    <path android:fillColor="#F4A261" android:pathData="M56,69 h12 v6 h-12 z" />
+    <!-- Legs & Shoes -->
+    <path android:fillColor="#FFE3C6" android:pathData="M58,74 h3 v2 h-3 z M64,74 h3 v2 h-3 z" />
+    <path android:fillColor="#6D597A" android:pathData="M57,76 h4 v3 h-4 z M64,76 h4 v3 h-4 z" />
+
+    <!-- Red Pixel Tulip / Flower in hands -->
+    <path android:fillColor="#43AA8B" android:pathData="M52,67 h2 v4 h-2 z" />
+    <path android:fillColor="#E63946" android:pathData="M51,62 h4 v3 h-4 z M52,60 h2 v2 h-2 z" />
+
+    <!-- Cute little pixel sparkles -->
+    <path android:fillColor="#F6BD60" android:pathData="M30,36 h2 v2 h-2 z M31,34 h1 v5 h-1 z M29,35 h4 v1 h-4 z" />
+    <path android:fillColor="#F6BD60" android:pathData="M76,38 h2 v2 h-2 z M77,36 h1 v5 h-1 z M75,37 h4 v1 h-4 z" />
+</vector>

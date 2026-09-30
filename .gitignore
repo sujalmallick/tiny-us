@@ -1,0 +1,31 @@
+*.iml
+.gradle
+.gradle_tmp/
+.kotlin
+/local.properties
+local.properties
+/.idea/
+.DS_Store
+/build
+/captures
+.externalNativeBuild
+.cxx
+
+# Test dumps and transient inspection artifacts
+*dump*.xml
+window_dump*
+uidump*
+temp_*
+live_*.png
+live_*.jpg
+screenshots/
+
+# Working / untrimmed raw media source
+bgm/
+music/
+
+# Local personal data layer (uncommitted personal configuration)
+personal_profile.json
+personal_config.json
+*.personal.json
+!personal_profile.template.json

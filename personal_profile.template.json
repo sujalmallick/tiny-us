@@ -1,0 +1,35 @@
+{
+  "boyName": "Partner 1",
+  "girlName": "Partner 2",
+  "anniversaryDate": "2024-01-01",
+  "secretLetter": "A heartfelt message just for you...",
+  "secretCodeTitle": "Our Secret Note",
+  "secretCodeBody": "A special place for our memories and quiet love.",
+  "boyTapWhispers": [
+    "Forever by your side.",
+    "You make me smile every single day."
+  ],
+  "girlTapWhispers": [
+    "My whole heart.",
+    "Warmest cuddles only with you."
+  ],
+  "memories": [
+    {
+      "id": "m_1",
+      "title": "A Special Day",
+      "date": "First Trip",
+      "note": "A wonderful memory shared together.",
+      "iconType": "heart"
+    }
+  ],
+  "loveNotes": [
+    {
+      "id": "n1",
+      "text": "Good morning my love! Hope your day is sweet.",
+      "author": "From Me",
+      "date": "Today"
+    }
+  ],
+  "stallSignboardText": "WARM BITES",
+  "milestoneText": "TINY US 0 KM"
+}

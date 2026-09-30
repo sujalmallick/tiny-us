@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="128dp"
+    android:height="128dp"
+    android:viewportWidth="128"
+    android:viewportHeight="128">
+
+    <!-- Soft circular aura / glow -->
+    <path
+        android:fillColor="#33FFB5C2"
+        android:pathData="M64,64m-48,0a48,48 0,1,1 96,0a48,48 0,1,1 -96,0" />
+
+    <!-- Cute Pixel Heart (Centered at x=64, y=64) -->
+    <!-- Lobes -->
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M48,44 h14 v12 h-14 z M66,44 h14 v12 h-14 z" />
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M42,50 h44 v18 h-44 z" />
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M46,68 h36 v10 h-36 z" />
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M52,78 h24 v8 h-24 z" />
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M58,86 h12 v6 h-12 z" />
+    <path
+        android:fillColor="#FF4D6D"
+        android:pathData="M62,92 h4 v4 h-4 z" />
+
+    <!-- Highlight Shine -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M48,48 h6 v6 h-6 z M48,54 h4 v4 h-4 z" />
+
+    <!-- Tiny Pixel Sparkles -->
+    <path
+        android:fillColor="#F6BD60"
+        android:pathData="M32,40 h4 v4 h-4 z M33,36 h2 v12 h-2 z M28,38 h12 v2 h-12 z" />
+    <path
+        android:fillColor="#F6BD60"
+        android:pathData="M92,44 h4 v4 h-4 z M93,40 h2 v12 h-2 z M88,42 h12 v2 h-12 z" />
+</vector>
