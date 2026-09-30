@@ -1,5 +1,9 @@
 package com.example.engine
 
+import kotlinx.datetime.Clock
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+
 /**
  * Single source of truth for the real-clock time phase across Tiny Us.
  *
@@ -26,6 +30,14 @@ enum class TimeOfDayPhase {
          */
         var debugOverride: TimeOfDayPhase? = null
 
+        fun currentHour(): Int {
+            return try {
+                Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
+            } catch (_: Exception) {
+                12
+            }
+        }
+
         /**
          * Computes the phase from a 24-hour hour integer (0..23).
          */
@@ -48,11 +60,9 @@ enum class TimeOfDayPhase {
          */
         fun resolve(
             atmosphereMode: String,
-            hour: Int = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
+            hour: Int = currentHour()
         ): TimeOfDayPhase {
-            if (com.example.BuildConfig.DEBUG) {
-                debugOverride?.let { return it }
-            }
+            debugOverride?.let { return it }
             return when (atmosphereMode) {
                 "DAY" -> AFTERNOON
                 "SUNSET" -> SUNSET

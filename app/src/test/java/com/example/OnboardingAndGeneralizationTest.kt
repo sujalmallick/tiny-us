@@ -7,6 +7,7 @@ import com.example.data.ProfileManager
 import com.example.data.RelationshipTimeManager
 import com.example.data.SpecialCalendarManager
 import com.example.data.SpecialMemoryType
+import com.example.data.anniversaryDateJava
 import com.example.engine.AmbientAudio
 import com.example.scene.SceneEngine
 import org.junit.Assert.assertEquals
@@ -183,7 +184,7 @@ class OnboardingAndGeneralizationTest {
         assertTrue("Valid personal profile with safeguard tokens must be accepted", accepted)
         assertEquals("Partner1", ProfileManager.getProfile().boyName)
         assertEquals("Partner2", ProfileManager.getProfile().girlName)
-        assertEquals(LocalDate.of(2023, 1, 1), ProfileManager.getProfile().anniversaryDate)
+        assertEquals(LocalDate.of(2023, 1, 1), ProfileManager.getProfile().anniversaryDateJava)
 
         // Clean up test file
         targetFile.delete()

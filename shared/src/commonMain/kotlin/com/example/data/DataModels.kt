@@ -50,4 +50,3 @@ data class DreamState(
     val text: String,
     val alpha: Float = 1.0f
 )
-

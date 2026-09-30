@@ -5,6 +5,8 @@ import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.Period
 import java.time.temporal.ChronoUnit
+import kotlinx.datetime.toKotlinLocalDate
+import kotlinx.datetime.toJavaLocalDate
 
 data class RelationshipDuration(
     val years: Int,
@@ -24,7 +26,7 @@ data class RelationshipDuration(
  */
 object RelationshipTimeManager {
     // Configurable relationship start date (defaults to profile anniversary or today)
-    var relationshipStartDate: LocalDate = ProfileManager.getProfile().anniversaryDate ?: LocalDate.now()
+    var relationshipStartDate: LocalDate = ProfileManager.getProfile().anniversaryDate?.toJavaLocalDate() ?: LocalDate.now()
 
     // Configurable exact start time: default 00:00 (can be updated with exact hour & minute)
     var relationshipStartTime: LocalTime = LocalTime.of(0, 0)
@@ -34,8 +36,10 @@ object RelationshipTimeManager {
      * Starts at Day 1 on relationshipStartDate.
      */
     fun calculateTinyUsDay(currentDate: LocalDate = LocalDate.now()): Long {
-        val daysBetween = ChronoUnit.DAYS.between(relationshipStartDate, currentDate)
-        return (daysBetween + 1).coerceAtLeast(1)
+        return RelationshipTimeCalculator.calculateTinyUsDay(
+            relationshipStartDate.toKotlinLocalDate(),
+            currentDate.toKotlinLocalDate()
+        )
     }
 
     /**

@@ -24,3 +24,4 @@ dependencyResolutionManagement {
 rootProject.name = "Tiny Us"
 
 include(":app")
+include(":shared")

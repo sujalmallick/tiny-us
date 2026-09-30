@@ -10,9 +10,13 @@ import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-class PreferencesManager(context: Context) {
-    private val prefs: SharedPreferences =
+class PreferencesManager(
+    private val prefs: SharedPreferences,
+    val storage: KeyValueStorage = SharedPreferencesStorage(prefs)
+) {
+    constructor(context: Context) : this(
         context.getSharedPreferences("tiny_us_prefs", Context.MODE_PRIVATE)
+    )
 
     private var cachedMemories: List<MemoryItem>? = null
     private var cachedLoveNotes: List<LoveNoteItem>? = null

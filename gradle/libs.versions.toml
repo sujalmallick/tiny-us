@@ -42,7 +42,10 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 androidx-core = { group = "androidx.test", name = "core", version.ref = "core" }
 androidx-runner = { group = "androidx.test", name = "runner", version.ref = "runner" }
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
+kotlinx-datetime = { group = "org.jetbrains.kotlinx", name = "kotlinx-datetime", version = "0.6.2" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
+android-kmp-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "agp" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

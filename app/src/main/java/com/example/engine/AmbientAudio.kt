@@ -29,27 +29,6 @@ import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.tanh
 
-enum class MusicBoxState {
-    STOPPED,
-    PLAYING,
-    PAUSED
-}
-
-data class MusicalNote(
-    val freq: Double,
-    val durationMs: Int,
-    val delayAfterMs: Long = durationMs.toLong() + 35L
-)
-
-data class Song(
-    val id: String,
-    val title: String,
-    val artist: String,
-    val vibe: String,
-    val rawResId: Int? = null,
-    val notes: List<MusicalNote> = emptyList()
-)
-
 class AmbientAudio(var context: Context? = null) {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val playbackMutex = Mutex()
@@ -164,15 +143,7 @@ class AmbientAudio(var context: Context? = null) {
     private fun initFootstepTrack() {
         if (footstepTrack != null) return
         try {
-            val numSamples = (sampleRate * 35 / 1000).coerceAtLeast(50)
-            val buffer = ShortArray(numSamples)
-            var last = 0f
-            for (i in 0 until numSamples) {
-                val white = (Math.random() * 2.0 - 1.0).toFloat()
-                last = (last + (0.05f * white)) / 1.05f
-                val env = 1.0 - (i.toDouble() / numSamples)
-                buffer[i] = (last * env * 0.16f * Short.MAX_VALUE).toInt().toShort()
-            }
+            val buffer = ProceduralAudioSynthesizer.synthesizeFootstep(sampleRate)
             val minBuf = AudioTrack.getMinBufferSize(
                 sampleRate,
                 AudioFormat.CHANNEL_OUT_MONO,
