@@ -1,4 +1,6 @@
 {
+  "isPersonalProfile": true,
+  "schemaVersion": 1,
   "boyName": "Partner 1",
   "girlName": "Partner 2",
   "anniversaryDate": "2024-01-01",

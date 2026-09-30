@@ -40,18 +40,51 @@ object SpecialCalendarManager {
     // Optional custom memory entries loaded from local data layer or user entries
     var customMemories: List<TinyUsMemory>? = null
 
-    // Base template memories (dynamic based on relationship start date)
+    var boyBirthday: LocalDate? = null
+    var girlBirthday: LocalDate? = null
+    var boyName: String = "Him"
+    var girlName: String = "Her"
+
+    // Base template memories (dynamic based on relationship start date & birthdays)
     val fixedMemories: List<TinyUsMemory>
-        get() = customMemories ?: listOf(
-            TinyUsMemory(
-                id = "our_beginning",
-                date = startDate,
-                title = "Our Beginning",
-                description = "Where our story began. The first day of forever.",
-                type = SpecialMemoryType.RELATIONSHIP,
-                annualRecurring = true
+        get() {
+            customMemories?.let { return it }
+            val list = mutableListOf(
+                TinyUsMemory(
+                    id = "our_beginning",
+                    date = startDate,
+                    title = "Our Beginning",
+                    description = "Where our story began. The first day of forever.",
+                    type = SpecialMemoryType.RELATIONSHIP,
+                    annualRecurring = true
+                )
             )
-        )
+            boyBirthday?.let { bDate ->
+                list.add(
+                    TinyUsMemory(
+                        id = "boy_birthday",
+                        date = bDate,
+                        title = "${boyName}'s Birthday",
+                        description = "Celebrating the most wonderful person in the world!",
+                        type = SpecialMemoryType.BIRTHDAY,
+                        annualRecurring = true
+                    )
+                )
+            }
+            girlBirthday?.let { gDate ->
+                list.add(
+                    TinyUsMemory(
+                        id = "girl_birthday",
+                        date = gDate,
+                        title = "${girlName}'s Birthday",
+                        description = "Celebrating the most special, beautiful soul!",
+                        type = SpecialMemoryType.BIRTHDAY,
+                        annualRecurring = true
+                    )
+                )
+            }
+            return list
+        }
 
     fun getMemoriesForDate(date: LocalDate): List<TinyUsMemory> {
         return fixedMemories.filter { mem ->

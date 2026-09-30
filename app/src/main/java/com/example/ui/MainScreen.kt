@@ -130,6 +130,7 @@ fun MainScreen(
     var showSpecialCalendar by remember { mutableStateOf(false) }
     var showWardrobe by remember { mutableStateOf(false) }
     var showDreamJournal by remember { mutableStateOf(false) }
+    var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
 
     var girlOutfitIndex by remember { mutableStateOf(prefs.girlOutfitIndex) }
     var girlAccessoryIndex by remember { mutableStateOf(prefs.girlAccessoryIndex) }
@@ -221,6 +222,21 @@ fun MainScreen(
 
     LaunchedEffect(atmosphere) {
         engine.updateAtmosphereMode(atmosphere)
+    }
+
+    LaunchedEffect(Unit) {
+        val loadedLocal = com.example.data.ProfileManager.loadFromLocalFile(context)
+        if (loadedLocal) {
+            prefs.isOnboardingCompleted = true
+            showOnboarding = false
+            engine.updateNames(prefs.boyfriendName, prefs.girlfriendName)
+        }
+        val anniv = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now())
+        com.example.data.RelationshipTimeManager.relationshipStartDate = anniv
+        com.example.data.SpecialCalendarManager.boyName = prefs.boyfriendName
+        com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
+        com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
+        com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
     }
 
     val isDark = engine.timeOfDayPhase.isNight || engine.timeOfDayPhase.isSunset
@@ -943,6 +959,12 @@ fun MainScreen(
                     audio.isEnabled = isSoundOn
                     engine.updateNames(prefs.boyfriendName, prefs.girlfriendName)
                     glassIntensity = prefs.buttonGlassIntensity
+                    val anniv = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now())
+                    com.example.data.RelationshipTimeManager.relationshipStartDate = anniv
+                    com.example.data.SpecialCalendarManager.boyName = prefs.boyfriendName
+                    com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
+                    com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
+                    com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
                 },
                 onReplayScene = {
                     engine.loadScene(engine.currentScene)
@@ -996,7 +1018,37 @@ fun MainScreen(
 
         if (showSecretKeepsake) {
             SecretKeepsakeDialog(
-                onDismiss = { showSecretKeepsake = false }
+                onDismiss = { showSecretKeepsake = false },
+                prefs = prefs
+            )
+        }
+
+        if (showOnboarding) {
+            OnboardingDialog(
+                initialBoyName = prefs.boyfriendName,
+                initialGirlName = prefs.girlfriendName,
+                initialAnniversaryDate = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now()),
+                initialSecretCode = prefs.secretCode,
+                initialSecretNote = prefs.secretCodeBody,
+                onDismiss = {
+                    prefs.isOnboardingCompleted = true
+                    showOnboarding = false
+                },
+                onComplete = { bName, gName, annivDate, code, note ->
+                    prefs.boyfriendName = bName
+                    prefs.girlfriendName = gName
+                    prefs.anniversaryDate = annivDate.toString()
+                    if (code.isNotEmpty()) prefs.secretCode = code
+                    if (note.isNotEmpty()) prefs.secretCodeBody = note
+                    prefs.isOnboardingCompleted = true
+
+                    engine.updateNames(bName, gName)
+                    com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate
+                    com.example.data.SpecialCalendarManager.boyName = bName
+                    com.example.data.SpecialCalendarManager.girlName = gName
+
+                    showOnboarding = false
+                }
             )
         }
 

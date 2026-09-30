@@ -51,6 +51,26 @@ class PreferencesManager(context: Context) {
         }
         set(value) = prefs.edit().putString("anniversary_date", value).apply()
 
+    var isOnboardingCompleted: Boolean
+        get() = prefs.getBoolean("onboarding_completed", false)
+        set(value) = prefs.edit().putBoolean("onboarding_completed", value).apply()
+
+    var secretCode: String
+        get() = prefs.getString("secret_code", "LOVE") ?: "LOVE"
+        set(value) = prefs.edit().putString("secret_code", value.trim().uppercase()).apply()
+
+    var secretCodeBody: String
+        get() = prefs.getString("secret_code_body", ProfileManager.getProfile().secretCodeBody) ?: ProfileManager.getProfile().secretCodeBody
+        set(value) = prefs.edit().putString("secret_code_body", value.trim()).apply()
+
+    var boyfriendBirthday: String
+        get() = prefs.getString("bf_birthday", "") ?: ""
+        set(value) = prefs.edit().putString("bf_birthday", value.trim()).apply()
+
+    var girlfriendBirthday: String
+        get() = prefs.getString("gf_birthday", "") ?: ""
+        set(value) = prefs.edit().putString("gf_birthday", value.trim()).apply()
+
     var firstOpenDate: String
         get() = prefs.getString("first_open_date", "") ?: ""
         set(value) = prefs.edit().putString("first_open_date", value).apply()

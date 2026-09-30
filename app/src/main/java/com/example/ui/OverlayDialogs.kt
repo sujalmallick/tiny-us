@@ -1365,28 +1365,75 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // Names
+            // Names (Max 10 chars)
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 OutlinedTextField(
                     value = boyName,
                     onValueChange = {
-                        boyName = it
-                        prefs.boyfriendName = it
+                        val trimmed = it.take(10)
+                        boyName = trimmed
+                        prefs.boyfriendName = trimmed
                         onSettingsChanged()
                     },
-                    label = { Text("Boyfriend Name") },
+                    label = { Text("Boy's Name") },
                     modifier = Modifier.weight(1f).testTag("input_boy_name"),
                     singleLine = true
                 )
                 OutlinedTextField(
                     value = girlName,
                     onValueChange = {
-                        girlName = it
-                        prefs.girlfriendName = it
+                        val trimmed = it.take(10)
+                        girlName = trimmed
+                        prefs.girlfriendName = trimmed
                         onSettingsChanged()
                     },
-                    label = { Text("Girlfriend Name") },
+                    label = { Text("Girl's Name") },
                     modifier = Modifier.weight(1f).testTag("input_girl_name"),
+                    singleLine = true
+                )
+            }
+
+            var anniversaryDate by remember { mutableStateOf(prefs.anniversaryDate) }
+            var boyBirthday by remember { mutableStateOf(prefs.boyfriendBirthday) }
+            var girlBirthday by remember { mutableStateOf(prefs.girlfriendBirthday) }
+
+            // Anniversary Date
+            OutlinedTextField(
+                value = anniversaryDate,
+                onValueChange = {
+                    anniversaryDate = it
+                    prefs.anniversaryDate = it
+                    onSettingsChanged()
+                },
+                label = { Text("Anniversary Date (YYYY-MM-DD)") },
+                modifier = Modifier.fillMaxWidth().testTag("input_anniversary_date"),
+                singleLine = true
+            )
+
+            // Birthdays (recurring yearly)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = boyBirthday,
+                    onValueChange = {
+                        boyBirthday = it
+                        prefs.boyfriendBirthday = it
+                        onSettingsChanged()
+                    },
+                    label = { Text("Boy's Birthday") },
+                    placeholder = { Text("YYYY-MM-DD") },
+                    modifier = Modifier.weight(1f).testTag("input_boy_bday"),
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = girlBirthday,
+                    onValueChange = {
+                        girlBirthday = it
+                        prefs.girlfriendBirthday = it
+                        onSettingsChanged()
+                    },
+                    label = { Text("Girl's Birthday") },
+                    placeholder = { Text("YYYY-MM-DD") },
+                    modifier = Modifier.weight(1f).testTag("input_girl_bday"),
                     singleLine = true
                 )
             }
@@ -2644,9 +2691,16 @@ fun TbSecretDialog(
 
 @Composable
 fun SecretKeepsakeDialog(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    prefs: com.example.data.PreferencesManager? = null
 ) {
     val profile = com.example.data.ProfileManager.getProfile()
+    val title = prefs?.secretCode?.ifBlank { null } ?: profile.secretCodeTitle.ifBlank { profile.boyName }
+    val subtitle = profile.secretCodeSubtitle.ifBlank { "A keepsake from the heart" }
+    val body = prefs?.secretCodeBody?.ifBlank { null } ?: profile.secretCodeBody.ifBlank {
+        "Not in money or gold,\nbut in endless love, quiet cuddles,\nand a heart that belongs\nentirely to you."
+    }
+
     Dialog(onDismissRequest = onDismiss) {
         Surface(
             shape = RoundedCornerShape(22.dp),
@@ -2666,7 +2720,7 @@ fun SecretKeepsakeDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = profile.secretCodeTitle.ifBlank { profile.boyName },
+                    text = title,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,
@@ -2677,7 +2731,7 @@ fun SecretKeepsakeDialog(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = profile.secretCodeSubtitle.ifBlank { "A keepsake from the heart" },
+                    text = subtitle,
                     fontSize = 14.sp,
                     fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
                     fontFamily = FontFamily.Serif,
@@ -2698,9 +2752,7 @@ fun SecretKeepsakeDialog(
                 Spacer(modifier = Modifier.height(16.dp))
 
                 Text(
-                    text = profile.secretCodeBody.ifBlank {
-                        "Not in money or gold,\nbut in endless love, quiet cuddles,\nand a heart that belongs\nentirely to you."
-                    },
+                    text = body,
                     fontSize = 13.5.sp,
                     fontFamily = FontFamily.Serif,
                     lineHeight = 22.sp,

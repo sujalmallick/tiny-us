@@ -120,7 +120,8 @@ class SceneEngine(
     var treeMossDebugYearOverride: Int? = null
     var treeMossGrowthStage: Int by mutableIntStateOf(0)
         internal set
-    var girlfriendInitial: Char = 'T'
+    var boyfriendInitial: Char = com.example.data.ProfileManager.getProfile().boyName.firstOrNull()?.uppercaseChar() ?: 'H'
+    var girlfriendInitial: Char = com.example.data.ProfileManager.getProfile().girlName.firstOrNull()?.uppercaseChar() ?: 'H'
 
     // Feature 3: Shared Dream Journal — isolated temporary Dream Mode
     var dreamState: com.example.data.DreamState? by mutableStateOf(null)
@@ -643,7 +644,8 @@ class SceneEngine(
     fun updateNames(boyName: String, girlName: String) {
         boy.name = boyName
         girl.name = girlName
-        girlfriendInitial = girlName.trim().firstOrNull()?.uppercaseChar() ?: 'T'
+        boyfriendInitial = boyName.trim().firstOrNull()?.uppercaseChar() ?: 'H'
+        girlfriendInitial = girlName.trim().firstOrNull()?.uppercaseChar() ?: 'H'
     }
 
     fun computeTreeMossGrowthStage(currentDate: java.time.LocalDate = java.time.LocalDate.now()): Int {

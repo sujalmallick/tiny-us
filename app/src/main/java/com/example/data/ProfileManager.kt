@@ -76,6 +76,11 @@ object ProfileManager {
             val jsonStr = target.readText()
             val obj = JSONObject(jsonStr)
 
+            // Safeguard: explicit profile flag prevents accidental auto-load from generic backups
+            if (!obj.optBoolean("isPersonalProfile", false) && obj.optInt("schemaVersion", 0) != 1) {
+                return false
+            }
+
             val parsedProfile = parseJsonToProfile(obj)
             activeProfile = parsedProfile
             true
