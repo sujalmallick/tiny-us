@@ -615,12 +615,12 @@ class PreferencesManager(
                         title = obj.getString("title"),
                         description = obj.getString("description"),
                         category = obj.optString("category", "COZY_HOME"),
-                        sceneHint = obj.optString("sceneHint", null).takeIf { !it.isNullOrEmpty() },
+                        sceneHint = if (obj.has("sceneHint") && !obj.isNull("sceneHint")) obj.getString("sceneHint").takeIf { it.isNotEmpty() } else null,
                         status = try { AdventureStatus.valueOf(obj.optString("status", "AVAILABLE")) } catch (_: Exception) { AdventureStatus.AVAILABLE },
                         completedByBoy = obj.optBoolean("completedByBoy", false),
                         completedByGirl = obj.optBoolean("completedByGirl", false),
                         completedTimestamp = if (obj.has("completedTimestamp")) obj.getLong("completedTimestamp") else null,
-                        unlockedArtifact = obj.optString("unlockedArtifact", null).takeIf { !it.isNullOrEmpty() }
+                        unlockedArtifact = if (obj.has("unlockedArtifact") && !obj.isNull("unlockedArtifact")) obj.getString("unlockedArtifact").takeIf { it.isNotEmpty() } else null
                     )
                 )
             }
@@ -705,8 +705,8 @@ class PreferencesManager(
                 val resp = DailyMomentResponse(
                     promptId = obj.getString("promptId"),
                     dateString = obj.getString("dateString"),
-                    boyAnswer = obj.optString("boyAnswer", null).takeIf { !it.isNullOrEmpty() },
-                    girlAnswer = obj.optString("girlAnswer", null).takeIf { !it.isNullOrEmpty() },
+                    boyAnswer = if (obj.has("boyAnswer") && !obj.isNull("boyAnswer")) obj.getString("boyAnswer").takeIf { it.isNotEmpty() } else null,
+                    girlAnswer = if (obj.has("girlAnswer") && !obj.isNull("girlAnswer")) obj.getString("girlAnswer").takeIf { it.isNotEmpty() } else null,
                     isRevealed = obj.optBoolean("isRevealed", false),
                     completedTimestamp = if (obj.has("completedTimestamp")) obj.getLong("completedTimestamp") else null
                 )
@@ -898,7 +898,7 @@ class PreferencesManager(
                         id = obj.getString("id"),
                         sender = obj.getString("sender"),
                         type = LongDistanceSignalType.fromId(obj.getString("type")),
-                        note = obj.optString("note", null).takeIf { !it.isNullOrEmpty() },
+                        note = if (obj.has("note") && !obj.isNull("note")) obj.getString("note").takeIf { it.isNotEmpty() } else null,
                         timestamp = obj.getLong("timestamp"),
                         isViewed = obj.optBoolean("isViewed", false)
                     )

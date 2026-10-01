@@ -79,35 +79,27 @@ fun interface WorldEventListener {
  * Safe for multiplatform use.
  */
 object WorldEventBus {
-    private val listeners = mutableListOf<WorldEventListener>()
-    private val lock = Any()
+    @kotlin.concurrent.Volatile
+    private var listeners = emptyList<WorldEventListener>()
 
     fun subscribe(listener: WorldEventListener) {
-        synchronized(lock) {
-            if (!listeners.contains(listener)) {
-                listeners.add(listener)
-            }
+        if (!listeners.contains(listener)) {
+            listeners = listeners + listener
         }
     }
 
     fun unsubscribe(listener: WorldEventListener) {
-        synchronized(lock) {
-            listeners.remove(listener)
-        }
+        listeners = listeners - listener
     }
 
     fun post(event: WorldEvent) {
-        val targets = synchronized(lock) {
-            listeners.toList()
-        }
+        val targets = listeners
         for (target in targets) {
             target.onWorldEvent(event)
         }
     }
 
     fun clearListeners() {
-        synchronized(lock) {
-            listeners.clear()
-        }
+        listeners = emptyList()
     }
 }
