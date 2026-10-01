@@ -34,6 +34,7 @@ All content created, customized, or logged within Tiny Us is stored strictly on 
 Tiny Us does not request generic network access for regular gameplay. The sole exception is **Google Play Billing**, which is utilized exclusively when you choose to make an optional one-time digital purchase (such as an optional cosmetic expansion pack or developer tip):
 
 - **Transaction Processing:** In-app purchases are handled directly through Google Play Services and Google LLC. When completing a transaction, Google processes payment details (such as credit card information and billing addresses) under the [Google Play Terms of Service](https://play.google.com/intl/en_us/about/play-terms/) and [Google Privacy Policy](https://policies.google.com/privacy).
+- **Strict Scope of INTERNET Permission:** The newly required `android.permission.INTERNET` permission is invoked only during an active purchase or restore-purchases transaction, and is never used for anything else or checked in the background. The app contains zero background network syncs, zero remote analytics, and zero telemetry pings.
 - **What Tiny Us Receives:** The app only receives an anonymous, cryptographically signed purchase token and product identifier from Google Play to confirm your entitlement. We never see, receive, or store your credit card or financial details.
 - **Offline Entitlement Caching:** Once a purchase is completed and verified, your entitlement is cached locally on your device. You do not need an active internet connection to use previously purchased content.
 
@@ -44,8 +45,7 @@ Tiny Us does not request generic network access for regular gameplay. The sole e
 Tiny Us requests a minimal set of Android system permissions, each serving a direct local function:
 
 - **Notifications (`POST_NOTIFICATIONS` - Android 13+):** Used exclusively to deliver optional, offline "Tiny Care" check-in reminders (such as water reminders, sleep prompts, or sweet check-ins) scheduled by you.
-- **Exact Alarms (`SCHEDULE_EXACT_ALARM`):** Used to fire your local Tiny Care reminders at your selected times.
-- **Run at Startup (`RECEIVE_BOOT_COMPLETED`):** Used solely to restore your local alarm schedules if your phone is restarted.
+- **Run at Startup (`RECEIVE_BOOT_COMPLETED`):** Used solely to restore your local inexact alarm schedules if your phone is restarted.
 - **Photos / Storage (`WRITE_EXTERNAL_STORAGE` - Android 9 and older only):** Used strictly when you explicitly tap "Save to Photos" to export a Polaroid snapshot to your device's picture gallery. On modern Android versions, this uses standard system photo saving without requiring broad storage permissions.
 
 ---

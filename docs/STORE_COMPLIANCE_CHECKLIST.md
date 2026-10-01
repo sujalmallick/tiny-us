@@ -52,9 +52,9 @@ Google Play requires declarations for specific runtime and special permissions:
 - [ ] **`POST_NOTIFICATIONS` (Android 13+):**
   - Declared in AndroidManifest.xml.
   - Requested in context when the user first toggles on "Tiny Care Check-ins" or sets a reminder time, not immediately on first app boot.
-- [ ] **`SCHEDULE_EXACT_ALARM`:**
-  - Used strictly for user-facing timely notifications (Tiny Care water/sleep check-ins).
-  - Under Google Play's exact alarm policy, apps that provide user-set reminders are an acceptable use case.
+- [ ] **Inexact Alarms Only (Zero `SCHEDULE_EXACT_ALARM`):**
+  - Tiny Care check-ins strictly use battery-friendly, inexact `setAndAllowWhileIdle()`.
+  - The app avoids requesting `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, completely eliminating Play Console exact-alarm declaration friction.
 - [ ] **`INTERNET` Permission:**
   - Added automatically by the Google Play Billing Library.
   - In your Data Safety form, explicitly clarify that internet access is used solely for Google Play transaction verification, and never for app data telemetry or ad networks.
