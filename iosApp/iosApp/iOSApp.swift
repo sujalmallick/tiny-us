@@ -5,7 +5,7 @@ import Shared
 struct iOSApp: App {
     init() {
         // Initialize platform storage adapter
-        let storage = IosUserDefaultsStorage()
+        let storage = IosUserDefaultsStorage(defaults: UserDefaults.standard)
         _ = storage
     }
 

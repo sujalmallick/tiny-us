@@ -6,8 +6,14 @@ import platform.Foundation.NSUserDefaults
  * Apple iOS NSUserDefaults adapter implementing the shared KeyValueStorage contract.
  */
 class IosUserDefaultsStorage(
-    private val defaults: NSUserDefaults = NSUserDefaults.standardUserDefaults
+    private val defaults: NSUserDefaults
 ) : KeyValueStorage {
+
+    constructor() : this(NSUserDefaults.standardUserDefaults)
+
+    companion object {
+        fun defaultStorage(): IosUserDefaultsStorage = IosUserDefaultsStorage(NSUserDefaults.standardUserDefaults)
+    }
 
     override fun getString(key: String, defaultValue: String?): String? =
         defaults.stringForKey(key) ?: defaultValue

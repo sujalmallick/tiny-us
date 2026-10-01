@@ -178,7 +178,7 @@ struct ContentView: View {
     }
     
     private func loadInitialData() {
-        let storage = IosUserDefaultsStorage()
+        let storage = IosUserDefaultsStorage(defaults: UserDefaults.standard)
         boyName = storage.getString(key: "bf_name", defaultValue: "Him") ?? "Him"
         girlName = storage.getString(key: "gf_name", defaultValue: "Her") ?? "Her"
         
@@ -195,7 +195,7 @@ struct ContentView: View {
     }
     
     private func saveProfile() {
-        let storage = IosUserDefaultsStorage()
+        let storage = IosUserDefaultsStorage(defaults: UserDefaults.standard)
         storage.putString(key: "bf_name", value: boyName)
         storage.putString(key: "gf_name", value: girlName)
         

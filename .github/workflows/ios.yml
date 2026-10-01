@@ -48,6 +48,8 @@ jobs:
                      ARCHS=arm64 \
                      ONLY_ACTIVE_ARCH=YES \
                      JAVA_HOME="$JAVA_HOME" \
+                     CODE_SIGNING_ALLOWED=NO \
+                     CODE_SIGNING_REQUIRED=NO \
                      build 2>&1 | tee xcodebuild-debug.log || (echo "=== XCODEBUILD FAILED: LAST 150 LINES ===" && tail -n 150 xcodebuild-debug.log && exit 1)
 
       - name: Archive iOS App for Device
@@ -77,3 +79,14 @@ jobs:
           name: TinyUs-iOS-unsigned
           path: TinyUs-iOS-unsigned.ipa
           retention-days: 14
+
+      - name: Upload Xcode Build Logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcode-build-logs
+          path: |
+            xcodebuild-debug.log
+            xcodebuild-archive.log
+          if-no-files-found: ignore
+          retention-days: 7
