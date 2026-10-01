@@ -40,6 +40,7 @@ jobs:
 
       - name: Build iOS App (Simulator Debug)
         run: |
+          set -o pipefail
           xcodebuild -project iosApp/iosApp.xcodeproj \
                      -scheme iosApp \
                      -configuration Debug \
@@ -47,10 +48,11 @@ jobs:
                      ARCHS=arm64 \
                      ONLY_ACTIVE_ARCH=YES \
                      JAVA_HOME="$JAVA_HOME" \
-                     build
+                     build 2>&1 | tee xcodebuild-debug.log || (echo "=== XCODEBUILD FAILED: LAST 150 LINES ===" && tail -n 150 xcodebuild-debug.log && exit 1)
 
       - name: Archive iOS App for Device
         run: |
+          set -o pipefail
           xcodebuild -project iosApp/iosApp.xcodeproj \
                      -scheme iosApp \
                      -configuration Release \
@@ -61,7 +63,7 @@ jobs:
                      JAVA_HOME="$JAVA_HOME" \
                      archive \
                      CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO
+                     CODE_SIGNING_REQUIRED=NO 2>&1 | tee xcodebuild-archive.log || (echo "=== XCODEBUILD ARCHIVE FAILED: LAST 150 LINES ===" && tail -n 150 xcodebuild-archive.log && exit 1)
 
       - name: Package Unsigned IPA
         run: |
