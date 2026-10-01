@@ -192,6 +192,7 @@ class SceneEngine(
     private var isRainAmbientPlaying: Boolean = false
 
     var gardenStage: Int by mutableIntStateOf(0)
+    var homeEvolutionState: com.example.data.HomeEvolutionState by mutableStateOf(com.example.data.HomeEvolutionState())
     var flowerWiggleTimer: Float by mutableFloatStateOf(0f)
     var wipeAlpha: Float by mutableFloatStateOf(0f)
 
@@ -1654,11 +1655,11 @@ class SceneEngine(
             mochiNudgeActiveTimer = (mochiNudgeActiveTimer - deltaSeconds).coerceAtLeast(0f)
         }
 
-        // Autonomous Pet Personality behavior cycle
+        // Autonomous Pet Personality behavior cycle (calm, living pet pacing)
         petBehaviorTimer += deltaSeconds
         if (petBehaviorTimer >= nextPetBehaviorInterval && !isWatchSceneActive) {
             petBehaviorTimer = 0f
-            nextPetBehaviorInterval = 4f + Random.nextFloat() * 5f
+            nextPetBehaviorInterval = 12f + Random.nextFloat() * 16f
             if (!mochiMatchmakerActive && canTriggerMochiMatchmaker()) {
                 triggerMochiMatchmaker(canvasWidth, canvasHeight)
             } else if (!mochiMatchmakerActive) {
@@ -2798,8 +2799,13 @@ class SceneEngine(
             return
         }
 
-        // Cat chooses next mood: 55% chance to get up and roam to a new spot!
-        val shouldRoam = Random.nextFloat() < 0.55f
+        // If cat is already sleeping peacefully, let it sleep most of the time (70% chance to remain sleeping)
+        if (catState == CatState.SLEEPING && Random.nextFloat() < 0.70f) {
+            return
+        }
+
+        // Cat chooses next mood: 25% chance to gently roam to a new spot (replaces frantic 55% constant wandering)
+        val shouldRoam = Random.nextFloat() < 0.25f
         if (shouldRoam) {
             val isOutdoor = currentScene.environment in listOf(
                 EnvironmentType.MEADOW,
@@ -2808,32 +2814,44 @@ class SceneEngine(
                 EnvironmentType.PATH_NIGHT,
                 EnvironmentType.MOMO_STALL
             )
+            val coupleClose = kotlin.math.abs(boy.worldX - girl.worldX) < 0.25f
             val newTargetX = when (currentScene.environment) {
                 EnvironmentType.LIVING_ROOM -> {
-                    // Living room floor spans between 0.18f (left door) and 0.84f (right floor lamp)
-                    val spots = listOf(0.18f, 0.28f, 0.38f, 0.52f, 0.70f, 0.84f)
-                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.20f + Random.nextFloat() * 0.65f)
+                    // Settle near the warm couch rug, floor lamp, or cozy box
+                    val spots = listOf(0.22f, 0.35f, 0.48f, 0.62f, 0.76f)
+                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.24f + Random.nextFloat() * 0.55f)
                 }
                 EnvironmentType.KITCHEN -> {
-                    val spots = listOf(0.14f, 0.28f, 0.42f, 0.58f, 0.74f, 0.84f)
-                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.15f + Random.nextFloat() * 0.70f)
+                    // Near the warm stove, kitchen table jute rug, or window
+                    val spots = listOf(0.24f, 0.38f, 0.50f, 0.68f)
+                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.25f + Random.nextFloat() * 0.50f)
                 }
                 else -> {
-                    // Outdoor scenes: trot towards boy, girl, or anywhere across the grass
-                    val spots = listOf(
-                        (boy.worldX - 0.10f).coerceIn(0.12f, 0.88f),
-                        (girl.worldX + 0.10f).coerceIn(0.12f, 0.88f),
-                        (boy.worldX + girl.worldX) / 2f,
-                        0.12f + Random.nextFloat() * 0.76f
-                    )
-                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.10f }.randomOrNull() ?: (0.12f + Random.nextFloat() * 0.76f)
+                    // Outdoor scenes:
+                    // If raining, shelter close to couple or cottage door
+                    if (weather == WeatherType.RAIN) {
+                        if (Random.nextBoolean()) (boy.worldX + (if (Random.nextBoolean()) 0.06f else -0.06f)).coerceIn(0.15f, 0.85f)
+                        else 0.22f // near cottage porch
+                    } else if (coupleClose && Random.nextFloat() < 0.60f) {
+                        // Snuggle up right beside the couple
+                        val offset = if (Random.nextBoolean()) 0.08f else -0.08f
+                        ((boy.worldX + girl.worldX) / 2f + offset).coerceIn(0.12f, 0.88f)
+                    } else {
+                        val spots = listOf(
+                            (boy.worldX - 0.08f).coerceIn(0.12f, 0.88f),
+                            (girl.worldX + 0.08f).coerceIn(0.12f, 0.88f),
+                            (boy.worldX + girl.worldX) / 2f,
+                            0.18f + Random.nextFloat() * 0.65f
+                        )
+                        spots.filter { kotlin.math.abs(it - catWorldX) > 0.10f }.randomOrNull() ?: (0.18f + Random.nextFloat() * 0.65f)
+                    }
                 }
             }
-            catTargetX = newTargetX.coerceIn(0.10f, 0.90f)
+            catTargetX = newTargetX.coerceIn(0.12f, 0.88f)
             catTargetY = if (isOutdoor) {
-                0.67f + Random.nextFloat() * 0.07f
+                0.67f + Random.nextFloat() * 0.06f
             } else {
-                0.67f + Random.nextFloat() * 0.04f
+                0.67f + Random.nextFloat() * 0.03f
             }
             catFacingLeft = catTargetX < catWorldX
             catState = CatState.WALK_FOLLOW
@@ -2841,14 +2859,29 @@ class SceneEngine(
             return
         }
 
-        // Otherwise stationary playful action at current spot
-        val states = listOf(
-            CatState.SITTING_PURR,
-            CatState.BELLY_ROLL,
-            CatState.PLAYFUL_POUNCE,
-            CatState.SLEEPING
-        )
-        val next = states.random()
+        // Otherwise stationary cozy action at current spot
+        // Weather-weighted state choices
+        val next = when {
+            weather == WeatherType.RAIN || weather == WeatherType.SNOW -> {
+                // In cold/wet weather, mostly cozy loafing or purring
+                val wetStates = listOf(CatState.SLEEPING, CatState.SLEEPING, CatState.SITTING_PURR, CatState.BELLY_ROLL)
+                wetStates.random()
+            }
+            weather == WeatherType.SUNNY -> {
+                // In sunshine, love sunbathing belly rolls and purring
+                val sunStates = listOf(CatState.BELLY_ROLL, CatState.SITTING_PURR, CatState.SLEEPING, CatState.PLAYFUL_POUNCE)
+                sunStates.random()
+            }
+            weather == WeatherType.SAKURA || weather == WeatherType.AUTUMN -> {
+                // In falling leaves or petals, playful pounce and purr
+                val playfulStates = listOf(CatState.PLAYFUL_POUNCE, CatState.SITTING_PURR, CatState.BELLY_ROLL, CatState.SLEEPING)
+                playfulStates.random()
+            }
+            else -> {
+                val states = listOf(CatState.SITTING_PURR, CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE, CatState.SLEEPING)
+                states.random()
+            }
+        }
         catState = next
         catSleeping = (next == CatState.SLEEPING)
         when (next) {

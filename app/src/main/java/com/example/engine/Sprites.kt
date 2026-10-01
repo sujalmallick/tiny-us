@@ -2546,6 +2546,319 @@ object WorldSprites {
         scope.drawRect(Color(0xFFE9ECEF), Offset(cx - 2.5f * p, binTop), Size(5 * p, 1f * p))
         // Top handle loop
         scope.drawRect(Color(0xFF6C757D), Offset(cx - 1.8f * p, binTop - 1.2f * p), Size(3.6f * p, 1.4f * p))
-        scope.drawRect(Color(0xFFCED4DA), Offset(cx - p, binTop - 0.8f * p), Size(2 * p, 0.8f * p))
+    }
+
+    /**
+     * Potted succulent / jade plant for windowsill or counter.
+     */
+    fun drawWindowsillPlant(
+        scope: DrawScope,
+        cx: Float,
+        groundY: Float,
+        p: Float
+    ) {
+        val potW = 7 * p
+        val potH = 6 * p
+        val potLeft = cx - potW / 2f
+        val potTop = groundY - potH
+        val potBase = Color(0xFFC86D51) // warm terracotta
+        val potShadow = Color(0xFFA55238)
+        val plantGreen = Color(0xFF588157)
+        val plantHighlight = Color(0xFFA3B18A)
+
+        // Pot
+        scope.drawRect(potBase, Offset(potLeft, potTop), Size(potW, potH))
+        scope.drawRect(potShadow, Offset(potLeft + potW - 1.5f * p, potTop), Size(1.5f * p, potH))
+        scope.drawRect(potBase, Offset(potLeft - 0.5f * p, potTop), Size(potW + p, 1.5f * p)) // rim
+        // Soil
+        scope.drawRect(Color(0xFF3A2312), Offset(potLeft + p, potTop + 0.5f * p), Size(potW - 2 * p, p))
+        // Plump succulent rosettes
+        scope.drawRect(plantGreen, Offset(cx - 3 * p, potTop - 3 * p), Size(6 * p, 3 * p))
+        scope.drawRect(plantHighlight, Offset(cx - 2 * p, potTop - 4.5f * p), Size(4 * p, 2 * p))
+        scope.drawRect(Color(0xFF344E41), Offset(cx - p, potTop - 2 * p), Size(2 * p, 2 * p))
+    }
+
+    /**
+     * Hand-knitted soft throw blanket draped over the arm of the living room couch.
+     */
+    fun drawCouchKnitThrow(
+        scope: DrawScope,
+        couchLeft: Float,
+        couchTop: Float,
+        p: Float
+    ) {
+        val throwColor = Color(0xFFE8D7F1) // pastel lavender knit
+        val throwPattern = Color(0xFFD0B8E3)
+        val fringeColor = Color(0xFFF3EAF8)
+        val throwLeft = couchLeft + 2 * p
+        val throwTop = couchTop + 6 * p
+        val throwW = 8 * p
+        val throwH = 14 * p
+
+        scope.drawRect(throwColor, Offset(throwLeft, throwTop), Size(throwW, throwH))
+        // Textured knit rib lines
+        scope.drawRect(throwPattern, Offset(throwLeft + 2 * p, throwTop), Size(1.2f * p, throwH))
+        scope.drawRect(throwPattern, Offset(throwLeft + 5 * p, throwTop), Size(1.2f * p, throwH))
+        // Delicate bottom fringe
+        for (i in 0 until 4) {
+            scope.drawRect(fringeColor, Offset(throwLeft + i * 2f * p, throwTop + throwH), Size(1.2f * p, 2f * p))
+        }
+    }
+
+    /**
+     * Gleaming copper tea kettle on the kitchen stove with soft rising steam wisps.
+     */
+    fun drawCopperTeakettle(
+        scope: DrawScope,
+        stoveX: Float,
+        stoveY: Float,
+        p: Float,
+        timeSeconds: Float
+    ) {
+        val copperLight = Color(0xFFE07A5F)
+        val copperDark = Color(0xFFB55238)
+        val copperShine = Color(0xFFFFB4A2)
+        val woodHandle = Color(0xFF582F0E)
+
+        val kw = 10 * p
+        val kh = 7 * p
+        val kLeft = stoveX - kw / 2f
+        val kTop = stoveY - kh
+
+        // Body
+        scope.drawRect(copperLight, Offset(kLeft, kTop), Size(kw, kh))
+        scope.drawRect(copperDark, Offset(kLeft + kw - 2 * p, kTop), Size(2 * p, kh))
+        scope.drawRect(copperShine, Offset(kLeft + 2 * p, kTop + p), Size(2 * p, kh - 2 * p))
+        // Lid & brass knob
+        scope.drawRect(copperLight, Offset(kLeft + 2 * p, kTop - 1.5f * p), Size(kw - 4 * p, 1.5f * p))
+        scope.drawRect(Color(0xFFFFD166), Offset(stoveX - p, kTop - 2.8f * p), Size(2 * p, 1.5f * p))
+        // Curved Spout
+        scope.drawRect(copperLight, Offset(kLeft - 2.5f * p, kTop + p), Size(3 * p, 2.5f * p))
+        scope.drawRect(copperDark, Offset(kLeft - 3f * p, kTop + 0.5f * p), Size(1.5f * p, 1.5f * p))
+        // Arched wood handle overhead
+        scope.drawRect(woodHandle, Offset(kLeft + p, kTop - 5 * p), Size(kw - 2 * p, 1.5f * p))
+        scope.drawRect(woodHandle, Offset(kLeft + p, kTop - 5 * p), Size(1.5f * p, 4 * p))
+        scope.drawRect(woodHandle, Offset(kLeft + kw - 2.5f * p, kTop - 5 * p), Size(1.5f * p, 4 * p))
+
+        // Gentle steam wisp
+        val steamSway = sin(timeSeconds * 3.5f) * 1.5f * p
+        scope.drawCircle(Color.White.copy(alpha = 0.40f), 1.8f * p, Offset(kLeft - 3.5f * p + steamSway, kTop - 2.5f * p))
+        scope.drawCircle(Color.White.copy(alpha = 0.25f), 2.5f * p, Offset(kLeft - 4.5f * p - steamSway * 0.8f, kTop - 6 * p))
+    }
+
+    /**
+     * Broadleaf Monstera Deliciosa in a glazed ceramic floor planter for the living room corner.
+     */
+    fun drawCornerMonstera(
+        scope: DrawScope,
+        cornerX: Float,
+        groundY: Float,
+        p: Float
+    ) {
+        val potW = 14 * p
+        val potH = 12 * p
+        val potLeft = cornerX - potW / 2f
+        val potTop = groundY - potH
+
+        // Ceramic white planter pot
+        scope.drawRect(Color(0xFFE9ECEF), Offset(potLeft, potTop), Size(potW, potH))
+        scope.drawRect(Color(0xFFCED4DA), Offset(potLeft + potW - 3 * p, potTop), Size(3 * p, potH))
+        scope.drawRect(Color(0xFFF8F9FA), Offset(potLeft + 2 * p, potTop), Size(3 * p, potH)) // glaze sheen
+        scope.drawRect(Color(0xFF342318), Offset(potLeft + 1.5f * p, potTop + 0.5f * p), Size(potW - 3 * p, 2 * p)) // rich soil
+
+        // Arching Monstera stems & fenestrated leaves
+        val leafDark = Color(0xFF1B4332)
+        val leafMid = Color(0xFF2D6A4F)
+        val leafBright = Color(0xFF40916C)
+
+        // Leaf 1: arching left
+        scope.drawRect(leafMid, Offset(cornerX - 12 * p, potTop - 18 * p), Size(10 * p, 11 * p))
+        scope.drawRect(leafDark, Offset(cornerX - 7 * p, potTop - 14 * p), Size(1.5f * p, 8 * p)) // midrib
+        scope.drawRect(Color.Transparent, Offset(cornerX - 10 * p, potTop - 16 * p), Size(2 * p, 2 * p)) // cutout
+        scope.drawRect(leafBright, Offset(cornerX - 11 * p, potTop - 17 * p), Size(3 * p, 2 * p))
+
+        // Leaf 2: soaring center high
+        scope.drawRect(leafMid, Offset(cornerX - 4 * p, potTop - 25 * p), Size(11 * p, 13 * p))
+        scope.drawRect(leafDark, Offset(cornerX + p, potTop - 22 * p), Size(1.5f * p, 10 * p))
+        scope.drawRect(leafBright, Offset(cornerX - 2 * p, potTop - 24 * p), Size(4 * p, 2.5f * p))
+
+        // Leaf 3: draping right
+        scope.drawRect(leafMid, Offset(cornerX + 4 * p, potTop - 16 * p), Size(9 * p, 10 * p))
+        scope.drawRect(leafDark, Offset(cornerX + 6 * p, potTop - 12 * p), Size(1.5f * p, 7 * p))
+        scope.drawRect(leafBright, Offset(cornerX + 8 * p, potTop - 15 * p), Size(3 * p, 2 * p))
+    }
+
+    /**
+     * Draped fairy string lights across wall with glowing amber bulbs.
+     */
+    fun drawFairyStringLights(
+        scope: DrawScope,
+        leftX: Float,
+        rightX: Float,
+        topY: Float,
+        p: Float,
+        timeSeconds: Float
+    ) {
+        val totalW = rightX - leftX
+        val swags = 4
+        val swagW = totalW / swags
+
+        for (s in 0 until swags) {
+            val sx = leftX + s * swagW
+            val sag = 5 * p
+            // Draw scalloped wire
+            val wireColor = Color(0x88495057)
+            scope.drawLine(
+                color = wireColor,
+                start = Offset(sx, topY),
+                end = Offset(sx + swagW / 2f, topY + sag),
+                strokeWidth = 1.2f * p
+            )
+            scope.drawLine(
+                color = wireColor,
+                start = Offset(sx + swagW / 2f, topY + sag),
+                end = Offset(sx + swagW, topY),
+                strokeWidth = 1.2f * p
+            )
+
+            // Warm golden fairy bulbs hanging at lowest point and quarter points
+            val bulbPulse = (sin(timeSeconds * 3f + s * 1.5f) * 0.3f + 0.7f).coerceIn(0.4f, 1f)
+            val bx = sx + swagW / 2f
+            val by = topY + sag + 1.5f * p
+            scope.drawCircle(Color(0xFFFFD166).copy(alpha = bulbPulse * 0.40f), 5 * p, Offset(bx, by))
+            scope.drawCircle(Color(0xFFFFF3B0), 2 * p, Offset(bx, by))
+            scope.drawCircle(Color.White, p, Offset(bx, by - 0.5f * p))
+        }
+    }
+
+    /**
+     * Refrigerator door pins: Keepsake Polaroid and Love Note pinned with cute magnets.
+     */
+    fun drawFridgeDecorations(
+        scope: DrawScope,
+        fridgeLeft: Float,
+        fridgeTop: Float,
+        p: Float,
+        hasPolaroid: Boolean,
+        hasLoveNote: Boolean
+    ) {
+        // Polaroid on upper door
+        if (hasPolaroid) {
+            val polX = fridgeLeft + 3 * p
+            val polY = fridgeTop + 10 * p
+            val polW = 10 * p
+            val polH = 12 * p
+            // White polaroid photo paper
+            scope.drawRect(Color(0xFFFDFBF5), Offset(polX, polY), Size(polW, polH))
+            // Inner picture area (soft coral couple silhouette)
+            scope.drawRect(Color(0xFFFFCAD4), Offset(polX + 1.5f * p, polY + 1.5f * p), Size(polW - 3 * p, 7 * p))
+            scope.drawRect(Color(0xFF2C2A29), Offset(polX + 3 * p, polY + 3.5f * p), Size(2 * p, 3 * p))
+            scope.drawRect(Color(0xFF6B4226), Offset(polX + 5.5f * p, polY + 4f * p), Size(2 * p, 3 * p))
+            scope.drawRect(Color(0xFFFF0054), Offset(polX + 4.5f * p, polY + 2f * p), Size(1.5f * p, 1.5f * p)) // mini heart
+            // Turquoise round magnet pin at top
+            scope.drawCircle(Color(0xFF06D6A0), 1.5f * p, Offset(polX + polW / 2f, polY + 1.2f * p))
+        }
+
+        // Folded love note envelope on lower section
+        if (hasLoveNote) {
+            val noteX = fridgeLeft + 4 * p
+            val noteY = fridgeTop + 25 * p
+            val noteW = 11 * p
+            val noteH = 8 * p
+            // Warm cream envelope
+            scope.drawRect(Color(0xFFFFF1E6), Offset(noteX, noteY), Size(noteW, noteH))
+            scope.drawRect(Color(0xFFE8D6CB), Offset(noteX, noteY + noteH - p), Size(noteW, p))
+            // Envelope flap V-line
+            scope.drawRect(Color(0xFFE8D6CB), Offset(noteX + 2 * p, noteY + 2 * p), Size(noteW - 4 * p, 1.2f * p))
+            // Sweet red heart magnet pin
+            scope.drawRect(Color(0xFFE63946), Offset(noteX + noteW / 2f - 1.5f * p, noteY - p), Size(3 * p, 2.5f * p))
+        }
+    }
+
+    /**
+     * Seasonal tabletop artifact (Spring sakura vase, Summer iced tea, Autumn harvest pumpkin, Winter cocoa).
+     */
+    fun drawSeasonalTableArtifact(
+        scope: DrawScope,
+        cx: Float,
+        groundY: Float,
+        p: Float,
+        artifact: com.example.data.SeasonalArtifact,
+        timeSeconds: Float
+    ) {
+        when (artifact) {
+            com.example.data.SeasonalArtifact.SPRING_BLOSSOM_VASE -> {
+                // White ceramic vase with flowering cherry twigs
+                val vW = 6 * p
+                val vH = 9 * p
+                val vLeft = cx - vW / 2f
+                val vTop = groundY - vH
+                scope.drawRect(Color(0xFFF8F9FA), Offset(vLeft, vTop), Size(vW, vH))
+                scope.drawRect(Color(0xFFDEE2E6), Offset(vLeft + vW - 1.5f * p, vTop), Size(1.5f * p, vH))
+                // Twig branches
+                scope.drawRect(Color(0xFF582F0E), Offset(cx - 0.6f * p, vTop - 7 * p), Size(1.2f * p, 7 * p))
+                scope.drawRect(Color(0xFF582F0E), Offset(cx - 4 * p, vTop - 5 * p), Size(4 * p, 1.2f * p))
+                scope.drawRect(Color(0xFF582F0E), Offset(cx, vTop - 6 * p), Size(4 * p, 1.2f * p))
+                // Pink cherry blossoms
+                scope.drawCircle(Color(0xFFFFB5C2), 2.2f * p, Offset(cx - 4 * p, vTop - 5.5f * p))
+                scope.drawCircle(Color(0xFFFF758F), 1.2f * p, Offset(cx - 4 * p, vTop - 5.5f * p))
+                scope.drawCircle(Color(0xFFFFB5C2), 2.2f * p, Offset(cx + 4 * p, vTop - 6.5f * p))
+                scope.drawCircle(Color(0xFFFF758F), 1.2f * p, Offset(cx + 4 * p, vTop - 6.5f * p))
+                scope.drawCircle(Color(0xFFFFB5C2), 2.2f * p, Offset(cx, vTop - 8.5f * p))
+                // Fallen petal on table
+                scope.drawRect(Color(0xFFFFB5C2), Offset(cx + 5 * p, groundY - p), Size(2 * p, 1.2f * p))
+            }
+            com.example.data.SeasonalArtifact.SUMMER_ICED_CARAFE -> {
+                // Glass carafe with lemon slice and fresh mint
+                val cW = 7 * p
+                val cH = 10 * p
+                val cLeft = cx - cW / 2f
+                val cTop = groundY - cH
+                scope.drawRect(Color(0x99BDE0FE), Offset(cLeft, cTop), Size(cW, cH))
+                scope.drawRect(Color(0xFFF8F9FA), Offset(cLeft + p, cTop + p), Size(1.5f * p, cH - 2 * p)) // glass sheen
+                // Lemon slice inside
+                scope.drawCircle(Color(0xFFFFD166), 2 * p, Offset(cx, cTop + 5 * p))
+                // Fresh mint leaf sprig poking out
+                scope.drawRect(Color(0xFF52B788), Offset(cx - p, cTop - 2.5f * p), Size(2.5f * p, 3 * p))
+            }
+            com.example.data.SeasonalArtifact.AUTUMN_HARVEST_PUMPKIN -> {
+                // Cute heirloom mini pumpkin with curved wood stem
+                val pw = 10 * p
+                val ph = 7 * p
+                val pLeft = cx - pw / 2f
+                val pTop = groundY - ph
+                val pumpkinOrange = Color(0xFFF77F00)
+                val pumpkinShadow = Color(0xFFD62828)
+                scope.drawOval(pumpkinOrange, Offset(pLeft, pTop), Size(pw, ph))
+                // Pumpkin ridges
+                scope.drawOval(pumpkinShadow.copy(alpha = 0.4f), Offset(cx - 2.5f * p, pTop), Size(5 * p, ph))
+                // Curly green-brown stem
+                scope.drawRect(Color(0xFF582F0E), Offset(cx - 0.8f * p, pTop - 2.5f * p), Size(1.6f * p, 3 * p))
+                scope.drawRect(Color(0xFF55A630), Offset(cx + 0.8f * p, pTop - 2.8f * p), Size(1.5f * p, 1.5f * p)) // tendril
+            }
+            com.example.data.SeasonalArtifact.WINTER_WARM_COCOA -> {
+                // Two warm mugs with marshmallows and rising steam
+                fun drawMug(mx: Float, mugColor: Color) {
+                    val mw = 6 * p
+                    val mh = 7 * p
+                    val mTop = groundY - mh
+                    scope.drawRect(mugColor, Offset(mx - mw / 2f, mTop), Size(mw, mh))
+                    // Handle
+                    scope.drawRect(mugColor, Offset(mx + mw / 2f, mTop + 1.5f * p), Size(2 * p, 4 * p))
+                    // Hot cocoa surface
+                    scope.drawRect(Color(0xFF582F0E), Offset(mx - mw / 2f + p, mTop + 0.5f * p), Size(mw - 2 * p, 1.5f * p))
+                    // Marshmallows!
+                    scope.drawCircle(Color.White, 1.2f * p, Offset(mx - p, mTop + p))
+                    scope.drawCircle(Color.White, 1.2f * p, Offset(mx + p, mTop + p))
+                }
+                drawMug(cx - 4.5f * p, Color(0xFFC1121F)) // Festive red mug
+                drawMug(cx + 4.5f * p, Color(0xFF2D6A4F)) // Cozy forest green mug
+                // Gentle rising steam
+                val steamSway = sin(timeSeconds * 4f) * 1.5f * p
+                scope.drawCircle(Color.White.copy(alpha = 0.35f), 1.5f * p, Offset(cx - 4.5f * p + steamSway, groundY - 10 * p))
+                scope.drawCircle(Color.White.copy(alpha = 0.35f), 1.5f * p, Offset(cx + 4.5f * p - steamSway, groundY - 10 * p))
+            }
+        }
     }
 }
+

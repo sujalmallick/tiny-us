@@ -226,6 +226,35 @@ class PreferencesManager(
         return RelationshipTimeManager.calculateTinyUsDay()
     }
 
+    /**
+     * Organic Home Evolution state based on real journey milestones and days together.
+     * Gradually introduces home artifacts (plants, photos, decor) without XP or levels.
+     */
+    fun getHomeEvolutionState(weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY): HomeEvolutionState {
+        val days = uniqueDaysOpened
+        val memoriesCount = getMemories().size
+        val notesCount = getLoveNotes().size
+        val seasonal = when (weather) {
+            com.example.scene.WeatherType.SAKURA -> SeasonalArtifact.SPRING_BLOSSOM_VASE
+            com.example.scene.WeatherType.AUTUMN -> SeasonalArtifact.AUTUMN_HARVEST_PUMPKIN
+            com.example.scene.WeatherType.SNOW -> SeasonalArtifact.WINTER_WARM_COCOA
+            else -> SeasonalArtifact.SUMMER_ICED_CARAFE
+        }
+
+        return HomeEvolutionState(
+            hasWindowsillPlant = days >= 3,
+            hasCozyKnitThrow = days >= 7,
+            hasCopperTeakettle = days >= 14,
+            hasCornerMonstera = days >= 21,
+            hasFairyStringLights = days >= 30,
+            hasHangingMacrame = days >= 45,
+            hasFramedKeepsake = memoriesCount >= 1,
+            hasFridgePolaroid = memoriesCount >= 2 || days >= 5,
+            hasFridgeLoveNote = notesCount >= 1,
+            seasonalArtifact = seasonal
+        )
+    }
+
     // Memories (Offline Keepsakes)
     fun getMemories(): List<MemoryItem> {
         cachedMemories?.let { return it }

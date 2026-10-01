@@ -50,3 +50,30 @@ data class DreamState(
     val text: String,
     val alpha: Float = 1.0f
 )
+
+/** Seasonal artifacts for couple's home table / mantelpiece. */
+enum class SeasonalArtifact {
+    SPRING_BLOSSOM_VASE,
+    SUMMER_ICED_CARAFE,
+    AUTUMN_HARVEST_PUMPKIN,
+    WINTER_WARM_COCOA
+}
+
+/**
+ * Organic Tiny Home Evolution state:
+ * Gradual introduction of objects, plants, photos, and artifacts
+ * based on days together, keepsakes, and memories without levels or XP.
+ */
+data class HomeEvolutionState(
+    val hasWindowsillPlant: Boolean = false,
+    val hasCozyKnitThrow: Boolean = false,
+    val hasCopperTeakettle: Boolean = false,
+    val hasCornerMonstera: Boolean = false,
+    val hasFairyStringLights: Boolean = false,
+    val hasHangingMacrame: Boolean = false,
+    val hasFramedKeepsake: Boolean = false,
+    val hasFridgePolaroid: Boolean = false,
+    val hasFridgeLoveNote: Boolean = false,
+    val seasonalArtifact: SeasonalArtifact = SeasonalArtifact.SPRING_BLOSSOM_VASE
+)
+

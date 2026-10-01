@@ -23,6 +23,9 @@ jobs:
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
 
+      - name: Ensure gradlew is executable
+        run: chmod +x gradlew
+
       - name: Run Privacy & Dependency Safeguard Check
         run: ./gradlew verifyNoUnauthorizedNetworkingOrAnalytics
 

@@ -2580,9 +2580,33 @@ private fun drawEnvironment(
             )
             WorldSprites.drawPedalDustbin(scope, cw * 0.785f, ch * 0.67f, p)
 
-            // --- Kitchen dynamic overlays (drawn on top of static sprites) ---
+            // --- Home Evolution progressive artifacts ---
             val floorY = ch * 0.65f
             val floorH = ch - floorY
+            if (engine.homeEvolutionState.hasCopperTeakettle) {
+                WorldSprites.drawCopperTeakettle(scope, cw * 0.60f, ch * 0.67f - 18 * p, p, timeSeconds)
+            }
+            if (engine.homeEvolutionState.hasFridgePolaroid || engine.homeEvolutionState.hasFridgeLoveNote) {
+                val fridgeX = cw * 0.88f
+                val fridgeW = 20 * p
+                val fridgeTop = floorY - 64 * p
+                WorldSprites.drawFridgeDecorations(
+                    scope = scope,
+                    fridgeLeft = fridgeX - fridgeW / 2f,
+                    fridgeTop = fridgeTop,
+                    p = p,
+                    hasPolaroid = engine.homeEvolutionState.hasFridgePolaroid,
+                    hasLoveNote = engine.homeEvolutionState.hasFridgeLoveNote
+                )
+            }
+            val juteY = floorY + floorH * 0.44f
+            val tblY = juteY + 7f * p
+            WorldSprites.drawSeasonalTableArtifact(scope, cw * 0.50f, tblY, p, engine.homeEvolutionState.seasonalArtifact, timeSeconds)
+            if (engine.homeEvolutionState.hasWindowsillPlant) {
+                WorldSprites.drawWindowsillPlant(scope, cw * 0.28f + 9 * p, floorY - 52 * p, p)
+            }
+
+            // --- Kitchen dynamic overlays (drawn on top of static sprites) ---
 
             // 1. Wall Clock hands: spin fast then settle to real device time
             if (engine.clockSpinTimer > 0f) {
@@ -2730,16 +2754,26 @@ private fun drawEnvironment(
             val isWindowSunset = if (isLampOn) isSunset else (couchPhase == CouchPhase.EVENING)
             val livingRoomIsNight = if (isLampOn) isNight else (couchPhase == CouchPhase.NIGHT)
             drawLivingRoom(scope, cw, ch, isNight = livingRoomIsNight, p = p, lampLit = isLampOn, couchPhase = couchPhase, timeSeconds = timeSeconds)
+            if (engine.homeEvolutionState.hasFairyStringLights) {
+                WorldSprites.drawFairyStringLights(scope, cw * 0.08f, cw * 0.92f, ch * 0.16f, p, timeSeconds)
+            }
+            if (engine.homeEvolutionState.hasCornerMonstera) {
+                WorldSprites.drawCornerMonstera(scope, cw * 0.10f, ch * 0.65f, p)
+            }
             WorldSprites.drawPhotoFrame(scope, cw * 0.28f, ch * 0.38f, p)
             WorldSprites.drawWindow(scope, cw * 0.70f, ch * 0.28f, isWindowNight, p, engine.weather, isSunset = isWindowSunset)
             WorldSprites.drawWallCalendar(scope, cw * 0.49f, ch * 0.30f, p, timeSeconds)
             WorldSprites.drawCouch(scope, cw * 0.48f, ch * 0.68f, p)
+            if (engine.homeEvolutionState.hasCozyKnitThrow) {
+                WorldSprites.drawCouchKnitThrow(scope, cw * 0.48f - 29 * p, ch * 0.68f - 24 * p, p)
+            }
             WorldSprites.drawFloorLamp(scope, cw * 0.20f, ch * 0.68f, p, engine.livingRoomLampLit)
             WorldSprites.drawWardrobe(scope, cw * 0.85f, ch * 0.65f, p, timeSeconds)
 
             // --- Living Room dynamic overlays (drawn on top of static sprites) ---
             val lrFloorY = ch * 0.65f
             val lrFloorH = ch - lrFloorY
+            WorldSprites.drawSeasonalTableArtifact(scope, cw * 0.50f + 10 * p, lrFloorY + 23 * p, p, engine.homeEvolutionState.seasonalArtifact, timeSeconds)
 
             // 1. Coffee Table Candle: warm pulsating golden glow & fluttering flame
             if (engine.tableCandleTimer > 0f) {

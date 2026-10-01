@@ -48,7 +48,7 @@ class DependencySafeguardTest {
         val buildFile = File(projectRoot, "app/build.gradle.kts")
         assertTrue("app/build.gradle.kts must exist", buildFile.exists())
         val content = buildFile.readLines()
-            .takeWhile { !it.contains("VerifyPrivacyTask") }
+            .filter { !it.contains("verifyPrivacySafeguards") && !it.contains("verifyNoUnauthorizedNetworkingOrAnalytics") && !it.contains("VerifyPrivacyTask") }
             .joinToString("\n")
             .lowercase()
 

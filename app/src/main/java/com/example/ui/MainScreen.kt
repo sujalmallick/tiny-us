@@ -343,9 +343,10 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(Unit, engine.weather) {
         prefs.markAppOpenedToday()
         engine.gardenStage = prefs.gardenStage
+        engine.homeEvolutionState = prefs.getHomeEvolutionState(engine.weather)
     }
 
     // Subtle interaction hint fade
