@@ -212,30 +212,33 @@ struct ContentView: View {
         if let sY = startComponents.year, let sM = startComponents.month, let sD = startComponents.day,
            let nY = nowComponents.year, let nM = nowComponents.month, let nD = nowComponents.day {
             
-            let kxStart = Kotlinx_datetimeLocalDate(year: Int32(sY), monthNumber: Int32(sM), dayOfMonth: Int32(sD))
-            let kxCurrent = Kotlinx_datetimeLocalDate(year: Int32(nY), monthNumber: Int32(nM), dayOfMonth: Int32(nD))
-            
-            relationshipDays = RelationshipTimeCalculator.shared.calculateTinyUsDay(start: kxStart, current: kxCurrent)
+            relationshipDays = RelationshipTimeCalculator.shared.calculateDays(
+                startYear: Int32(sY),
+                startMonth: Int32(sM),
+                startDay: Int32(sD),
+                currentYear: Int32(nY),
+                currentMonth: Int32(nM),
+                currentDay: Int32(nD)
+            )
         }
         
         let hour = Int32(nowComponents.hour ?? 12)
-        let minute = Int32(nowComponents.minute ?? 0)
-        let phase = TimeOfDayPhaseKt.currentPhase(hour: hour, minute: minute)
+        let phase = TimeOfDayPhaseKt.currentPhase(hour: hour)
         timeOfDayText = phase.displayName
     }
     
     private func refreshCareMessage() {
-        let allMessages = TinyCareMessagePoolKt.getAllCareMessages()
+        let allMessages = TinyCareMessagePool.shared.allMessages
         if !allMessages.isEmpty {
             let randomIndex = Int.random(in: 0..<allMessages.count)
-            dailyMessage = allMessages[randomIndex].text
+            dailyMessage = allMessages[randomIndex].body
         }
     }
     
     private func playChime() {
         let sink = IosAudioSink()
         let synthesizer = ProceduralAudioSynthesizer.shared
-        let buffer = synthesizer.generateChime(frequency: 528.0, durationSec: 0.6, sampleRate: 22050, volume: 0.8)
+        let buffer = synthesizer.synthesizeChime(frequency: 528.0, durationMs: 600, sampleRate: 22050, volume: 0.8)
         sink.playStaticBuffer(buffer: buffer, sampleRate: 22050, volume: 0.8)
     }
 }

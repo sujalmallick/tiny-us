@@ -35,13 +35,17 @@ jobs:
       - name: Run Shared iOS Unit Tests
         run: ./gradlew :shared:iosSimulatorArm64Test
 
+      - name: Precompile Shared iOS Frameworks
+        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64
+
       - name: Build iOS App (Simulator Debug)
         run: |
           xcodebuild -project iosApp/iosApp.xcodeproj \
                      -scheme iosApp \
                      -configuration Debug \
                      -destination 'generic/platform=iOS Simulator' \
-                     clean build
+                     JAVA_HOME="$JAVA_HOME" \
+                     build
 
       - name: Archive iOS App for Device
         run: |
@@ -50,6 +54,7 @@ jobs:
                      -configuration Release \
                      -destination 'generic/platform=iOS' \
                      -archivePath build/iosApp.xcarchive \
+                     JAVA_HOME="$JAVA_HOME" \
                      archive \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO
