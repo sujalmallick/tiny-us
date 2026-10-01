@@ -1107,7 +1107,11 @@ fun PixelWorldView(
             }
             val effectiveBoyX = boyX + ((midCharX - targetHugOffset) - boyX) * cuddleEased
             val effectiveGirlX = girlX + ((midCharX + targetHugOffset) - girlX) * cuddleEased
-            val effectiveY = boyY + (maxOf(boyY, girlY) - boyY) * cuddleEased
+            val effectiveBoyY = boyY + (maxOf(boyY, girlY) - boyY) * cuddleEased
+            val effectiveGirlY = girlY + (maxOf(boyY, girlY) - girlY) * cuddleEased
+            val catY = ch * engine.catWorldY
+            val isCatInScene = engine.currentScene.environment != EnvironmentType.COZY_LOFT &&
+                engine.currentScene != com.example.scene.SceneType.EVENING_RIDE
 
             if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
                 val hopBounce = if (engine.scooterHonkTimer > 0f) {
@@ -1192,36 +1196,92 @@ fun PixelWorldView(
                     engine.girl.direction = com.example.engine.Direction.LEFT
                 }
 
-                PixelArtRenderer.drawCharacter(
-                    drawScope = this,
-                    char = engine.boy,
-                    centerX = effectiveBoyX,
-                    bottomY = effectiveY,
-                    pixelSize = charPixelScale,
-                    isHoldingUmbrella = isHoldingUmbrella,
-                    isSnow = isSnow,
-                    isSpeaking = !engine.boySpeechText.isNullOrEmpty()
-                )
+                fun drawBoy() {
+                    PixelArtRenderer.drawCharacter(
+                        drawScope = this,
+                        char = engine.boy,
+                        centerX = effectiveBoyX,
+                        bottomY = effectiveBoyY,
+                        pixelSize = charPixelScale,
+                        isHoldingUmbrella = isHoldingUmbrella,
+                        isSnow = isSnow,
+                        isSpeaking = !engine.boySpeechText.isNullOrEmpty()
+                    )
+                }
 
-                PixelArtRenderer.drawCharacter(
-                    drawScope = this,
-                    char = engine.girl,
-                    centerX = effectiveGirlX,
-                    bottomY = effectiveY,
-                    pixelSize = charPixelScale,
-                    isHoldingUmbrella = isHoldingUmbrella,
-                    isSnow = isSnow,
-                    isSpeaking = !engine.girlSpeechText.isNullOrEmpty()
-                )
+                fun drawGirl() {
+                    PixelArtRenderer.drawCharacter(
+                        drawScope = this,
+                        char = engine.girl,
+                        centerX = effectiveGirlX,
+                        bottomY = effectiveGirlY,
+                        pixelSize = charPixelScale,
+                        isHoldingUmbrella = isHoldingUmbrella,
+                        isSnow = isSnow,
+                        isSpeaking = !engine.girlSpeechText.isNullOrEmpty()
+                    )
+                }
+
+                fun drawMochi() {
+                    if (isCatInScene) {
+                        WorldSprites.drawCat(
+                            scope = this,
+                            cx = cw * engine.catWorldX,
+                            groundY = catY,
+                            p = pixelScale,
+                            timeSeconds = engine.sceneTime,
+                            catState = engine.catState,
+                            isSnow = isSnow,
+                            facingLeft = engine.catFacingLeft
+                        )
+                    }
+                }
+
+                // 2D depth sorting by vertical Y plane
+                val drawBoyFirst = effectiveBoyY <= effectiveGirlY
+
+                // Helper to draw characters in sorted order
+                fun drawCharacters() {
+                    if (drawBoyFirst) {
+                        drawBoy()
+                        drawGirl()
+                    } else {
+                        drawGirl()
+                        drawBoy()
+                    }
+                }
+
+                val minY = minOf(effectiveBoyY, effectiveGirlY)
+                val maxY = maxOf(effectiveBoyY, effectiveGirlY)
+
+                if (isCatInScene && catY < minY) {
+                    drawMochi()
+                    drawCharacters()
+                } else if (isCatInScene && catY in minY..maxY) {
+                    if (drawBoyFirst) {
+                        drawBoy()
+                        drawMochi()
+                        drawGirl()
+                    } else {
+                        drawGirl()
+                        drawMochi()
+                        drawBoy()
+                    }
+                } else {
+                    drawCharacters()
+                    if (isCatInScene) {
+                        drawMochi()
+                    }
+                }
 
                 // Cozy couple umbrella in rain weather (boy holds umbrella over girl)
                 if (isHoldingUmbrella) {
                     WorldSprites.drawBoyHoldingUmbrella(
                         scope = this,
                         boyX = effectiveBoyX,
-                        boyY = effectiveY,
+                        boyY = effectiveBoyY,
                         girlX = effectiveGirlX,
-                        girlY = effectiveY,
+                        girlY = effectiveGirlY,
                         boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
                         p = charPixelScale,
                         timeSeconds = engine.sceneTime,
@@ -1319,25 +1379,10 @@ fun PixelWorldView(
                 }
             }
 
-            // 2c. Pet Cat ("Mochi") - drawn in front of characters so Mochi walks on the frontside!
-            if (engine.currentScene.environment != EnvironmentType.COZY_LOFT &&
-                engine.currentScene != com.example.scene.SceneType.EVENING_RIDE) {
-                WorldSprites.drawCat(
-                    scope = this,
-                    cx = cw * engine.catWorldX,
-                    groundY = ch * engine.catWorldY,
-                    p = pixelScale,
-                    timeSeconds = engine.sceneTime,
-                    catState = engine.catState,
-                    isSnow = engine.weather == com.example.scene.WeatherType.SNOW,
-                    facingLeft = engine.catFacingLeft
-                )
-            }
-
             // Draw cute earphone wire connecting both characters!
             if (engine.earphonesActive) {
-                val boyAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.boy, effectiveBoyX, effectiveY, pixelScale)
-                val girlAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.girl, effectiveGirlX, effectiveY, pixelScale)
+                val boyAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.boy, effectiveBoyX, effectiveBoyY, pixelScale)
+                val girlAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.girl, effectiveGirlX, effectiveGirlY, pixelScale)
                 PixelArtRenderer.drawEarphoneCord(
                     scope = this,
                     startOffset = boyAttachment,
@@ -1430,7 +1475,10 @@ fun PixelWorldView(
 
         val effectiveBoyX = rawBoyX + ((midCharX - targetHugOffset) - rawBoyX) * cuddleEased
         val effectiveGirlX = rawGirlX + ((midCharX + targetHugOffset) - rawGirlX) * cuddleEased
-        val effectiveCharY = viewportHeight * engine.boy.worldY + (maxOf(viewportHeight * engine.boy.worldY, viewportHeight * engine.girl.worldY) - viewportHeight * engine.boy.worldY) * cuddleEased
+        val rawBoyY = viewportHeight * engine.boy.worldY
+        val rawGirlY = viewportHeight * engine.girl.worldY
+        val effectiveBoyY = rawBoyY + (maxOf(rawBoyY, rawGirlY) - rawBoyY) * cuddleEased
+        val effectiveGirlY = rawGirlY + (maxOf(rawBoyY, rawGirlY) - rawGirlY) * cuddleEased
 
         val isBoySitting = engine.boy.pose == com.example.engine.CharacterPose.SIT || engine.boy.pose == com.example.engine.CharacterPose.SIT_SNUGGLE
         val isGirlSitting = engine.girl.pose == com.example.engine.CharacterPose.SIT || engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE
@@ -1449,12 +1497,12 @@ fun PixelWorldView(
         val boyHeadY = when {
             isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
             isLoftScene -> viewportHeight * 0.55f - 24f * (pixelScale * 1.10f)
-            else -> effectiveCharY - (38.5f * pixelScale) - engine.boy.bounceOffset + (if (isBoySitting) 7.5f * pixelScale else 0f)
+            else -> effectiveBoyY - (38.5f * pixelScale) - engine.boy.bounceOffset + (if (isBoySitting) 7.5f * pixelScale else 0f)
         }
         val girlHeadY = when {
             isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
             isLoftScene -> viewportHeight * 0.55f - 24f * (pixelScale * 1.10f)
-            else -> effectiveCharY - (38.5f * pixelScale) - engine.girl.bounceOffset + (if (isGirlSitting) 7.5f * pixelScale else 0f)
+            else -> effectiveGirlY - (38.5f * pixelScale) - engine.girl.bounceOffset + (if (isGirlSitting) 7.5f * pixelScale else 0f)
         }
 
         if (!engine.isDreamMode) {

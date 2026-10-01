@@ -1408,6 +1408,29 @@ class SceneEngine(
             girl.bounceOffset = (girl.bounceOffset - deltaSeconds * 22f).coerceAtLeast(0f)
         }
 
+        // Living breathing offset (upper body chest rise/fall during idle and sleep)
+        val boyBreathFreq = if (boy.pose == CharacterPose.SLEEP || boy.pose == CharacterPose.SLEEP_YAWN) 1.5f else 2.1f
+        val girlBreathFreq = if (girl.pose == CharacterPose.SLEEP || girl.pose == CharacterPose.SLEEP_YAWN) 1.6f else 2.2f
+
+        boy.breathingOffset = if (!isWalking && !boy.isTransitioningPosition) {
+            (sin(sceneTime * boyBreathFreq) * 0.85f).coerceIn(-1.2f, 1.2f)
+        } else 0f
+
+        girl.breathingOffset = if (!isGirlWalking && !girl.isTransitioningPosition) {
+            (sin(sceneTime * girlBreathFreq + 0.9f) * 0.85f).coerceIn(-1.2f, 1.2f)
+        } else 0f
+
+        // Natural gentle idle sway (subtle organic weight shift during idle standing)
+        val isBoyStandingIdle = (boy.pose == CharacterPose.IDLE || boy.pose == CharacterPose.IDLE_BLINK)
+        boy.idleSwayOffset = if (isBoyStandingIdle && !boy.isMovingOrTransitioning) {
+            sin(sceneTime * 0.95f) * 0.6f
+        } else 0f
+
+        val isGirlStandingIdle = (girl.pose == CharacterPose.IDLE || girl.pose == CharacterPose.IDLE_BLINK)
+        girl.idleSwayOffset = if (isGirlStandingIdle && !girl.isMovingOrTransitioning) {
+            sin(sceneTime * 0.90f + 1.3f) * 0.6f
+        } else 0f
+
         // Emote timers
         if (boy.emoteTimer > 0) {
             boy.emoteTimer -= deltaSeconds

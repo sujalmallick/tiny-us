@@ -477,6 +477,24 @@ object PixelArtRenderer {
         val startX = centerX - (w * p) / 2f + char.idleSwayOffset
         val startY = bottomY - (h * p) - char.bounceOffset
 
+        // Grounding contact drop-shadow beneath character's feet
+        val shadowW = when (char.pose) {
+            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 19f * p
+            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 17f * p
+            CharacterPose.HUG, CharacterPose.KISS -> 16f * p
+            else -> 14f * p
+        }
+        val shadowH = 4.2f * p
+        val shadowAlpha = when (char.pose) {
+            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 0.18f
+            else -> 0.25f
+        }
+        drawScope.drawOval(
+            color = Color(0xFF151820).copy(alpha = shadowAlpha),
+            topLeft = Offset(centerX - shadowW / 2f + char.idleSwayOffset * 0.5f, bottomY - shadowH * 0.55f),
+            size = Size(shadowW, shadowH)
+        )
+
         when (char.pose) {
             CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> {
                 drawSittingCharacter(drawScope, char, startX, startY + 5 * p, p, flip, isHoldingUmbrella, isSnow)

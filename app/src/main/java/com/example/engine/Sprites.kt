@@ -524,6 +524,20 @@ object WorldSprites {
                 catState
             }
 
+            // Grounding contact drop-shadow beneath Mochi
+            val catShadowW = when (effectiveState) {
+                com.example.scene.CatState.BELLY_ROLL -> 15f * p
+                com.example.scene.CatState.SLEEPING -> 13f * p
+                com.example.scene.CatState.PLAYFUL_POUNCE -> 14f * p
+                else -> 11f * p
+            }
+            val catShadowH = 3.4f * p
+            scope.drawOval(
+                color = Color(0xFF151820).copy(alpha = 0.24f),
+                topLeft = Offset(cx - catShadowW / 2f, groundY - catShadowH * 0.65f),
+                size = Size(catShadowW, catShadowH)
+            )
+
             when (effectiveState) {
             com.example.scene.CatState.SLEEPING -> {
                 // Curled sleeping loaf with peaceful living breathing, ear twitch, and curled tail flick
