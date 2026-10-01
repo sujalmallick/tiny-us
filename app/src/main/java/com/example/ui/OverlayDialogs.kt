@@ -1250,6 +1250,56 @@ fun ScenePickerDialog(
     }
 }
 
+@Composable
+private fun SettingsCategoryHeader(
+    icon: ImageVector,
+    title: String,
+    subtitle: String? = null
+) {
+    Column(modifier = Modifier.padding(top = 8.dp, bottom = 2.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                tint = DeepRose,
+                modifier = Modifier.size(17.dp)
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(
+                text = title,
+                fontSize = 14.5.sp,
+                fontWeight = FontWeight.Bold,
+                color = DarkSlate,
+                fontFamily = FontFamily.Serif
+            )
+        }
+        if (subtitle != null) {
+            Text(
+                text = subtitle,
+                fontSize = 11.5.sp,
+                color = DarkSlate.copy(alpha = 0.6f),
+                modifier = Modifier.padding(start = 25.dp, top = 2.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun SettingsSectionCard(
+    modifier: Modifier = Modifier,
+    content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(Color.White.copy(alpha = 0.92f))
+            .padding(14.dp),
+        verticalArrangement = Arrangement.spacedBy(10.dp),
+        content = content
+    )
+}
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsBottomSheet(
@@ -1267,6 +1317,9 @@ fun SettingsBottomSheet(
 ) {
     var boyName by remember { mutableStateOf(prefs.boyfriendName) }
     var girlName by remember { mutableStateOf(prefs.girlfriendName) }
+    var anniversaryDate by remember { mutableStateOf(prefs.anniversaryDate) }
+    var boyBirthday by remember { mutableStateOf(prefs.boyfriendBirthday) }
+    var girlBirthday by remember { mutableStateOf(prefs.girlfriendBirthday) }
     var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
@@ -1365,144 +1418,496 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // Names (Max 10 chars)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = boyName,
-                    onValueChange = {
-                        val trimmed = it.take(10)
-                        boyName = trimmed
-                        prefs.boyfriendName = trimmed
-                        onSettingsChanged()
-                    },
-                    label = { Text("Boy's Name") },
-                    modifier = Modifier.weight(1f).testTag("input_boy_name"),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = girlName,
-                    onValueChange = {
-                        val trimmed = it.take(10)
-                        girlName = trimmed
-                        prefs.girlfriendName = trimmed
-                        onSettingsChanged()
-                    },
-                    label = { Text("Girl's Name") },
-                    modifier = Modifier.weight(1f).testTag("input_girl_name"),
-                    singleLine = true
-                )
-            }
-
-            var anniversaryDate by remember { mutableStateOf(prefs.anniversaryDate) }
-            var boyBirthday by remember { mutableStateOf(prefs.boyfriendBirthday) }
-            var girlBirthday by remember { mutableStateOf(prefs.girlfriendBirthday) }
-
-            // Anniversary Date
-            OutlinedTextField(
-                value = anniversaryDate,
-                onValueChange = {
-                    anniversaryDate = it
-                    prefs.anniversaryDate = it
-                    onSettingsChanged()
-                },
-                label = { Text("Anniversary Date (YYYY-MM-DD)") },
-                modifier = Modifier.fillMaxWidth().testTag("input_anniversary_date"),
-                singleLine = true
+            // ── 1. Our World ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.Favorite,
+                title = "Our World",
+                subtitle = "Names and special dates for your story together"
             )
-
-            // Birthdays (recurring yearly)
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                OutlinedTextField(
-                    value = boyBirthday,
-                    onValueChange = {
-                        boyBirthday = it
-                        prefs.boyfriendBirthday = it
-                        onSettingsChanged()
-                    },
-                    label = { Text("Boy's Birthday") },
-                    placeholder = { Text("YYYY-MM-DD") },
-                    modifier = Modifier.weight(1f).testTag("input_boy_bday"),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = girlBirthday,
-                    onValueChange = {
-                        girlBirthday = it
-                        prefs.girlfriendBirthday = it
-                        onSettingsChanged()
-                    },
-                    label = { Text("Girl's Birthday") },
-                    placeholder = { Text("YYYY-MM-DD") },
-                    modifier = Modifier.weight(1f).testTag("input_girl_bday"),
-                    singleLine = true
-                )
-            }
-
-            // Secret Gift Box Easter Egg (Tap 5 times to reveal!)
-            GiftBoxEasterEgg(
-                onJumpToMomoStall = {
-                    onJumpToScene(SceneType.MOMO_STALL)
+            SettingsSectionCard {
+                // Names (Max 10 chars)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = boyName,
+                        onValueChange = {
+                            val trimmed = it.take(10)
+                            boyName = trimmed
+                            prefs.boyfriendName = trimmed
+                            onSettingsChanged()
+                        },
+                        label = { Text("Boy's Name") },
+                        modifier = Modifier.weight(1f).testTag("input_boy_name"),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = girlName,
+                        onValueChange = {
+                            val trimmed = it.take(10)
+                            girlName = trimmed
+                            prefs.girlfriendName = trimmed
+                            onSettingsChanged()
+                        },
+                        label = { Text("Girl's Name") },
+                        modifier = Modifier.weight(1f).testTag("input_girl_name"),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
                 }
-            )
 
-            // Atmosphere Mode
-            Column {
-                Text("Sky & Atmosphere:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DarkSlate)
-                Spacer(modifier = Modifier.height(6.dp))
+                // Anniversary Date
+                OutlinedTextField(
+                    value = anniversaryDate,
+                    onValueChange = {
+                        anniversaryDate = it
+                        prefs.anniversaryDate = it
+                        onSettingsChanged()
+                    },
+                    label = { Text("Anniversary Date (YYYY-MM-DD)") },
+                    modifier = Modifier.fillMaxWidth().testTag("input_anniversary_date"),
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp)
+                )
+
+                // Birthdays (recurring yearly)
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = boyBirthday,
+                        onValueChange = {
+                            boyBirthday = it
+                            prefs.boyfriendBirthday = it
+                            onSettingsChanged()
+                        },
+                        label = { Text("Boy's Birthday") },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        modifier = Modifier.weight(1f).testTag("input_boy_bday"),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    OutlinedTextField(
+                        value = girlBirthday,
+                        onValueChange = {
+                            girlBirthday = it
+                            prefs.girlfriendBirthday = it
+                            onSettingsChanged()
+                        },
+                        label = { Text("Girl's Birthday") },
+                        placeholder = { Text("YYYY-MM-DD") },
+                        modifier = Modifier.weight(1f).testTag("input_girl_bday"),
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                }
+
+                // Secret Gift Box Easter Egg (Tap 5 times to reveal!)
+                GiftBoxEasterEgg(
+                    onJumpToMomoStall = {
+                        onJumpToScene(SceneType.MOMO_STALL)
+                    }
+                )
+            }
+
+            // ── 2. Characters & Wardrobe ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.Favorite,
+                title = "Characters & Wardrobe",
+                subtitle = "Sweaters, hoodies & cute ribbons for both characters"
+            )
+            SettingsSectionCard {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(DeepRose.copy(alpha = 0.08f))
+                        .clickable {
+                            onDismiss()
+                            onOpenWardrobe()
+                        }
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    val modes = listOf("AUTO", "DAY", "SUNSET", "NIGHT")
-                    modes.forEach { m ->
-                        FilterChip(
-                            selected = atmosphere == m,
-                            onClick = {
-                                atmosphere = m
-                                prefs.atmosphereMode = m
-                                onSettingsChanged()
-                            },
-                            label = { Text(m) }
-                        )
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(DeepRose.copy(alpha = 0.15f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(Icons.Default.Favorite, contentDescription = null, tint = DeepRose, modifier = Modifier.size(18.dp))
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Cottage Wardrobe", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = DarkSlate)
+                            Text("Hoodies & Outfits", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+                        }
+                    }
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenWardrobe()
+                        },
+                        modifier = Modifier.testTag("settings_open_wardrobe_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
+                        shape = RoundedCornerShape(10.dp),
+                        contentPadding = PaddingValues(horizontal = 14.dp, vertical = 6.dp)
+                    ) {
+                        Text("Open", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
                 }
             }
 
-            // Sound Toggle
-            Row(
+            // ── 3. Atmosphere & Sky ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.WbSunny,
+                title = "Atmosphere & Sky",
+                subtitle = "Sync with the real sky or set an intimate mood"
+            )
+            SettingsSectionCard {
+                Column {
+                    Text("Sky & Atmosphere:", fontSize = 13.sp, fontWeight = FontWeight.SemiBold, color = DarkSlate)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        val modes = listOf("AUTO", "DAY", "SUNSET", "NIGHT")
+                        modes.forEach { m ->
+                            FilterChip(
+                                selected = atmosphere == m,
+                                onClick = {
+                                    atmosphere = m
+                                    prefs.atmosphereMode = m
+                                    onSettingsChanged()
+                                },
+                                label = { Text(m) }
+                            )
+                        }
+                    }
+                }
+            }
+
+            // ── 4. Sounds & Music ──
+            SettingsCategoryHeader(
+                icon = Icons.AutoMirrored.Filled.VolumeUp,
+                title = "Sounds & Music",
+                subtitle = "Gentle music box lullabies & peaceful nature ambience"
+            )
+            SettingsSectionCard {
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(Color(0xFFFAF7F2))
+                        .clickable {
+                            soundEnabled = !soundEnabled
+                            prefs.soundEnabled = soundEnabled
+                            onSettingsChanged()
+                        }
+                        .padding(14.dp),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.weight(1f)) {
+                        Box(
+                            modifier = Modifier
+                                .size(36.dp)
+                                .clip(CircleShape)
+                                .background(if (soundEnabled) DeepRose.copy(alpha = 0.15f) else Color.LightGray.copy(alpha = 0.25f)),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                                contentDescription = null,
+                                tint = if (soundEnabled) DeepRose else DarkSlate.copy(alpha = 0.5f),
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Cozy Ambient Lullaby & Audio", fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = DarkSlate)
+                            Text(if (soundEnabled) "Gentle music box sounds on" else "Sounds muted", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+                        }
+                    }
+                    Switch(
+                        checked = soundEnabled,
+                        onCheckedChange = {
+                            soundEnabled = it
+                            prefs.soundEnabled = it
+                            onSettingsChanged()
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = DeepRose,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFD1D5DB)
+                        )
+                    )
+                }
+            }
+
+            // ── 5. Memories & Keepsakes ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.AutoAwesome,
+                title = "Memories & Keepsakes",
+                subtitle = "Your love notes, special days & polaroid moments"
+            )
+            SettingsSectionCard {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenMemories()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Our Keepsakes", fontSize = 12.5.sp)
+                    }
+
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenLoveNotes()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE07A5F)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("Love Notes", fontSize = 12.5.sp)
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenPolaroids()
+                        },
+                        modifier = Modifier.weight(1f),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC9184A)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Tiny Moments Gallery", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = onOpenDreamJournal,
+                        modifier = Modifier.weight(1f).testTag("settings_open_dream_journal_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2D8B)),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(15.dp))
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Shared Dream Journal", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+            }
+
+            // ── 6. Tiny Care Notifications ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.Favorite,
+                title = "Tiny Care",
+                subtitle = "Gentle, wholesome offline check-ins for each other"
+            )
+            // Tiny Care: Wholesome Offline Reminders
+            Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .clickable {
-                        soundEnabled = !soundEnabled
-                        prefs.soundEnabled = soundEnabled
-                        onSettingsChanged()
-                    }
-                    .padding(14.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.White.copy(alpha = 0.90f))
+                    .padding(14.dp)
+                    .testTag("tiny_care_card")
             ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = if (soundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                        contentDescription = null,
-                        tint = DeepRose
-                    )
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text("Cozy Ambient Lullaby & Audio", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                        Text(if (soundEnabled) "Gentle music box sounds on" else "Muted", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.weight(1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = null,
+                            tint = DeepRose
+                        )
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text("Tiny Care", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
+                            Text("Gentle, wholesome offline reminders", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+                        }
                     }
+
+                    Switch(
+                        checked = tinyCareEnabled,
+                        onCheckedChange = { willEnable ->
+                            if (willEnable) {
+                                val needsRuntimePermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
+                                    androidx.core.content.ContextCompat.checkSelfPermission(
+                                        context,
+                                        android.Manifest.permission.POST_NOTIFICATIONS
+                                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+
+                                if (needsRuntimePermission) {
+                                    showPermissionExplanation = true
+                                    permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                } else {
+                                    val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
+                                    if (systemAllowed) {
+                                        showPermissionExplanation = true
+                                        tinyCareEnabled = true
+                                        com.example.care.TinyCareScheduler.enable(context)
+                                    } else {
+                                        showPermissionExplanation = true
+                                    }
+                                }
+                            } else {
+                                showPermissionExplanation = false
+                                tinyCareEnabled = false
+                                com.example.care.TinyCareScheduler.disable(context)
+                            }
+                            onSettingsChanged()
+                        },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = Color.White,
+                            checkedTrackColor = DeepRose,
+                            uncheckedThumbColor = Color.White,
+                            uncheckedTrackColor = Color(0xFFD1D5DB)
+                        ),
+                        modifier = Modifier.testTag("tiny_care_switch")
+                    )
+                }
+
+                if (showPermissionExplanation) {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Notification permission is needed so Tiny Care can deliver quiet offline reminders.",
+                        fontSize = 11.5.sp,
+                        color = DeepRose,
+                        lineHeight = 15.sp
+                    )
+                }
+
+                if (tinyCareEnabled) {
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(Color(0xFFF8F9FA))
+                            .padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Nightlight,
+                            contentDescription = null,
+                            tint = DarkSlate.copy(alpha = 0.6f),
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text(
+                            text = "Quiet hours: 11:00 PM - 7:00 AM (sleep window)",
+                            fontSize = 11.5.sp,
+                            color = DarkSlate.copy(alpha = 0.7f)
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.height(10.dp))
+                    Text(
+                        text = "Remind me about:",
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = DarkSlate
+                    )
+                    Spacer(modifier = Modifier.height(6.dp))
+
+                    val categories = com.example.care.TinyCareCategory.values()
+                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                        for (chunk in categories.toList().chunked(2)) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(6.dp)
+                            ) {
+                                for (cat in chunk) {
+                                    val isSelected = cat.id in enabledCategories
+                                    FilterChip(
+                                        selected = isSelected,
+                                        onClick = {
+                                            val updated = if (isSelected) {
+                                                if (enabledCategories.size > 1) enabledCategories - cat.id else enabledCategories
+                                            } else {
+                                                enabledCategories + cat.id
+                                            }
+                                            enabledCategories = updated
+                                            prefs.tinyCareCategories = updated
+                                            onSettingsChanged()
+                                        },
+                                        label = { Text(cat.title, fontSize = 11.5.sp) },
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Button(
+                        onClick = {
+                            com.example.care.TinyCareScheduler.sendTestNotification(context)
+                        },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .testTag("tiny_care_test_button"),
+                        colors = ButtonDefaults.buttonColors(
+                            containerColor = Color(0xFFFCE4EC),
+                            contentColor = DeepRose
+                        ),
+                        shape = RoundedCornerShape(10.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.AutoAwesome,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp)
+                        )
+                        Spacer(modifier = Modifier.width(6.dp))
+                        Text("Send preview reminder", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                    Spacer(modifier = Modifier.height(4.dp))
+                    Text(
+                        text = "Preview reminder does not count toward daily frequency or message history.",
+                        fontSize = 10.5.sp,
+                        color = DarkSlate.copy(alpha = 0.5f),
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.fillMaxWidth()
+                    )
                 }
             }
 
+            // ── 7. Appearance ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.AutoAwesome,
+                title = "Appearance & Controls",
+                subtitle = "Frosted glassmorphism intensity for buttons"
+            )
             // Button Glassmorphism Setting
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
+                    .clip(RoundedCornerShape(14.dp))
+                    .background(Color.White.copy(alpha = 0.90f))
                     .padding(14.dp)
             ) {
                 Row(
@@ -1645,279 +2050,63 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // Tiny Care: Wholesome Offline Reminders
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(Color.White)
-                    .padding(14.dp)
-                    .testTag("tiny_care_card")
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = null,
-                            tint = DeepRose
-                        )
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Column {
-                            Text("Tiny Care", fontWeight = FontWeight.SemiBold, fontSize = 14.sp)
-                            Text("Gentle, wholesome offline reminders", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
-                        }
-                    }
-
-                    Switch(
-                        checked = tinyCareEnabled,
-                        onCheckedChange = { willEnable ->
-                            if (willEnable) {
-                                val needsRuntimePermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                                    androidx.core.content.ContextCompat.checkSelfPermission(
-                                        context,
-                                        android.Manifest.permission.POST_NOTIFICATIONS
-                                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                                if (needsRuntimePermission) {
-                                    showPermissionExplanation = true
-                                    permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
-                                } else {
-                                    val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-                                    if (systemAllowed) {
-                                        showPermissionExplanation = false
-                                        tinyCareEnabled = true
-                                        com.example.care.TinyCareScheduler.enable(context)
-                                    } else {
-                                        showPermissionExplanation = true
-                                    }
-                                }
-                            } else {
-                                showPermissionExplanation = false
-                                tinyCareEnabled = false
-                                com.example.care.TinyCareScheduler.disable(context)
-                            }
-                            onSettingsChanged()
+            // ── 8. World Exploration & Privacy ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.Shuffle,
+                title = "World & Privacy",
+                subtitle = "Scenes exploration and offline privacy guarantee"
+            )
+            SettingsSectionCard {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            onOpenScenePicker()
                         },
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = Color.White,
-                            checkedTrackColor = DeepRose,
-                            uncheckedThumbColor = Color.White,
-                            uncheckedTrackColor = Color(0xFFD1D5DB)
-                        ),
-                        modifier = Modifier.testTag("tiny_care_switch")
-                    )
-                }
-
-                if (showPermissionExplanation) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = "Notification permission is needed so Tiny Care can deliver quiet offline reminders.",
-                        fontSize = 11.5.sp,
-                        color = DeepRose,
-                        lineHeight = 15.sp
-                    )
-                }
-
-                if (tinyCareEnabled) {
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clip(RoundedCornerShape(8.dp))
-                            .background(Color(0xFFF8F9FA))
-                            .padding(horizontal = 10.dp, vertical = 6.dp),
-                        verticalAlignment = Alignment.CenterVertically
+                        modifier = Modifier.weight(1f).testTag("choose_scene_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A86FF)),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Nightlight,
-                            contentDescription = null,
-                            tint = DarkSlate.copy(alpha = 0.6f),
-                            modifier = Modifier.size(14.dp)
-                        )
+                        Icon(Icons.Default.Shuffle, contentDescription = null, modifier = Modifier.size(15.dp))
                         Spacer(modifier = Modifier.width(6.dp))
-                        Text(
-                            text = "Quiet hours: 11:00 PM - 7:00 AM (sleep window)",
-                            fontSize = 11.5.sp,
-                            color = DarkSlate.copy(alpha = 0.7f)
-                        )
+                        Text("Select Scene", fontSize = 12.5.sp)
                     }
-
-                    Spacer(modifier = Modifier.height(10.dp))
-                    Text(
-                        text = "Remind me about:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = DarkSlate
-                    )
-                    Spacer(modifier = Modifier.height(6.dp))
-
-                    val categories = com.example.care.TinyCareCategory.values()
-                    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                        for (chunk in categories.toList().chunked(2)) {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.spacedBy(6.dp)
-                            ) {
-                                for (cat in chunk) {
-                                    val isSelected = cat.id in enabledCategories
-                                    FilterChip(
-                                        selected = isSelected,
-                                        onClick = {
-                                            val updated = if (isSelected) {
-                                                if (enabledCategories.size > 1) enabledCategories - cat.id else enabledCategories
-                                            } else {
-                                                enabledCategories + cat.id
-                                            }
-                                            enabledCategories = updated
-                                            prefs.tinyCareCategories = updated
-                                            onSettingsChanged()
-                                        },
-                                        label = { Text(cat.title, fontSize = 11.5.sp) },
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(12.dp))
 
                     Button(
                         onClick = {
-                            com.example.care.TinyCareScheduler.sendTestNotification(context)
+                            onReplayScene()
+                            onDismiss()
                         },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("tiny_care_test_button"),
-                        colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFFCE4EC),
-                            contentColor = DeepRose
-                        ),
-                        shape = RoundedCornerShape(10.dp)
+                        modifier = Modifier.weight(1f).testTag("replay_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
+                        shape = RoundedCornerShape(12.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.AutoAwesome,
-                            contentDescription = null,
-                            modifier = Modifier.size(15.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
-                        Text("Send preview reminder", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                        Text("Replay Scene", fontSize = 12.5.sp)
                     }
-                    Spacer(modifier = Modifier.height(4.dp))
+                }
+
+                // Wholesome offline assurance card
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(10.dp))
+                        .background(Color(0xFFF0F4F0))
+                        .padding(horizontal = 12.dp, vertical = 10.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Favorite,
+                        contentDescription = null,
+                        tint = SageGreen,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        text = "Preview reminder does not count toward daily frequency or message history.",
-                        fontSize = 10.5.sp,
-                        color = DarkSlate.copy(alpha = 0.5f),
-                        textAlign = TextAlign.Center,
-                        modifier = Modifier.fillMaxWidth()
+                        text = "Tiny Us is 100% offline & private. All names, dates, notes, and memories stay safely on this device.",
+                        fontSize = 11.5.sp,
+                        color = DarkSlate.copy(alpha = 0.75f),
+                        lineHeight = 15.sp
                     )
                 }
-            }
-
-            // Anniversay & Memories shortcuts
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-                Button(
-                    onClick = {
-                        onDismiss()
-                        onOpenMemories()
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text("Our Keepsakes", fontSize = 13.sp)
-                }
-
-                Button(
-                    onClick = {
-                        onDismiss()
-                        onOpenLoveNotes()
-                    },
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFE07A5F)),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text("Love Notes", fontSize = 13.sp)
-                }
-            }
-
-            // Tiny Moments Polaroid Gallery
-            Button(
-                onClick = {
-                    onDismiss()
-                    onOpenPolaroids()
-                },
-                modifier = Modifier.fillMaxWidth(),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC9184A)),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Tiny Moments Gallery", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            // Shared Dream Journal
-            Button(
-                onClick = onOpenDreamJournal,
-                modifier = Modifier.fillMaxWidth().testTag("settings_open_dream_journal_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2D8B)),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Shared Dream Journal", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            // Cottage Wardrobe (Hoodies & Outfits)
-            Button(
-                onClick = {
-                    onDismiss()
-                    onOpenWardrobe()
-                },
-                modifier = Modifier.fillMaxWidth().testTag("settings_open_wardrobe_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(16.dp))
-                Spacer(modifier = Modifier.width(6.dp))
-                Text("Cottage Wardrobe (Hoodies & Outfits)", fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
-
-            // Choose Scene Button
-            Button(
-                onClick = {
-                    onOpenScenePicker()
-                },
-                modifier = Modifier.fillMaxWidth().testTag("choose_scene_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF3A86FF)),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Icon(Icons.Default.Shuffle, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Select Scene")
-            }
-
-            // Replay Scene Button
-            Button(
-                onClick = {
-                    onReplayScene()
-                    onDismiss()
-                },
-                modifier = Modifier.fillMaxWidth().testTag("replay_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
-                shape = RoundedCornerShape(14.dp)
-            ) {
-                Text("Replay Current Scene")
             }
 
             Spacer(modifier = Modifier.height(16.dp))
