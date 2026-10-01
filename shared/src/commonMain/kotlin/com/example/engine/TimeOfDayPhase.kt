@@ -23,6 +23,8 @@ enum class TimeOfDayPhase {
     val isSunset: Boolean get() = this == SUNSET
     val isMorning: Boolean get() = this == MORNING
     val isDay: Boolean get() = this == AFTERNOON || this == MORNING
+    val isMidnight: Boolean get() = this == NIGHT && (currentHour() >= 23 || currentHour() <= 4)
+    val isTwilight: Boolean get() = (this == SUNSET && currentHour() >= 19) || (this == NIGHT && currentHour() == 20)
 
     companion object {
         /**

@@ -1182,10 +1182,40 @@ object WorldSprites {
         val glowColor = if (isLit) Color(0xFFFFD166) else Color(0xFF6C757D)
         scope.drawRect(glowColor, Offset(headX + 2 * p, headY + 2 * p), Size(headW - 4 * p, headH - 4 * p))
 
-        // Soft ambient warm light cone
+        // Soft ambient warm light cone & ground pool
         if (isLit) {
-            val halo = Color(0x35FFE66D)
-            scope.drawRect(halo, Offset(headX - 20 * p, headY + 8 * p), Size(headW + 40 * p, 55 * p))
+            val headCenter = Offset(cx, headY + headH / 2f)
+            // 1. Stepped radiant concentric halos around lantern glass
+            scope.drawCircle(Color(0xFFFFD166).copy(alpha = 0.08f), radius = 28 * p, center = headCenter)
+            scope.drawCircle(Color(0xFFFFEAA7).copy(alpha = 0.16f), radius = 16 * p, center = headCenter)
+            scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.28f), radius = 9 * p, center = headCenter)
+
+            // 2. Tiered light cone expanding downward toward the street
+            val coneTiers = 5
+            for (t in 0 until coneTiers) {
+                val frac = (t + 1).toFloat() / coneTiers
+                val tierH = (groundY - (headY + headH)) / coneTiers
+                val tierY = headY + headH + t * tierH
+                val tierW = headW + frac * 48 * p
+                val alpha = (0.16f * (1f - frac * 0.45f)).coerceIn(0.04f, 0.20f)
+                scope.drawRect(
+                    color = Color(0xFFFFE66D).copy(alpha = alpha),
+                    topLeft = Offset(cx - tierW / 2f, tierY),
+                    size = Size(tierW, tierH + 1.5f)
+                )
+            }
+
+            // 3. Warm ambient light pool on the cobblestone ground
+            scope.drawOval(
+                color = Color(0xFFFFD166).copy(alpha = 0.20f),
+                topLeft = Offset(cx - 30 * p, groundY - 6 * p),
+                size = Size(60 * p, 12 * p)
+            )
+            scope.drawOval(
+                color = Color(0xFFFFF3B0).copy(alpha = 0.30f),
+                topLeft = Offset(cx - 16 * p, groundY - 4 * p),
+                size = Size(32 * p, 8 * p)
+            )
         }
     }
 
@@ -2002,13 +2032,38 @@ object WorldSprites {
         scope.drawRect(Color(0xFFD4A373), Offset(x - 7 * p, ly + 13 * p), Size(14 * p, p))
         // Glow cone below the shade — bright when lit, invisible when off
         if (lampLit) {
-            val glowAlpha = 0.45f
-            scope.drawRect(Color(0xFFFFE66D).copy(alpha = glowAlpha), Offset(x - 18 * p, ly + 14 * p), Size(36 * p, 10 * p))
-            scope.drawRect(Color(0xFFFFE66D).copy(alpha = glowAlpha * 0.6f), Offset(x - 24 * p, ly + 22 * p), Size(48 * p, 12 * p))
-            scope.drawRect(Color(0xFFFFE66D).copy(alpha = glowAlpha * 0.35f), Offset(x - 30 * p, ly + 32 * p), Size(60 * p, 14 * p))
-            scope.drawRect(Color(0xFFFFE66D).copy(alpha = glowAlpha * 0.15f), Offset(x - 36 * p, ly + 44 * p), Size(72 * p, lampH - 44 * p))
+            val shadeCenter = Offset(x, ly + 8 * p)
+            scope.drawCircle(Color(0xFFFFD166).copy(alpha = 0.12f), radius = 22 * p, center = shadeCenter)
+            scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.22f), radius = 12 * p, center = shadeCenter)
+
+            // Warm light cone downward
+            val coneTiers = 4
+            for (t in 0 until coneTiers) {
+                val frac = (t + 1).toFloat() / coneTiers
+                val tierH = (lampH - 14 * p) / coneTiers
+                val tierY = ly + 14 * p + t * tierH
+                val tierW = 14 * p + frac * 42 * p
+                val alpha = (0.24f * (1f - frac * 0.40f)).coerceIn(0.04f, 0.28f)
+                scope.drawRect(
+                    color = Color(0xFFFFEAA7).copy(alpha = alpha),
+                    topLeft = Offset(x - tierW / 2f, tierY),
+                    size = Size(tierW, tierH + 1.5f)
+                )
+            }
+
+            // Warm oval light pool on the floor/rug
+            scope.drawOval(
+                color = Color(0xFFFFD166).copy(alpha = 0.24f),
+                topLeft = Offset(x - 26 * p, groundY - 5 * p),
+                size = Size(52 * p, 10 * p)
+            )
+            scope.drawOval(
+                color = Color(0xFFFFF8D6).copy(alpha = 0.34f),
+                topLeft = Offset(x - 14 * p, groundY - 3.5f * p),
+                size = Size(28 * p, 7 * p)
+            )
         } else {
-            scope.drawRect(Color(0x10FFE66D), Offset(x - 18 * p, ly + 14 * p), Size(36 * p, 44 * p))
+            scope.drawRect(Color(0x10FFE66D), Offset(x - 14 * p, ly + 14 * p), Size(28 * p, 36 * p))
         }
     }
 

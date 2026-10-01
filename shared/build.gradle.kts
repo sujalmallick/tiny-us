@@ -6,6 +6,10 @@ plugins {
 kotlin {
     jvmToolchain(17)
 
+    compilerOptions {
+        freeCompilerArgs.add("-Xexpect-actual-classes")
+    }
+
     android {
         namespace = "com.example.shared"
         compileSdk = 35
@@ -20,6 +24,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "Shared"
             isStatic = true
+            export(libs.kotlinx.datetime)
         }
     }
 

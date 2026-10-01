@@ -1395,8 +1395,37 @@ fun PixelWorldView(
             // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
             drawForegroundParticles(this, engine.particles.particles, pixelScale)
 
-            // Weather ambient atmospheric tinting overlay
+            // Atmospheric Lighting & Time-of-Day Layering
+            val isMorning = timePhase.isMorning
+            val isTwilight = timePhase.isTwilight
+            val isMidnight = timePhase.isMidnight
+
             if (isOutdoor) {
+                // Time-of-day atmospheric layer (delicate, natural light transitions)
+                when {
+                    isMidnight -> {
+                        // Midnight celestial coziness: deep starlight indigo vignette
+                        drawRect(Color(0xFF060B1E).copy(alpha = 0.16f), Offset.Zero, size)
+                    }
+                    isNight -> {
+                        // Night: calm, intimate moonlit atmosphere
+                        drawRect(Color(0xFF0A122C).copy(alpha = 0.12f), Offset.Zero, size)
+                    }
+                    isTwilight -> {
+                        // Twilight: deep rich lavender-indigo dusk glow
+                        drawRect(Color(0xFF4A2545).copy(alpha = 0.12f), Offset.Zero, size)
+                    }
+                    isSunset -> {
+                        // Sunset: warm coral-amber golden hour wash
+                        drawRect(Color(0xFFE85D04).copy(alpha = 0.08f), Offset.Zero, size)
+                    }
+                    isMorning -> {
+                        // Morning: soft rose-ivory dewy dawn glow
+                        drawRect(Color(0xFFFFD6A5).copy(alpha = 0.06f), Offset.Zero, size)
+                    }
+                }
+
+                // Weather ambient atmospheric tinting
                 when (engine.weather) {
                     com.example.scene.WeatherType.RAIN -> {
                         drawRect(Color(0x221B263B), Offset.Zero, size)
@@ -1411,11 +1440,24 @@ fun PixelWorldView(
                         drawRect(Color(0x14FF758F), Offset.Zero, size)
                     }
                     com.example.scene.WeatherType.SUNNY -> {
-                        // Subtle golden warmth only during daytime, never at night or sunset (no harsh beams)
                         if (!isNight && !isSunset) {
                             drawRect(Color(0x08FFB703), Offset.Zero, size)
                         }
                     }
+                }
+            } else {
+                // Indoor atmosphere (Kitchen, Living Room, Cozy Loft)
+                // Distinctly warmer and cozier than chilly outdoors
+                val indoorWarmthAlpha = when {
+                    isMidnight -> 0.14f
+                    isNight -> 0.10f
+                    isSunset -> 0.08f
+                    else -> 0.04f
+                }
+                drawRect(Color(0xFFFFB703).copy(alpha = indoorWarmthAlpha), Offset.Zero, size)
+                if (isNight || isMidnight) {
+                    // Soft cozy interior evening shading
+                    drawRect(Color(0xFF1B1124).copy(alpha = if (isMidnight) 0.12f else 0.07f), Offset.Zero, size)
                 }
             }
 
@@ -3685,7 +3727,60 @@ private fun drawMeadowGround(
         scope.drawRect(bladeDark, Offset(bx + sway, groundY - bladeH), Size(p, bladeH))
     }
 
-    // 8. Winter Snow Blanket Highlights (Subtle glistening terrain)
+    // 8. Reflective Rain Puddles with animated ripples
+    if (weather == com.example.scene.WeatherType.RAIN) {
+        val puddleCoords = listOf(
+            Triple(0.24f, 0.74f, 22f),
+            Triple(0.53f, 0.79f, 28f),
+            Triple(0.79f, 0.73f, 20f)
+        )
+        for ((pxRel, pyRel, pSize) in puddleCoords) {
+            val px = cw * pxRel
+            val py = ch * pyRel
+            val pw = pSize * p
+            val ph = pw * 0.36f
+            // Dark puddle depression
+            scope.drawOval(
+                color = Color(0x35122135),
+                topLeft = Offset(px - pw / 2f, py - ph / 2f),
+                size = Size(pw, ph)
+            )
+            // Soft sky water reflection
+            scope.drawOval(
+                color = Color(0x3060A5FA),
+                topLeft = Offset(px - pw * 0.40f, py - ph * 0.35f),
+                size = Size(pw * 0.80f, ph * 0.7f)
+            )
+            // Occasional gentle ripple ring
+            val ripT = (timeSeconds * 1.8f + pxRel * 6f) % 2.5f
+            if (ripT < 1.2f) {
+                val ripFrac = ripT / 1.2f
+                val ripW = pw * 0.25f + pw * 0.65f * ripFrac
+                val ripH = ripW * 0.36f
+                val ripAlpha = (1f - ripFrac) * 0.45f
+                scope.drawOval(
+                    color = Color.White.copy(alpha = ripAlpha),
+                    topLeft = Offset(px - ripW / 2f, py - ripH / 2f),
+                    size = Size(ripW, ripH),
+                    style = Stroke(width = 1.2f * p)
+                )
+            }
+        }
+    }
+
+    // 9. Sweeping cloud shadows during sunny day
+    if (weather == com.example.scene.WeatherType.SUNNY && !isNight && !isSunset) {
+        val cloudCycle = (timeSeconds * 0.05f) % 1.0f
+        val csX = -cw * 0.4f + cloudCycle * (cw * 1.8f)
+        val csY = groundY + totalH * 0.20f
+        scope.drawOval(
+            color = Color(0x150B132B),
+            topLeft = Offset(csX, csY),
+            size = Size(cw * 0.60f, totalH * 0.60f)
+        )
+    }
+
+    // 10. Winter Snow Blanket Highlights (Subtle glistening terrain)
     if (isSnow) {
         for (i in 0 until 16) {
             val sx = ((i * 59) % cw.toInt()).toFloat()
@@ -4105,6 +4200,12 @@ private fun drawKitchenRoom(
         val gw = 16 * p + step * 8 * p
         scope.drawRect(glowColor.copy(alpha = glowAlpha * (1f - step * 0.14f)), Offset(lampX - gw / 2f, gy), Size(gw, 6 * p))
     }
+    // Warm floor light pool under pendant lamp
+    scope.drawOval(
+        color = Color(0xFFFFD166).copy(alpha = if (isNight) 0.22f else 0.12f),
+        topLeft = Offset(lampX - 26 * p, floorY - 4 * p),
+        size = Size(52 * p, 8 * p)
+    )
 
     // 9. Retro 1950s Pastel Refrigerator (Right wall, cw * 0.88f)
     val fridgeX = cw * 0.88f
@@ -5072,8 +5173,21 @@ private fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
             scope.drawRect(color, Offset(pt.x + s * 0.35f, pt.y + s * 0.35f), Size(s * 0.35f, s * 0.35f))
             scope.drawRect(color, Offset(pt.x, pt.y + s * 0.7f), Size(s, s * 0.3f))
         }
-        ParticleType.WATER_RIPPLE, ParticleType.MUSIC_NOTE -> {
-            scope.drawRect(color, Offset(pt.x, pt.y), Size(pt.size, pt.size * 0.6f))
+        ParticleType.WATER_RIPPLE -> {
+            val rx = (pt.size * p * 0.9f).coerceAtLeast(6f)
+            val ry = rx * 0.42f
+            scope.drawOval(
+                color = color.copy(alpha = (pt.alpha * 0.65f).coerceIn(0f, 1f)),
+                topLeft = Offset(pt.x - rx, pt.y - ry),
+                size = Size(rx * 2f, ry * 2f),
+                style = Stroke(width = 1.3f * p)
+            )
+        }
+        ParticleType.MUSIC_NOTE -> {
+            // Retro 16-bit musical eighth note
+            scope.drawOval(color.copy(alpha = pt.alpha), topLeft = Offset(pt.x, pt.y + 4f * p), size = Size(3f * p, 2.5f * p))
+            scope.drawRect(color.copy(alpha = pt.alpha), Offset(pt.x + 2.4f * p, pt.y), Size(1.2f * p, 5f * p))
+            scope.drawRect(color.copy(alpha = pt.alpha), Offset(pt.x + 3.2f * p, pt.y), Size(2f * p, 1.8f * p))
         }
         ParticleType.RAIN_DROP -> {
             // Proper authentic retro rain streak: crisp vertical slant falling towards ground

@@ -2868,6 +2868,143 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Weather-specific living autonomous moments that occur naturally in the world.
+     * Preserves:
+     * - Sunny: Butterflies, Cloud Shadow
+     * - Rain: Puddle interaction & shelter under umbrella
+     * - Sakura: Petal catching, Mochi chasing petals
+     * - Autumn: Leaf kick, Leaf on head
+     * - Snow: Snowball moment, Snowflake watching
+     */
+    private fun triggerWeatherAutonomousMoment(cw: Float, ch: Float): Boolean {
+        if (!isCurrentSceneOutdoor) return false
+        val variant = Random.nextInt(2)
+        when (weather) {
+            WeatherType.SUNNY -> {
+                if (variant == 0) {
+                    // Butterflies: Girl follows a butterfly, boy watches happily
+                    val targetX = (girl.worldX + 0.08f).coerceAtMost(0.72f)
+                    val walkTime = abs(targetX - girl.worldX) / CharacterMotionTween.SHARED_WALKING_SPEED
+                    girl.moveTo(targetX, arrivePose = CharacterPose.IDLE)
+                    girl.emotion = CharacterEmotion.CURIOUS
+                    girl.emote = EmoteType.SPARKLE
+                    girl.emoteTimer = walkTime + 2.0f
+                    boy.direction = Direction.RIGHT
+                    boy.emotion = CharacterEmotion.HAPPY
+                    boy.reactionTimer = walkTime + 2.5f
+                    girl.reactionTimer = walkTime + 2.5f
+                    audio.playStarTwinkle()
+                    particles.spawnSparkles(cw * targetX, ch * girl.worldY - 30f, 6)
+                } else {
+                    // Cloud Shadow: Couple stops, glances up at a passing cloud together
+                    boy.transitionPoseTo(CharacterPose.IDLE)
+                    girl.transitionPoseTo(CharacterPose.IDLE)
+                    boy.emotion = CharacterEmotion.CURIOUS
+                    girl.emotion = CharacterEmotion.CURIOUS
+                    boy.reactionTimer = 3.0f
+                    girl.reactionTimer = 3.0f
+                    audio.playWindChime()
+                }
+                return true
+            }
+            WeatherType.RAIN -> {
+                // Rain: Puddle interaction & stepping closer under the umbrella
+                val targetBoyX = 0.46f
+                val targetGirlX = 0.54f
+                boy.moveTo(targetBoyX, arrivePose = CharacterPose.IDLE)
+                girl.moveTo(targetGirlX, arrivePose = CharacterPose.IDLE)
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.HAPPY
+                girl.emote = EmoteType.HEART
+                girl.emoteTimer = 2.5f
+                boy.reactionTimer = 3.2f
+                girl.reactionTimer = 3.2f
+                audio.playWaterDrip()
+                particles.spawnRainSplash(cw * 0.50f, ch * 0.72f)
+                return true
+            }
+            WeatherType.SAKURA -> {
+                if (variant == 0) {
+                    // Petal Catching: Girl reaches out, petal drifts into hand
+                    girl.transitionPoseTo(CharacterPose.RECEIVE_FLOWER)
+                    girl.emotion = CharacterEmotion.HAPPY
+                    girl.emote = EmoteType.SPARKLE
+                    girl.emoteTimer = 2.4f
+                    boy.direction = Direction.RIGHT
+                    boy.emotion = CharacterEmotion.LOVING
+                    boy.reactionTimer = 2.8f
+                    girl.reactionTimer = 2.8f
+                    audio.playStarTwinkle()
+                    particles.spawnPetals(cw * girl.worldX, ch * girl.worldY - 24f, 8)
+                } else {
+                    // Mochi chasing petals across the grass!
+                    catState = CatState.PLAYFUL_POUNCE
+                    catSleeping = false
+                    catTargetX = (catWorldX + (if (catFacingLeft) -0.10f else 0.10f)).coerceIn(0.20f, 0.85f)
+                    audio.playCatChirp()
+                    particles.spawnPetals(cw * catWorldX, ch * catWorldY - 14f, 5)
+                }
+                return true
+            }
+            WeatherType.AUTUMN -> {
+                if (variant == 0) {
+                    // Leaf Kick: Joyful kick through leaves, rustling leaves scatter
+                    boy.transitionPoseTo(CharacterPose.JOY_JUMP)
+                    boy.emotion = CharacterEmotion.PLAYFUL
+                    boy.reactionTimer = 1.8f
+                    girl.emotion = CharacterEmotion.HAPPY
+                    girl.emote = EmoteType.BLUSH
+                    girl.emoteTimer = 2.0f
+                    girl.reactionTimer = 2.0f
+                    audio.playLeafRustle()
+                    repeat(6) { particles.spawnLeaf(cw * boy.worldX, ch * boy.worldY) }
+                } else {
+                    // Leaf on Head: Leaf drifts onto head, partner gently pats/picks it off
+                    girl.transitionPoseTo(CharacterPose.HEAD_PAT)
+                    girl.emotion = CharacterEmotion.LOVING
+                    boy.transitionPoseTo(CharacterPose.HEAD_PAT_RECEIVE)
+                    boy.emotion = CharacterEmotion.SHY
+                    boy.emote = EmoteType.HEART
+                    boy.emoteTimer = 2.2f
+                    boy.reactionTimer = 2.8f
+                    girl.reactionTimer = 2.8f
+                    audio.playHeartChime()
+                    repeat(3) { particles.spawnLeaf(cw * boy.worldX, ch * boy.worldY - 32f) }
+                }
+                return true
+            }
+            WeatherType.SNOW -> {
+                if (variant == 0) {
+                    // Snowball Moment: Playful snowball reveal & joy jump
+                    boy.transitionPoseTo(CharacterPose.JOY_JUMP)
+                    boy.emotion = CharacterEmotion.PLAYFUL
+                    boy.emote = EmoteType.SPARKLE
+                    boy.emoteTimer = 2.0f
+                    girl.emotion = CharacterEmotion.HAPPY
+                    girl.emote = EmoteType.HEART
+                    girl.emoteTimer = 2.2f
+                    boy.reactionTimer = 2.5f
+                    girl.reactionTimer = 2.5f
+                    audio.playBubblePop()
+                    particles.spawnSparkles(cw * boy.worldX, ch * boy.worldY - 26f, 8)
+                } else {
+                    // Snowflake Watching: Standing close in peaceful silence admiring the snow
+                    val targetBoyX = 0.46f
+                    val targetGirlX = 0.54f
+                    boy.moveTo(targetBoyX, arrivePose = CharacterPose.IDLE)
+                    girl.moveTo(targetGirlX, arrivePose = CharacterPose.IDLE)
+                    boy.emotion = CharacterEmotion.LOVING
+                    girl.emotion = CharacterEmotion.LOVING
+                    boy.reactionTimer = 3.5f
+                    girl.reactionTimer = 3.5f
+                    audio.playStarTwinkle()
+                }
+                return true
+            }
+        }
+    }
+
     // Autonomous Spontaneous Affectionate Moments — scene-aware (Feature 2 & 8)
     private fun triggerAutonomousMoment(cw: Float, ch: Float) {
         nextAutonomousInterval = 4.5f + Random.nextFloat() * 3.5f
@@ -2875,6 +3012,13 @@ class SceneEngine(
         // Scenes with no autonomous walking
         if (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.EVENING_RIDE) {
             return
+        }
+
+        // Occasional weather-specific autonomous moment in outdoor scenes
+        if (isCurrentSceneOutdoor && Random.nextFloat() < 0.35f) {
+            if (triggerWeatherAutonomousMoment(cw, ch)) {
+                return
+            }
         }
 
         // Scene-specific autonomous moments (Feature 8)

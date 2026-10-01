@@ -745,17 +745,19 @@ class ParticleSystem {
     fun spawnRainDrop(cw: Float, ch: Float) {
         val rx = Random.nextFloat() * (cw + 120f) - 40f
         val groundY = ch * (0.64f + Random.nextFloat() * 0.32f)
-        // Explicit pixels-per-second: target traversal 1.5s - 2.0s (avg 1.75s) with tight +/-12% variation
-        val baseSpeedPxPerSec = ch / 1.75f
-        val rainSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.24f)
+        val isBackgroundDrizzle = Random.nextFloat() < 0.35f
+        val baseSpeedPxPerSec = if (isBackgroundDrizzle) ch / 2.1f else ch / 1.75f
+        val rainSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.20f)
+        val rainSize = if (isBackgroundDrizzle) 8f + Random.nextFloat() * 5f else 15f + Random.nextFloat() * 7f
+        val rainColor = if (isBackgroundDrizzle) Color(0x65BAE6FD) else Color(0xC8E0F2FE)
         particles.add(
             obtainParticle(
                 x = rx,
                 y = -25f,
-                vx = -0.14f * cw, // Steady diagonal slant decoupled from fall speed
+                vx = if (isBackgroundDrizzle) -0.10f * cw else -0.14f * cw,
                 vy = rainSpeed,
-                size = 14f + Random.nextFloat() * 6f, // Rain streak length
-                color = Color(0xB8BAE6FD),
+                size = rainSize,
+                color = rainColor,
                 maxLife = 180f,
                 type = ParticleType.RAIN_DROP,
                 phase = 0f,
@@ -778,6 +780,21 @@ class ParticleSystem {
                 phase = 0f
             )
         )
+        if (Random.nextFloat() < 0.40f) {
+            pendingParticles.add(
+                obtainParticle(
+                    x = x,
+                    y = y,
+                    vx = 0f,
+                    vy = 0f,
+                    size = 4.5f,
+                    color = Color(0x80BAE6FD),
+                    maxLife = 16f,
+                    type = ParticleType.WATER_RIPPLE,
+                    phase = 0f
+                )
+            )
+        }
         repeat(2) { idx ->
             val dir = if (idx == 0) -1.2f else 1.2f
             pendingParticles.add(

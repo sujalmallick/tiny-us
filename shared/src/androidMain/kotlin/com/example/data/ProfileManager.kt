@@ -12,12 +12,12 @@ import kotlinx.datetime.toJavaLocalDate
 val PersonalProfile.anniversaryDateJava: LocalDate?
     get() = anniversaryDate?.toJavaLocalDate()
 
-object ProfileManager : ProfileRepository {
+actual object ProfileManager : ProfileRepository {
     private var activeProfile: PersonalProfile = PersonalProfile()
 
-    override fun getProfile(): PersonalProfile = activeProfile
+    actual override fun getProfile(): PersonalProfile = activeProfile
 
-    override fun setProfile(profile: PersonalProfile) {
+    actual override fun setProfile(profile: PersonalProfile) {
         activeProfile = profile
     }
 
@@ -102,7 +102,7 @@ object ProfileManager : ProfileRepository {
         }
 
         val stallText = obj.optString("stallSignboardText", "WARM BITES")
-        val mileText = obj.optString("milestoneText", "TINY US 0 KM")
+        val mileText = obj.optString("milestoneText", "TINY Us 0 KM")
 
         return PersonalProfile(
             boyName = bName,
