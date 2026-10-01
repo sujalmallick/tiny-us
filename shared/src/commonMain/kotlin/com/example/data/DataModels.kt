@@ -74,6 +74,10 @@ data class HomeEvolutionState(
     val hasFramedKeepsake: Boolean = false,
     val hasFridgePolaroid: Boolean = false,
     val hasFridgeLoveNote: Boolean = false,
+    val hasAdventurePicnicBasket: Boolean = false,
+    val hasBedsideNotepad: Boolean = false,
+    val hasMiniGameBoard: Boolean = false,
+    val hasOrigamiHeart: Boolean = false,
     val seasonalArtifact: SeasonalArtifact = SeasonalArtifact.SPRING_BLOSSOM_VASE
 )
 

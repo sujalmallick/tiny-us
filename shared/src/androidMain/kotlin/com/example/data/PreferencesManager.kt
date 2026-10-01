@@ -234,6 +234,11 @@ class PreferencesManager(
         val days = uniqueDaysOpened
         val memoriesCount = getMemories().size
         val notesCount = getLoveNotes().size
+        val completedAdventures = getCompletedAdventuresCount()
+        val completedMoments = getCompletedMomentsCount()
+        val completedMiniGames = getCompletedMiniGamesCount()
+        val hasSignals = getLongDistanceSignals().isNotEmpty()
+
         val seasonal = when (weather) {
             com.example.scene.WeatherType.SAKURA -> SeasonalArtifact.SPRING_BLOSSOM_VASE
             com.example.scene.WeatherType.AUTUMN -> SeasonalArtifact.AUTUMN_HARVEST_PUMPKIN
@@ -251,6 +256,10 @@ class PreferencesManager(
             hasFramedKeepsake = memoriesCount >= 1,
             hasFridgePolaroid = memoriesCount >= 2 || days >= 5,
             hasFridgeLoveNote = notesCount >= 1,
+            hasAdventurePicnicBasket = completedAdventures >= 1,
+            hasBedsideNotepad = completedMoments >= 1,
+            hasMiniGameBoard = completedMiniGames >= 1,
+            hasOrigamiHeart = hasSignals,
             seasonalArtifact = seasonal
         )
     }
@@ -587,5 +596,384 @@ class PreferencesManager(
             arr.put(obj)
         }
         prefs.edit().putString("dreams_json", arr.toString()).apply()
+    }
+
+    // ── Tiny Date Adventures ──
+    private var cachedAdventures: List<DateAdventure>? = null
+
+    fun getDateAdventures(): List<DateAdventure> {
+        cachedAdventures?.let { return it }
+        val raw = prefs.getString("date_adventures_json", null) ?: return DateAdventureCatalog.defaultAdventures.also { cachedAdventures = it }
+        return try {
+            val arr = JSONArray(raw)
+            val list = mutableListOf<DateAdventure>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                list.add(
+                    DateAdventure(
+                        id = obj.getString("id"),
+                        title = obj.getString("title"),
+                        description = obj.getString("description"),
+                        category = obj.optString("category", "COZY_HOME"),
+                        sceneHint = obj.optString("sceneHint", null).takeIf { !it.isNullOrEmpty() },
+                        status = try { AdventureStatus.valueOf(obj.optString("status", "AVAILABLE")) } catch (_: Exception) { AdventureStatus.AVAILABLE },
+                        completedByBoy = obj.optBoolean("completedByBoy", false),
+                        completedByGirl = obj.optBoolean("completedByGirl", false),
+                        completedTimestamp = if (obj.has("completedTimestamp")) obj.getLong("completedTimestamp") else null,
+                        unlockedArtifact = obj.optString("unlockedArtifact", null).takeIf { !it.isNullOrEmpty() }
+                    )
+                )
+            }
+            list.ifEmpty { DateAdventureCatalog.defaultAdventures }.also { cachedAdventures = it }
+        } catch (_: Exception) {
+            DateAdventureCatalog.defaultAdventures.also { cachedAdventures = it }
+        }
+    }
+
+    fun saveDateAdventures(list: List<DateAdventure>) {
+        cachedAdventures = list
+        val arr = JSONArray()
+        list.forEach { adv ->
+            val obj = JSONObject().apply {
+                put("id", adv.id)
+                put("title", adv.title)
+                put("description", adv.description)
+                put("category", adv.category)
+                adv.sceneHint?.let { put("sceneHint", it) }
+                put("status", adv.status.name)
+                put("completedByBoy", adv.completedByBoy)
+                put("completedByGirl", adv.completedByGirl)
+                adv.completedTimestamp?.let { put("completedTimestamp", it) }
+                adv.unlockedArtifact?.let { put("unlockedArtifact", it) }
+            }
+            arr.put(obj)
+        }
+        prefs.edit().putString("date_adventures_json", arr.toString()).apply()
+    }
+
+    fun updateAdventureStatus(
+        id: String,
+        status: AdventureStatus,
+        completedByBoy: Boolean = false,
+        completedByGirl: Boolean = false
+    ) {
+        val current = getDateAdventures().toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index != -1) {
+            val old = current[index]
+            val boyDone = old.completedByBoy || completedByBoy
+            val girlDone = old.completedByGirl || completedByGirl
+            val finalStatus = if (boyDone && girlDone) AdventureStatus.COMPLETED else status
+            val updated = old.copy(
+                status = finalStatus,
+                completedByBoy = boyDone,
+                completedByGirl = girlDone,
+                completedTimestamp = if (finalStatus == AdventureStatus.COMPLETED) System.currentTimeMillis() else old.completedTimestamp
+            )
+            current[index] = updated
+            saveDateAdventures(current)
+
+            if (finalStatus == AdventureStatus.COMPLETED) {
+                WorldEventBus.post(
+                    WorldEvent.DateAdventureCompleted(
+                        id = UUID.randomUUID().toString(),
+                        timestamp = System.currentTimeMillis(),
+                        adventureId = updated.id,
+                        title = updated.title,
+                        completedBy = if (boyDone && girlDone) "both" else if (boyDone) "boy" else "girl"
+                    )
+                )
+            }
+        }
+    }
+
+    fun getCompletedAdventuresCount(): Int {
+        return getDateAdventures().count { it.status == AdventureStatus.COMPLETED || (it.completedByBoy && it.completedByGirl) }
+    }
+
+    // ── Daily Tiny Moment ──
+    private var cachedMomentResponses: MutableMap<String, DailyMomentResponse>? = null
+
+    fun getDailyMomentResponses(): Map<String, DailyMomentResponse> {
+        cachedMomentResponses?.let { return it }
+        val raw = prefs.getString("daily_moment_responses_json", null) ?: return emptyMap<String, DailyMomentResponse>().also { cachedMomentResponses = it.toMutableMap() }
+        return try {
+            val arr = JSONArray(raw)
+            val map = mutableMapOf<String, DailyMomentResponse>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val resp = DailyMomentResponse(
+                    promptId = obj.getString("promptId"),
+                    dateString = obj.getString("dateString"),
+                    boyAnswer = obj.optString("boyAnswer", null).takeIf { !it.isNullOrEmpty() },
+                    girlAnswer = obj.optString("girlAnswer", null).takeIf { !it.isNullOrEmpty() },
+                    isRevealed = obj.optBoolean("isRevealed", false),
+                    completedTimestamp = if (obj.has("completedTimestamp")) obj.getLong("completedTimestamp") else null
+                )
+                map[resp.dateString] = resp
+            }
+            map.also { cachedMomentResponses = it }
+        } catch (_: Exception) {
+            emptyMap<String, DailyMomentResponse>().also { cachedMomentResponses = it.toMutableMap() }
+        }
+    }
+
+    fun getDailyMomentResponseForDate(dateString: String, promptId: String): DailyMomentResponse {
+        val map = getDailyMomentResponses()
+        return map[dateString] ?: DailyMomentResponse(promptId = promptId, dateString = dateString)
+    }
+
+    fun saveDailyMomentResponse(response: DailyMomentResponse) {
+        val map = getDailyMomentResponses().toMutableMap()
+        map[response.dateString] = response
+        cachedMomentResponses = map
+
+        val arr = JSONArray()
+        map.values.forEach { resp ->
+            val obj = JSONObject().apply {
+                put("promptId", resp.promptId)
+                put("dateString", resp.dateString)
+                resp.boyAnswer?.let { put("boyAnswer", it) }
+                resp.girlAnswer?.let { put("girlAnswer", it) }
+                put("isRevealed", resp.isRevealed)
+                resp.completedTimestamp?.let { put("completedTimestamp", it) }
+            }
+            arr.put(obj)
+        }
+        prefs.edit().putString("daily_moment_responses_json", arr.toString()).apply()
+
+        if (response.isBothAnswered || response.isRevealed) {
+            val prompt = DailyPromptCatalog.defaultPrompts.find { it.id == response.promptId }
+            WorldEventBus.post(
+                WorldEvent.TinyMomentCompleted(
+                    id = UUID.randomUUID().toString(),
+                    timestamp = System.currentTimeMillis(),
+                    promptId = response.promptId,
+                    promptText = prompt?.question ?: "Daily Tiny Moment",
+                    isBothAnswered = response.isBothAnswered
+                )
+            )
+        }
+    }
+
+    fun getCompletedMomentsCount(): Int {
+        return getDailyMomentResponses().values.count { it.isBothAnswered || it.isRevealed }
+    }
+
+    // ── Two-Person Mini-Games ──
+    private var cachedMiniGames: List<MiniGameRound>? = null
+
+    fun getMiniGameRounds(): List<MiniGameRound> {
+        cachedMiniGames?.let { return it }
+        val raw = prefs.getString("mini_games_json", null) ?: return emptyList<MiniGameRound>().also { cachedMiniGames = it }
+        return try {
+            val arr = JSONArray(raw)
+            val list = mutableListOf<MiniGameRound>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                val optsArr = obj.getJSONArray("options")
+                val opts = mutableListOf<String>()
+                for (j in 0 until optsArr.length()) opts.add(optsArr.getString(j))
+
+                list.add(
+                    MiniGameRound(
+                        id = obj.getString("id"),
+                        questionId = obj.getString("questionId"),
+                        type = try { MiniGameType.valueOf(obj.optString("type", "WOULD_YOU_RATHER")) } catch (_: Exception) { MiniGameType.WOULD_YOU_RATHER },
+                        prompt = obj.getString("prompt"),
+                        options = opts,
+                        boyChosenIndex = if (obj.has("boyChosenIndex") && !obj.isNull("boyChosenIndex")) obj.getInt("boyChosenIndex") else null,
+                        girlChosenIndex = if (obj.has("girlChosenIndex") && !obj.isNull("girlChosenIndex")) obj.getInt("girlChosenIndex") else null,
+                        isRevealed = obj.optBoolean("isRevealed", false),
+                        timestamp = obj.optLong("timestamp", 0L)
+                    )
+                )
+            }
+            list.also { cachedMiniGames = it }
+        } catch (_: Exception) {
+            emptyList<MiniGameRound>().also { cachedMiniGames = it }
+        }
+    }
+
+    fun saveMiniGameRound(round: MiniGameRound) {
+        val current = getMiniGameRounds().toMutableList()
+        val index = current.indexOfFirst { it.id == round.id }
+        if (index != -1) {
+            current[index] = round
+        } else {
+            current.add(0, round)
+        }
+        if (current.size > 50) current.subList(50, current.size).clear()
+        cachedMiniGames = current
+
+        val arr = JSONArray()
+        current.forEach { r ->
+            val obj = JSONObject().apply {
+                put("id", r.id)
+                put("questionId", r.questionId)
+                put("type", r.type.name)
+                put("prompt", r.prompt)
+                val opts = JSONArray()
+                r.options.forEach { opts.put(it) }
+                put("options", opts)
+                r.boyChosenIndex?.let { put("boyChosenIndex", it) }
+                r.girlChosenIndex?.let { put("girlChosenIndex", it) }
+                put("isRevealed", r.isRevealed)
+                put("timestamp", r.timestamp)
+            }
+            arr.put(obj)
+        }
+        prefs.edit().putString("mini_games_json", arr.toString()).apply()
+
+        if (round.isBothAnswered || round.isRevealed) {
+            WorldEventBus.post(
+                WorldEvent.MiniGameCompleted(
+                    id = UUID.randomUUID().toString(),
+                    timestamp = System.currentTimeMillis(),
+                    gameId = round.id,
+                    gameTypeName = round.type.title,
+                    summary = if (round.isMatch) "Sweet Match!" else "Shared Perspective"
+                )
+            )
+        }
+    }
+
+    fun getCompletedMiniGamesCount(): Int {
+        return getMiniGameRounds().count { it.isBothAnswered || it.isRevealed }
+    }
+
+    // ── Shared Mood ──
+    fun getPartnerMoodState(): PartnerMoodState {
+        val boyMoodId = prefs.getString("boy_mood", "good") ?: "good"
+        val boyShared = prefs.getBoolean("boy_mood_shared", true)
+        val girlMoodId = prefs.getString("girl_mood", "good") ?: "good"
+        val girlShared = prefs.getBoolean("girl_mood_shared", true)
+        val lastUpdated = prefs.getLong("mood_last_updated", 0L)
+        return PartnerMoodState(
+            boyMood = SharedMoodType.fromId(boyMoodId),
+            boyMoodShared = boyShared,
+            girlMood = SharedMoodType.fromId(girlMoodId),
+            girlMoodShared = girlShared,
+            lastUpdated = lastUpdated
+        )
+    }
+
+    fun setPartnerMood(partner: String, mood: SharedMoodType, isShared: Boolean) {
+        val editor = prefs.edit()
+        val now = System.currentTimeMillis()
+        if (partner.equals("boy", ignoreCase = true)) {
+            editor.putString("boy_mood", mood.id)
+            editor.putBoolean("boy_mood_shared", isShared)
+        } else {
+            editor.putString("girl_mood", mood.id)
+            editor.putBoolean("girl_mood_shared", isShared)
+        }
+        editor.putLong("mood_last_updated", now)
+        editor.apply()
+
+        WorldEventBus.post(
+            WorldEvent.SharedMoodChanged(
+                id = UUID.randomUUID().toString(),
+                timestamp = now,
+                partner = partner,
+                moodName = mood.displayName,
+                isShared = isShared
+            )
+        )
+    }
+
+    // ── Long-Distance Mode ──
+    private var cachedSignals: List<LongDistanceSignal>? = null
+
+    fun getLongDistanceSignals(): List<LongDistanceSignal> {
+        cachedSignals?.let { return it }
+        val raw = prefs.getString("ld_signals_json", null) ?: return emptyList<LongDistanceSignal>().also { cachedSignals = it }
+        return try {
+            val arr = JSONArray(raw)
+            val list = mutableListOf<LongDistanceSignal>()
+            for (i in 0 until arr.length()) {
+                val obj = arr.getJSONObject(i)
+                list.add(
+                    LongDistanceSignal(
+                        id = obj.getString("id"),
+                        sender = obj.getString("sender"),
+                        type = LongDistanceSignalType.fromId(obj.getString("type")),
+                        note = obj.optString("note", null).takeIf { !it.isNullOrEmpty() },
+                        timestamp = obj.getLong("timestamp"),
+                        isViewed = obj.optBoolean("isViewed", false)
+                    )
+                )
+            }
+            list.also { cachedSignals = it }
+        } catch (_: Exception) {
+            emptyList<LongDistanceSignal>().also { cachedSignals = it }
+        }
+    }
+
+    fun sendLongDistanceSignal(signal: LongDistanceSignal) {
+        val current = getLongDistanceSignals().toMutableList()
+        current.add(0, signal)
+        if (current.size > 50) current.subList(50, current.size).clear()
+        saveLongDistanceSignals(current)
+
+        WorldEventBus.post(
+            WorldEvent.PartnerSignalReceived(
+                id = signal.id,
+                timestamp = signal.timestamp,
+                sender = signal.sender,
+                signalTypeName = signal.type.title,
+                note = signal.note
+            )
+        )
+    }
+
+    fun markSignalViewed(id: String) {
+        val current = getLongDistanceSignals().toMutableList()
+        val index = current.indexOfFirst { it.id == id }
+        if (index != -1) {
+            current[index] = current[index].copy(isViewed = true)
+            saveLongDistanceSignals(current)
+        }
+    }
+
+    private fun saveLongDistanceSignals(list: List<LongDistanceSignal>) {
+        cachedSignals = list
+        val arr = JSONArray()
+        list.forEach { sig ->
+            val obj = JSONObject().apply {
+                put("id", sig.id)
+                put("sender", sig.sender)
+                put("type", sig.type.id)
+                sig.note?.let { put("note", it) }
+                put("timestamp", sig.timestamp)
+                put("isViewed", sig.isViewed)
+            }
+            arr.put(obj)
+        }
+        prefs.edit().putString("ld_signals_json", arr.toString()).apply()
+    }
+
+    // ── Widget Data Payload ──
+    fun getWidgetData(currentWeather: String = "Sunny", timePhase: String = "Day", sceneName: String = "Living Room"): TinyUsWidgetData {
+        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
+        val dayIndex = RelationshipTimeManager.calculateTinyUsDay().toInt()
+        val prompt = DailyPromptCatalog.getPromptForDay(dayIndex)
+        val momentResp = getDailyMomentResponseForDate(todayStr, prompt.id)
+        val mood = getPartnerMoodState()
+        val latestSig = getLongDistanceSignals().firstOrNull()
+
+        return TinyUsWidgetData(
+            coupleNames = "$boyfriendName & $girlfriendName",
+            daysTogether = RelationshipTimeManager.calculateTinyUsDay(),
+            sceneName = sceneName,
+            weatherName = currentWeather,
+            timePhase = timePhase,
+            dailyMomentPrompt = prompt.question,
+            dailyMomentAnswered = momentResp.isBothAnswered || momentResp.isRevealed,
+            latestSignalText = latestSig?.let { "${it.type.emoji} ${it.type.title}" },
+            sharedMoodEmoji = mood.boyMood.emoji,
+            sharedMoodText = mood.boyMood.displayName,
+            lastUpdatedTimestamp = System.currentTimeMillis()
+        )
     }
 }

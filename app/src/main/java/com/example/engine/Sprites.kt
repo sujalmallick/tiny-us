@@ -2860,5 +2860,368 @@ object WorldSprites {
             }
         }
     }
+
+    /**
+     * Woven wicker adventure picnic basket with red-and-white gingham cloth peeking out.
+     * Unlocked by completing 1+ Tiny Date Adventures.
+     */
+    fun drawAdventurePicnicBasket(scope: DrawScope, cx: Float, groundY: Float, p: Float) {
+        val bw = 16 * p
+        val bh = 11 * p
+        val bLeft = cx - bw / 2f
+        val bTop = groundY - bh
+
+        // Ground shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.22f),
+            Offset(bLeft - p, groundY - 2.5f * p),
+            Size(bw + 2 * p, 4 * p)
+        )
+
+        // Basket body (woven golden wicker)
+        val wickerBase = Color(0xFFC48B47)
+        val wickerDark = Color(0xFF9E652A)
+        val wickerLight = Color(0xFFE2B06F)
+        scope.drawRect(wickerBase, Offset(bLeft, bTop + 3 * p), Size(bw, bh - 3 * p))
+
+        // Weave cross-hatch accents
+        for (i in 0..3) {
+            val yOffset = bTop + (4 + i * 2) * p
+            scope.drawRect(wickerDark, Offset(bLeft, yOffset), Size(bw, p))
+            for (j in 0..3) {
+                val xOffset = bLeft + (1 + j * 4 + (i % 2) * 2) * p
+                scope.drawRect(wickerLight, Offset(xOffset, yOffset - p), Size(1.5f * p, p))
+            }
+        }
+
+        // Overhanging red-and-white gingham picnic cloth
+        val ginghamRed = Color(0xFFE63946)
+        val ginghamLight = Color(0xFFFFA8B0)
+        scope.drawRect(ginghamRed, Offset(bLeft + 2 * p, bTop + 2.5f * p), Size(5 * p, 4 * p))
+        scope.drawRect(Color.White, Offset(bLeft + 3 * p, bTop + 3 * p), Size(2 * p, 2 * p))
+        scope.drawRect(ginghamLight, Offset(bLeft + 2 * p, bTop + 4.5f * p), Size(2 * p, 2 * p))
+
+        // Basket lid & rim
+        scope.drawRect(wickerDark, Offset(bLeft - p, bTop + 2 * p), Size(bw + 2 * p, 2 * p))
+        scope.drawRect(wickerLight, Offset(bLeft, bTop + 1.5f * p), Size(bw, p))
+
+        // Wicker arch handle
+        scope.drawRect(wickerDark, Offset(cx - 5 * p, bTop - 4 * p), Size(p, 6 * p))
+        scope.drawRect(wickerDark, Offset(cx + 4 * p, bTop - 4 * p), Size(p, 6 * p))
+        scope.drawRect(wickerLight, Offset(cx - 5 * p, bTop - 5 * p), Size(10 * p, 1.5f * p))
+    }
+
+    /**
+     * Bedside desk notepad with pencil and folded paper corner.
+     * Unlocked by completing 1+ Daily Tiny Moments.
+     */
+    fun drawBedsideNotepad(scope: DrawScope, cx: Float, groundY: Float, p: Float) {
+        val nw = 11 * p
+        val nh = 8 * p
+        val nLeft = cx - nw / 2f
+        val nTop = groundY - nh
+
+        // Ground shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.18f),
+            Offset(nLeft - p, groundY - 2 * p),
+            Size(nw + 2 * p, 3 * p)
+        )
+
+        // Notepad paper backing
+        val paperCream = Color(0xFFFFFDF5)
+        val paperShadow = Color(0xFFE8E2D5)
+        val lineBlue = Color(0xFFB0C4DE).copy(alpha = 0.6f)
+        scope.drawRect(paperShadow, Offset(nLeft + 0.5f * p, nTop + 0.5f * p), Size(nw, nh))
+        scope.drawRect(paperCream, Offset(nLeft, nTop), Size(nw, nh))
+
+        // Lined pages
+        scope.drawRect(lineBlue, Offset(nLeft + 2 * p, nTop + 2.5f * p), Size(nw - 4 * p, 0.8f * p))
+        scope.drawRect(lineBlue, Offset(nLeft + 2 * p, nTop + 4.5f * p), Size(nw - 4 * p, 0.8f * p))
+
+        // Top binder strip (warm leather / coral tape)
+        scope.drawRect(Color(0xFFE07A5F), Offset(nLeft, nTop), Size(nw, 1.5f * p))
+
+        // Little yellow wooden pencil alongside
+        val pencilYellow = Color(0xFFFFB703)
+        val pencilLead = Color(0xFF2B2D42)
+        val px = nLeft + nw + 1.5f * p
+        scope.drawRect(pencilYellow, Offset(px, nTop + p), Size(1.5f * p, 6 * p))
+        scope.drawRect(Color(0xFFE9C46A), Offset(px, nTop + 7 * p), Size(1.5f * p, 1.2f * p))
+        scope.drawRect(pencilLead, Offset(px + 0.2f * p, nTop + 8.2f * p), Size(1.1f * p, p))
+    }
+
+    /**
+     * Handcrafted wooden mini-game board box on table / shelf.
+     * Unlocked by completing 1+ Two-Person Mini-Games.
+     */
+    fun drawMiniGameBoard(scope: DrawScope, cx: Float, groundY: Float, p: Float) {
+        val gw = 14 * p
+        val gh = 6 * p
+        val gLeft = cx - gw / 2f
+        val gTop = groundY - gh
+
+        // Soft drop shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.22f),
+            Offset(gLeft - p, groundY - 2 * p),
+            Size(gw + 2 * p, 3.5f * p)
+        )
+
+        // Wood game box (warm mahogany)
+        val woodDark = Color(0xFF6B4226)
+        val woodMid = Color(0xFF8B5A2B)
+        val woodLight = Color(0xFFA0522D)
+        val brassGold = Color(0xFFFFD166)
+
+        scope.drawRect(woodDark, Offset(gLeft, gTop), Size(gw, gh))
+        scope.drawRect(woodMid, Offset(gLeft + p, gTop + p), Size(gw - 2 * p, gh - 2 * p))
+
+        // Checkerboard inlay on top
+        val checkDark = Color(0xFF3D2314)
+        val checkLight = Color(0xFFDEB887)
+        for (row in 0..1) {
+            for (col in 0..3) {
+                val color = if ((row + col) % 2 == 0) checkLight else checkDark
+                scope.drawRect(color, Offset(gLeft + 2 * p + col * 2.5f * p, gTop + 1.2f * p + row * 1.8f * p), Size(2.2f * p, 1.5f * p))
+            }
+        }
+
+        // Brass corner braces and center latch
+        scope.drawRect(brassGold, Offset(gLeft, gTop), Size(1.5f * p, 1.5f * p))
+        scope.drawRect(brassGold, Offset(gLeft + gw - 1.5f * p, gTop), Size(1.5f * p, 1.5f * p))
+        scope.drawRect(brassGold, Offset(cx - p, gTop + gh - 2 * p), Size(2 * p, 1.8f * p))
+    }
+
+    /**
+     * Delicate folded origami heart on windowsill / desk.
+     * Unlocked by sending or receiving a Long-Distance signal.
+     */
+    fun drawOrigamiHeart(scope: DrawScope, cx: Float, groundY: Float, p: Float) {
+        val hw = 9 * p
+        val hh = 8 * p
+        val hLeft = cx - hw / 2f
+        val hTop = groundY - hh
+
+        // Contact drop shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.16f),
+            Offset(hLeft, groundY - 1.5f * p),
+            Size(hw, 2.5f * p)
+        )
+
+        // Crisp folded origami facet colors (Japanese washi paper)
+        val facetMain = Color(0xFFFF4D6D)
+        val facetLight = Color(0xFFFF758F)
+        val facetDeep = Color(0xFFC9184A)
+        val facetFold = Color(0xFF800F2F).copy(alpha = 0.5f)
+
+        // Left lobe
+        scope.drawRect(facetLight, Offset(hLeft + p, hTop), Size(3.5f * p, 3.5f * p))
+        // Right lobe
+        scope.drawRect(facetMain, Offset(hLeft + 4.5f * p, hTop), Size(3.5f * p, 3.5f * p))
+
+        // Center fold triangle body
+        scope.drawRect(facetMain, Offset(hLeft + 1.5f * p, hTop + 2.5f * p), Size(6 * p, 3 * p))
+        scope.drawRect(facetDeep, Offset(hLeft + 2.5f * p, hTop + 5 * p), Size(4 * p, 2 * p))
+        scope.drawRect(facetDeep, Offset(hLeft + 3.5f * p, hTop + 6.8f * p), Size(2 * p, 1.2f * p))
+
+        // Origami crease fold line down the center
+        scope.drawRect(facetFold, Offset(cx - 0.4f * p, hTop + 1.5f * p), Size(0.8f * p, 5 * p))
+    }
+
+    fun drawAromatherapyCandle(
+        scope: DrawScope,
+        cx: Float,
+        groundY: Float,
+        p: Float,
+        isLit: Boolean,
+        timeSeconds: Float
+    ) {
+        val cw = 8 * p
+        val ch = 9 * p
+        val left = cx - cw / 2f
+        val top = groundY - ch
+
+        // Soft drop shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.18f),
+            Offset(left - p, groundY - 1.5f * p),
+            Size(cw + 2 * p, 2.5f * p)
+        )
+
+        // Ceramic jar body (warm terracotta/cream)
+        scope.drawRect(Color(0xFFE8DCC4), Offset(left, top + 2 * p), Size(cw, ch - 2 * p))
+        scope.drawRect(Color(0xFFD4C4A8), Offset(left + cw - 1.5f * p, top + 2 * p), Size(1.5f * p, ch - 2 * p))
+        scope.drawRect(Color(0xFFFAF6EE), Offset(left, top + 2 * p), Size(1.2f * p, ch - 2 * p))
+
+        // Soy wax surface
+        scope.drawOval(Color(0xFFFFF9EE), Offset(left + 0.5f * p, top + 1.2f * p), Size(cw - p, 2.2f * p))
+
+        // Dark wick
+        scope.drawRect(Color(0xFF2B2B2B), Offset(cx - 0.4f * p, top + 0.4f * p), Size(0.8f * p, 1.8f * p))
+
+        if (isLit) {
+            val flicker = kotlin.math.sin(timeSeconds * 12f) * 0.4f * p
+            val flameH = 4.5f * p + flicker
+
+            // Warm halo glow
+            val glowRadius = 14f * p + flicker * 2f
+            scope.drawOval(
+                Color(0xFFFFD166).copy(alpha = 0.22f),
+                Offset(cx - glowRadius, top - flameH * 0.5f - glowRadius),
+                Size(glowRadius * 2, glowRadius * 2)
+            )
+
+            // Outer flame (warm amber)
+            scope.drawOval(
+                Color(0xFFFFAA00),
+                Offset(cx - 1.6f * p, top - flameH),
+                Size(3.2f * p, flameH)
+            )
+            // Inner core flame (bright white-yellow)
+            scope.drawOval(
+                Color(0xFFFFFDF0),
+                Offset(cx - 0.9f * p, top - flameH + 1.2f * p),
+                Size(1.8f * p, flameH - 1.5f * p)
+            )
+        }
+    }
+
+    fun drawPorchWindChimes(
+        scope: DrawScope,
+        cx: Float,
+        topY: Float,
+        p: Float,
+        swayProgress: Float,
+        timeSeconds: Float
+    ) {
+        val naturalBreeze = kotlin.math.sin(timeSeconds * 2.2f) * 1.5f
+        val activeSway = if (swayProgress > 0f) kotlin.math.sin(swayProgress * 10f) * 6f else 0f
+        val totalSway = (naturalBreeze + activeSway) * p
+
+        // Top hanger hook & thread
+        scope.drawRect(Color(0xFF7F5539), Offset(cx - 0.5f * p, topY), Size(1f * p, 4 * p))
+
+        // Top wooden disk
+        val diskW = 14 * p
+        val diskLeft = cx - diskW / 2f
+        scope.drawRect(Color(0xFF9C6644), Offset(diskLeft, topY + 4 * p), Size(diskW, 2.5f * p))
+        scope.drawRect(Color(0xFFB08968), Offset(diskLeft, topY + 4 * p), Size(diskW, 0.8f * p))
+
+        // 4 Chime pipes with varied lengths and sway
+        val pipeColor = Color(0xFFC5BAAF)
+        val pipeHighlight = Color(0xFFEBE6E0)
+        val pipeShadow = Color(0xFF9E9285)
+
+        val lengths = floatArrayOf(12f, 16f, 14f, 10f)
+        val offsets = floatArrayOf(-4.5f, -1.5f, 1.5f, 4.5f)
+
+        for (i in 0 until 4) {
+            val px = cx + offsets[i] * p + totalSway * (0.6f + i * 0.1f)
+            val py = topY + 7.5f * p
+            val ph = lengths[i] * p
+            scope.drawRect(pipeColor, Offset(px - p, py), Size(2 * p, ph))
+            scope.drawRect(pipeHighlight, Offset(px - p, py), Size(0.6f * p, ph))
+            scope.drawRect(pipeShadow, Offset(px + 0.4f * p, py), Size(0.6f * p, ph))
+        }
+
+        // Center thread, wooden clapper, and sail
+        val sailY = topY + 28 * p
+        val sailX = cx + totalSway * 1.4f
+        scope.drawRect(Color(0xFFB08968), Offset(cx - 0.3f * p + totalSway * 0.8f, topY + 14 * p), Size(0.6f * p, 8 * p))
+        // Crystal / wooden wind sail
+        scope.drawRect(Color(0xFFFFB5C2), Offset(sailX - 2.5f * p, sailY), Size(5 * p, 7 * p))
+        scope.drawRect(Color(0xFFFF758F), Offset(sailX - 1.5f * p, sailY + 1 * p), Size(3 * p, 5 * p))
+    }
+
+    fun drawFeatherWand(
+        scope: DrawScope,
+        baseX: Float,
+        baseY: Float,
+        p: Float,
+        wiggleProgress: Float,
+        timeSeconds: Float
+    ) {
+        val wiggleAngle = if (wiggleProgress > 0f) kotlin.math.sin(wiggleProgress * 12f) * 8f * p else kotlin.math.sin(timeSeconds * 1.8f) * 1.2f * p
+
+        // Natural slender wooden stick (tilted ~40 degrees)
+        val tipX = baseX + 14 * p + wiggleAngle
+        val tipY = baseY - 22 * p
+
+        scope.drawLine(
+            Color(0xFFB08968),
+            Offset(baseX, baseY),
+            Offset(tipX, tipY),
+            strokeWidth = 1.8f * p
+        )
+
+        // Hanging string
+        val cordEnd = Offset(tipX + wiggleAngle * 1.2f, tipY + 10 * p)
+        scope.drawLine(
+            Color(0xFFE2D6CA),
+            Offset(tipX, tipY),
+            cordEnd,
+            strokeWidth = 0.8f * p
+        )
+
+        // 3 playful pastel feathers (Rose, Sky, Mint)
+        val feather1 = Color(0xFFFF758F)
+        val feather2 = Color(0xFF48CAE4)
+        val feather3 = Color(0xFF80ED99)
+
+        scope.drawOval(feather1, Offset(cordEnd.x - 2.5f * p, cordEnd.y), Size(5 * p, 7 * p))
+        scope.drawOval(feather2, Offset(cordEnd.x - 4 * p, cordEnd.y + 2 * p), Size(4 * p, 6 * p))
+        scope.drawOval(feather3, Offset(cordEnd.x + 0.5f * p, cordEnd.y + 1.5f * p), Size(4 * p, 6.5f * p))
+    }
+
+    fun drawVintageTelescope(
+        scope: DrawScope,
+        cx: Float,
+        groundY: Float,
+        p: Float,
+        timeSeconds: Float
+    ) {
+        val tripodH = 26 * p
+        val topY = groundY - tripodH
+        val legSpread = 13 * p
+
+        // Contact drop shadow
+        scope.drawOval(
+            Color.Black.copy(alpha = 0.22f),
+            Offset(cx - legSpread - 2 * p, groundY - 2 * p),
+            Size(legSpread * 2 + 4 * p, 3.5f * p)
+        )
+
+        // Tripod legs (rich mahogany wood with brass tips)
+        val woodLeg = Color(0xFF5E3023)
+        val brass = Color(0xFFE0A96D)
+        val brassHighlight = Color(0xFFF7D070)
+
+        scope.drawLine(woodLeg, Offset(cx, topY), Offset(cx - legSpread, groundY), strokeWidth = 2.2f * p)
+        scope.drawLine(woodLeg, Offset(cx, topY), Offset(cx + legSpread, groundY), strokeWidth = 2.2f * p)
+        scope.drawLine(woodLeg, Offset(cx, topY), Offset(cx, groundY + p), strokeWidth = 2f * p)
+
+        // Brass mount & pivot ring
+        scope.drawOval(brass, Offset(cx - 3 * p, topY - 2 * p), Size(6 * p, 4 * p))
+
+        // Brass telescope tube angled upward at ~32 degrees
+        val barrelLen = 22 * p
+        val tiltAngle = -0.48f // radians (~28 deg upwards)
+        val barrelEndX = cx + kotlin.math.cos(tiltAngle) * barrelLen
+        val barrelEndY = topY + kotlin.math.sin(tiltAngle) * barrelLen
+        val eyepieceX = cx - kotlin.math.cos(tiltAngle) * 8 * p
+        val eyepieceY = topY - kotlin.math.sin(tiltAngle) * 8 * p
+
+        // Main barrel
+        scope.drawLine(brass, Offset(eyepieceX, eyepieceY), Offset(barrelEndX, barrelEndY), strokeWidth = 4.2f * p)
+        scope.drawLine(brassHighlight, Offset(eyepieceX, eyepieceY - 0.8f * p), Offset(barrelEndX, barrelEndY - 0.8f * p), strokeWidth = 1.2f * p)
+
+        // Front lens hood
+        scope.drawRect(Color(0xFFC68B59), Offset(barrelEndX - p, barrelEndY - 2.5f * p), Size(3.5f * p, 5f * p))
+        // Glass lens glint
+        val glintAlpha = 0.6f + kotlin.math.sin(timeSeconds * 3f) * 0.3f
+        scope.drawRect(Color(0xFFBCE7FD).copy(alpha = glintAlpha), Offset(barrelEndX + 1.5f * p, barrelEndY - 2 * p), Size(1.2f * p, 4f * p))
+    }
 }
 

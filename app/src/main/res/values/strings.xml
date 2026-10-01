@@ -8,4 +8,5 @@
     <string name="sound_toggle">Toggle ambient sounds</string>
     <string name="replay_scene">Replay scene</string>
     <string name="next_scene">Next surprise scene</string>
+    <string name="widget_description">A cozy pixel window into your Tiny Us world</string>
 </resources>

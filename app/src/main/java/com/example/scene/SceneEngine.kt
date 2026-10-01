@@ -186,6 +186,15 @@ class SceneEngine(
     var loftFairyLightsTimer: Float by mutableFloatStateOf(0f) // drives string lights cascading twinkle (1.6 s)
     var loftWindowTimer: Float by mutableFloatStateOf(0f)      // drives window panel sliding open with breeze/leaves (2.0 s)
 
+    // Interactive Cozy Objects states and timers
+    var hearthCandleLit: Boolean by mutableStateOf(false)
+    var teakettleWhistleTimer: Float by mutableFloatStateOf(0f)
+    var cuddleBlanketTimer: Float by mutableFloatStateOf(0f)
+    var windChimeSwayTimer: Float by mutableFloatStateOf(0f)
+    var featherWandWiggleTimer: Float by mutableFloatStateOf(0f)
+    var plantWaterTimer: Float by mutableFloatStateOf(0f)
+    var telescopeStarTimer: Float by mutableFloatStateOf(0f)
+
     var lightningFlashAlpha: Float by mutableFloatStateOf(0f)
     var lightningTimer: Float = 0f
     private var nextLightningTime: Float = 14f
@@ -325,11 +334,99 @@ class SceneEngine(
     private val recentSceneHistory = mutableListOf<SceneType>()
     private val allScenes = SceneType.values().toList()
 
+    private val worldEventListener = com.example.data.WorldEventListener { event ->
+        triggerWorldEventReaction(event)
+    }
+
     init {
         loadScene(SceneType.FLOWER)
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = false)
         if (audio.isEnabled) {
             audio.playWeatherBgm(weather, isAutomaticDrift = false)
+        }
+        com.example.data.WorldEventBus.subscribe(worldEventListener)
+    }
+
+    fun triggerWorldEventReaction(event: com.example.data.WorldEvent) {
+        if (isWatchSceneActive) return // Respect cinematic priority
+
+        when (event) {
+            is com.example.data.WorldEvent.PartnerSignalReceived -> {
+                val receiver = if (event.sender.equals("boy", ignoreCase = true)) girl else boy
+                receiver.reactionTimer = 3.5f
+                receiver.emotion = CharacterEmotion.LOVING
+                receiver.emote = when (event.signalTypeName) {
+                    "Need a Hug" -> EmoteType.HEART
+                    "Thinking of You" -> EmoteType.DOTS
+                    "Good Morning" -> EmoteType.SPARKLE
+                    "Good Night" -> EmoteType.SLEEP_Z
+                    else -> EmoteType.HEART
+                }
+                receiver.emoteTimer = 3.0f
+                audio.playHeartChime()
+                particles.spawnHeart(800f * receiver.worldX, 600f * receiver.worldY)
+            }
+            is com.example.data.WorldEvent.DateAdventureCompleted -> {
+                boy.reactionTimer = 3.0f
+                girl.reactionTimer = 3.0f
+                boy.pose = CharacterPose.JOY_JUMP
+                girl.pose = CharacterPose.JOY_JUMP
+                boy.emote = EmoteType.SPARKLE
+                girl.emote = EmoteType.SPARKLE
+                boy.emoteTimer = 2.8f
+                girl.emoteTimer = 2.8f
+                audio.playHeartChime()
+                particles.spawnHeart(400f, 300f)
+            }
+            is com.example.data.WorldEvent.TinyMomentCompleted -> {
+                boy.reactionTimer = 2.8f
+                girl.reactionTimer = 2.8f
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.LOVING
+                boy.emote = EmoteType.MUSIC_NOTE
+                girl.emote = EmoteType.MUSIC_NOTE
+                boy.emoteTimer = 2.5f
+                girl.emoteTimer = 2.5f
+                audio.playHeartChime()
+            }
+            is com.example.data.WorldEvent.MiniGameCompleted -> {
+                boy.reactionTimer = 2.6f
+                girl.reactionTimer = 2.6f
+                boy.emotion = CharacterEmotion.PLAYFUL
+                girl.emotion = CharacterEmotion.PLAYFUL
+                boy.emote = EmoteType.HEART
+                girl.emote = EmoteType.HEART
+                boy.emoteTimer = 2.2f
+                girl.emoteTimer = 2.2f
+                audio.playBubblePop()
+            }
+            is com.example.data.WorldEvent.SharedMoodChanged -> {
+                when (event.moodName) {
+                    "Tired" -> {
+                        val target = if (event.partner.equals("boy", ignoreCase = true)) boy else girl
+                        target.reactionTimer = 3.5f
+                        target.emotion = CharacterEmotion.SLEEPY
+                        target.pose = CharacterPose.SLEEP_YAWN
+                        catState = CatState.SLEEPING
+                    }
+                    "Missing You" -> {
+                        val target = if (event.partner.equals("boy", ignoreCase = true)) boy else girl
+                        target.reactionTimer = 3.0f
+                        target.emotion = CharacterEmotion.SHY
+                        target.emote = EmoteType.HEART
+                        target.emoteTimer = 2.5f
+                    }
+                    "Great" -> {
+                        val target = if (event.partner.equals("boy", ignoreCase = true)) boy else girl
+                        target.reactionTimer = 2.5f
+                        target.emotion = CharacterEmotion.HAPPY
+                        target.emote = EmoteType.SPARKLE
+                        target.emoteTimer = 2.0f
+                    }
+                    else -> {}
+                }
+            }
+            else -> {}
         }
     }
 
@@ -426,6 +523,12 @@ class SceneEngine(
         livingRoomReturnTimer = 0f
         livingRoomReturnChar = null
         cuddleProgress = 0f
+        teakettleWhistleTimer = 0f
+        cuddleBlanketTimer = 0f
+        windChimeSwayTimer = 0f
+        featherWandWiggleTimer = 0f
+        plantWaterTimer = 0f
+        telescopeStarTimer = 0f
 
         // Reset Feature 1 (Mochi Matchmaker) & compute Feature 2 (Tree Bark Growth)
         mochiMatchmakerActive = false
@@ -1647,6 +1750,15 @@ class SceneEngine(
         if (loftBookNookTimer > 0f) loftBookNookTimer = (loftBookNookTimer - deltaSeconds).coerceAtLeast(0f)
         if (loftFairyLightsTimer > 0f) loftFairyLightsTimer = (loftFairyLightsTimer - deltaSeconds).coerceAtLeast(0f)
         if (loftWindowTimer > 0f) loftWindowTimer = (loftWindowTimer - deltaSeconds).coerceAtLeast(0f)
+
+        // Interactive Cozy Objects countdowns
+        if (teakettleWhistleTimer > 0f) teakettleWhistleTimer = (teakettleWhistleTimer - deltaSeconds).coerceAtLeast(0f)
+        if (cuddleBlanketTimer > 0f) cuddleBlanketTimer = (cuddleBlanketTimer - deltaSeconds).coerceAtLeast(0f)
+        if (windChimeSwayTimer > 0f) windChimeSwayTimer = (windChimeSwayTimer - deltaSeconds).coerceAtLeast(0f)
+        if (featherWandWiggleTimer > 0f) featherWandWiggleTimer = (featherWandWiggleTimer - deltaSeconds).coerceAtLeast(0f)
+        if (plantWaterTimer > 0f) plantWaterTimer = (plantWaterTimer - deltaSeconds).coerceAtLeast(0f)
+        if (telescopeStarTimer > 0f) telescopeStarTimer = (telescopeStarTimer - deltaSeconds).coerceAtLeast(0f)
+
         // Feature 1: Mochi Matchmaker countdown timers
         if (mochiMatchmakerCooldown > 0f) {
             mochiMatchmakerCooldown = (mochiMatchmakerCooldown - deltaSeconds).coerceAtLeast(0f)
@@ -4912,5 +5024,147 @@ class SceneEngine(
             couchVisualPhase = CouchPhase.NIGHT
             showMessage("Lamp off — time to drift away together.", duration = 2.5f)
         }
+    }
+
+    // ── Interactive Cozy Objects Touch Handlers ──────────────────────────────
+
+    fun onTouchAromatherapyCandle(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        hearthCandleLit = !hearthCandleLit
+        audio.playCandleFlicker()
+        if (hearthCandleLit) {
+            particles.spawnSparkles(touchX, touchY, 6)
+            particles.spawnHeart(touchX, touchY - 15f, Color(0xFFFFD166))
+            boy.emotion = CharacterEmotion.LOVING
+            girl.emotion = CharacterEmotion.LOVING
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.SPARKLE
+            boy.reactionTimer = 3.0f
+            girl.reactionTimer = 3.0f
+            showMessage("Lit the lavender soy candle... warm, calming scent fills the room 🕯️", duration = 3.0f)
+        } else {
+            repeat(3) { particles.spawnSteam(touchX, touchY - 8f) }
+            showMessage("Blew out the candle with a gentle breath. Time to rest.", duration = 2.5f)
+        }
+    }
+
+    fun onTouchTeakettle(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        if (teakettleWhistleTimer > 0f) return
+        teakettleWhistleTimer = 2.2f
+        audio.playSteamHiss()
+        audio.playCookingBubbles()
+        repeat(8) {
+            particles.spawnSteam(touchX + (Random.nextFloat() - 0.5f) * 12f, touchY - 14f)
+        }
+        particles.spawnHeart(touchX, touchY - 26f, Color(0xFFFF9EAA))
+        girl.worldX = 0.58f
+        girl.direction = Direction.RIGHT
+        girl.pose = CharacterPose.COOK
+        girl.emotion = CharacterEmotion.HAPPY
+        girl.emote = EmoteType.MUSIC_NOTE
+        girl.emoteTimer = 2.5f
+        girl.reactionTimer = 3.5f
+
+        boy.worldX = 0.50f
+        boy.direction = Direction.RIGHT
+        boy.pose = CharacterPose.EAT_SNEAK
+        boy.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.HEART
+        boy.emoteTimer = 2.5f
+        boy.reactionTimer = 3.5f
+
+        showMessage("Whistling teakettle! Fresh hot tea steeping for both of us ☕", duration = 3.0f)
+    }
+
+    fun onTouchCouchThrow(cw: Float, ch: Float) {
+        if (cuddleBlanketTimer > 0f) return
+        cuddleBlanketTimer = 3.5f
+        audio.playLeafRustle()
+        particles.spawnHeart(cw * 0.48f, ch * 0.65f, Color(0xFFFF758F))
+        boy.moveTo(0.46f)
+        girl.moveTo(0.50f)
+        boy.pose = CharacterPose.SIT_SNUGGLE
+        girl.pose = CharacterPose.SIT_SNUGGLE
+        boy.targetPose = CharacterPose.SIT_SNUGGLE
+        girl.targetPose = CharacterPose.SIT_SNUGGLE
+        boy.emotion = CharacterEmotion.LOVING
+        girl.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.HEART
+        girl.emote = EmoteType.HEART
+        boy.reactionTimer = 4.0f
+        girl.reactionTimer = 4.0f
+
+        // Mochi curls up at the edge of the blanket
+        catWorldX = 0.40f
+        catWorldY = 0.68f
+        catState = CatState.SLEEPING
+        catSleeping = true
+
+        showMessage("Snuggling warm under the chunky knit throw together 💕", duration = 3.2f)
+    }
+
+    fun onTouchWindChimes(touchX: Float, touchY: Float) {
+        if (windChimeSwayTimer > 0f) return
+        windChimeSwayTimer = 2.5f
+        audio.playWindChime()
+        particles.spawnSparkles(touchX, touchY + 16f, 6)
+        particles.spawnSparkles(touchX, touchY + 36f, 4)
+        boy.emotion = CharacterEmotion.HAPPY
+        girl.emotion = CharacterEmotion.HAPPY
+        boy.emote = EmoteType.MUSIC_NOTE
+        girl.emote = EmoteType.SPARKLE
+        boy.reactionTimer = 3.0f
+        girl.reactionTimer = 3.0f
+        showMessage("The crystalline porch wind chime sings in the breeze 🎐", duration = 3.0f)
+    }
+
+    fun onTouchFeatherWand(touchX: Float, touchY: Float) {
+        if (featherWandWiggleTimer > 0f) return
+        featherWandWiggleTimer = 2.4f
+        audio.playCatChirp()
+        audio.playCatPurr()
+        catWorldX = 0.22f
+        catWorldY = 0.69f
+        catState = CatState.PLAYFUL_POUNCE
+        catSleeping = false
+        particles.spawnSparkles(touchX, touchY, 5)
+        particles.spawnHeart(touchX, touchY - 20f, Color(0xFFFFB5C2))
+        boy.emotion = CharacterEmotion.PLAYFUL
+        girl.emotion = CharacterEmotion.PLAYFUL
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.HEART
+        boy.reactionTimer = 3.0f
+        girl.reactionTimer = 3.0f
+        showMessage("Mochi pounces on the feather wand with pure joy! 🐾", duration = 3.0f)
+    }
+
+    fun onTouchPlantWatering(touchX: Float, touchY: Float) {
+        if (plantWaterTimer > 0f) return
+        plantWaterTimer = 2.0f
+        audio.playWaterDrip()
+        particles.spawnSparkles(touchX, touchY - 12f, 6)
+        particles.spawnHeart(touchX, touchY - 24f, Color(0xFF80ED99))
+        girl.worldX = 0.32f
+        girl.direction = Direction.LEFT
+        girl.emotion = CharacterEmotion.HAPPY
+        girl.emote = EmoteType.SPARKLE
+        girl.reactionTimer = 3.0f
+        showMessage("Watering the tender green leaves... dewdrops sparkle! 🌱", duration = 3.0f)
+    }
+
+    fun onTouchTelescope(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        if (telescopeStarTimer > 0f) return
+        telescopeStarTimer = 3.0f
+        audio.playStarArpeggio()
+        audio.playStarTwinkle()
+        particles.spawnShootingStar(cw * 0.15f, ch * 0.12f)
+        particles.spawnSparkles(touchX, touchY - 16f, 8)
+        particles.spawnHeart(touchX, touchY - 30f, Color(0xFFFFCAD4))
+        boy.direction = Direction.RIGHT
+        girl.direction = Direction.RIGHT
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.HEART
+        boy.reactionTimer = 3.5f
+        girl.reactionTimer = 3.5f
+        showMessage("A shooting star crossed the night sky! Made a quiet wish for us 🌠", duration = 3.5f)
     }
 }

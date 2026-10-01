@@ -1313,6 +1313,11 @@ fun SettingsBottomSheet(
     onOpenPolaroids: () -> Unit = {},
     onOpenDreamJournal: () -> Unit = {},
     onOpenWardrobe: () -> Unit = {},
+    onOpenDateAdventures: () -> Unit = {},
+    onOpenDailyMoment: () -> Unit = {},
+    onOpenMiniGames: () -> Unit = {},
+    onOpenSharedMood: () -> Unit = {},
+    onOpenLongDistance: () -> Unit = {},
     onJumpToScene: (SceneType) -> Unit = {}
 ) {
     var boyName by remember { mutableStateOf(prefs.boyfriendName) }
@@ -1710,6 +1715,78 @@ fun SettingsBottomSheet(
                         Spacer(modifier = Modifier.width(6.dp))
                         Text("Shared Dream Journal", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
                     }
+                }
+            }
+
+            // ── Couple Activities & Connection ──
+            SettingsCategoryHeader(
+                icon = Icons.Default.Favorite,
+                title = "Couple Activities & Connection",
+                subtitle = "Adventures, reflections, mini-games & long-distance signals"
+            )
+            SettingsSectionCard {
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenDateAdventures()
+                        },
+                        modifier = Modifier.weight(1f).testTag("settings_date_adventures_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🧺 Date Adventures", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenDailyMoment()
+                        },
+                        modifier = Modifier.weight(1f).testTag("settings_daily_moment_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = SoftRose),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("💭 Daily Moment", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenMiniGames()
+                        },
+                        modifier = Modifier.weight(1f).testTag("settings_mini_games_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🎲 Mini-Games", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+
+                    Button(
+                        onClick = {
+                            onDismiss()
+                            onOpenSharedMood()
+                        },
+                        modifier = Modifier.weight(1f).testTag("settings_shared_mood_button"),
+                        colors = ButtonDefaults.buttonColors(containerColor = PeachMuted),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text("🌸 Shared Mood", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
+                }
+
+                Button(
+                    onClick = {
+                        onDismiss()
+                        onOpenLongDistance()
+                    },
+                    modifier = Modifier.fillMaxWidth().testTag("settings_long_distance_button"),
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFFC9184A)),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Text("💌 Long-Distance Signals", fontSize = 12.5.sp, fontWeight = FontWeight.SemiBold)
                 }
             }
 

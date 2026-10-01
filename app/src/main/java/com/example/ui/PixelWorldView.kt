@@ -282,7 +282,11 @@ private enum class TapTargetKind {
 fun PixelWorldView(
     engine: SceneEngine,
     atmosphereMode: String,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onOpenDateAdventures: (() -> Unit)? = null,
+    onOpenDailyMoment: (() -> Unit)? = null,
+    onOpenMiniGames: (() -> Unit)? = null,
+    onOpenLongDistance: (() -> Unit)? = null
 ) {
     var frameNanos by remember { mutableLongStateOf(0L) }
     var viewportWidth by remember { mutableFloatStateOf(1080f) }
@@ -564,6 +568,12 @@ fun PixelWorldView(
                                     engine.onTouchCottageDoor()
                                     return@detectTapGestures
                                 }
+                                // Porch Wind Chimes
+                                if (abs(tapOffset.x - (w * 0.22f + 24f * pixelScale)) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.67f - 34f * pixelScale)) < 24f * pixelScale) {
+                                    engine.onTouchWindChimes(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 // Flowers
                                 if (tapOffset.y > h * 0.65f) {
                                     engine.onTouchFlower(w, h)
@@ -586,9 +596,13 @@ fun PixelWorldView(
                                     engine.onCycleCottageRoom()
                                     return@detectTapGestures
                                 }
-                                // 2. Stew Pot on Stovetop (left burner of counter)
-                                if (abs(tapOffset.x - w * 0.60f) < 18f * pixelScale && abs(tapOffset.y - (h * 0.67f - 18f * pixelScale)) < 18f * pixelScale) {
-                                    engine.onTouchPot(w, h)
+                                // 2. Whistling Copper Teakettle & Stew Pot on Stovetop (left burner of counter)
+                                if (abs(tapOffset.x - w * 0.60f) < 20f * pixelScale && abs(tapOffset.y - (h * 0.67f - 18f * pixelScale)) < 18f * pixelScale) {
+                                    if (engine.homeEvolutionState.hasCopperTeakettle || engine.teakettleWhistleTimer > 0f) {
+                                        engine.onTouchTeakettle(w, h, tapOffset.x, tapOffset.y)
+                                    } else {
+                                        engine.onTouchPot(w, h)
+                                    }
                                     return@detectTapGestures
                                 }
                                 // 3. Cutting board & ingredients (right side of counter)
@@ -652,6 +666,26 @@ fun PixelWorldView(
                                     engine.onTouchKitchenStool(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
+                                // 13. Picnic Basket (Home Evolution artifact)
+                                if (engine.homeEvolutionState.hasAdventurePicnicBasket &&
+                                    abs(tapOffset.x - w * 0.76f) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f - 8f * pixelScale)) < 20f * pixelScale) {
+                                    onOpenDateAdventures?.invoke()
+                                    return@detectTapGestures
+                                }
+                                // 14. Origami Heart on Kitchen Windowsill
+                                if (engine.homeEvolutionState.hasOrigamiHeart &&
+                                    abs(tapOffset.x - (w * 0.28f - 7f * pixelScale)) < 18f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f - 52f * pixelScale)) < 18f * pixelScale) {
+                                    onOpenLongDistance?.invoke()
+                                    return@detectTapGestures
+                                }
+                                // 15. Windowsill Herb Planter Watering
+                                if (abs(tapOffset.x - (w * 0.28f + 9f * pixelScale)) < 18f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f - 52f * pixelScale)) < 18f * pixelScale) {
+                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                             }
                             EnvironmentType.LIVING_ROOM -> {
                                 // Feature 5: Floor lamp tap (left side of room) — checked first
@@ -685,9 +719,61 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                                 val floorH = h - h * 0.65f
+
+                                // Corner Monstera plant watering
+                                if ((engine.homeEvolutionState.hasCornerMonstera || engine.plantWaterTimer > 0f) &&
+                                    abs(tapOffset.x - w * 0.10f) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f - 20f * pixelScale)) < 26f * pixelScale) {
+                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
+
+                                // Couch Throw / Snuggle Blanket (left side of sofa)
+                                if (abs(tapOffset.x - (w * 0.48f - 26f * pixelScale)) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.68f - 20f * pixelScale)) < 22f * pixelScale) {
+                                    engine.onTouchCouchThrow(w, h)
+                                    return@detectTapGestures
+                                }
+
+                                // Home Evolution Artifacts in Living Room:
+                                // Picnic Basket (near wardrobe)
+                                if (engine.homeEvolutionState.hasAdventurePicnicBasket &&
+                                    abs(tapOffset.x - w * 0.77f) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f - 8f * pixelScale)) < 20f * pixelScale) {
+                                    onOpenDateAdventures?.invoke()
+                                    return@detectTapGestures
+                                }
+                                // Origami Heart on Windowsill
+                                if (engine.homeEvolutionState.hasOrigamiHeart &&
+                                    abs(tapOffset.x - (w * 0.70f + 14f * pixelScale)) < 18f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.28f + 18f * pixelScale)) < 18f * pixelScale) {
+                                    onOpenLongDistance?.invoke()
+                                    return@detectTapGestures
+                                }
+                                // Bedside / Coffee Table Notepad
+                                if (engine.homeEvolutionState.hasBedsideNotepad &&
+                                    abs(tapOffset.x - (w * 0.50f - 13f * pixelScale)) < 16f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f + 22f * pixelScale)) < 16f * pixelScale) {
+                                    onOpenDailyMoment?.invoke()
+                                    return@detectTapGestures
+                                }
+                                // Mini-Game Board on Coffee Table
+                                if (engine.homeEvolutionState.hasMiniGameBoard &&
+                                    abs(tapOffset.x - (w * 0.50f - 1f * pixelScale)) < 16f * pixelScale &&
+                                    abs(tapOffset.y - (h * 0.65f + 23f * pixelScale)) < 16f * pixelScale) {
+                                    onOpenMiniGames?.invoke()
+                                    return@detectTapGestures
+                                }
+
                                 // Low Wooden Coffee Table (on rug directly in front of couch)
                                 val tableX = w * 0.50f
                                 val tableY = h * 0.65f + 23f * pixelScale
+                                val candleX = tableX + 13f * pixelScale
+                                val candleY = tableY - 4f * pixelScale
+                                if (abs(tapOffset.x - candleX) < 14f * pixelScale && abs(tapOffset.y - candleY) < 14f * pixelScale) {
+                                    engine.onTouchAromatherapyCandle(w, h, tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 if (abs(tapOffset.x - tableX) < 28f * pixelScale && abs(tapOffset.y - tableY) < 16f * pixelScale) {
                                     engine.onTouchCoffeeTable(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
@@ -704,6 +790,13 @@ fun PixelWorldView(
                                 val boxY = h * 0.65f + floorH * 0.75f
                                 if (abs(tapOffset.x - boxX) < 18f * pixelScale && abs(tapOffset.y - boxY) < 16f * pixelScale) {
                                     engine.onTouchCardboardBox(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
+                                // Feather Wand (beside Mochi's cardboard box)
+                                val wandX = w * 0.23f
+                                val wandY = boxY + 6f * pixelScale
+                                if (abs(tapOffset.x - wandX) < 16f * pixelScale && abs(tapOffset.y - wandY) < 20f * pixelScale) {
+                                    engine.onTouchFeatherWand(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                                 // Woven Storage Basket (beside Mochi's box in bottom-left corner)
@@ -731,6 +824,13 @@ fun PixelWorldView(
                                     engine.onTouchStreetlamp()
                                     return@detectTapGestures
                                 }
+                                // Vintage Stargazing Telescope on overlook
+                                val teleX = w * 0.38f
+                                val teleGroundY = h * 0.68f
+                                if (abs(tapOffset.x - teleX) < 22f * pixelScale && abs(tapOffset.y - (teleGroundY - 20f * pixelScale)) < 26f * pixelScale) {
+                                    engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 val curbY = h * 0.66f + 30f * pixelScale
                                 val curbH = h - curbY
                                 // Miniature Stone Garden Pagoda Lantern (Cluster A)
@@ -754,6 +854,13 @@ fun PixelWorldView(
                                 }
                             }
                             EnvironmentType.TWILIGHT -> {
+                                // Vintage Stargazing Telescope on grassy knoll
+                                val teleX = w * 0.25f
+                                val teleGroundY = h * 0.70f
+                                if (abs(tapOffset.x - teleX) < 22f * pixelScale && abs(tapOffset.y - (teleGroundY - 20f * pixelScale)) < 26f * pixelScale) {
+                                    engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 if (tapOffset.y > h * 0.65f) {
                                     engine.onTouchFlower(w, h)
                                     return@detectTapGestures
@@ -2513,6 +2620,8 @@ private fun drawEnvironment(
             drawMeadowGround(scope, cw, ch, isNight, isSunset, timeSeconds, p, engine.weather)
             // Cottage house in background
             WorldSprites.drawCottage(scope, cw * 0.22f, ch * 0.67f, p, timeSeconds, isNight, engine.weather)
+            // Porch wind chimes hanging from cottage eaves
+            WorldSprites.drawPorchWindChimes(scope, cw * 0.22f + 24f * p, ch * 0.67f - 40f * p, p, engine.windChimeSwayTimer / 2.5f, timeSeconds)
             // Animated chimney smoke
             if (sin(timeSeconds * 3f) > 0.7f) {
                 engine.particles.spawnChimneySmoke(cw * 0.17f, ch * 0.67f - 54 * p)
@@ -2530,6 +2639,8 @@ private fun drawEnvironment(
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather)
             // Twinkling fairy light jar on the grass
             WorldSprites.drawFairyJar(scope, cw * 0.76f, ch * 0.70f, p, timeSeconds)
+            // Stargazing Vintage Telescope on the knoll
+            WorldSprites.drawVintageTelescope(scope, cw * 0.25f, ch * 0.70f, p, timeSeconds)
             // Ambient birds
             engine.birdSystem.drawBirds(scope, p)
         }
@@ -2583,7 +2694,7 @@ private fun drawEnvironment(
             // --- Home Evolution progressive artifacts ---
             val floorY = ch * 0.65f
             val floorH = ch - floorY
-            if (engine.homeEvolutionState.hasCopperTeakettle) {
+            if (engine.homeEvolutionState.hasCopperTeakettle || engine.teakettleWhistleTimer > 0f) {
                 WorldSprites.drawCopperTeakettle(scope, cw * 0.60f, ch * 0.67f - 18 * p, p, timeSeconds)
             }
             if (engine.homeEvolutionState.hasFridgePolaroid || engine.homeEvolutionState.hasFridgeLoveNote) {
@@ -2602,8 +2713,14 @@ private fun drawEnvironment(
             val juteY = floorY + floorH * 0.44f
             val tblY = juteY + 7f * p
             WorldSprites.drawSeasonalTableArtifact(scope, cw * 0.50f, tblY, p, engine.homeEvolutionState.seasonalArtifact, timeSeconds)
-            if (engine.homeEvolutionState.hasWindowsillPlant) {
+            if (engine.homeEvolutionState.hasWindowsillPlant || engine.plantWaterTimer > 0f) {
                 WorldSprites.drawWindowsillPlant(scope, cw * 0.28f + 9 * p, floorY - 52 * p, p)
+            }
+            if (engine.homeEvolutionState.hasOrigamiHeart) {
+                WorldSprites.drawOrigamiHeart(scope, cw * 0.28f - 7 * p, floorY - 52 * p, p)
+            }
+            if (engine.homeEvolutionState.hasAdventurePicnicBasket) {
+                WorldSprites.drawAdventurePicnicBasket(scope, cw * 0.76f, floorY, p)
             }
 
             // --- Kitchen dynamic overlays (drawn on top of static sprites) ---
@@ -2753,19 +2870,30 @@ private fun drawEnvironment(
             val isWindowNight = if (isLampOn) isNight else (couchPhase == CouchPhase.NIGHT)
             val isWindowSunset = if (isLampOn) isSunset else (couchPhase == CouchPhase.EVENING)
             val livingRoomIsNight = if (isLampOn) isNight else (couchPhase == CouchPhase.NIGHT)
-            drawLivingRoom(scope, cw, ch, isNight = livingRoomIsNight, p = p, lampLit = isLampOn, couchPhase = couchPhase, timeSeconds = timeSeconds)
+            drawLivingRoom(scope, cw, ch, isNight = livingRoomIsNight, p = p, lampLit = isLampOn, couchPhase = couchPhase, timeSeconds = timeSeconds, candleLit = engine.hearthCandleLit)
             if (engine.homeEvolutionState.hasFairyStringLights) {
                 WorldSprites.drawFairyStringLights(scope, cw * 0.08f, cw * 0.92f, ch * 0.16f, p, timeSeconds)
             }
-            if (engine.homeEvolutionState.hasCornerMonstera) {
+            if (engine.homeEvolutionState.hasCornerMonstera || engine.plantWaterTimer > 0f) {
                 WorldSprites.drawCornerMonstera(scope, cw * 0.10f, ch * 0.65f, p)
             }
             WorldSprites.drawPhotoFrame(scope, cw * 0.28f, ch * 0.38f, p)
             WorldSprites.drawWindow(scope, cw * 0.70f, ch * 0.28f, isWindowNight, p, engine.weather, isSunset = isWindowSunset)
             WorldSprites.drawWallCalendar(scope, cw * 0.49f, ch * 0.30f, p, timeSeconds)
             WorldSprites.drawCouch(scope, cw * 0.48f, ch * 0.68f, p)
-            if (engine.homeEvolutionState.hasCozyKnitThrow) {
+            if (engine.homeEvolutionState.hasCozyKnitThrow || engine.cuddleBlanketTimer > 0f) {
                 WorldSprites.drawCouchKnitThrow(scope, cw * 0.48f - 29 * p, ch * 0.68f - 24 * p, p)
+            }
+            if (engine.cuddleBlanketTimer > 0f) {
+                val blkX = cw * 0.48f - 18 * p
+                val blkY = ch * 0.68f - 12 * p
+                val blkW = 36 * p
+                val blkH = 14 * p
+                scope.drawRect(Color(0xFFD4A373), Offset(blkX, blkY), Size(blkW, blkH))
+                scope.drawRect(Color(0xFFFAEDCD), Offset(blkX + p, blkY + p), Size(blkW - 2 * p, blkH - 2 * p))
+                for (kx in 0 until 6) {
+                    scope.drawRect(Color(0xFFE9D8A6), Offset(blkX + 3 * p + kx * 5 * p, blkY + p), Size(1.5f * p, blkH - 2 * p))
+                }
             }
             WorldSprites.drawFloorLamp(scope, cw * 0.20f, ch * 0.68f, p, engine.livingRoomLampLit)
             WorldSprites.drawWardrobe(scope, cw * 0.85f, ch * 0.65f, p, timeSeconds)
@@ -2774,6 +2902,27 @@ private fun drawEnvironment(
             val lrFloorY = ch * 0.65f
             val lrFloorH = ch - lrFloorY
             WorldSprites.drawSeasonalTableArtifact(scope, cw * 0.50f + 10 * p, lrFloorY + 23 * p, p, engine.homeEvolutionState.seasonalArtifact, timeSeconds)
+            if (engine.homeEvolutionState.hasBedsideNotepad) {
+                WorldSprites.drawBedsideNotepad(scope, cw * 0.50f - 14 * p, lrFloorY + 23 * p, p)
+            }
+            if (engine.homeEvolutionState.hasMiniGameBoard) {
+                WorldSprites.drawMiniGameBoard(scope, cw * 0.50f - 1 * p, lrFloorY + 23 * p, p)
+            }
+            if (engine.homeEvolutionState.hasAdventurePicnicBasket) {
+                WorldSprites.drawAdventurePicnicBasket(scope, cw * 0.77f, lrFloorY, p)
+            }
+            if (engine.homeEvolutionState.hasOrigamiHeart) {
+                WorldSprites.drawOrigamiHeart(scope, cw * 0.70f + 14 * p, ch * 0.28f + 18 * p, p)
+            }
+            // Feather wand beside Mochi's cardboard box
+            WorldSprites.drawFeatherWand(
+                scope = scope,
+                baseX = cw * 0.23f,
+                baseY = lrFloorY + lrFloorH * 0.75f + 11f * p,
+                p = p,
+                wiggleProgress = engine.featherWandWiggleTimer / 2.4f,
+                timeSeconds = timeSeconds
+            )
 
             // 1. Coffee Table Candle: warm pulsating golden glow & fluttering flame
             if (engine.tableCandleTimer > 0f) {
@@ -2989,6 +3138,8 @@ private fun drawEnvironment(
             drawPathGround(scope, cw, ch, p, engine.weather, isWalk = true, timeSeconds = timeSeconds, isNight = isNight, isSunset = isSunset)
             WorldSprites.drawStreetlamp(scope, cw * 0.65f, ch * 0.68f, engine.lampLit && (isNight || isSunset), p)
             WorldSprites.drawMailbox(scope, cw * 0.82f, ch * 0.68f, hasLetter = true, p)
+            // Stargazing Vintage Telescope on the overlook
+            WorldSprites.drawVintageTelescope(scope, cw * 0.38f, ch * 0.68f, p, timeSeconds)
 
             val curbY = ch * 0.66f + 30f * p
             val curbH = ch - curbY
@@ -4481,7 +4632,8 @@ private fun drawLivingRoom(
     p: Float,
     lampLit: Boolean = true,
     couchPhase: CouchPhase = CouchPhase.NIGHT,
-    timeSeconds: Float = 0f
+    timeSeconds: Float = 0f,
+    candleLit: Boolean = true
 ) {
     val floorY = ch * 0.65f
     val wallColor = when {
@@ -4581,16 +4733,9 @@ private fun drawLivingRoom(
         scope.drawRect(Color(0x77FFFFFF), Offset(mug1X + 1.5f * p, mugY - 3 * p), Size(1.2f * p, 2 * p))
         scope.drawRect(Color(0x77FFFFFF), Offset(mug2X + 1.5f * p, mugY - 3 * p), Size(1.2f * p, 2 * p))
     }
-    // Glowing scented candle
+    // Aromatherapy candle on coffee table
     val cndX = tblX + 37 * p
-    val cndY = tblY - 5f * p
-    scope.drawRect(Color(0xFFD4A373), Offset(cndX, cndY + 2 * p), Size(4.5f * p, 3.5f * p))
-    scope.drawRect(Color(0xFFFFD166), Offset(cndX + 0.8f * p, cndY + 2.5f * p), Size(2.8f * p, 2.5f * p))
-    if (lampLit || couchPhase != CouchPhase.NIGHT) {
-        val flk = sin(timeSeconds * 5f) * 0.4f * p
-        scope.drawRect(Color(0xFFFFB703), Offset(cndX + 1.5f * p + flk * 0.3f, cndY), Size(1.5f * p, 2.2f * p))
-        scope.drawRect(Color.White, Offset(cndX + 1.8f * p, cndY + 0.6f * p), Size(0.8f * p, p))
-    }
+    WorldSprites.drawAromatherapyCandle(scope, cndX + 2.2f * p, tblY, p, candleLit, timeSeconds)
 
     // 3. Knitted Round Floor Pouf / Ottoman (at right edge of rug, beside table)
     val pfX = cw * 0.70f

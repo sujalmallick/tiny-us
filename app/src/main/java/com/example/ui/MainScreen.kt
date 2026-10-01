@@ -134,6 +134,12 @@ fun MainScreen(
     var showDreamJournal by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
 
+    var showDateAdventures by remember { mutableStateOf(false) }
+    var showDailyMomentPrompt by remember { mutableStateOf(false) }
+    var showMiniGames by remember { mutableStateOf(false) }
+    var showSharedMood by remember { mutableStateOf(false) }
+    var showLongDistance by remember { mutableStateOf(false) }
+
     var girlOutfitIndex by remember { mutableStateOf(prefs.girlOutfitIndex) }
     var girlAccessoryIndex by remember { mutableStateOf(prefs.girlAccessoryIndex) }
     var boyOutfitIndex by remember { mutableStateOf(prefs.boyOutfitIndex) }
@@ -406,7 +412,11 @@ fun MainScreen(
         PixelWorldView(
             engine = engine,
             atmosphereMode = atmosphere,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize(),
+            onOpenDateAdventures = { showDateAdventures = true },
+            onOpenDailyMoment = { showDailyMomentPrompt = true },
+            onOpenMiniGames = { showMiniGames = true },
+            onOpenLongDistance = { showLongDistance = true }
         )
 
         // 2. Glassmorphism Top Controls (Translucent frosted capsule design)
@@ -1008,6 +1018,26 @@ fun MainScreen(
                     showSettings = false
                     showWardrobe = true
                 },
+                onOpenDateAdventures = {
+                    showSettings = false
+                    showDateAdventures = true
+                },
+                onOpenDailyMoment = {
+                    showSettings = false
+                    showDailyMomentPrompt = true
+                },
+                onOpenMiniGames = {
+                    showSettings = false
+                    showMiniGames = true
+                },
+                onOpenSharedMood = {
+                    showSettings = false
+                    showSharedMood = true
+                },
+                onOpenLongDistance = {
+                    showSettings = false
+                    showLongDistance = true
+                },
                 onJumpToScene = { sc ->
                     showSettings = false
                     engine.loadScene(sc)
@@ -1147,6 +1177,42 @@ fun MainScreen(
                     polaroidCaptureMemory = null
                     showPolaroidGallery = true
                 }
+            )
+        }
+
+        // ── Public Feature Dialogs ──────────────────────────────────────────
+        if (showDateAdventures) {
+            DateAdventuresDialog(
+                prefs = prefs,
+                onDismiss = { showDateAdventures = false }
+            )
+        }
+
+        if (showDailyMomentPrompt) {
+            DailyMomentPromptDialog(
+                prefs = prefs,
+                onDismiss = { showDailyMomentPrompt = false }
+            )
+        }
+
+        if (showMiniGames) {
+            TwoPersonMiniGameDialog(
+                prefs = prefs,
+                onDismiss = { showMiniGames = false }
+            )
+        }
+
+        if (showSharedMood) {
+            SharedMoodDialog(
+                prefs = prefs,
+                onDismiss = { showSharedMood = false }
+            )
+        }
+
+        if (showLongDistance) {
+            LongDistanceSheet(
+                prefs = prefs,
+                onDismiss = { showLongDistance = false }
             )
         }
     }
