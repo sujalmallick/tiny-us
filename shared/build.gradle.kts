@@ -12,6 +12,17 @@ kotlin {
         minSdk = 26
     }
 
+    listOf(
+        iosX64(),
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "Shared"
+            isStatic = true
+        }
+    }
+
     sourceSets {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
