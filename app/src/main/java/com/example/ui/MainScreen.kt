@@ -64,6 +64,8 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -515,26 +517,23 @@ fun MainScreen(
             }
         }
 
+        val haptic = LocalHapticFeedback.current
         val renderButtonsRow: @Composable (androidx.compose.ui.unit.Dp) -> Unit = { screenWidth ->
             val buttonTouchSize = when {
-                screenWidth < 360.dp -> 36.dp
-                screenWidth < 410.dp -> 38.dp
+                screenWidth < 360.dp -> 38.dp
+                screenWidth < 410.dp -> 40.dp
                 else -> 42.dp
             }
             val buttonVisualSize = when {
-                screenWidth < 360.dp -> 31.dp
-                screenWidth < 410.dp -> 33.dp
+                screenWidth < 360.dp -> 32.dp
+                screenWidth < 410.dp -> 34.dp
                 else -> 36.dp
             }
-            val iconSize = when {
-                screenWidth < 360.dp -> 15.dp
-                screenWidth < 410.dp -> 16.dp
-                else -> 17.dp
-            }
+            val iconSize = 16.dp
             val spacing = when {
-                screenWidth < 360.dp -> 1.5.dp
-                screenWidth < 410.dp -> 2.dp
-                else -> 3.dp
+                screenWidth < 360.dp -> 2.dp
+                screenWidth < 410.dp -> 2.5.dp
+                else -> 3.5.dp
             }
 
             Row(
@@ -548,7 +547,11 @@ fun MainScreen(
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,
-                            onClick = { engine.cycleWeather() }
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (isSoundOn) audio.playWindChime()
+                                engine.cycleWeather()
+                            }
                         )
                         .testTag("weather_cycle_button"),
                     contentAlignment = Alignment.Center
@@ -586,10 +589,12 @@ fun MainScreen(
                         .clickable(
                             role = Role.Button,
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 val target = !isSoundOn
                                 isSoundOn = target
                                 prefs.soundEnabled = target
                                 audio.isEnabled = target
+                                if (target) audio.playHeartChime()
                             }
                         )
                         .testTag("sound_toggle_button"),
@@ -628,6 +633,7 @@ fun MainScreen(
                         .clickable(
                             role = Role.Button,
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                                 showMusicBox = true
                             }
                         )
@@ -667,6 +673,8 @@ fun MainScreen(
                         .clickable(
                             role = Role.Button,
                             onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                if (isSoundOn) audio.playWoodKnock()
                                 val next = engine.nextRandomScene()
                                 prefs.addRecentScene(next.name)
                                 engine.loadScene(next)
@@ -707,7 +715,10 @@ fun MainScreen(
                         .clip(CircleShape)
                         .clickable(
                             role = Role.Button,
-                            onClick = { showSettings = true }
+                            onClick = {
+                                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                                showSettings = true
+                            }
                         )
                         .testTag("dock_settings_button"),
                     contentAlignment = Alignment.Center

@@ -26,6 +26,14 @@ enum class TimeOfDayPhase {
     val isMidnight: Boolean get() = this == NIGHT && (currentHour() >= 23 || currentHour() <= 4)
     val isTwilight: Boolean get() = (this == SUNSET && currentHour() >= 19) || (this == NIGHT && currentHour() == 20)
 
+    val displayName: String
+        get() = when (this) {
+            MORNING -> "Morning Dew"
+            AFTERNOON -> "Golden Sunshine"
+            SUNSET -> "Sunset Twilight"
+            NIGHT -> if (isMidnight) "Midnight Starscape" else "Moonlit Night"
+        }
+
     companion object {
         /**
          * Optional debug override. Only effective in debug builds or tests.
@@ -74,3 +82,9 @@ enum class TimeOfDayPhase {
         }
     }
 }
+
+/**
+ * Top-level convenience function for Swift / multiplatform access.
+ */
+fun currentPhase(hour: Int = TimeOfDayPhase.currentHour()): TimeOfDayPhase =
+    TimeOfDayPhase.fromHour(hour)

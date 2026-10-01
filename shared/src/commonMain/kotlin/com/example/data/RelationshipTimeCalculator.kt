@@ -19,6 +19,35 @@ object RelationshipTimeCalculator {
     }
 
     /**
+     * Integer-component helper for seamless Swift interop.
+     */
+    fun calculateDays(
+        startYear: Int,
+        startMonth: Int,
+        startDay: Int,
+        currentYear: Int,
+        currentMonth: Int,
+        currentDay: Int
+    ): Long {
+        val start = runCatching { LocalDate(startYear, startMonth, startDay) }.getOrDefault(LocalDate(2024, 1, 1))
+        val current = runCatching { LocalDate(currentYear, currentMonth, currentDay) }.getOrDefault(LocalDate(2024, 1, 1))
+        return calculateTinyUsDay(start, current)
+    }
+
+    /**
+     * ISO-8601 string helper for seamless Swift interop.
+     */
+    fun calculateDaysFromIso(startIsoDate: String, currentIsoDate: String): Long {
+        return try {
+            val start = LocalDate.parse(startIsoDate)
+            val current = LocalDate.parse(currentIsoDate)
+            calculateTinyUsDay(start, current)
+        } catch (_: Exception) {
+            1L
+        }
+    }
+
+    /**
      * Platform-agnostic countdown computation.
      */
     fun computeCountdown(
