@@ -67,7 +67,7 @@ class TinyUsOfflineTest {
     }
 
     @Test
-    fun `test all six scenes load with appropriate environments`() {
+    fun `test all scenes load with appropriate environments`() {
         for (scene in SceneType.values()) {
             engine.loadScene(scene)
             assertEquals("Scene should match loaded type", scene, engine.currentScene)
@@ -81,6 +81,8 @@ class TinyUsOfflineTest {
                 SceneType.MOMO_STALL -> assertEquals(EnvironmentType.MOMO_STALL, scene.environment)
                 SceneType.EVENING_RIDE -> assertEquals(EnvironmentType.EVENING_ROAD, scene.environment)
                 SceneType.COZY_LOFT -> assertEquals(EnvironmentType.COZY_LOFT, scene.environment)
+                SceneType.RAINY_CAFE -> assertEquals(EnvironmentType.RAINY_CAFE, scene.environment)
+                SceneType.SUNROOM -> assertEquals(EnvironmentType.SUNROOM, scene.environment)
             }
         }
     }
@@ -372,10 +374,21 @@ class TinyUsOfflineTest {
         // 4. Sunny
         engine.weather = WeatherType.SUNNY
         engine.particles.particles.clear()
-        repeat(60) { engine.update(0.016f, 1000f, 1000f) }
-        assertTrue("Sunny breeze, fluff or sparkles spawned", engine.particles.particles.any {
-            it.type in listOf(ParticleType.DANDELION_FLUFF, ParticleType.SPARKLE, ParticleType.WIND_BREEZE)
-        })
+        // Sunny ambient details are intentionally rare; observe long enough not to fail
+        // intermittently just because the random spawn rolls did not occur in one second.
+        var sawSunnyAmbientEffect = false
+        repeat(1800) {
+            engine.update(0.016f, 1000f, 1000f)
+            if (engine.particles.particles.any {
+                    it.type == ParticleType.DANDELION_FLUFF ||
+                        it.type == ParticleType.SPARKLE ||
+                        it.type == ParticleType.WIND_BREEZE
+                }
+            ) {
+                sawSunnyAmbientEffect = true
+            }
+        }
+        assertTrue("Sunny breeze, fluff or sparkles spawned", sawSunnyAmbientEffect)
 
         // 5. Rain
         engine.weather = WeatherType.RAIN
@@ -1650,4 +1663,3 @@ class TinyUsOfflineTest {
         assertEquals(0.40f, audio.computeEffectiveWeatherVolume(), 0.01f)
     }
 }
-
