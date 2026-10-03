@@ -71,7 +71,7 @@ class SceneLayoutHitTest {
             val p = c.p
             assertEquals(c.toString(), CampfireProp.FIRE, campHit(c, CampfireLayout.fire(c.cw, c.ch)))
             assertEquals(c.toString(), CampfireProp.LANTERN, campHit(c, CampfireLayout.lantern(c.cw, c.ch, p) + Offset(0f, 5f * p)))
-            assertEquals(c.toString(), CampfireProp.LANTERN, campHit(c, CampfireLayout.tentTopLeft(c.cw, c.ch) + CampfireLayout.tentSize(p) * 0.5f))
+            assertEquals(c.toString(), CampfireProp.LANTERN, campHit(c, CampfireLayout.tentTopLeft(c.cw, c.ch, p) + CampfireLayout.tentSize(p) * 0.5f))
             assertEquals(c.toString(), CampfireProp.GUITAR, campHit(c, CampfireLayout.guitar(c.cw, c.ch, p) + Offset(p, 6f * p)))
             val mochi = Offset(c.cw * campCat.x, c.ch * campCat.y - 7f * p)
             assertEquals(c.toString(), CampfireProp.MOCHI, campHit(c, mochi))

@@ -45,26 +45,39 @@ enum class CafeProp { MOCHI, BARISTA, MENU, PUP, LATTE, PASTRY, PASSERBY, WINDOW
 object CafeLayout {
     const val MAX_PASTRY_BITES = 3
 
+    /** Where the back wall meets the floor. The couple's feet rest a little in front of it. */
+    const val WALL_BOTTOM = 0.655f
+
+    /** Feet line of the seated couple (their home spot in SceneEngine). */
+    const val SEAT_FEET_Y = 0.68f
+
     fun window(cw: Float, ch: Float): Rect = Rect(cw * 0.36f, ch * 0.08f, cw * 0.94f, ch * 0.52f)
 
     /** The glass pane inside the window frame, where fog hearts can be drawn. */
     fun glass(cw: Float, ch: Float, p: Float): Rect = window(cw, ch).deflate(6f * p)
 
     fun barX(cw: Float) = cw * 0.05f
-    fun barY(ch: Float) = ch * 0.48f
     fun barW(cw: Float) = cw * 0.28f
 
+    /** Counter top: a waist-high counter standing against the back wall. */
+    fun barY(ch: Float, p: Float) = ch * (WALL_BOTTOM + 0.01f) - 20f * p
+
     /** Leo's feet line, behind the counter. */
-    fun barista(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) * 0.44f, barY(ch) + 12f * p)
+    fun barista(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) * 0.56f, barY(ch, p) + 12f * p)
 
-    fun menuTopLeft(cw: Float, ch: Float, p: Float) = Offset(cw * 0.38f - 18f * p, ch * 0.16f)
+    /** Chalkboard menu hanging on the brick wall above the counter. */
+    fun menuTopLeft(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) / 2f - 16f * p, ch * 0.21f)
 
-    fun tableX(cw: Float) = cw * 0.32f
-    fun tableY(ch: Float) = ch * 0.58f
-    fun tableW(cw: Float) = cw * 0.42f
+    /**
+     * Small round cafe table standing just in front of the seated couple, drawn after them so
+     * it hides their laps like a real table. [tableY] is the table top.
+     */
+    fun tableW(p: Float) = 40f * p
+    fun tableX(cw: Float, p: Float) = cw * 0.5f - tableW(p) / 2f
+    fun tableY(ch: Float, p: Float) = ch * SEAT_FEET_Y - 8f * p
 
-    fun latte(cw: Float, ch: Float, p: Float) = Offset(tableX(cw) + tableW(cw) * 0.22f, tableY(ch) - 6f * p)
-    fun plate(cw: Float, ch: Float, p: Float) = Offset(tableX(cw) + tableW(cw) * 0.78f, tableY(ch) - 5f * p)
+    fun latte(cw: Float, ch: Float, p: Float) = Offset(tableX(cw, p) + tableW(p) * 0.24f, tableY(ch, p) - 4f * p)
+    fun plate(cw: Float, ch: Float, p: Float) = Offset(tableX(cw, p) + tableW(p) * 0.76f, tableY(ch, p) - 2.5f * p)
 
     /** Croissant width per bite, so the last bite leaves an empty plate. */
     fun croissantWidth(bites: Int, p: Float): Float =
@@ -119,18 +132,23 @@ object CampfireLayout {
 
     fun fire(cw: Float, ch: Float) = Offset(cw * PIT_X, ch * PIT_Y)
 
-    fun tentTopLeft(cw: Float, ch: Float) = Offset(cw * 0.06f, ch * 0.44f)
+    /** Ground line the tent is pitched on: behind the log, in front of the treeline. */
+    const val TENT_BASE_Y = 0.60f
+
     fun tentSize(p: Float) = Offset(54f * p, 50f * p)
+    fun tentTopLeft(cw: Float, ch: Float, p: Float) = Offset(cw * 0.06f, ch * TENT_BASE_Y - tentSize(p).y)
+    /** The lantern hangs from a shepherd's-hook pole planted beside the tent door. */
     fun lantern(cw: Float, ch: Float, p: Float): Offset {
-        val tent = tentTopLeft(cw, ch)
+        val tent = tentTopLeft(cw, ch, p)
         val size = tentSize(p)
         return Offset(tent.x + size.x + 4f * p, tent.y + size.y * 0.45f)
     }
 
     fun logX(cw: Float) = cw * 0.33f
-    fun logY(ch: Float) = ch * 0.69f
     fun logW(cw: Float) = cw * 0.34f
-    fun guitar(cw: Float, ch: Float, p: Float) = Offset(logX(cw) + logW(cw) + 4f * p, logY(ch) - 6f * p)
+    /** Top of the log the couple sits on: seat height above their feet line (0.68). */
+    fun logY(ch: Float, p: Float) = ch * 0.68f - 7f * p
+    fun guitar(cw: Float, ch: Float, p: Float) = Offset(logX(cw) + logW(cw) + 4f * p, logY(ch, p) - 2f * p)
 
     /** True when Mochi is resting on the plaid blanket rather than somewhere else in the clearing. */
     fun isOnBlanket(catWorldX: Float, catWorldY: Float): Boolean =
@@ -147,7 +165,7 @@ object CampfireLayout {
     fun hitTest(tap: Offset, cw: Float, ch: Float, p: Float, catWorldX: Float, catWorldY: Float): CampfireProp? {
         val gtr = guitar(cw, ch, p)
         val lant = lantern(cw, ch, p)
-        val tent = tentTopLeft(cw, ch)
+        val tent = tentTopLeft(cw, ch, p)
         val tentSize = tentSize(p)
         val targets = listOf(
             PropTarget(CampfireProp.FIRE, fire(cw, ch) - Offset(0f, 4f * p), 18f * p),

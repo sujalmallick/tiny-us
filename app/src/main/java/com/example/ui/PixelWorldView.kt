@@ -322,7 +322,8 @@ fun PixelWorldView(
                                     engine.onTouchSunroomWateringCan(w, h)
                                     return@detectTapGestures
                                 }
-                                if (tapOffset.x > w * 0.48f && tapOffset.y in (h * 0.32f)..(h * 0.68f)) {
+                                // The potting bench and the plant shelf above it (clear of the couple standing in the middle)
+                                if (tapOffset.x > w * 0.64f && tapOffset.y in (h * 0.40f)..(h * 0.665f)) {
                                     engine.onTouchSunroomPlants(w, h)
                                     return@detectTapGestures
                                 }
@@ -1327,6 +1328,11 @@ fun PixelWorldView(
                     engine.boy.direction = origBoyDir
                     engine.girl.direction = origGirlDir
                 }
+            }
+
+            // 2a. Cozy Rainy Cafe: the little table stands in front of the seated couple
+            if (engine.currentScene.environment == EnvironmentType.RAINY_CAFE) {
+                drawCafeTableForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
             }
 
             // 2a. Seaside Pier: ice-cream cones in hand and Pip flying in front of the couple
