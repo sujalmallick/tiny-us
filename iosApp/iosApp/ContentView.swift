@@ -26,7 +26,8 @@ enum TinyScene: String, CaseIterable, Codable, Identifiable {
         }
     }
     /// Bridges to the shared Kotlin scene catalog so both apps describe places identically.
-    var sharedScene: SceneType {
+    /// Campfire has no shared entry until Android's Campfire scene lands on master.
+    var sharedScene: SceneType? {
         switch self {
         case .meadow: return .flower
         case .tree: return .underTree
@@ -39,10 +40,10 @@ enum TinyScene: String, CaseIterable, Codable, Identifiable {
         case .momo: return .momoStall
         case .scooter: return .eveningRide
         case .twilight: return .looking
-        case .campfire: return .campfire
+        case .campfire: return nil
         }
     }
-    var subtitle: String { sharedScene.subtitle }
+    var subtitle: String { sharedScene?.subtitle ?? "Roasting marshmallows under the midnight stars" }
     var icon: String {
         switch self {
         case .meadow: return "sun.max.fill"

@@ -59,11 +59,6 @@ enum class SceneType(
         title = "Cottage Sunroom",
         subtitle = "A little greenhouse full of growing things",
         environment = EnvironmentType.SUNROOM
-    ),
-    CAMPFIRE(
-        title = "Starry Campfire",
-        subtitle = "Roasting marshmallows under the midnight stars",
-        environment = EnvironmentType.CAMPFIRE
     )
 }
 
@@ -78,8 +73,7 @@ enum class EnvironmentType {
     EVENING_ROAD,
     COZY_LOFT,
     RAINY_CAFE,
-    SUNROOM,
-    CAMPFIRE
+    SUNROOM
 }
 
 enum class WeatherType(val displayName: String) {

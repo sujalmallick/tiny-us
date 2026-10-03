@@ -48,7 +48,7 @@ class SharedCoreTest {
     fun sharedCatalogsAndSceneWeatherDefinitionsAreUsable() {
         assertTrue(DateAdventureCatalog.defaultAdventures.isNotEmpty())
         assertEquals(DateAdventureCatalog.defaultAdventures.size, DateAdventureCatalog.defaultAdventures.map { it.id }.toSet().size)
-        assertEquals(12, SceneType.values().size)
+        assertEquals(11, SceneType.values().size)
         assertTrue(SceneType.values().all { it.title.isNotBlank() && it.subtitle.isNotBlank() })
         assertEquals(5, WeatherType.values().size)
         assertTrue(WeatherType.values().all { it.displayName.isNotBlank() })
