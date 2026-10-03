@@ -1,13 +1,13 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample backup rules file; uncomment and customize as necessary.
-   See https://developer.android.com/guide/topics/data/autobackup
-   for details.
-   Note: This file is ignored for devices older than API 31
-   See https://developer.android.com/about/versions/12/backup-restore
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android Auto Backup on Android 11 and older (Android 12+ uses data_extraction_rules.xml).
+    Tiny Us never sends data anywhere itself; this only controls what Android's own backup may copy.
+
+    Included: names, dates, keepsakes, letters, garden progress and settings (tiny_us_prefs).
+    Excluded: polaroid photos and their index (they can exceed Android's 25 MB backup quota,
+    which would make the whole backup fail) and the privacy-lock state. Photos move with
+    "Backup & Restore" in Settings, or with a direct phone-to-phone transfer.
 -->
 <full-backup-content>
-    <!--
-   <include domain="sharedpref" path="."/>
-   <exclude domain="sharedpref" path="device.xml"/>
--->
+    <include domain="sharedpref" path="tiny_us_prefs.xml" />
 </full-backup-content>

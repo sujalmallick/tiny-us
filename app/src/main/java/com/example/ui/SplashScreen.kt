@@ -82,7 +82,8 @@ fun SplashScreen(
             pose = CharacterPose.IDLE,
             direction = Direction.RIGHT,
             emote = EmoteType.HEART,
-            emoteTimer = 99f
+            emoteTimer = 99f,
+            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = false))
         )
     }
 
@@ -95,7 +96,8 @@ fun SplashScreen(
             pose = CharacterPose.IDLE,
             direction = Direction.LEFT,
             emote = EmoteType.BLUSH,
-            emoteTimer = 99f
+            emoteTimer = 99f,
+            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = true))
         )
     }
 

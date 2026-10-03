@@ -9,4 +9,110 @@
     <string name="replay_scene">Replay scene</string>
     <string name="next_scene">Next surprise scene</string>
     <string name="widget_description">A cozy pixel window into your Tiny Us world</string>
+
+    <!-- Partner-neutral labels -->
+    <string name="label_your_name">Your name</string>
+    <string name="label_partner_name">Your person’s name</string>
+    <string name="label_your_birthday">Your birthday</string>
+    <string name="label_partner_birthday">Your person’s birthday</string>
+    <string name="action_done">Done</string>
+
+    <!-- Make Us (avatar customizer) -->
+    <string name="avatar_title">Make Us ♡</string>
+    <string name="avatar_subtitle">Make your tiny selves look like you.</string>
+    <string name="avatar_entry">🎨 Make Us — looks &amp; hair</string>
+    <string name="avatar_skin">Skin tone</string>
+    <string name="avatar_hair_color">Hair colour</string>
+    <string name="avatar_hair_length">Hair</string>
+    <string name="avatar_hair_short">Short</string>
+    <string name="avatar_hair_long">Long</string>
+    <string name="avatar_outfit_style">Outfit style</string>
+    <string name="avatar_outfit_trousers">Trousers</string>
+    <string name="avatar_outfit_dress">Dresses</string>
+    <string name="avatar_wardrobe_hint">The wardrobe shows outfits for the style you pick here.</string>
+    <string name="avatar_reset">Reset</string>
+
+    <string name="action_close">Close</string>
+    <string name="action_next">Next</string>
+
+    <!-- Privacy lock -->
+    <string name="lock_title">Welcome back</string>
+    <string name="lock_subtitle">Enter your PIN to open your tiny world</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_wrong_pin">That’s not it — try again.</string>
+    <string name="lock_cooldown">Too many tries. Try again in %1$d s.</string>
+    <string name="lock_forgot">Forgot PIN?</string>
+    <string name="lock_forgot_body">Confirm it’s you with your phone’s own screen lock. The app lock will turn off and you can choose a new PIN in Settings. Nothing inside is deleted.</string>
+    <string name="lock_forgot_no_screen_lock">Your phone has no screen lock, so the PIN can’t be reset here. Tiny Us has no account or server, so the only other way is clearing the app’s data in Android Settings — which also erases everything inside.</string>
+    <string name="lock_reset_with_phone">Use my phone’s screen lock</string>
+    <string name="lock_reset_prompt_title">Reset Tiny Us lock</string>
+    <string name="lock_reset_prompt_subtitle">Confirm with your phone’s screen lock</string>
+    <string name="lock_reset_done">App lock turned off. Set a new PIN in Settings → Privacy.</string>
+    <string name="lock_biometric_title">Unlock Tiny Us</string>
+    <string name="lock_biometric_subtitle">Use your fingerprint or face</string>
+    <string name="lock_use_pin">Use PIN</string>
+    <string name="lock_backspace">Delete digit</string>
+    <string name="lock_setup_choose">Choose a PIN</string>
+    <string name="lock_setup_confirm">Enter it once more</string>
+    <string name="lock_setup_hint">4–6 digits. Your PIN never leaves this phone.</string>
+    <string name="lock_setup_mismatch">Those didn’t match. Let’s start again.</string>
+    <string name="lock_setup_turn_on">Turn on lock</string>
+    <string name="lock_setting_title">Lock with PIN</string>
+    <string name="lock_setting_subtitle">Keep your letters and memories just for you two</string>
+    <string name="lock_setting_biometrics">Unlock with fingerprint or face</string>
+    <string name="lock_setting_grace">Lock again after leaving the app</string>
+    <string name="lock_grace_immediately">Right away</string>
+    <string name="lock_grace_minutes">%1$d min</string>
+    <string name="lock_setting_hide_preview">Hide in recent apps</string>
+    <string name="lock_setting_hide_preview_sub">Also blocks screenshots while the lock is on</string>
+    <string name="lock_setting_change_pin">Change PIN</string>
+    <string name="privacy_section_title">Privacy Lock</string>
+    <string name="privacy_section_subtitle">PIN, fingerprint &amp; a discreet icon</string>
+
+    <!-- Our Story -->
+    <string name="story_entry">📖 Our Story</string>
+    <string name="story_title">Our Story</string>
+    <string name="story_subtitle">Day %1$d together · %2$d little moments</string>
+    <string name="story_loading">Gathering our pages…</string>
+    <string name="story_undated">Somewhere in our story</string>
+    <string name="story_upcoming">Coming up · %1$s</string>
+    <string name="story_filter_all">All</string>
+    <string name="story_filter_milestones">Milestones</string>
+    <string name="story_filter_memories">Keepsakes</string>
+    <string name="story_filter_letters">Letters</string>
+    <string name="story_filter_photos">Photos</string>
+    <string name="story_filter_together">Together</string>
+    <string name="story_empty_title">Your story starts here</string>
+    <string name="story_empty_body">Add a keepsake, write a letter or tap the heart to take a tiny photo — each one becomes a page here.</string>
+
+    <!-- Backup & Restore -->
+    <string name="action_cancel">Cancel</string>
+    <string name="action_continue">Continue</string>
+    <string name="backup_section_title">Backup &amp; Restore</string>
+    <string name="backup_section_subtitle">Keep a copy of your world, or move it to a new phone</string>
+    <string name="backup_explainer">Saves letters, keepsakes, photos and settings into one password-protected file. It goes wherever you choose — Tiny Us never uploads it.</string>
+    <string name="backup_export">Save backup</string>
+    <string name="backup_restore">Restore</string>
+    <string name="backup_working">Working on it… keep Tiny Us open.</string>
+    <string name="backup_password_title">Protect your backup</string>
+    <string name="backup_password_hint">At least 6 characters. Write it down — without it the file can’t be opened, not even by us.</string>
+    <string name="backup_password">Backup password</string>
+    <string name="backup_password_again">Type it again</string>
+    <string name="backup_enter_password">Backup password</string>
+    <string name="backup_saved">Backup saved (%1$d photos included).</string>
+    <string name="backup_failed">Something went wrong. Nothing was changed.</string>
+    <string name="backup_restored">Welcome home — your world is restored.</string>
+    <string name="backup_wrong_password">Wrong password or damaged backup.</string>
+    <string name="backup_restore_confirm_title">Replace everything?</string>
+    <string name="backup_restore_confirm_body">Restoring replaces all letters, keepsakes, photos and settings on this phone with the ones in the backup. If anything goes wrong, nothing is changed.</string>
+    <string name="backup_choose_file">Choose file</string>
+
+    <string name="privacy_footer">Tiny Us works offline and never sends your names, dates, letters or photos anywhere. Copies only leave this phone if you save a backup file yourself or use Android’s own encrypted device backup.</string>
+
+    <!-- Discreet mode -->
+    <string name="discreet_app_name">Journal</string>
+    <string name="discreet_setting_title">Discreet icon</string>
+    <string name="discreet_setting_subtitle">Shows a plain “Journal” icon and keeps reminders generic. Your launcher may take a moment to update.</string>
+    <string name="discreet_notification_title">A gentle reminder</string>
+    <string name="discreet_notification_body">Take a small moment for yourself today.</string>
 </resources>

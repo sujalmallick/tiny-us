@@ -953,6 +953,14 @@ class ParticleSystem {
         rainGroundY: Float = ch * 0.84f
     ) {
         val dt = deltaSeconds.coerceIn(0f, 0.05f)
+        // Cap applies indoors too, so rapid prop taps cannot pile up particles.
+        if (particles.size > 400) {
+            val removeCount = particles.size - 400
+            for (i in 0 until removeCount) {
+                recycleParticle(particles[i])
+            }
+            particles.subList(0, removeCount).clear()
+        }
         // Weather-specific particles belong to the weather that created them. Clear them
         // together at a transition so old rain/petals cannot drift into a new climate.
         if (!isOutdoor) {
@@ -967,13 +975,6 @@ class ParticleSystem {
             activeWeather = weather
             rainSpawnAccumulator = 0f
             seasonalSpawnAccumulator = 0f
-        }
-        if (particles.size > 400) {
-            val removeCount = particles.size - 400
-            for (i in 0 until removeCount) {
-                recycleParticle(particles[i])
-            }
-            particles.subList(0, removeCount).clear()
         }
 
         // Track weather change so stale ground particles of the old type are removed.
@@ -1012,16 +1013,16 @@ class ParticleSystem {
                 )
             }
             com.example.scene.WeatherType.SUNNY -> {
-                // Keep the sunny air gentle and stable at both 60 and 120 Hz.
-                if (eventChance(0.18f, dt)) {
-                    spawnDandelionFluff(-10f, ch * (0.35f + Random.nextFloat() * 0.45f))
-                }
-                // Only spawn sun sparkles during the day, never at night
-                if (!isNight && eventChance(0.32f, dt)) {
-                    spawnSunSparkle(cw * Random.nextFloat(), ch * (0.25f + Random.nextFloat() * 0.50f))
-                }
-                if (eventChance(0.07f, dt)) {
-                    spawnWindBreezeStreak(-40f, ch * (0.45f + Random.nextFloat() * 0.35f), cw)
+                // A bounded rate accumulator keeps the sunny ambience present in short
+                // sessions and consistent across frame rates without bursty catch-up.
+                seasonalSpawnAccumulator += dt * 0.58f
+                if (seasonalSpawnAccumulator >= 1f) {
+                    seasonalSpawnAccumulator -= 1f
+                    when (Random.nextInt(if (isNight) 2 else 3)) {
+                        0 -> spawnDandelionFluff(-10f, ch * (0.35f + Random.nextFloat() * 0.45f))
+                        1 -> spawnWindBreezeStreak(-40f, ch * (0.45f + Random.nextFloat() * 0.35f), cw)
+                        else -> spawnSunSparkle(cw * Random.nextFloat(), ch * (0.25f + Random.nextFloat() * 0.50f))
+                    }
                 }
             }
         }

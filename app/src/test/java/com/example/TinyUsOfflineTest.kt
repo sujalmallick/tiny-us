@@ -83,8 +83,78 @@ class TinyUsOfflineTest {
                 SceneType.COZY_LOFT -> assertEquals(EnvironmentType.COZY_LOFT, scene.environment)
                 SceneType.RAINY_CAFE -> assertEquals(EnvironmentType.RAINY_CAFE, scene.environment)
                 SceneType.SUNROOM -> assertEquals(EnvironmentType.SUNROOM, scene.environment)
+                SceneType.CAMPFIRE -> assertEquals(EnvironmentType.CAMPFIRE, scene.environment)
+                SceneType.SEASIDE_PIER -> assertEquals(EnvironmentType.SEASIDE_PIER, scene.environment)
             }
         }
+    }
+
+    @Test
+    fun `test campfire scene loads and interactive objects update state`() {
+        engine.loadScene(SceneType.CAMPFIRE)
+        assertEquals(SceneType.CAMPFIRE, engine.currentScene)
+        assertEquals(EnvironmentType.CAMPFIRE, engine.currentScene.environment)
+        assertTrue(engine.isCurrentSceneOutdoor)
+
+        // Fire pit & roasting marshmallows
+        engine.onTouchCampfire(1000f, 1000f, 480f, 740f)
+        assertTrue(engine.marshmallowRoastingTimer > 0f)
+        assertTrue(engine.campfireEmbersTimer > 0f)
+        assertEquals(CharacterPose.EAT_SNEAK, engine.boy.pose)
+        assertTrue("Roasting emote should be visible", engine.boy.emoteTimer > 0f)
+
+        // Camp guitar
+        engine.onTouchCampGuitar(1000f, 1000f)
+        assertTrue(engine.campGuitarStrumTimer > 0f)
+        assertEquals(EmoteType.MUSIC_NOTE, engine.boy.emote)
+
+        // Lantern toggle
+        val prevLantern = engine.campLanternLit
+        engine.onTouchCampLantern(1000f, 1000f)
+        assertEquals(!prevLantern, engine.campLanternLit)
+
+        // Mochi napping on the blanket stirs awake like anywhere else
+        assertEquals(CatState.SLEEPING, engine.catState)
+        engine.onTouchCampMochi(1000f, 1000f)
+        assertEquals(CatState.SITTING_PURR, engine.catState)
+        assertTrue(engine.sceneMessage?.contains("blanket") == true)
+    }
+
+    @Test
+    fun `test rainy cafe scene elements and characters interactions`() {
+        engine.loadScene(SceneType.RAINY_CAFE)
+        assertEquals(SceneType.RAINY_CAFE, engine.currentScene)
+        assertEquals(EnvironmentType.RAINY_CAFE, engine.currentScene.environment)
+
+        // Barista Leo interaction
+        engine.onTouchCafeBarista(1000f, 1000f)
+        assertTrue(engine.cafeBaristaBrewTimer > 0f)
+        assertEquals(CharacterEmotion.HAPPY, engine.boy.emotion)
+        assertEquals(CharacterEmotion.HAPPY, engine.girl.emotion)
+
+        // Daily specials menu interaction
+        engine.onTouchCafeMenu()
+        assertTrue(engine.sceneMessage?.contains("Specials") == true)
+
+        // Boba the cafe pup interaction
+        engine.onTouchCafePup(1000f, 1000f)
+        assertTrue(engine.cafePupPetTimer > 0f)
+
+        // Rainy street umbrella passerby interaction
+        engine.onTouchCafePasserby(500f, 300f)
+        assertTrue(engine.sceneMessage?.contains("umbrella") == true)
+
+        // Table items: Latte and Pastry
+        engine.onTouchCafeLatte(1000f, 1000f)
+        assertTrue(engine.cafeLatteTimer > 0f)
+
+        val prevBites = engine.cafePastryBites
+        engine.onTouchCafePastry(1000f, 1000f)
+        assertTrue(engine.cafePastryBites > prevBites)
+
+        // Foggy window heart
+        engine.onTouchCafeWindow(500f, 250f, 1000f, 1000f)
+        assertTrue(engine.cafeWindowHeartTimer > 0f)
     }
 
     @Test

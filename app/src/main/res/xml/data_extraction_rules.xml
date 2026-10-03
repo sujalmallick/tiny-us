@@ -1,19 +1,18 @@
-<?xml version="1.0" encoding="utf-8"?><!--
-   Sample data extraction rules file; uncomment and customize as necessary.
-   See https://developer.android.com/about/versions/12/backup-restore#xml-changes
-   for details.
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Android 12+ backup rules. Tiny Us never sends data anywhere itself; this only controls what
+    Android's own backup and phone-to-phone transfer may copy.
 -->
 <data-extraction-rules>
-    <cloud-backup>
-        <!-- TODO: Use <include> and <exclude> to control what is backed up.
-        <include .../>
-        <exclude .../>
-        -->
+    <!-- Cloud backup only when Android can end-to-end encrypt it with the phone's screen lock.
+         Photos are excluded so the 25 MB quota is never exceeded (see backup_rules.xml). -->
+    <cloud-backup disableIfNoEncryptionCapabilities="true">
+        <include domain="sharedpref" path="tiny_us_prefs.xml" />
     </cloud-backup>
-    <!--
+    <!-- Direct device-to-device transfer has no size quota: bring everything except the lock. -->
     <device-transfer>
-        <include .../>
-        <exclude .../>
+        <include domain="sharedpref" path="tiny_us_prefs.xml" />
+        <include domain="sharedpref" path="tiny_us_polaroids.xml" />
+        <include domain="file" path="polaroids/" />
     </device-transfer>
-    -->
 </data-extraction-rules>

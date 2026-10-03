@@ -30,3 +30,8 @@ personal_profile.json
 personal_config.json
 *.personal.json
 !personal_profile.template.json
+
+# Release signing secrets (see app/build.gradle.kts)
+keystore.properties
+*.jks
+*.keystore

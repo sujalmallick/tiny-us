@@ -1054,7 +1054,7 @@ fun SharedMoodDialog(
                     colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
                     shape = RoundedCornerShape(14.dp)
                 ) {
-                    Text("Share With Each Other 💌", fontWeight = FontWeight.SemiBold)
+                    Text(if (com.example.FeatureFlags.PARTNER_SYNC) "Share With Each Other 💌" else "Save Our Moods 🌸", fontWeight = FontWeight.SemiBold)
                 }
             }
         }
@@ -1087,7 +1087,7 @@ private fun PartnerMoodSection(
                     fontWeight = FontWeight.Bold,
                     color = DarkSlate
                 )
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                if (com.example.FeatureFlags.PARTNER_SYNC) Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
                         text = if (isShared) "Shared" else "Private",
                         fontSize = 11.sp,

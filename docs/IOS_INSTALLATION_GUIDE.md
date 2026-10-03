@@ -2,6 +2,12 @@
 
 Since Tiny Us is built with Kotlin Multiplatform (KMP), GitHub Actions compiles the shared framework and iOS app on macOS runners in the cloud, generating a ready-to-install `.ipa` package without needing a Mac on your local desk.
 
+## Widget App Group setup
+
+The iOS widget reads a local snapshot through the App Group `group.com.example.tinyus.shared`. For a signed device build, register that App Group with the Apple Developer team, enable it for both the app and `com.example.tinyus.widget` identifiers, and keep the matching value in both entitlement files, `TinyAppGroup.suiteName` (`iosApp/iosApp/TinyWidgetPayload.swift`) and `IosUserDefaultsStorage.APP_GROUP_SUITE` (shared Kotlin). The widget shows its built-in Tiny Us preview until the app and extension share that group.
+
+The iOS bundle identifiers in this public project are example identifiers. Replace them with identifiers registered to your signing team before distributing a signed build.
+
 ---
 
 ## Method 1: Sideloadly (Recommended — Fastest & Easiest on Windows)

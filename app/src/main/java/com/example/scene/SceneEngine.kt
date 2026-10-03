@@ -6,6 +6,8 @@ import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
+import com.example.data.DailyPromptCatalog
+import com.example.data.RelationshipTimeManager
 import com.example.engine.AmbientAudio
 import com.example.engine.MusicBoxState
 import com.example.engine.AntiRepeatRandomPicker
@@ -35,7 +37,9 @@ private val OUTDOOR_ENVIRONMENTS = setOf(
     EnvironmentType.PATH_NIGHT,
     EnvironmentType.TWILIGHT,
     EnvironmentType.EVENING_ROAD,
-    EnvironmentType.MOMO_STALL
+    EnvironmentType.MOMO_STALL,
+    EnvironmentType.CAMPFIRE,
+    EnvironmentType.SEASIDE_PIER
 )
 
 /** Converts a per-second event rate to a frame-rate-independent per-frame chance. */
@@ -52,6 +56,8 @@ class SceneEngine(
 ) {
     companion object {
         const val MIN_CAT_WALK_THRESHOLD_PIXELS = 48f
+        const val PIER_ICE_CREAM_SECONDS = 8f
+        const val PIER_BOTTLE_RESPAWN_SECONDS = 30f
     }
 
     val isCurrentSceneOutdoor: Boolean
@@ -138,6 +144,52 @@ class SceneEngine(
         private set
     var mochiCollarStyle: Int by mutableIntStateOf(0)
         private set
+    var campfireEmbersTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var campLanternLit: Boolean by mutableStateOf(true)
+        private set
+    var campGuitarStrumTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var marshmallowRoastingTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var cafeBaristaBrewTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var cafePupPetTimer: Float by mutableFloatStateOf(0f)
+        private set
+
+    // Seaside Pier: ice cream cart, Grandpa Bao's fishing, the bottle, the lighthouse and Pip the seagull
+    var pierIceCreamTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierLighthouseTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierFishingPhase: PierFishingPhase by mutableStateOf(PierFishingPhase.IDLE)
+        private set
+    var pierFishingTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierLastCatch: PierCatch? by mutableStateOf(null)
+        private set
+    var pierBottleVisible: Boolean by mutableStateOf(true)
+        private set
+    private var pierBottleRespawnTimer = 0f
+    var pierGullState: GullState by mutableStateOf(GullState.AWAY)
+        private set
+    var pierGullX: Float by mutableFloatStateOf(1.1f)
+        private set
+    var pierGullY: Float by mutableFloatStateOf(0.20f)
+        private set
+    var pierGullFacingLeft: Boolean by mutableStateOf(true)
+        private set
+    private var pierGullTimer = 0f
+    private var pierGullTargetX = 0.62f
+    /** Random source for the pier's characters; tests swap in a seeded one. */
+    internal var pierRng: Random = Random.Default
+    private val pierCatchPicker = AntiRepeatRandomPicker(PierCatch.entries.toList())
+    private val baoLinePicker = AntiRepeatRandomPicker(GRANDPA_BAO_LINES)
+    /** Today's Daily Tiny Moments question, revealed by the message in a bottle. */
+    internal var dailyPromptProvider: () -> String = {
+        DailyPromptCatalog.getPromptForDay(RelationshipTimeManager.calculateTinyUsDay().toInt()).question
+    }
+
     private var catTreatInProgress = false
     private var catTreatWalking = false
     val isCatTreatOnFloor: Boolean get() = catTreatInProgress && catTreatDropTimer <= 0f && catTreatMunchTimer <= 0f
@@ -238,6 +290,8 @@ class SceneEngine(
     private var isRainAmbientPlaying: Boolean = false
 
     var gardenStage: Int by mutableIntStateOf(0)
+    /** Keepsake plants earned by total visit days; only ever grows. */
+    var gardenBlooms: List<com.example.data.GardenBloom> by mutableStateOf(emptyList())
     var homeEvolutionState: com.example.data.HomeEvolutionState by mutableStateOf(com.example.data.HomeEvolutionState())
     var flowerWiggleTimer: Float by mutableFloatStateOf(0f)
     var wipeAlpha: Float by mutableFloatStateOf(0f)
@@ -357,6 +411,13 @@ class SceneEngine(
     private var groundInteractionWait = 0f
     private var groundInteractionX = 0f
     private var groundInteractionY = 0f
+
+    /** Where each character rests in scenes without a scripted idle loop (cafe, sunroom, campfire). */
+    private data class HomeSpot(val x: Float, val y: Float, val pose: CharacterPose, val direction: Direction)
+    private var boyHome = HomeSpot(0.43f, 0.68f, CharacterPose.IDLE, Direction.RIGHT)
+    private var girlHome = HomeSpot(0.57f, 0.68f, CharacterPose.IDLE, Direction.LEFT)
+    private var boyAwayIdle = 0f
+    private var girlAwayIdle = 0f
 
     /** Smooth sitting/snuggle/kiss offset interpolation progress (0f = separated, 1f = fully cuddled) */
     var cuddleProgress: Float by mutableFloatStateOf(0f)
@@ -591,6 +652,23 @@ class SceneEngine(
         catTreatJarTimer = 0f
         catTreatDropTimer = 0f
         catTreatMunchTimer = 0f
+        campfireEmbersTimer = 0f
+        campLanternLit = true
+        campGuitarStrumTimer = 0f
+        marshmallowRoastingTimer = 0f
+        cafeBaristaBrewTimer = 0f
+        cafePupPetTimer = 0f
+        pierIceCreamTimer = 0f
+        pierLighthouseTimer = 0f
+        pierFishingPhase = PierFishingPhase.IDLE
+        pierFishingTimer = 0f
+        pierLastCatch = null
+        pierBottleVisible = true
+        pierBottleRespawnTimer = 0f
+        pierGullState = GullState.AWAY
+        pierGullX = 1.1f
+        pierGullY = 0.20f
+        pierGullTimer = 2.5f
         catTreatInProgress = false
         catTreatWalking = false
 
@@ -833,10 +911,54 @@ class SceneEngine(
                 catWorldX = 0.82f
                 catWorldY = 0.70f
             }
+            SceneType.CAMPFIRE -> {
+                boy.worldX = 0.38f
+                boy.worldY = 0.68f
+                boy.direction = Direction.RIGHT
+                boy.pose = CharacterPose.SIT
+                boy.emotion = CharacterEmotion.LOVING
+                boy.emote = EmoteType.NONE
+
+                girl.worldX = 0.58f
+                girl.worldY = 0.68f
+                girl.direction = Direction.LEFT
+                girl.pose = CharacterPose.SIT_SNUGGLE
+                girl.emotion = CharacterEmotion.HAPPY
+                girl.emote = EmoteType.NONE
+
+                catSleeping = true
+                catState = CatState.SLEEPING
+                catWorldX = 0.76f
+                catWorldY = 0.70f
+            }
+            SceneType.SEASIDE_PIER -> {
+                boy.worldX = 0.42f
+                boy.worldY = 0.74f
+                boy.direction = Direction.RIGHT
+                boy.pose = CharacterPose.SIT
+                boy.emotion = CharacterEmotion.LOVING
+                boy.emote = EmoteType.NONE
+
+                girl.worldX = 0.56f
+                girl.worldY = 0.74f
+                girl.direction = Direction.LEFT
+                girl.pose = CharacterPose.SIT_SNUGGLE
+                girl.emotion = CharacterEmotion.HAPPY
+                girl.emote = EmoteType.NONE
+
+                catSleeping = false
+                catState = CatState.SITTING_PURR
+                catWorldX = 0.66f
+                catWorldY = 0.73f
+            }
         }
         catTargetX = catWorldX
         catTargetY = catWorldY
         catFacingLeft = false
+        boyHome = HomeSpot(boy.worldX, boy.worldY, boy.pose, boy.direction)
+        girlHome = HomeSpot(girl.worldX, girl.worldY, girl.pose, girl.direction)
+        boyAwayIdle = 0f
+        girlAwayIdle = 0f
     }
 
     fun setRoomTheme(theme: RoomTheme, announce: Boolean = true) {
@@ -1714,7 +1836,7 @@ class SceneEngine(
             SceneType.MOMO_STALL -> sceneTime < 6.2f
             SceneType.EVENING_RIDE -> sceneTime < 7.0f
             SceneType.COZY_LOFT -> sceneTime < 5.6f
-            SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
+            SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> sceneTime < 1.5f // no opening script; just the scene wipe
         }
         autonomousTimer += deltaSeconds
         if (!isScriptActive && !isWatchSceneActive && autonomousTimer >= nextAutonomousInterval &&
@@ -1755,7 +1877,7 @@ class SceneEngine(
         // Match rain contact to the visible floor in each outdoor backdrop. Path scenes
         // include their raised cobbled strip; meadow scenes meet the grass sooner.
         val rainGroundY = when (currentScene) {
-            SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING -> canvasHeight * 0.74f
+            SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING, SceneType.CAMPFIRE -> canvasHeight * 0.74f
             SceneType.WALK, SceneType.MOMO_STALL -> canvasHeight * 0.66f + 30f * pixelScale
             SceneType.EVENING_RIDE -> canvasHeight * 0.73f
             else -> canvasHeight * 0.84f
@@ -1851,6 +1973,13 @@ class SceneEngine(
         if (sunroomMistTimer > 0f) sunroomMistTimer = (sunroomMistTimer - deltaSeconds).coerceAtLeast(0f)
         if (catTreatJarTimer > 0f) catTreatJarTimer = (catTreatJarTimer - deltaSeconds).coerceAtLeast(0f)
         if (catTreatDropTimer > 0f) catTreatDropTimer = (catTreatDropTimer - deltaSeconds).coerceAtLeast(0f)
+        if (campfireEmbersTimer > 0f) campfireEmbersTimer = (campfireEmbersTimer - deltaSeconds).coerceAtLeast(0f)
+        if (campGuitarStrumTimer > 0f) campGuitarStrumTimer = (campGuitarStrumTimer - deltaSeconds).coerceAtLeast(0f)
+        if (marshmallowRoastingTimer > 0f) marshmallowRoastingTimer = (marshmallowRoastingTimer - deltaSeconds).coerceAtLeast(0f)
+        if (cafeBaristaBrewTimer > 0f) cafeBaristaBrewTimer = (cafeBaristaBrewTimer - deltaSeconds).coerceAtLeast(0f)
+        if (cafePupPetTimer > 0f) cafePupPetTimer = (cafePupPetTimer - deltaSeconds).coerceAtLeast(0f)
+        if (pierIceCreamTimer > 0f) pierIceCreamTimer = (pierIceCreamTimer - deltaSeconds).coerceAtLeast(0f)
+        if (pierLighthouseTimer > 0f) pierLighthouseTimer = (pierLighthouseTimer - deltaSeconds).coerceAtLeast(0f)
 
         // Living Room tap-interaction animation countdowns
         if (tableCandleTimer > 0f)  tableCandleTimer  = (tableCandleTimer  - deltaSeconds).coerceAtLeast(0f)
@@ -1928,7 +2057,15 @@ class SceneEngine(
             SceneType.MOMO_STALL -> updateMomoScene(deltaSeconds, canvasWidth, canvasHeight)
             SceneType.EVENING_RIDE -> updateEveningRideScene(deltaSeconds, canvasWidth, canvasHeight)
             SceneType.COZY_LOFT -> updateCozyLoftScene(deltaSeconds, canvasWidth, canvasHeight)
-            SceneType.RAINY_CAFE, SceneType.SUNROOM -> Unit
+            SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE -> {
+                boyAwayIdle = settleToHome(boy, boyHome, boyAwayIdle, boyIdleWaveTimer, deltaSeconds)
+                girlAwayIdle = settleToHome(girl, girlHome, girlAwayIdle, girlIdleWaveTimer, deltaSeconds)
+            }
+            SceneType.SEASIDE_PIER -> {
+                boyAwayIdle = settleToHome(boy, boyHome, boyAwayIdle, boyIdleWaveTimer, deltaSeconds)
+                girlAwayIdle = settleToHome(girl, girlHome, girlAwayIdle, girlIdleWaveTimer, deltaSeconds)
+                updatePierScene(deltaSeconds, canvasWidth, canvasHeight)
+            }
         }
 
         // Feature 2: High-level CharacterState synchronization (wrapper layer only)
@@ -2488,6 +2625,31 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Scenes without a scripted idle loop settle each character back to its seat once a
+     * tap reaction, watch scene or floor stroll is over, so reaction poses never stick.
+     * Returns the new away-from-home linger time; a negative value marks a walk home in progress.
+     */
+    private fun settleToHome(c: PixelCharacter, home: HomeSpot, awayIdle: Float, waveTimer: Float, dt: Float): Float {
+        if (isWatchSceneActive || c.reactionTimer > 0f || c.isMovingOrTransitioning ||
+            waveTimer > 0f || groundInteractionCharacter === c
+        ) return if (awayIdle < 0f) awayIdle else 0f
+
+        if (kotlin.math.hypot(c.worldX - home.x, c.worldY - home.y) > 0.01f) {
+            // After a floor stroll, linger a moment before heading back; leftover
+            // reaction poses (a kiss, a jump) head home straight away.
+            val linger = awayIdle.coerceAtLeast(0f) + dt
+            if (c.pose == CharacterPose.IDLE && linger < 3.5f) return linger
+            c.moveTo(home.x, home.y, arrivePose = home.pose)
+            return -1f
+        }
+        if (c.pose != home.pose || awayIdle < 0f) {
+            c.transitionPoseTo(home.pose)
+            c.direction = home.direction
+        }
+        return 0f
+    }
+
     private fun updateMomoScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
         val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
@@ -2706,7 +2868,7 @@ class SceneEngine(
             SceneType.MOMO_STALL -> sceneTime < 6.2f
             SceneType.EVENING_RIDE -> sceneTime < 7.0f
             SceneType.COZY_LOFT -> sceneTime < 5.6f
-            SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
+            SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> sceneTime < 1.5f // no opening script; just the scene wipe
         }
         if (isScriptActive || isWatchSceneActive) return false
 
@@ -2981,19 +3143,13 @@ class SceneEngine(
     fun commandCatWalkTo(targetX: Float, targetY: Float, cw: Float, ch: Float) {
         if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return
         mochiMatchmakerActive = false
-        val isOutdoor = currentScene.environment in listOf(
-            EnvironmentType.MEADOW,
-            EnvironmentType.TWILIGHT,
-            EnvironmentType.TREE_HILL,
-            EnvironmentType.PATH_NIGHT,
-            EnvironmentType.MOMO_STALL
-        )
-        val clampedTargetX = targetX.coerceIn(0.08f, 0.92f)
+        val isOutdoor = isCurrentSceneOutdoor
         val clampedTargetY = if (isOutdoor) {
             targetY.coerceIn(0.66f, 0.74f)
         } else {
             targetY.coerceIn(0.66f, 0.72f)
         }
+        val clampedTargetX = avoidCampfirePit(targetX.coerceIn(0.08f, 0.92f), clampedTargetY)
 
         // Aspect-corrected distance guard: prevent waking Mochi or playing sounds on tiny nudges/taps
         val effCw = if (cw > 0f) cw else 1080f
@@ -3013,7 +3169,12 @@ class SceneEngine(
         audio.playCatPurr()
         particles.spawnHeart(effCw * catWorldX, effCh * catWorldY - 20f, Color(0xFFFF85A1))
         particles.spawnSparkles(effCw * catTargetX, effCh * catTargetY, 4)
-        showMessage(if (isOutdoor) "Mochi trots through the grass towards you!" else "Mochi trots across the room to you!", duration = 2.0f)
+        val trotMessage = when {
+            currentScene == SceneType.SEASIDE_PIER -> "Mochi pads along the boardwalk to you!"
+            isOutdoor -> "Mochi trots through the grass towards you!"
+            else -> "Mochi trots across the room to you!"
+        }
+        showMessage(trotMessage, duration = 2.0f)
     }
 
     private fun triggerAutonomousPetBehavior(cw: Float, ch: Float) {
@@ -3058,13 +3219,7 @@ class SceneEngine(
         // Cat chooses next mood: 25% chance to gently roam to a new spot (replaces frantic 55% constant wandering)
         val shouldRoam = Random.nextFloat() < 0.25f
         if (shouldRoam) {
-            val isOutdoor = currentScene.environment in listOf(
-                EnvironmentType.MEADOW,
-                EnvironmentType.TWILIGHT,
-                EnvironmentType.TREE_HILL,
-                EnvironmentType.PATH_NIGHT,
-                EnvironmentType.MOMO_STALL
-            )
+            val isOutdoor = isCurrentSceneOutdoor
             val coupleClose = kotlin.math.abs(boy.worldX - girl.worldX) < 0.25f
             val newTargetX = when (currentScene.environment) {
                 EnvironmentType.LIVING_ROOM -> {
@@ -3098,12 +3253,12 @@ class SceneEngine(
                     }
                 }
             }
-            catTargetX = newTargetX.coerceIn(0.12f, 0.88f)
             catTargetY = if (isOutdoor) {
                 0.67f + Random.nextFloat() * 0.06f
             } else {
                 0.67f + Random.nextFloat() * 0.03f
             }
+            catTargetX = avoidCampfirePit(newTargetX.coerceIn(0.12f, 0.88f), catTargetY)
             catFacingLeft = catTargetX < catWorldX
             catState = CatState.WALK_FOLLOW
             catSleeping = false
@@ -4013,6 +4168,12 @@ class SceneEngine(
             SceneType.COZY_LOFT -> { minY = 0.56f; maxY = 0.66f; minX = 0.40f; maxX = 0.80f }
             SceneType.RAINY_CAFE -> { minY = 0.69f; maxY = 0.79f; minX = 0.16f; maxX = 0.84f }
             SceneType.SUNROOM -> { minY = 0.67f; maxY = 0.80f; minX = 0.14f; maxX = 0.86f }
+            SceneType.CAMPFIRE -> { minY = 0.68f; maxY = 0.80f; minX = 0.14f; maxX = 0.86f }
+            // Between the ice-cream cart and Grandpa Bao's crate.
+            SceneType.SEASIDE_PIER -> {
+                minY = PierLayout.WALK_MIN_Y; maxY = PierLayout.WALK_MAX_Y
+                minX = PierLayout.WALK_MIN_X; maxX = PierLayout.WALK_MAX_X
+            }
             SceneType.EVENING_RIDE -> return false // They are sharing the scooter in this scene.
         }
 
@@ -4026,6 +4187,8 @@ class SceneEngine(
         val partner = if (walker === boy) girl else boy
         val targetX = requestedX.coerceIn(minX, maxX)
         val targetY = requestedY.coerceIn(minY, maxY)
+        // Nobody strolls into the campfire flames.
+        if (avoidCampfirePit(targetX, targetY) != targetX) return false
 
         // Leave a little personal space so a depth walk cannot end with the sprites stacked.
         if (kotlin.math.hypot(partner.worldX - targetX, partner.worldY - targetY) < 0.105f) return false
@@ -4045,6 +4208,9 @@ class SceneEngine(
         return true
     }
 
+    private fun avoidCampfirePit(x: Float, y: Float): Float =
+        if (currentScene == SceneType.CAMPFIRE) CampfireLayout.avoidPit(x, y) else x
+
     private fun isSceneOpeningScriptActive(): Boolean = when (currentScene) {
         SceneType.FLOWER -> sceneTime < 8.2f
         SceneType.UNDER_TREE -> sceneTime < 7.2f
@@ -4055,7 +4221,7 @@ class SceneEngine(
         SceneType.MOMO_STALL -> sceneTime < 6.2f
         SceneType.EVENING_RIDE -> sceneTime < 7.0f
         SceneType.COZY_LOFT -> sceneTime < 5.6f
-        SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
+        SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> sceneTime < 1.5f // no opening script; just the scene wipe
     }
 
     private fun updateGroundInteraction(dt: Float, cw: Float, ch: Float) {
@@ -4722,27 +4888,41 @@ class SceneEngine(
         onOpenWardrobe()
     }
 
+    // Outfit names follow the character's chosen style (dress vs trousers), not its slot.
+    private fun dressOutfitNames(partnerName: String): List<String> = listOf(
+        "Strawberry Cream Sundress",
+        "Lavender Dream Wrap Dress",
+        "Emerald Velvet Romance",
+        "Lemon Sunshine Picnic Dress",
+        "Midnight Starlight Gown",
+        "Mint Macaron Tea Dress",
+        "$partnerName's Oversized Flannel",
+        "Blush Rose Cropped Hoodie",
+        "Sage & Cream Colorblock Hoodie",
+        "Lavender Cloud Oversized Hoodie",
+        "Buttercream Star Shimmer Hoodie"
+    )
+
+    private fun trouserOutfitNames(): List<String> = listOf(
+        "Classic Spruce Knit & Navy Pants",
+        "White & Emerald Varsity Hoodie",
+        "Charcoal Streetwear Zip Hoodie",
+        "Oatmeal Cloud Oversized Hoodie",
+        "Midnight Starlight Graphic Hoodie"
+    )
+
+    private fun outfitDisplayName(char: PixelCharacter, index: Int): String =
+        if (char.look.wearsDress) dressOutfitNames(partnerName = if (char === girl) boy.name else girl.name).getOrElse(index) { "Lovely Outfit" }
+        else trouserOutfitNames().getOrElse(index) { "Sharp Outfit" }
+
     fun selectGirlDress(index: Int) {
         girl.outfitIndex = index
         girl.emotion = CharacterEmotion.LOVING
         girl.pose = CharacterPose.JOY_JUMP
         girl.bounceOffset = 8f
         audio.playHeartChime()
-        val dressNames = listOf(
-            "Strawberry Cream Sundress",
-            "Lavender Dream Wrap Dress",
-            "Emerald Velvet Romance",
-            "Lemon Sunshine Picnic Dress",
-            "Midnight Starlight Gown",
-            "Mint Macaron Tea Dress",
-            "${boy.name}'s Oversized Flannel",
-            "Blush Rose Cropped Hoodie",
-            "Sage & Cream Colorblock Hoodie",
-            "Lavender Cloud Oversized Hoodie",
-            "Buttercream Star Shimmer Hoodie"
-        )
-        val name = dressNames.getOrElse(index) { "Lovely Outfit" }
-        showMessage("${girl.name} is now wearing the $name! Looking stunning!", duration = 3.5f)
+        val name = outfitDisplayName(girl, index)
+        showMessage("${girl.name} is now wearing the $name! Looking lovely!", duration = 3.5f)
     }
 
     fun selectGirlAccessory(index: Int) {
@@ -4756,7 +4936,7 @@ class SceneEngine(
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
-            showMessage("${girl.name} took off her accessory.", duration = 2.5f)
+            showMessage("${girl.name} took off the accessory.", duration = 2.5f)
         } else {
             showMessage("${girl.name} is now wearing the $name!", duration = 3.0f)
         }
@@ -4768,15 +4948,8 @@ class SceneEngine(
         boy.pose = CharacterPose.JOY_JUMP
         boy.bounceOffset = 8f
         audio.playHeartChime()
-        val boyOutfitNames = listOf(
-            "Classic Spruce Knit & Navy Pants",
-            "White & Emerald Varsity Hoodie",
-            "Charcoal Streetwear Zip Hoodie",
-            "Oatmeal Cloud Oversized Hoodie",
-            "Midnight Starlight Graphic Hoodie"
-        )
-        val name = boyOutfitNames.getOrElse(index) { "Sharp Outfit" }
-        showMessage("${boy.name} is now wearing the $name! Looking handsome!", duration = 3.5f)
+        val name = outfitDisplayName(boy, index)
+        showMessage("${boy.name} is now wearing the $name! Looking wonderful!", duration = 3.5f)
     }
 
     fun selectBoyAccessory(index: Int) {
@@ -4790,7 +4963,7 @@ class SceneEngine(
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
-            showMessage("${boy.name} took off his accessory.", duration = 2.5f)
+            showMessage("${boy.name} took off the accessory.", duration = 2.5f)
         } else {
             showMessage("${boy.name} is now wearing the $name!", duration = 3.0f)
         }
@@ -4895,24 +5068,76 @@ class SceneEngine(
     fun onTouchCafeLatte(cw: Float, ch: Float) {
         cafeLatteTimer = 2.2f
         audio.playHeartChime()
-        particles.spawnHeart(cw * 0.31f, ch * 0.59f, Color(0xFFFF729F))
+        val latte = CafeLayout.latte(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnHeart(latte.x, latte.y - 8f, Color(0xFFFF729F))
         showMessage("A tiny heart in the latte foam, made just for you.", duration = 2.4f)
     }
 
     fun onTouchCafePastry(cw: Float, ch: Float) {
-        cafePastryBites = (cafePastryBites + 1).coerceAtMost(3)
+        val plate = CafeLayout.plate(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        if (cafePastryBites >= CafeLayout.MAX_PASTRY_BITES) {
+            cafePastryBites = 0
+            cafeBaristaBrewTimer = 1.2f
+            audio.playHeartChime()
+            particles.spawnSparkles(plate.x, plate.y, 4, Color(0xFFFFD166))
+            showMessage("Barista Leo brings a fresh warm croissant 🥐", duration = 2.2f)
+            return
+        }
+        cafePastryBites += 1
         audio.playBubblePop()
-        particles.spawnSparkles(cw * 0.69f, ch * 0.61f, 3, Color(0xFFFFD166))
-        showMessage(if (cafePastryBites >= 3) "The croissant disappeared between you!" else "A tiny croissant nibble for two.", duration = 2.0f)
+        particles.spawnSparkles(plate.x, plate.y, 3, Color(0xFFFFD166))
+        showMessage(if (cafePastryBites >= CafeLayout.MAX_PASTRY_BITES) "The croissant disappeared between you!" else "A tiny croissant nibble for two.", duration = 2.0f)
     }
 
     fun onTouchCafeWindow(touchX: Float, touchY: Float, cw: Float, ch: Float) {
+        // Keep the whole fog heart on the glass (it spans -3..+4 heart pixels around the tap).
+        val p = (cw / 115f).coerceIn(3f, 5f)
+        val glass = CafeLayout.glass(cw, ch, p)
         cafeWindowHeartTimer = 2.8f
-        cafeWindowHeartX = (touchX / cw).coerceIn(0.12f, 0.88f)
-        cafeWindowHeartY = (touchY / ch).coerceIn(0.12f, 0.47f)
+        cafeWindowHeartX = touchX.coerceIn(glass.left + 5f * p, glass.right - 7f * p) / cw
+        cafeWindowHeartY = touchY.coerceIn(glass.top + p, glass.bottom - 8f * p) / ch
         audio.playWaterDrip()
         particles.spawnHeart(touchX, touchY, Color(0xFFFFB6C9))
         showMessage("A little heart fogs the rainy window.", duration = 2.2f)
+    }
+
+    fun onTouchCafeBarista(cw: Float, ch: Float) {
+        cafeBaristaBrewTimer = 2.5f
+        audio.playSteamHiss()
+        audio.playHeartChime()
+        val leo = CafeLayout.barista(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnSparkles(leo.x, leo.y - 30f, 6, Color(0xFFFFD166))
+        particles.spawnHeart(leo.x, leo.y - 50f, Color(0xFFFF729F))
+        boy.emotion = CharacterEmotion.HAPPY
+        girl.emotion = CharacterEmotion.HAPPY
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.5f
+        girl.emoteTimer = 2.5f
+        boy.reactionTimer = 2.5f
+        girl.reactionTimer = 2.5f
+        showMessage("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.' ☕✨", duration = 3.0f)
+    }
+
+    fun onTouchCafeMenu() {
+        audio.playPaperFlip()
+        showMessage("Today's Specials: 1. Caramel Cloud Latte 2. Warm Croissant 3. Strawberry Macaron 🥐☕", duration = 3.2f)
+    }
+
+    fun onTouchCafePup(cw: Float, ch: Float) {
+        cafePupPetTimer = 2.0f
+        audio.playBubblePop()
+        val pup = CafeLayout.pup(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnHeart(pup.x, pup.y - 30f, Color(0xFFFFCAD4))
+        particles.spawnSparkles(pup.x, pup.y - 10f, 4, Color(0xFFFFD166))
+        showMessage("Boba the cafe pup wags his tail and naps happily beside Mochi 🐶💤", duration = 2.8f)
+    }
+
+    fun onTouchCafePasserby(touchX: Float, touchY: Float) {
+        audio.playBubblePop()
+        particles.spawnSparkles(touchX, touchY, 5, Color(0xFFFFE066))
+        particles.spawnHeart(touchX, touchY - 14f, Color(0xFFFF9AA2))
+        showMessage("A friendly neighbor strolls by with an umbrella through the rain ☂️🌧️", duration = 2.5f)
     }
 
     fun onTouchSunroomSkylight(touchX: Float, touchY: Float) {
@@ -4936,6 +5161,280 @@ class SceneEngine(
         particles.spawnSparkles(cw * 0.24f, ch * 0.69f, 6, Color(0xFFBFE9F7))
         showMessage("A cool morning mist curls through the greenhouse.", duration = 2.3f)
     }
+
+    fun onTouchCampfire(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        campfireEmbersTimer = 2.8f
+        marshmallowRoastingTimer = 3.5f
+        audio.playCandleFlicker()
+        repeat(5) {
+            particles.spawnSparkles(touchX + (Random.nextFloat() - 0.5f) * 20f, touchY - 14f - Random.nextFloat() * 18f, 2, Color(0xFFFFB703))
+        }
+        particles.spawnHeart(cw * CampfireLayout.PIT_X, ch * 0.60f, Color(0xFFFF9AA2))
+        boy.pose = CharacterPose.EAT_SNEAK
+        girl.pose = CharacterPose.EAT_SNEAK
+        boy.emotion = CharacterEmotion.LOVING
+        girl.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.HEART
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 3.0f
+        girl.emoteTimer = 3.0f
+        boy.reactionTimer = 3.5f
+        girl.reactionTimer = 3.5f
+        showMessage("Roasting sweet golden marshmallows over the crackling campfire embers 🪵🔥", duration = 3.2f)
+    }
+
+    fun onTouchCampGuitar(cw: Float, ch: Float) {
+        campGuitarStrumTimer = 2.6f
+        audio.playStarArpeggio()
+        val guitar = CampfireLayout.guitar(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnSparkles(guitar.x, guitar.y, 5, Color(0xFFFFD166))
+        boy.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.MUSIC_NOTE
+        girl.emotion = CharacterEmotion.LOVING
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.6f
+        girl.emoteTimer = 2.6f
+        boy.reactionTimer = 3.0f
+        girl.reactionTimer = 3.0f
+        showMessage("Strumming a quiet acoustic melody beneath the pine trees and starlight 🎸✨", duration = 3.0f)
+    }
+
+    fun onTouchCampLantern(cw: Float, ch: Float) {
+        campLanternLit = !campLanternLit
+        audio.playWoodKnock()
+        val lantern = CampfireLayout.lantern(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnSparkles(lantern.x, lantern.y + 10f, 4, if (campLanternLit) Color(0xFFFFE066) else Color(0xFF888888))
+        val dimmedMessage = if (timeOfDayPhase.isNight) "Dimmed the lantern for better stargazing 🌌" else "Lantern off until the stars come out 🌲"
+        showMessage(if (campLanternLit) "The warm camp lantern glows bright beside our tent ⛺💡" else dimmedMessage, duration = 2.5f)
+    }
+
+    /** Mochi at the campfire: the usual cat reaction, with a blanket line when she was napping on it. */
+    fun onTouchCampMochi(cw: Float, ch: Float) {
+        val wasNappingOnBlanket = catState == CatState.SLEEPING && CampfireLayout.isOnBlanket(catWorldX, catWorldY)
+        onTouchCat(cw, ch)
+        if (wasNappingOnBlanket) {
+            showMessage("Mochi stretches and purrs on the cozy plaid camp blanket 🐾", duration = 2.8f)
+        }
+    }
+
+    // ── Seaside Pier ─────────────────────────────────────────────────────
+
+    fun onTouchPierIceCream(cw: Float, ch: Float) {
+        if (pierIceCreamTimer > 0f) {
+            showMessage("Still working on these cones! 🍦", duration = 1.8f)
+            return
+        }
+        pierIceCreamTimer = PIER_ICE_CREAM_SECONDS
+        audio.playHeartChime()
+        val cart = PierLayout.cart(cw, ch)
+        particles.spawnSparkles(cart.x, cart.y - 60f, 6, Color(0xFFFFC8DD))
+        boy.emotion = CharacterEmotion.HAPPY
+        girl.emotion = CharacterEmotion.HAPPY
+        boy.emote = EmoteType.HEART
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.5f
+        girl.emoteTimer = 2.5f
+        // Pip has noticed.
+        if (pierGullState == GullState.PERCHED) pierGullTimer = pierGullTimer.coerceAtMost(1.5f)
+        showMessage("Two strawberry cones from the cart, one for each of you 🍦🍦", duration = 3.0f)
+    }
+
+    fun onTouchGrandpaBao(cw: Float, ch: Float) {
+        when (pierFishingPhase) {
+            PierFishingPhase.IDLE, PierFishingPhase.SHOWING -> {
+                pierFishingPhase = PierFishingPhase.CASTING
+                pierFishingTimer = 0.8f
+                pierLastCatch = null
+                audio.playReelClick()
+                showMessage(baoLinePicker.pick(), duration = 3.2f)
+            }
+            PierFishingPhase.CASTING, PierFishingPhase.WAITING ->
+                showMessage("Grandpa Bao: 'Shh… something's nibbling.' 🎣", duration = 2.2f)
+            PierFishingPhase.REELING ->
+                showMessage("Grandpa Bao: 'Easy now, easy…'", duration = 1.8f)
+        }
+    }
+
+    fun onTouchPip(cw: Float, ch: Float) {
+        if (!pierGullState.isVisible || pierGullState == GullState.ESCAPING) return
+        val caughtInTheAct = pierGullState == GullState.SNEAKING || pierGullState == GullState.STEALING
+        pierGullState = GullState.ESCAPING
+        audio.playSeagullCall()
+        particles.spawnSparkles(cw * pierGullX, ch * pierGullY, 6, Color(0xFFF5F5F5))
+        showMessage(
+            if (caughtInTheAct) "Caught red-beaked! Pip flaps away empty-winged 🐦"
+            else "Shoo, Pip! The seagull flaps off with an offended squawk 🪶",
+            duration = 2.6f
+        )
+    }
+
+    fun onTouchPierBottle(cw: Float, ch: Float) {
+        if (!pierBottleVisible) return
+        pierBottleVisible = false
+        pierBottleRespawnTimer = PIER_BOTTLE_RESPAWN_SECONDS
+        audio.playPaperFlip()
+        val bottle = PierLayout.bottle(cw, ch)
+        particles.spawnSparkles(bottle.x, bottle.y, 5, Color(0xFFBDE0FE))
+        showMessage("💌 A message in a bottle: \"${dailyPromptProvider()}\"", duration = 5.0f)
+    }
+
+    fun onTouchLighthouse(cw: Float, ch: Float) {
+        pierLighthouseTimer = 4f
+        audio.playFoghorn()
+        val lamp = PierLayout.lighthouseLamp(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        particles.spawnSparkles(lamp.x, lamp.y, 6, Color(0xFFFFF3B0))
+        showMessage(
+            if (timeOfDayPhase.isNight) "The lighthouse sweeps its beam across the dark water 🌊✨"
+            else "A low foghorn hums across the bay. Ships, say hello! ⚓",
+            duration = 2.8f
+        )
+    }
+
+    fun onTouchPierSea(touchX: Float, touchY: Float) {
+        audio.playWaterDrip()
+        particles.spawnRainSplash(touchX, touchY)
+        particles.spawnSparkles(touchX, touchY - 6f, 3, Color(0xFFCFEFFF))
+    }
+
+    private fun updatePierScene(dt: Float, cw: Float, ch: Float) {
+        updatePierGull(dt, cw, ch)
+        updatePierFishing(dt, cw, ch)
+        if (!pierBottleVisible) {
+            pierBottleRespawnTimer -= dt
+            if (pierBottleRespawnTimer <= 0f) pierBottleVisible = true
+        }
+    }
+
+    private fun updatePierGull(dt: Float, cw: Float, ch: Float) {
+        when (pierGullState) {
+            GullState.AWAY -> {
+                pierGullTimer -= dt
+                if (pierGullTimer > 0f) return
+                pierGullX = 1.1f
+                pierGullY = 0.18f + pierRng.nextFloat() * 0.08f
+                pierGullTargetX = PierLayout.PERCH_XS[pierRng.nextInt(PierLayout.PERCH_XS.size)]
+                pierGullState = GullState.FLYING
+            }
+            GullState.FLYING -> {
+                if (moveGullToward(pierGullTargetX, PierLayout.RAIL_Y, 0.22f, dt)) {
+                    pierGullState = GullState.PERCHED
+                    pierGullTimer = 4f + pierRng.nextFloat() * 4f
+                }
+            }
+            GullState.PERCHED -> {
+                // In the rain Pip tucks in and waits it out.
+                if (weather == WeatherType.RAIN) return
+                if (pierIceCreamTimer > 0f) pierGullTimer = pierGullTimer.coerceAtMost(1.5f)
+                pierGullTimer -= dt
+                if (pierGullTimer > 0f) return
+                if (pierIceCreamTimer > 0f) {
+                    pierGullTargetX = (boy.worldX + girl.worldX) / 2f
+                    pierGullState = GullState.SNEAKING
+                } else if (pierRng.nextFloat() < 0.5f) {
+                    val others = PierLayout.PERCH_XS.filter { abs(it - pierGullX) > 0.05f }
+                    pierGullTargetX = others[pierRng.nextInt(others.size)]
+                    pierGullState = GullState.FLYING
+                } else {
+                    pierGullTimer = 4f + pierRng.nextFloat() * 4f
+                }
+            }
+            GullState.SNEAKING -> {
+                if (pierIceCreamTimer <= 0f) {
+                    pierGullState = GullState.PERCHED
+                    pierGullTimer = 3f
+                    return
+                }
+                if (moveGullToward(pierGullTargetX, PierLayout.RAIL_Y, 0.12f, dt)) {
+                    pierGullState = GullState.STEALING
+                    pierGullTimer = 0.6f
+                }
+            }
+            GullState.STEALING -> {
+                moveGullToward(pierGullTargetX, boy.worldY - 0.06f, 0.35f, dt)
+                pierGullTimer -= dt
+                if (pierGullTimer <= 0f) stealPierIceCream(cw, ch)
+            }
+            GullState.ESCAPING -> {
+                if (moveGullToward(-0.12f, 0.08f, 0.45f, dt)) {
+                    pierGullState = GullState.AWAY
+                    pierGullTimer = 10f + pierRng.nextFloat() * 6f
+                }
+            }
+        }
+    }
+
+    /** Moves Pip toward a point at [speed] (normalized units per second); true once there. */
+    private fun moveGullToward(targetX: Float, targetY: Float, speed: Float, dt: Float): Boolean {
+        val dx = targetX - pierGullX
+        val dy = targetY - pierGullY
+        val dist = kotlin.math.hypot(dx, dy)
+        if (abs(dx) > 0.002f) pierGullFacingLeft = dx < 0f
+        val step = speed * dt
+        if (dist <= step) {
+            pierGullX = targetX
+            pierGullY = targetY
+            return true
+        }
+        pierGullX += dx / dist * step
+        pierGullY += dy / dist * step
+        return false
+    }
+
+    private fun stealPierIceCream(cw: Float, ch: Float) {
+        pierIceCreamTimer = 0f
+        pierGullState = GullState.ESCAPING
+        audio.playSeagullCall()
+        particles.spawnSparkles(cw * pierGullX, ch * pierGullY, 5, Color(0xFFFFC8DD))
+        for (c in listOf(boy, girl)) {
+            c.pose = CharacterPose.JOY_JUMP
+            c.emotion = CharacterEmotion.SURPRISED
+            c.emote = EmoteType.EXCLAMATION
+            c.emoteTimer = 2.2f
+            c.reactionTimer = 2.2f
+        }
+        showMessage("Pip stole the ice cream!! 🐦🍦", duration = 3.0f)
+    }
+
+    private fun updatePierFishing(dt: Float, cw: Float, ch: Float) {
+        if (pierFishingPhase == PierFishingPhase.IDLE) return
+        pierFishingTimer -= dt
+        if (pierFishingTimer > 0f) return
+        when (pierFishingPhase) {
+            PierFishingPhase.CASTING -> {
+                pierFishingPhase = PierFishingPhase.WAITING
+                pierFishingTimer = 2f + pierRng.nextFloat() * 1.5f
+            }
+            PierFishingPhase.WAITING -> {
+                pierFishingPhase = PierFishingPhase.REELING
+                pierFishingTimer = 1.2f
+                audio.playReelClick()
+            }
+            PierFishingPhase.REELING -> {
+                val catch = pierCatchPicker.pick()
+                pierLastCatch = catch
+                pierFishingPhase = PierFishingPhase.SHOWING
+                pierFishingTimer = 3f
+                audio.playHeartChime()
+                val bao = PierLayout.bao(cw, ch)
+                particles.spawnSparkles(bao.x, bao.y - 40f, 5, Color(0xFFBDE0FE))
+                showMessage(catch.message, duration = 3.2f)
+                if (catch == PierCatch.FISH) {
+                    // Mochi knows exactly who that fish is for.
+                    catTargetX = PierLayout.MOCHI_FISH_X
+                    catTargetY = PierLayout.MOCHI_FISH_Y
+                    catFacingLeft = catTargetX < catWorldX
+                    catState = CatState.WALK_FOLLOW
+                    catSleeping = false
+                }
+            }
+            PierFishingPhase.SHOWING -> {
+                pierFishingPhase = PierFishingPhase.IDLE
+                pierLastCatch = null
+            }
+            PierFishingPhase.IDLE -> Unit
+        }
+    }
+
 
     fun onTouchKitchenStool(touchX: Float, touchY: Float) {
         if (stoolWobbleTimer > 0f) return
@@ -5328,7 +5827,7 @@ class SceneEngine(
         boy.emoteTimer = 2.0f
         val quotes = listOf(
             "Browsing through old love stories on the shelf...",
-            "Chapter 1: The boy with big dreams and the girl he loves.",
+            "Chapter 1: Two dreamers who found each other.",
             "Found our couple photo tucked between vintage poems!",
             "A tiny white bunny plush rests peacefully on tier 3."
         )

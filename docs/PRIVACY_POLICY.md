@@ -53,9 +53,11 @@ Tiny Us requests a minimal set of Android system permissions, each serving a dir
 ## 5. Data Backup, Export, and Transfer
 
 Because Tiny Us operates without cloud databases or user accounts:
-- If implemented, any backup or export feature uses Android's native Storage Access Framework to generate an encrypted/local archive file saved to a location of your choice.
-- You have complete control over transferring, sharing, or deleting this backup file.
-- If you uninstall the application without exporting a backup, all locally stored data is permanently deleted by the Android operating system.
+- **Backup & Restore (in Settings)** saves your data into a single file encrypted with a password you choose (AES-256-GCM, key derived with PBKDF2). The file is written through Android's system file picker to a location you choose; Tiny Us never uploads it and cannot open it without your password.
+- **Android device backup:** if you have Android backup turned on, Android itself may copy the app's core settings and journal text (not photos, and not the privacy-lock settings) to your Google account backup. On Android 12 and later this only happens when Android can end-to-end encrypt it with your screen lock. This is a service of your phone's operating system; we never receive or can access it.
+- **Phone-to-phone transfer:** when you set up a new phone with Android's direct transfer, your Tiny Us data (including photos) can move with it.
+- You have complete control over transferring, sharing, or deleting backup files.
+- If you uninstall the application without a backup, all locally stored data is permanently deleted by the Android operating system.
 
 ---
 

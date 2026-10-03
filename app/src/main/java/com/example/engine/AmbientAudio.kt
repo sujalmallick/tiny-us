@@ -1736,6 +1736,51 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Kitchen: wooden knock — short low square-ish burst for crate rattle
+    // Seaside Pier: Pip's cheeky two-note squawk, twice
+    fun playSeagullCall() {
+        if (!isEnabled) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                repeat(2) {
+                    if (!isEnabled) return@launch
+                    playSfxNoteStatic(1318.51, 70, 0.26f, isMusicBox = false)
+                    delay(20)
+                    if (!isEnabled) return@launch
+                    playSfxNoteStatic(987.77, 110, 0.22f, isMusicBox = false)
+                    delay(90)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
+    // Seaside Pier: soft, low lighthouse foghorn (root and fifth)
+    fun playFoghorn() {
+        if (!isEnabled) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                if (!isEnabled) return@launch
+                playSfxNoteStatic(110.0, 520, 0.30f, isMusicBox = false)
+                delay(60)
+                if (!isEnabled) return@launch
+                playSfxNoteStatic(164.81, 420, 0.20f, isMusicBox = false)
+            } catch (_: Exception) {}
+        }
+    }
+
+    // Seaside Pier: Grandpa Bao's fishing reel ticking
+    fun playReelClick() {
+        if (!isEnabled) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                repeat(6) {
+                    if (!isEnabled) return@launch
+                    playSfxNoteStatic(1760.0, 18, 0.16f, isMusicBox = false)
+                    delay(38)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     fun playWoodKnock() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {

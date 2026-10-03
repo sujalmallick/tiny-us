@@ -424,6 +424,30 @@ class PolaroidManager(private val context: Context) {
                 "Loft Dreaming", "High Above the World", "Blanket and Music",
                 "City Lights and Us", "Slow Midnight", "Needle on the Groove",
                 "Steam from the Mug", "Rooftop Calm", "Our Little Sanctuary"
+            ),
+            "CAMPFIRE" to listOf(
+                "Starry Campfire", "Roasting Marshmallows", "Crackling Embers",
+                "Guitar Under the Stars", "Warm Flannel Nights", "Fireside Whispers",
+                "Sparks in the Night", "Camping With You", "Midnight Starlight",
+                "Pine Trees and Us", "Golden Warmth", "Sweet Roasts"
+            ),
+            "RAINY_CAFE" to listOf(
+                "Rain on the Window", "Two Cups, One Table", "Latte Hearts",
+                "Croissant for Two", "Cafe Corner Us", "Steam and Rain",
+                "Fogged Glass Hearts", "Warm Mugs, Cold Rain", "Our Usual Table",
+                "Espresso and Smiles", "Puddles Outside", "Stay a Little Longer"
+            ),
+            "SUNROOM" to listOf(
+                "Little Greenhouse", "Growing Together", "Sunlight Through Glass",
+                "Morning Mist", "Seedlings and Us", "Terracotta Afternoon",
+                "Rain on the Skylight", "Fresh Blooms", "Green and Golden",
+                "Where Things Grow", "Leaves and Laughter", "Our Quiet Garden"
+            ),
+            "SEASIDE_PIER" to listOf(
+                "Salt and Sunset", "Feet Over the Water", "Pip Strikes Again",
+                "Lighthouse Glow", "Two Cones, One Seagull", "Boardwalk Us",
+                "Waves Say Hello", "Message in a Bottle", "Grandpa Bao's Pier",
+                "Sea Breeze Hearts", "Golden Hour Tide", "Stay Till the Stars"
             )
         )
 

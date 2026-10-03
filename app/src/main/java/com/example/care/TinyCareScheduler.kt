@@ -247,14 +247,32 @@ object TinyCareScheduler {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
 
+        val discreet = com.example.security.DiscreetMode.isEnabled(context)
+        val locked = com.example.security.AppLockStore(context).isEnabled
+        val shownTitle = if (discreet) context.getString(R.string.discreet_notification_title) else title
+        val shownBody = if (discreet) context.getString(R.string.discreet_notification_body) else body
+        val icon = if (discreet) R.mipmap.ic_launcher_discreet else R.mipmap.ic_launcher
+
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.mipmap.ic_launcher)
-            .setContentTitle(title)
-            .setContentText(body)
-            .setStyle(NotificationCompat.BigTextStyle().bigText(body))
+            .setSmallIcon(icon)
+            .setContentTitle(shownTitle)
+            .setContentText(shownBody)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(shownBody))
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .setContentIntent(contentPendingIntent)
             .setAutoCancel(true)
+            .apply {
+                if (discreet || locked) {
+                    // On the lock screen show only a neutral line, never the message itself.
+                    setVisibility(NotificationCompat.VISIBILITY_PRIVATE)
+                    setPublicVersion(
+                        NotificationCompat.Builder(context, CHANNEL_ID)
+                            .setSmallIcon(icon)
+                            .setContentTitle(context.getString(R.string.discreet_notification_title))
+                            .build()
+                    )
+                }
+            }
             .build()
 
         try {

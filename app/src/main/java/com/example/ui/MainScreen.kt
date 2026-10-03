@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.AvatarLook
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -136,6 +137,8 @@ fun MainScreen(
     var showWardrobe by remember { mutableStateOf(false) }
     var showDreamJournal by remember { mutableStateOf(false) }
     var showRoomCustomizer by remember { mutableStateOf(false) }
+    var showAvatarCustomizer by remember { mutableStateOf(false) }
+    var showOurStory by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
 
     var showDateAdventures by remember { mutableStateOf(false) }
@@ -224,6 +227,8 @@ fun MainScreen(
             girl.accessoryIndex = prefs.girlAccessoryIndex
             boy.outfitIndex = prefs.boyOutfitIndex
             boy.accessoryIndex = prefs.boyAccessoryIndex
+            boy.look = AvatarLook.of(prefs.getAvatarAppearance(isSlotB = false))
+            girl.look = AvatarLook.of(prefs.getAvatarAppearance(isSlotB = true))
             val initial = SceneType.values().firstOrNull { it.name == prefs.lastSceneId }
             val chosen = nextRandomScene(initial)
             prefs.addRecentScene(chosen.name)
@@ -357,9 +362,27 @@ fun MainScreen(
     }
 
     LaunchedEffect(Unit, engine.weather) {
-        prefs.markAppOpenedToday()
+        val bloomsBefore = com.example.data.GardenGrowth.bloomsFor(prefs.uniqueDaysOpened).size
+        val isNewDay = prefs.markAppOpenedToday()
         engine.gardenStage = prefs.gardenStage
+        engine.gardenBlooms = com.example.data.GardenGrowth.bloomsFor(prefs.uniqueDaysOpened)
         engine.homeEvolutionState = prefs.getHomeEvolutionState(engine.weather)
+
+        if (isNewDay) {
+            // Gentle garden news: a warm welcome after time away, then any new bloom. Never a loss.
+            val welcome = com.example.data.GardenGrowth.welcomeBackMessage(prefs.consumeDaysAway(), prefs.catName)
+            val newBloom = engine.gardenBlooms.takeIf { it.size > bloomsBefore }?.lastOrNull()
+            if (welcome != null || newBloom != null) delay(3500)
+            if (welcome != null) {
+                engine.showMessage(welcome, duration = 4.5f)
+                if (newBloom != null) delay(5000)
+            }
+            if (newBloom != null) {
+                val text = if (newBloom.isGolden) "A golden bloom sparkles in your garden ✨"
+                else "A ${newBloom.plant.name} bloomed in your garden ${newBloom.plant.emoji}"
+                engine.showMessage(text, duration = 4.5f)
+            }
+        }
     }
 
     // Subtle interaction hint fade
@@ -421,7 +444,7 @@ fun MainScreen(
             onOpenDateAdventures = { showDateAdventures = true },
             onOpenDailyMoment = { showDailyMomentPrompt = true },
             onOpenMiniGames = { showMiniGames = true },
-            onOpenLongDistance = { showLongDistance = true }
+            onOpenLongDistance = if (com.example.FeatureFlags.PARTNER_SYNC) ({ showLongDistance = true }) else null
         )
 
         // 2. Glassmorphism Top Controls (Translucent frosted capsule design)
@@ -1041,6 +1064,14 @@ fun MainScreen(
                     showSettings = false
                     showWardrobe = true
                 },
+                onOpenAvatarCustomizer = {
+                    showSettings = false
+                    showAvatarCustomizer = true
+                },
+                onOpenOurStory = {
+                    showSettings = false
+                    showOurStory = true
+                },
                 onOpenDateAdventures = {
                     showSettings = false
                     showDateAdventures = true
@@ -1139,6 +1170,27 @@ fun MainScreen(
             )
         }
 
+        if (showOurStory) {
+            OurStoryDialog(onDismiss = { showOurStory = false })
+        }
+
+        if (showAvatarCustomizer) {
+            AvatarCustomizerDialog(
+                nameA = prefs.boyfriendName,
+                nameB = prefs.girlfriendName,
+                outfitIndexA = boyOutfitIndex,
+                outfitIndexB = girlOutfitIndex,
+                initialA = engine.boy.look.appearance,
+                initialB = engine.girl.look.appearance,
+                onChange = { isSlotB, appearance ->
+                    prefs.setAvatarAppearance(isSlotB, appearance)
+                    val look = AvatarLook.of(appearance)
+                    if (isSlotB) engine.girl.look = look else engine.boy.look = look
+                },
+                onDismiss = { showAvatarCustomizer = false }
+            )
+        }
+
         if (showWardrobe) {
             WardrobeDialog(
                 currentGirlOutfitIndex = girlOutfitIndex,
@@ -1147,6 +1199,8 @@ fun MainScreen(
                 currentBoyAccessoryIndex = boyAccessoryIndex,
                 girlfriendName = prefs.girlfriendName,
                 boyfriendName = prefs.boyfriendName,
+                girlWearsDress = engine.girl.look.wearsDress,
+                boyWearsDress = engine.boy.look.wearsDress,
                 onSelectGirlOutfit = { index ->
                     girlOutfitIndex = index
                     engine.selectGirlDress(index)

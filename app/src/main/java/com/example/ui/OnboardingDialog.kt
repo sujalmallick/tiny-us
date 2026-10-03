@@ -1,5 +1,8 @@
 package com.example.ui
 
+import androidx.compose.ui.res.stringResource
+import com.example.R
+import com.example.data.PersonalProfile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -77,8 +80,8 @@ private const val MAX_NAME_LENGTH = 10
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OnboardingDialog(
-    initialBoyName: String = "Him",
-    initialGirlName: String = "Her",
+    initialBoyName: String = PersonalProfile.DEFAULT_NAME_A,
+    initialGirlName: String = PersonalProfile.DEFAULT_NAME_B,
     initialAnniversaryDate: LocalDate = LocalDate.now(),
     initialSecretCode: String = "",
     initialSecretNote: String = "",
@@ -91,8 +94,8 @@ fun OnboardingDialog(
         secretNote: String
     ) -> Unit
 ) {
-    var boyName by remember { mutableStateOf(if (initialBoyName == "Him") "" else initialBoyName) }
-    var girlName by remember { mutableStateOf(if (initialGirlName == "Her") "" else initialGirlName) }
+    var boyName by remember { mutableStateOf(if (PersonalProfile.isPlaceholderName(initialBoyName)) "" else initialBoyName) }
+    var girlName by remember { mutableStateOf(if (PersonalProfile.isPlaceholderName(initialGirlName)) "" else initialGirlName) }
     var anniversaryDate by remember { mutableStateOf(initialAnniversaryDate) }
     var showDatePicker by remember { mutableStateOf(false) }
 
@@ -180,8 +183,8 @@ fun OnboardingDialog(
                         OutlinedTextField(
                             value = boyName,
                             onValueChange = { if (it.length <= MAX_NAME_LENGTH) boyName = it },
-                            label = { Text("Boy's Name (e.g. Alex)") },
-                            placeholder = { Text("Him") },
+                            label = { Text(stringResource(R.string.label_your_name)) },
+                            placeholder = { Text(PersonalProfile.DEFAULT_NAME_A) },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryRose)
                             },
@@ -199,8 +202,8 @@ fun OnboardingDialog(
                         OutlinedTextField(
                             value = girlName,
                             onValueChange = { if (it.length <= MAX_NAME_LENGTH) girlName = it },
-                            label = { Text("Girl's Name (e.g. Sam)") },
-                            placeholder = { Text("Her") },
+                            label = { Text(stringResource(R.string.label_partner_name)) },
+                            placeholder = { Text(PersonalProfile.DEFAULT_NAME_B) },
                             leadingIcon = {
                                 Icon(Icons.Default.Person, contentDescription = null, tint = PrimaryRose)
                             },
@@ -323,8 +326,8 @@ fun OnboardingDialog(
                     // Complete Button
                     Button(
                         onClick = {
-                            val finalBoy = boyName.trim().ifBlank { "Him" }.take(MAX_NAME_LENGTH)
-                            val finalGirl = girlName.trim().ifBlank { "Her" }.take(MAX_NAME_LENGTH)
+                            val finalBoy = boyName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_A }.take(MAX_NAME_LENGTH)
+                            val finalGirl = girlName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_B }.take(MAX_NAME_LENGTH)
                             onComplete(
                                 finalBoy,
                                 finalGirl,
