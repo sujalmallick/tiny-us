@@ -11,6 +11,19 @@
 		A10000000000000000000010 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000000F /* ContentView.swift */; };
 		A10000000000000000000012 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000011 /* Assets.xcassets */; };
 		A10000000000000000000015 /* Shared.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A10000000000000000000014 /* Shared.framework */; };
+		A10000000000000000000020 /* bgm_sunny.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000021 /* bgm_sunny.mp3 */; };
+		A10000000000000000000022 /* bgm_rain.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000023 /* bgm_rain.mp3 */; };
+		A10000000000000000000024 /* bgm_sakura.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* bgm_sakura.mp3 */; };
+		A10000000000000000000026 /* bgm_autumn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000027 /* bgm_autumn.mp3 */; };
+		A10000000000000000000028 /* bgm_snow.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000029 /* bgm_snow.mp3 */; };
+		A10000000000000000000030 /* died_in_your_arms.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000031 /* died_in_your_arms.mp3 */; };
+		A10000000000000000000032 /* cant_take_my_eyes_off_you.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000033 /* cant_take_my_eyes_off_you.mp3 */; };
+		A10000000000000000000034 /* wicked_game.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000035 /* wicked_game.mp3 */; };
+		A10000000000000000000036 /* golden_brown.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000037 /* golden_brown.mp3 */; };
+		A10000000000000000000038 /* WidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000039 /* WidgetExtension.swift */; };
+		A10000000000000000000040 /* TinyWidgetPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
+		A10000000000000000000042 /* TinyWidgetPayload.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
+		A10000000000000000000045 /* TinyUsWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000046 /* TinyUsWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +33,20 @@
 		A10000000000000000000013 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		A10000000000000000000014 /* Shared.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Shared.framework; path = Shared.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000016 /* iosApp.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = iosApp.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000021 /* bgm_sunny.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_sunny.mp3; path = ../../app/src/main/res/raw/bgm_sunny.mp3; sourceTree = "<group>"; };
+		A10000000000000000000023 /* bgm_rain.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_rain.mp3; path = ../../app/src/main/res/raw/bgm_rain.mp3; sourceTree = "<group>"; };
+		A10000000000000000000025 /* bgm_sakura.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_sakura.mp3; path = ../../app/src/main/res/raw/bgm_sakura.mp3; sourceTree = "<group>"; };
+		A10000000000000000000027 /* bgm_autumn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_autumn.mp3; path = ../../app/src/main/res/raw/bgm_autumn.mp3; sourceTree = "<group>"; };
+		A10000000000000000000029 /* bgm_snow.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_snow.mp3; path = ../../app/src/main/res/raw/bgm_snow.mp3; sourceTree = "<group>"; };
+		A10000000000000000000031 /* died_in_your_arms.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = died_in_your_arms.mp3; path = ../../app/src/main/res/raw/died_in_your_arms.mp3; sourceTree = "<group>"; };
+		A10000000000000000000033 /* cant_take_my_eyes_off_you.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = cant_take_my_eyes_off_you.mp3; path = ../../app/src/main/res/raw/cant_take_my_eyes_off_you.mp3; sourceTree = "<group>"; };
+		A10000000000000000000035 /* wicked_game.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = wicked_game.mp3; path = ../../app/src/main/res/raw/wicked_game.mp3; sourceTree = "<group>"; };
+		A10000000000000000000037 /* golden_brown.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = golden_brown.mp3; path = ../../app/src/main/res/raw/golden_brown.mp3; sourceTree = "<group>"; };
+		A10000000000000000000039 /* WidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetExtension.swift; sourceTree = "<group>"; };
+		A10000000000000000000041 /* TinyWidgetPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWidgetPayload.swift; sourceTree = "<group>"; };
+		A10000000000000000000043 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000044 /* TinyUsWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TinyUsWidget.entitlements; sourceTree = "<group>"; };
+		A10000000000000000000046 /* TinyUsWidget.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = TinyUsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -31,6 +58,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000051 /* TinyUsWidget Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -50,6 +78,19 @@
 				A1000000000000000000000F /* ContentView.swift */,
 				A10000000000000000000011 /* Assets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
+				A10000000000000000000039 /* WidgetExtension.swift */,
+				A10000000000000000000041 /* TinyWidgetPayload.swift */,
+				A10000000000000000000043 /* iosApp.entitlements */,
+				A10000000000000000000044 /* TinyUsWidget.entitlements */,
+				A10000000000000000000021 /* bgm_sunny.mp3 */,
+				A10000000000000000000023 /* bgm_rain.mp3 */,
+				A10000000000000000000025 /* bgm_sakura.mp3 */,
+				A10000000000000000000027 /* bgm_autumn.mp3 */,
+				A10000000000000000000029 /* bgm_snow.mp3 */,
+				A10000000000000000000031 /* died_in_your_arms.mp3 */,
+				A10000000000000000000033 /* cant_take_my_eyes_off_you.mp3 */,
+				A10000000000000000000035 /* wicked_game.mp3 */,
+				A10000000000000000000037 /* golden_brown.mp3 */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -66,6 +107,7 @@
 			isa = PBXGroup;
 			children = (
 				A10000000000000000000016 /* iosApp.app */,
+				A10000000000000000000046 /* TinyUsWidget.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -81,10 +123,12 @@
 				A10000000000000000000017 /* Sources */,
 				A10000000000000000000018 /* Frameworks */,
 				A10000000000000000000019 /* Resources */,
+				A10000000000000000000053 /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				A10000000000000000000049 /* PBXTargetDependency */,
 			);
 			name = iosApp;
 			productName = iosApp;
@@ -119,6 +163,7 @@
 			projectRoot = "";
 			targets = (
 				A10000000000000000000002 /* iosApp */,
+				A10000000000000000000047 /* TinyUsWidget */,
 			);
 		};
 /* End PBXProject section */
@@ -129,8 +174,32 @@
 			buildActionMask = 2147483647;
 			files = (
 				A10000000000000000000012 /* Assets.xcassets in Resources */,
+				A10000000000000000000020 /* bgm_sunny.mp3 in Resources */,
+				A10000000000000000000022 /* bgm_rain.mp3 in Resources */,
+				A10000000000000000000024 /* bgm_sakura.mp3 in Resources */,
+				A10000000000000000000026 /* bgm_autumn.mp3 in Resources */,
+				A10000000000000000000028 /* bgm_snow.mp3 in Resources */,
+				A10000000000000000000030 /* died_in_your_arms.mp3 in Resources */,
+				A10000000000000000000032 /* cant_take_my_eyes_off_you.mp3 in Resources */,
+				A10000000000000000000034 /* wicked_game.mp3 in Resources */,
+				A10000000000000000000036 /* golden_brown.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A10000000000000000000047 /* TinyUsWidget */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A10000000000000000000054 /* Build configuration list for PBXNativeTarget "TinyUsWidget" */;
+			buildPhases = (
+				A10000000000000000000050 /* Widget Sources */,
+				A10000000000000000000051 /* TinyUsWidget Frameworks */,
+				A10000000000000000000052 /* TinyUsWidget Resources */,
+			);
+			buildRules = ();
+			dependencies = ();
+			name = TinyUsWidget;
+			productName = TinyUsWidget;
+			productReference = A10000000000000000000046 /* TinyUsWidget.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXResourcesBuildPhase section */
 
@@ -163,9 +232,11 @@
 			files = (
 				A1000000000000000000000E /* iOSApp.swift in Sources */,
 				A10000000000000000000010 /* ContentView.swift in Sources */,
+				A10000000000000000000040 /* TinyWidgetPayload.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A10000000000000000000050 /* Widget Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (A10000000000000000000038 /* WidgetExtension.swift in Sources */, A10000000000000000000042 /* TinyWidgetPayload.swift in Widget Sources */, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -228,6 +299,10 @@
 			};
 			name = Debug;
 		};
+		A10000000000000000000052 /* TinyUsWidget Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000053 /* Embed App Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (A10000000000000000000045 /* TinyUsWidget.appex in Embed App Extensions */, ); name = "Embed App Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+		A10000000000000000000048 /* Widget Container Proxy */ = {isa = PBXContainerItemProxy; containerPortal = A10000000000000000000001 /* Project object */; proxyType = 1; remoteGlobalIDString = A10000000000000000000047; remoteInfo = TinyUsWidget; };
+		A10000000000000000000049 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = A10000000000000000000047 /* TinyUsWidget */; targetProxy = A10000000000000000000048 /* Widget Container Proxy */; };
 		A10000000000000000000006 /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {

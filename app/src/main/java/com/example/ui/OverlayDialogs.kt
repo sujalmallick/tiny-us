@@ -3477,6 +3477,8 @@ private fun getSceneIcon(sc: SceneType): ImageVector = when (sc) {
     SceneType.MOMO_STALL -> Icons.Default.Restaurant
     SceneType.EVENING_RIDE -> Icons.Default.TwoWheeler
     SceneType.COZY_LOFT -> Icons.Default.Weekend
+    SceneType.RAINY_CAFE -> Icons.Default.Restaurant
+    SceneType.SUNROOM -> Icons.Default.LocalFlorist
 }
 
 @Composable

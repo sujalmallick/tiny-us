@@ -72,6 +72,7 @@ import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelParticle
 import com.example.engine.CharacterMotionTween
 import com.example.engine.WorldSprites
+import com.example.engine.RoomTheme
 import com.example.scene.EnvironmentType
 import com.example.scene.WeatherType
 import com.example.scene.SceneEngine
@@ -270,6 +271,9 @@ private val RIVER_REED_OFFSETS = floatArrayOf(-9f, -6f, 7f, 9f)
 private val RIVER_STALKS_X = floatArrayOf(-6f, -3f, 0f, 3f, 6f)
 private val RIVER_STALKS_Y = floatArrayOf(0f, -2.5f, -4f, -1.5f, 1.5f)
 private val RIVER_MUSH_OFFSETS = floatArrayOf(-8f, 0f, 8f)
+private val MEADOW_PUDDLE_X = floatArrayOf(0.24f, 0.53f, 0.79f)
+private val MEADOW_PUDDLE_Y = floatArrayOf(0.74f, 0.79f, 0.73f)
+private val MEADOW_PUDDLE_SIZE = floatArrayOf(22f, 28f, 20f)
 
 private enum class TapTargetKind {
     BOY,
@@ -468,8 +472,48 @@ fun PixelWorldView(
                                 engine.onTouchTempleSpire(w, h)
                                 return@detectTapGestures
                             }
-                            engine.particles.spawnSparkles(tapOffset.x, tapOffset.y, 4)
+                            engine.onTouchRideFireflies(tapOffset.x, tapOffset.y, w, h)
                             return@detectTapGestures
+                        }
+
+                        // These small scene props share vertical space with the characters' generous
+                        // touch boxes, so resolve them first to keep their interactions reachable.
+                        when (engine.currentScene.environment) {
+                            EnvironmentType.RAINY_CAFE -> {
+                                if (kotlin.math.hypot(tapOffset.x - w * 0.31f, tapOffset.y - h * 0.61f) < 16f * pixelScale) {
+                                    engine.onTouchCafeLatte(w, h)
+                                    return@detectTapGestures
+                                }
+                                if (kotlin.math.hypot(tapOffset.x - w * 0.70f, tapOffset.y - h * 0.61f) < 20f * pixelScale) {
+                                    engine.onTouchCafePastry(w, h)
+                                    return@detectTapGestures
+                                }
+                                if (tapOffset.y < h * 0.52f && tapOffset.x in (w * 0.10f)..(w * 0.90f)) {
+                                    engine.onTouchCafeWindow(tapOffset.x, tapOffset.y, w, h)
+                                    return@detectTapGestures
+                                }
+                            }
+                            EnvironmentType.SUNROOM -> {
+                                if (tapOffset.y < h * 0.25f) {
+                                    engine.onTouchSunroomSkylight(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
+                                if (kotlin.math.hypot(tapOffset.x - w * 0.20f, tapOffset.y - h * 0.72f) < 22f * pixelScale) {
+                                    engine.onTouchSunroomWateringCan(w, h)
+                                    return@detectTapGestures
+                                }
+                                if (tapOffset.x > w * 0.48f && tapOffset.y in (h * 0.32f)..(h * 0.68f)) {
+                                    engine.onTouchSunroomPlants(w, h)
+                                    return@detectTapGestures
+                                }
+                            }
+                            EnvironmentType.KITCHEN -> {
+                                if (kotlin.math.hypot(tapOffset.x - w * 0.17f, tapOffset.y - h * 0.55f) < 18f * pixelScale) {
+                                    engine.onTouchKitchenTreatJar()
+                                    return@detectTapGestures
+                                }
+                            }
+                            else -> Unit
                         }
 
                         val isLoftBedTap = engine.currentScene.environment != EnvironmentType.COZY_LOFT || tapOffset.y <= (h * 0.55f + 2f * pixelScale)
@@ -576,6 +620,9 @@ fun PixelWorldView(
                                 }
                                 // Flowers
                                 if (tapOffset.y > h * 0.65f) {
+                                    if (tapOffset.y > h * 0.75f &&
+                                        engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
+                                    ) return@detectTapGestures
                                     engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
@@ -586,6 +633,9 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                                 if (tapOffset.y > h * 0.66f) {
+                                    if (tapOffset.y > h * 0.75f &&
+                                        engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
+                                    ) return@detectTapGestures
                                     engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
@@ -862,6 +912,9 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                                 if (tapOffset.y > h * 0.65f) {
+                                    if (tapOffset.y > h * 0.75f &&
+                                        engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
+                                    ) return@detectTapGestures
                                     engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
@@ -920,6 +973,7 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                             }
+                            EnvironmentType.RAINY_CAFE, EnvironmentType.SUNROOM -> Unit // props handled before character hit-testing
                             EnvironmentType.EVENING_ROAD -> {}
                             EnvironmentType.COZY_LOFT -> {
                                 // Door tap on left to cycle rooms
@@ -1001,6 +1055,12 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                             }
+                        }
+
+                        // Tap open floor/ground to invite the nearest character into a
+                        // short depth-aware stroll and a tiny scene/weather response.
+                        if (engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)) {
+                            return@detectTapGestures
                         }
 
                         // 5. Turn characters gaze towards tap position if idling
@@ -1166,6 +1226,13 @@ fun PixelWorldView(
             val ch = size.height
             val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
             val charPixelScale = pixelScale * 1.38f
+            val sceneDepthBaseY = when (engine.currentScene) {
+                com.example.scene.SceneType.COZY_LOFT -> 0.55f
+                com.example.scene.SceneType.EVENING_RIDE -> 0.70f
+                else -> 0.68f
+            }
+            val boyDepthScale = (1f + (engine.boy.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
+            val girlDepthScale = (1f + (engine.girl.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
 
             // Dynamic Weather outdoor check
             val isOutdoor = engine.isCurrentSceneOutdoor
@@ -1309,7 +1376,7 @@ fun PixelWorldView(
                         char = engine.boy,
                         centerX = effectiveBoyX,
                         bottomY = effectiveBoyY,
-                        pixelSize = charPixelScale,
+                        pixelSize = charPixelScale * boyDepthScale,
                         isHoldingUmbrella = isHoldingUmbrella,
                         isSnow = isSnow,
                         isSpeaking = !engine.boySpeechText.isNullOrEmpty()
@@ -1322,7 +1389,7 @@ fun PixelWorldView(
                         char = engine.girl,
                         centerX = effectiveGirlX,
                         bottomY = effectiveGirlY,
-                        pixelSize = charPixelScale,
+                        pixelSize = charPixelScale * girlDepthScale,
                         isHoldingUmbrella = isHoldingUmbrella,
                         isSnow = isSnow,
                         isSpeaking = !engine.girlSpeechText.isNullOrEmpty()
@@ -1339,7 +1406,8 @@ fun PixelWorldView(
                             timeSeconds = engine.sceneTime,
                             catState = engine.catState,
                             isSnow = isSnow,
-                            facingLeft = engine.catFacingLeft
+                            facingLeft = engine.catFacingLeft,
+                            collarStyle = engine.mochiCollarStyle
                         )
                     }
                 }
@@ -1411,7 +1479,8 @@ fun PixelWorldView(
                     p = pixelScale,
                     timeSeconds = engine.sceneTime,
                     lampLit = engine.lampLit,
-                    isSnow = engine.weather == com.example.scene.WeatherType.SNOW
+                    isSnow = engine.weather == com.example.scene.WeatherType.SNOW,
+                    roomTheme = engine.roomTheme
                 )
 
                 val p = pixelScale
@@ -2600,6 +2669,147 @@ private fun drawFallbackDream(scope: DrawScope, cw: Float, ch: Float, t: Float, 
     }
 }
 
+private fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+    val x = cw * 0.17f
+    val y = ch * 0.535f
+    // Checker-glass jar with a warm gingham lid and a few visible biscuits.
+    scope.drawRect(Color(0xFF8A5636), Offset(x - 10f * p, y - 15f * p), Size(20f * p, 20f * p))
+    scope.drawRect(Color(0xFFD8B89A), Offset(x - 8f * p, y - 14f * p), Size(16f * p, 16f * p))
+    scope.drawRect(Color(0x667AC6D4), Offset(x - 7f * p, y - 12f * p), Size(14f * p, 13f * p))
+    scope.drawRect(Color(0xFFE5A85B), Offset(x - 6f * p, y - 4f * p), Size(5f * p, 4f * p))
+    scope.drawRect(Color(0xFFFFD38A), Offset(x + 1f * p, y - 7f * p), Size(5f * p, 4f * p))
+    scope.drawRect(Color(0xFF70452F), Offset(x - 10f * p, y - 17f * p), Size(20f * p, 3f * p))
+    scope.drawRect(Color(0xFFC78A56), Offset(x - 4f * p, y - 20f * p), Size(8f * p, 3f * p))
+    scope.drawRect(Color(0xFFFFF1CF), Offset(x - 5f * p, y - 11f * p), Size(2f * p, 6f * p))
+    if (engine.catTreatJarTimer > 0f) {
+        val t = ((0.85f - engine.catTreatJarTimer) / 0.85f).coerceIn(0f, 1f)
+        scope.drawRect(Color(0xFF70452F), Offset(x - 9f * p, y - 19f * p - 4f * p * t), Size(18f * p, 2.5f * p))
+    }
+    if (engine.catTreatDropTimer > 0f) {
+        val t = (1f - engine.catTreatDropTimer / 0.48f).coerceIn(0f, 1f)
+        val treatX = x + (cw * 0.48f - x) * t
+        val treatY = y + (ch * 0.72f - y) * t + sin(t * Math.PI.toFloat()) * 9f * p
+        scope.drawCircle(Color(0xFFE6AA5C), 3.5f * p, Offset(treatX, treatY))
+        scope.drawCircle(Color(0xFFFFD78C), 1.8f * p, Offset(treatX - 0.8f * p, treatY - 0.7f * p))
+    } else if (engine.isCatTreatOnFloor) {
+        scope.drawCircle(Color(0xFFE6AA5C), 3.5f * p, Offset(cw * 0.48f, ch * 0.72f))
+        scope.drawCircle(Color(0xFFFFD78C), 1.8f * p, Offset(cw * 0.48f - 0.8f * p, ch * 0.72f - 0.7f * p))
+    }
+    if (engine.catTreatMunchTimer > 0f && sin(time * 15f) > 0f) {
+        scope.drawRect(Color(0xFFFF7194), Offset(cw * 0.48f - 2f * p, ch * 0.72f - 19f * p), Size(1.4f * p, 1.4f * p))
+        scope.drawRect(Color(0xFFFF7194), Offset(cw * 0.48f + 2f * p, ch * 0.72f - 19f * p), Size(1.4f * p, 1.4f * p))
+    }
+}
+
+private fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+    val wood = Color(0xFF684333)
+    val darkWood = Color(0xFF402D2A)
+    val window = Color(0xFF586C7A)
+    scope.drawRect(Color(0xFFBA9273), Offset.Zero, Size(cw, ch))
+    scope.drawRect(Color(0xFFD2AF8D), Offset(0f, ch * 0.50f), Size(cw, ch * 0.18f))
+    // Window frame, rainy panes, and distant soft rooftops.
+    scope.drawRect(darkWood, Offset(cw * 0.08f, ch * 0.065f), Size(cw * 0.84f, ch * 0.48f))
+    scope.drawRect(wood, Offset(cw * 0.10f, ch * 0.085f), Size(cw * 0.80f, ch * 0.44f))
+    scope.drawRect(window, Offset(cw * 0.125f, ch * 0.11f), Size(cw * 0.75f, ch * 0.39f))
+    scope.drawRect(Color(0xFF788A91), Offset(cw * 0.125f, ch * 0.31f), Size(cw * 0.75f, ch * 0.19f))
+    for (i in 0..5) {
+        val bx = cw * (0.15f + i * 0.125f)
+        val bh = ch * (0.055f + ((i * 7) % 4) * 0.018f)
+        scope.drawRect(Color(0xFF465B68), Offset(bx, ch * 0.31f - bh), Size(cw * 0.085f, bh))
+        scope.drawRect(Color(0xFFFFD996).copy(alpha = 0.34f), Offset(bx + cw * 0.018f, ch * 0.31f - bh * 0.72f), Size(cw * 0.012f, bh * 0.20f))
+    }
+    scope.drawRect(wood, Offset(cw * 0.48f, ch * 0.085f), Size(5f * p, ch * 0.44f))
+    scope.drawRect(wood, Offset(cw * 0.10f, ch * 0.295f), Size(cw * 0.80f, 5f * p))
+    for (i in 0..17) {
+        val x = cw * (0.14f + ((i * 37) % 71) / 100f)
+        val y = ch * (0.13f + ((i * 19) % 31) / 100f)
+        val fall = (time * (0.13f + (i % 4) * 0.035f) + i * 0.137f) % 0.34f
+        scope.drawRect(Color(0xFFC8E1E9).copy(alpha = 0.62f), Offset(x + sin(time + i) * 2f * p, ch * 0.13f + fall * ch), Size(1.2f * p, (3f + i % 3) * p))
+    }
+    scope.drawRect(Color(0xFF4E382E), Offset(0f, ch * 0.68f), Size(cw, ch * 0.32f))
+    scope.drawRect(Color(0xFF9B6946), Offset(0f, ch * 0.57f), Size(cw, ch * 0.075f))
+    scope.drawRect(Color(0xFFC18B5D), Offset(0f, ch * 0.57f), Size(cw, 2f * p))
+    // Latte, pixel heart art, steam, and a nibbled croissant.
+    scope.drawRect(Color(0xFFEEE0CC), Offset(cw * 0.275f, ch * 0.54f), Size(cw * 0.07f, ch * 0.09f))
+    scope.drawRect(Color(0xFFBA7850), Offset(cw * 0.282f, ch * 0.55f), Size(cw * 0.056f, ch * 0.061f))
+    scope.drawRect(Color(0xFFEAD6B8), Offset(cw * 0.294f, ch * 0.56f), Size(cw * 0.032f, ch * 0.035f))
+    if (engine.cafeLatteTimer > 0f || (time % 11f) < 0.3f) {
+        val heart = Color(0xFFE96E91)
+        val hx = cw * 0.31f; val hy = ch * 0.568f; val s = 1.3f * p
+        scope.drawRect(heart, Offset(hx - 2*s, hy), Size(2*s, 2*s)); scope.drawRect(heart, Offset(hx + s, hy), Size(2*s, 2*s))
+        scope.drawRect(heart, Offset(hx - 3*s, hy + s), Size(7*s, 2*s)); scope.drawRect(heart, Offset(hx - 2*s, hy + 3*s), Size(5*s, s)); scope.drawRect(heart, Offset(hx - s, hy + 4*s), Size(3*s, s))
+    }
+    for (i in 0..2) {
+        val sway = sin(time * 2.4f + i) * 2f * p
+        scope.drawRect(Color(0xFFFFF4E8).copy(alpha = 0.6f), Offset(cw * (0.294f + i * 0.012f) + sway, ch * (0.53f - i * 0.026f)), Size(1.2f * p, 3f * p))
+    }
+    scope.drawRect(Color(0xFFF2D29C), Offset(cw * 0.65f, ch * 0.565f), Size(cw * 0.095f, ch * 0.035f))
+    scope.drawRect(Color(0xFFC98245), Offset(cw * 0.665f, ch * 0.55f), Size(cw * 0.065f, ch * 0.04f))
+    scope.drawRect(Color(0xFFFFE0A5), Offset(cw * 0.675f, ch * 0.553f), Size(cw * 0.035f, ch * 0.012f))
+    if (engine.cafePastryBites > 0) scope.drawRect(Color(0xFFD2AF8D), Offset(cw * (0.72f - engine.cafePastryBites * 0.012f), ch * 0.55f), Size(cw * (engine.cafePastryBites * 0.014f), ch * 0.04f))
+    if (engine.cafeWindowHeartTimer > 0f) {
+        val alpha = (engine.cafeWindowHeartTimer / 3f).coerceIn(0f, 1f)
+        val hx = cw * engine.cafeWindowHeartX; val hy = ch * engine.cafeWindowHeartY; val s = 1.5f * p
+        val c = Color(0xFFFFB5CA).copy(alpha = alpha)
+        scope.drawRect(c, Offset(hx - 2*s, hy), Size(2*s, 2*s)); scope.drawRect(c, Offset(hx + s, hy), Size(2*s, 2*s))
+        scope.drawRect(c, Offset(hx - 3*s, hy + s), Size(7*s, 2*s)); scope.drawRect(c, Offset(hx - 2*s, hy + 3*s), Size(5*s, s)); scope.drawRect(c, Offset(hx - s, hy + 4*s), Size(3*s, s))
+    }
+}
+
+private fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+    scope.drawRect(Color(0xFFBCDCCB), Offset.Zero, Size(cw, ch))
+    scope.drawRect(Color(0xFFE7D8BB), Offset(0f, ch * 0.61f), Size(cw, ch * 0.39f))
+    scope.drawRect(Color(0xFF9BC9BF), Offset(cw * 0.08f, ch * 0.05f), Size(cw * 0.84f, ch * 0.31f))
+    scope.drawRect(Color(0xFFECF6DA).copy(alpha = 0.32f + 0.08f * sin(time)), Offset(cw * 0.10f, ch * 0.07f), Size(cw * 0.80f, ch * 0.27f))
+    // Skylight lattice and warm sun patches.
+    for (i in 0..5) scope.drawRect(Color(0xFF688F82), Offset(cw * (0.10f + i * 0.16f), ch * 0.06f), Size(2.2f * p, ch * 0.30f))
+    scope.drawRect(Color(0xFF688F82), Offset(cw * 0.09f, ch * 0.20f), Size(cw * 0.82f, 2.2f * p))
+    scope.drawRect(Color(0x55FFF2B2), Offset(cw * 0.16f, ch * 0.34f), Size(cw * 0.21f, ch * 0.25f))
+    scope.drawRect(Color(0x55FFF2B2), Offset(cw * 0.60f, ch * 0.36f), Size(cw * 0.18f, ch * 0.22f))
+    // Potting shelves with individually arranged pots and layered foliage.
+    for (shelf in 0..1) {
+        val sy = ch * (0.43f + shelf * 0.14f)
+        scope.drawRect(Color(0xFF8A5B3D), Offset(cw * 0.10f, sy), Size(cw * 0.80f, 4f * p))
+        scope.drawRect(Color(0xFFC08A5D), Offset(cw * 0.10f, sy), Size(cw * 0.80f, 1.2f * p))
+        for (i in 0..5) {
+            val px = cw * (0.16f + i * 0.135f)
+            val potTop = sy - (10f + (i % 2) * 2f) * p
+            val terracotta = if (i % 2 == 0) Color(0xFFC87652) else Color(0xFFB76648)
+            scope.drawRect(terracotta, Offset(px, potTop), Size(8f * p, 9f * p))
+            scope.drawRect(Color(0xFF824A3D), Offset(px - p, potTop), Size(10f * p, 2f * p))
+            val leaf = if (i % 2 == 0) Color(0xFF548B5B) else Color(0xFF78A96E)
+            scope.drawRect(leaf, Offset(px + 2*p, potTop - 5*p - sin(time * 1.4f + i) * p), Size(2*p, 6*p))
+            scope.drawRect(leaf, Offset(px - p, potTop - 3*p), Size(4*p, 2*p))
+            scope.drawRect(leaf, Offset(px + 4*p, potTop - 4*p), Size(4*p, 2*p))
+            if (engine.sunroomBloomStage > i / 2) {
+                val flowerY = potTop - 5*p - sin(time * 1.4f + i) * p
+                scope.drawRect(Color(0xFFFFC6D6), Offset(px + 1*p, flowerY - 2*p), Size(2*p, 2*p))
+                scope.drawRect(Color(0xFFFFC6D6), Offset(px + 4*p, flowerY - 2*p), Size(2*p, 2*p))
+                scope.drawRect(Color(0xFFFFE08A), Offset(px + 2.5f*p, flowerY - p), Size(2*p, 2*p))
+            }
+        }
+    }
+    // Hanging fern fronds, swaying independently in the greenhouse breeze.
+    for (i in 0..3) {
+        val hx = cw * (0.25f + i * 0.18f)
+        val sway = sin(time * 1.2f + i * 1.7f) * 2.5f * p
+        scope.drawRect(Color(0xFF79583F), Offset(hx, ch * 0.05f), Size(p, 9*p))
+        for (leaf in 0..3) {
+            scope.drawRect(Color(0xFF3F8052), Offset(hx - (leaf % 2 + 1)*p + sway, ch * 0.12f + leaf*3*p), Size(3*p, 2*p))
+            scope.drawRect(Color(0xFF70A66A), Offset(hx + p + sway, ch * 0.13f + leaf*3*p), Size(3*p, 2*p))
+        }
+    }
+    // Watering can and brief hand-sprayed mist.
+    scope.drawRect(Color(0xFF719A9A), Offset(cw * 0.15f, ch * 0.68f), Size(cw * 0.09f, ch * 0.07f))
+    scope.drawRect(Color(0xFF4F777B), Offset(cw * 0.22f, ch * 0.70f), Size(cw * 0.055f, 2.4f * p))
+    scope.drawRect(Color(0xFF4F777B), Offset(cw * 0.16f, ch * 0.65f), Size(cw * 0.06f, 2.2f * p))
+    if (engine.sunroomMistTimer > 0f) for (i in 0..7) {
+        val mx = cw * (0.27f + (i % 4) * 0.10f) + sin(time * 2f + i) * 3f * p
+        val my = ch * (0.59f - (i / 4) * 0.045f - ((time * 0.16f + i * 0.11f) % 0.09f))
+        scope.drawCircle(Color(0xFFAEE6E3).copy(alpha = 0.42f), (1.5f + i % 2) * p, Offset(mx, my))
+    }
+}
+
 private fun drawEnvironment(
     scope: DrawScope,
     cw: Float,
@@ -2690,6 +2900,9 @@ private fun drawEnvironment(
                 cabinetOpen = engine.cabinetOpenTimer > 0f
             )
             WorldSprites.drawPedalDustbin(scope, cw * 0.785f, ch * 0.67f, p)
+
+            // Treat jar and the dropped biscuit are part of the kitchen scene, not a separate interaction layer.
+            drawKitchenTreatJar(scope, cw, ch, p, timeSeconds, engine)
 
             // --- Home Evolution progressive artifacts ---
             val floorY = ch * 0.65f
@@ -2870,9 +3083,13 @@ private fun drawEnvironment(
             val isWindowNight = if (isLampOn) isNight else (couchPhase == CouchPhase.NIGHT)
             val isWindowSunset = if (isLampOn) isSunset else (couchPhase == CouchPhase.EVENING)
             val livingRoomIsNight = if (isLampOn) isNight else (couchPhase == CouchPhase.NIGHT)
-            drawLivingRoom(scope, cw, ch, isNight = livingRoomIsNight, p = p, lampLit = isLampOn, couchPhase = couchPhase, timeSeconds = timeSeconds, candleLit = engine.hearthCandleLit)
+            drawLivingRoom(scope, cw, ch, isNight = livingRoomIsNight, p = p, lampLit = isLampOn, couchPhase = couchPhase, timeSeconds = timeSeconds, candleLit = engine.hearthCandleLit, roomTheme = engine.roomTheme)
             if (engine.homeEvolutionState.hasFairyStringLights) {
-                WorldSprites.drawFairyStringLights(scope, cw * 0.08f, cw * 0.92f, ch * 0.16f, p, timeSeconds)
+                WorldSprites.drawFairyStringLights(
+                    scope, cw * 0.08f, cw * 0.92f, ch * 0.16f, p, timeSeconds,
+                    bulbColor = engine.roomTheme.light,
+                    bulbStyle = engine.roomTheme.ordinal
+                )
             }
             if (engine.homeEvolutionState.hasCornerMonstera || engine.plantWaterTimer > 0f) {
                 WorldSprites.drawCornerMonstera(scope, cw * 0.10f, ch * 0.65f, p)
@@ -2880,7 +3097,7 @@ private fun drawEnvironment(
             WorldSprites.drawPhotoFrame(scope, cw * 0.28f, ch * 0.38f, p)
             WorldSprites.drawWindow(scope, cw * 0.70f, ch * 0.28f, isWindowNight, p, engine.weather, isSunset = isWindowSunset)
             WorldSprites.drawWallCalendar(scope, cw * 0.49f, ch * 0.30f, p, timeSeconds)
-            WorldSprites.drawCouch(scope, cw * 0.48f, ch * 0.68f, p)
+            WorldSprites.drawCouch(scope, cw * 0.48f, ch * 0.68f, p, engine.roomTheme)
             if (engine.homeEvolutionState.hasCozyKnitThrow || engine.cuddleBlanketTimer > 0f) {
                 WorldSprites.drawCouchKnitThrow(scope, cw * 0.48f - 29 * p, ch * 0.68f - 24 * p, p)
             }
@@ -3106,7 +3323,8 @@ private fun drawEnvironment(
                 recordSpinning = engine.recordSpinning,
                 weather = engine.weather,
                 isNight = isNight,
-                isSunset = isSunset
+                isSunset = isSunset,
+                roomTheme = engine.roomTheme
             )
 
             // Loft panoramic window breeze shimmer & leaves
@@ -3133,6 +3351,8 @@ private fun drawEnvironment(
                 }
             }
         }
+        EnvironmentType.RAINY_CAFE -> drawRainyCafeScene(scope, cw, ch, p, timeSeconds, engine)
+        EnvironmentType.SUNROOM -> drawCottageSunroom(scope, cw, ch, p, timeSeconds, engine)
         EnvironmentType.PATH_NIGHT -> {
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
             drawPathGround(scope, cw, ch, p, engine.weather, isWalk = true, timeSeconds = timeSeconds, isNight = isNight, isSunset = isSunset)
@@ -3577,8 +3797,8 @@ private fun drawMilkyWayNightSky(
     scope.drawRect(Color(0xFFE9D8A6), Offset(moonX + 3 * p, moonY + 4 * p), Size(3 * p, 3 * p))
     scope.drawRect(Color(0xFFE9D8A6), Offset(moonX + 8 * p, moonY + 7 * p), Size(4 * p, 3 * p))
 
-    // 4. Subtle Occasional Shooting Star (~10.0s cycle)
-    val meteorCycle = (time + 3.8f) % 10.0f
+    // 4. Rare shooting star; most quiet nights remain still.
+    val meteorCycle = (time + 19.7f) % 78.0f
     if (meteorCycle < 0.75f) {
         val prog = meteorCycle / 0.75f
         val startMx = cw * 0.20f
@@ -3914,12 +4134,10 @@ private fun drawMeadowGround(
 
     // 8. Reflective Rain Puddles with animated ripples
     if (weather == com.example.scene.WeatherType.RAIN) {
-        val puddleCoords = listOf(
-            Triple(0.24f, 0.74f, 22f),
-            Triple(0.53f, 0.79f, 28f),
-            Triple(0.79f, 0.73f, 20f)
-        )
-        for ((pxRel, pyRel, pSize) in puddleCoords) {
+        for (i in MEADOW_PUDDLE_X.indices) {
+            val pxRel = MEADOW_PUDDLE_X[i]
+            val pyRel = MEADOW_PUDDLE_Y[i]
+            val pSize = MEADOW_PUDDLE_SIZE[i]
             val px = cw * pxRel
             val py = ch * pyRel
             val pw = pSize * p
@@ -3951,6 +4169,18 @@ private fun drawMeadowGround(
                 )
             }
         }
+
+        // Thin wet sheen catches the overcast sky; low pixel mist softens the horizon.
+        val sheenAlpha = 0.035f + (sin(timeSeconds * 0.45f) * 0.012f + 0.012f)
+        scope.drawRect(
+            Color(0xFFB7D1E0).copy(alpha = sheenAlpha),
+            Offset(0f, groundY + totalH * 0.15f),
+            Size(cw, totalH * 0.08f)
+        )
+        val mistPhase = sin(timeSeconds * 0.32f)
+        val mistY = groundY + totalH * (0.27f + mistPhase * 0.018f)
+        scope.drawRect(Color(0xFFCFDCE2).copy(alpha = 0.045f), Offset(0f, mistY), Size(cw, 10f * p))
+        scope.drawRect(Color(0xFFCFDCE2).copy(alpha = 0.025f), Offset(cw * 0.18f, mistY + 7f * p), Size(cw * 0.64f, 8f * p))
     }
 
     // 9. Sweeping cloud shadows during sunny day
@@ -4070,8 +4300,9 @@ private fun drawWildFlowers(
                 }
             }
 
-            // Stage 4+: Fluttering pixel butterflies!
-            if (gardenStage >= 4) {
+            // Stage 4+: a brief butterfly visit, then long quiet intervals.
+            val butterflyVisit = (timeSeconds % 46f) < 7f
+            if (gardenStage >= 4 && weather == com.example.scene.WeatherType.SUNNY && butterflyVisit) {
                 // Butterfly 1 (Warm Gold)
                 val b1X = cw * 0.32f + sin(timeSeconds * 2.2f) * 24f * p
                 val b1Y = groundY - 14f * p + kotlin.math.cos(timeSeconds * 3.5f) * 12f * p
@@ -4633,11 +4864,12 @@ private fun drawLivingRoom(
     lampLit: Boolean = true,
     couchPhase: CouchPhase = CouchPhase.NIGHT,
     timeSeconds: Float = 0f,
-    candleLit: Boolean = true
+    candleLit: Boolean = true,
+    roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
 ) {
     val floorY = ch * 0.65f
     val wallColor = when {
-        lampLit -> Color(0xFFF6EDE2) // Warm illuminated cream
+        lampLit -> roomTheme.wall
         couchPhase == CouchPhase.NIGHT -> Color(0xFF78798C) // Dim cozy midnight slate
         couchPhase == CouchPhase.DAY -> Color(0xFFF4ECE1) // Morning daylight cream
         couchPhase == CouchPhase.MIDDAY -> Color(0xFFFFF9EE) // Bright noon sunlight
@@ -4645,6 +4877,24 @@ private fun drawLivingRoom(
         else -> if (isNight) Color(0xFFBCB1A6) else Color(0xFFF6EDE2)
     }
     scope.drawRect(wallColor, Offset.Zero, Size(cw, floorY))
+
+    // Warm low wainscot breaks up the tall wall while keeping the existing room layout intact.
+    val panelTop = floorY * 0.76f
+    val panelColor = when {
+        !lampLit && couchPhase == CouchPhase.NIGHT -> Color(0xFF6A6975)
+        couchPhase == CouchPhase.EVENING -> Color(0xFFD8A895)
+        else -> roomTheme.panel
+    }
+    scope.drawRect(panelColor, Offset(0f, panelTop), Size(cw, floorY - panelTop - 3 * p))
+    scope.drawRect(Color(0xFF8A6247).copy(alpha = 0.48f), Offset(0f, panelTop), Size(cw, 2.2f * p))
+    scope.drawRect(Color(0xFFFFF7EB).copy(alpha = 0.38f), Offset(0f, panelTop + 2.2f * p), Size(cw, 1.2f * p))
+    val panelStep = cw / 9f
+    var panelX = panelStep
+    while (panelX < cw) {
+        scope.drawRect(Color(0xFF8A6247).copy(alpha = 0.15f), Offset(panelX, panelTop + 5 * p), Size(1.1f * p, floorY - panelTop - 12 * p))
+        scope.drawRect(Color(0xFFFFF7EB).copy(alpha = 0.22f), Offset(panelX + 1.1f * p, panelTop + 5 * p), Size(0.8f * p, floorY - panelTop - 12 * p))
+        panelX += panelStep
+    }
 
     // Baseboard
     val baseboardColor = if (!lampLit && couchPhase == CouchPhase.NIGHT) Color(0xFF5A3A25) else Color(0xFF7F5539)
@@ -4674,14 +4924,16 @@ private fun drawLivingRoom(
     }
 
     // 1. Large Woven Living Room Area Rug (anchors both couch and coffee table)
-    val rugColor = if (!lampLit && couchPhase == CouchPhase.NIGHT) Color(0xFF9E4E3C) else Color(0xFFE07A5F)
-    val rugBorder = if (!lampLit && couchPhase == CouchPhase.NIGHT) Color(0xFF5A7D6C) else Color(0xFF81B29A)
+    val rugColor = if (!lampLit && couchPhase == CouchPhase.NIGHT) roomTheme.rug.copy(alpha = 0.72f) else roomTheme.rug
+    val rugBorder = roomTheme.rugTrim
     val rugCx = cw * 0.50f
     val rugW = 88 * p
     val rugH = 46 * p
     val rugY = floorY + 4 * p
     scope.drawRect(rugBorder, Offset(rugCx - rugW / 2f, rugY), Size(rugW, rugH))
     scope.drawRect(rugColor, Offset(rugCx - rugW / 2f + 2.5f * p, rugY + 2.5f * p), Size(rugW - 5 * p, rugH - 5 * p))
+    scope.drawRect(Color(0xFFFFE1C7).copy(alpha = 0.25f), Offset(rugCx - rugW / 2f + 4 * p, rugY + 4 * p), Size(rugW - 8 * p, 1.1f * p))
+    scope.drawRect(Color(0xFF633F3B).copy(alpha = 0.22f), Offset(rugCx - rugW / 2f + 4 * p, rugY + rugH - 5 * p), Size(rugW - 8 * p, 1.1f * p))
     // Subtle woven diamond pattern across rug center
     val diaCol = rugBorder.copy(alpha = 0.45f)
     for (i in -2..2) {
@@ -4719,13 +4971,13 @@ private fun drawLivingRoom(
     val mug2X = tblX + 27 * p
     val mugY = tblY - 4.5f * p
     // Boy's slate blue mug
-    scope.drawRect(Color(0xFF457B9D), Offset(mug1X, mugY), Size(4 * p, 4.5f * p))
-    scope.drawRect(Color(0xFF457B9D), Offset(mug1X - 1.2f * p, mugY + p), Size(1.2f * p, 2.5f * p))
+    scope.drawRect(roomTheme.mug, Offset(mug1X, mugY), Size(4 * p, 4.5f * p))
+    scope.drawRect(roomTheme.mug, Offset(mug1X - 1.2f * p, mugY + p), Size(1.2f * p, 2.5f * p))
     scope.drawRect(Color(0xFF5C3A21), Offset(mug1X + 0.8f * p, mugY + 0.6f * p), Size(2.4f * p, 1.2f * p))
     scope.drawRect(Color.White, Offset(mug1X + p, mugY + 0.8f * p), Size(p, 0.8f * p))
     // Girl's soft blush mug
-    scope.drawRect(Color(0xFFFFB5C2), Offset(mug2X, mugY), Size(4 * p, 4.5f * p))
-    scope.drawRect(Color(0xFFFFB5C2), Offset(mug2X + 4 * p, mugY + p), Size(1.2f * p, 2.5f * p))
+    scope.drawRect(roomTheme.mugAccent, Offset(mug2X, mugY), Size(4 * p, 4.5f * p))
+    scope.drawRect(roomTheme.mugAccent, Offset(mug2X + 4 * p, mugY + p), Size(1.2f * p, 2.5f * p))
     scope.drawRect(Color(0xFF5C3A21), Offset(mug2X + 0.8f * p, mugY + 0.6f * p), Size(2.4f * p, 1.2f * p))
     scope.drawRect(Color.White, Offset(mug2X + 1.8f * p, mugY + 0.8f * p), Size(p, 0.8f * p))
     // Steam from mugs
@@ -4955,6 +5207,18 @@ private fun drawPathGround(
             val px = ((i * 53) % cw.toInt()).toFloat()
             val py = pathY + ((i * 7) % (pathH.toInt() - 6))
             scope.drawRect(Color.White, Offset(px, py), Size(3 * p, 2 * p))
+        }
+    }
+
+    if (weather == com.example.scene.WeatherType.RAIN) {
+        // Rain-darkened cobbles with a few broken pixel reflections.
+        scope.drawRect(Color(0xFF9FC3D8).copy(alpha = 0.075f), Offset(0f, pathY + 2 * p), Size(cw, pathH - 4 * p))
+        val glintShift = (timeSeconds * 7f) % (24f * p)
+        var glintX = -24f * p + glintShift
+        while (glintX < cw) {
+            scope.drawRect(Color(0xFFCEE7F2).copy(alpha = 0.22f), Offset(glintX, pathY + 5 * p), Size(5f * p, p))
+            scope.drawRect(Color(0xFFCEE7F2).copy(alpha = 0.14f), Offset(glintX + 10f * p, pathY + 14 * p), Size(3f * p, p))
+            glintX += 24f * p
         }
     }
 
@@ -5290,9 +5554,9 @@ private fun drawGroundFallenParticles(
 private fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
-        if (pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
+        if ((pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
             pt.type == ParticleType.SNOWFLAKE || pt.type == ParticleType.DANDELION_FLUFF ||
-            pt.type == ParticleType.WIND_BREEZE) {
+            pt.type == ParticleType.WIND_BREEZE || pt.type == ParticleType.RAIN_DROP) && pt.depth < 0.96f) {
             drawSingleParticle(scope, pt, p)
         }
     }
@@ -5301,9 +5565,11 @@ private fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<Pi
 private fun drawForegroundParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
-        if (pt.type != ParticleType.SAKURA_PETAL && pt.type != ParticleType.AUTUMN_LEAF &&
-            pt.type != ParticleType.SNOWFLAKE && pt.type != ParticleType.DANDELION_FLUFF &&
-            pt.type != ParticleType.WIND_BREEZE) {
+        val isSeasonal = pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
+            pt.type == ParticleType.SNOWFLAKE || pt.type == ParticleType.DANDELION_FLUFF ||
+            pt.type == ParticleType.WIND_BREEZE
+        val isBackgroundRain = pt.type == ParticleType.RAIN_DROP && pt.depth < 0.96f
+        if ((!isSeasonal && !isBackgroundRain) || pt.depth >= 0.96f) {
             drawSingleParticle(scope, pt, p)
         }
     }
@@ -5385,7 +5651,7 @@ private fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.SAKURA_PETAL -> {
             // Romantic pink drifting sakura petal with tumbling width and highlight
-            val s = (p * 1.45f).coerceIn(5.5f, 9.0f)
+            val s = (p * (0.95f + pt.depth * 0.30f)).coerceIn(4.5f, 8.5f)
             val flip = kotlin.math.cos(pt.phase * 1.4f)
             val wFrac = kotlin.math.abs(flip).coerceIn(0.35f, 1.0f)
             val pw = s * 2.2f * wFrac
@@ -5399,7 +5665,7 @@ private fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.AUTUMN_LEAF -> {
             // Romantic warm autumn leaf with tumbling flutter and silhouette
-            val s = (p * 1.50f).coerceIn(6.0f, 9.5f)
+            val s = (p * (1.0f + pt.depth * 0.32f)).coerceIn(4.8f, 9.0f)
             val flip = kotlin.math.cos(pt.phase * 1.2f)
             val wFrac = kotlin.math.abs(flip).coerceIn(0.40f, 1.0f)
             val pw = s * 2.3f * wFrac
@@ -5413,7 +5679,7 @@ private fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.SNOWFLAKE -> {
             // Delicate crystal pixel snowflake (clearly visible 16-bit retro cross)
-            val s = (p * 1.35f).coerceIn(4.5f, 7.5f)
+            val s = (p * 1.35f * pt.depth).coerceIn(3.2f, 8.5f)
             if (pt.size > 2.6f) {
                 // Classic 5-pixel cross snowflake with white/ice-blue core
                 scope.drawRect(color, Offset(pt.x - s * 1.2f, pt.y - s * 0.35f), Size(s * 2.4f, s * 0.7f))

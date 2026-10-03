@@ -144,7 +144,8 @@ object LoftSprites {
         recordSpinning: Boolean,
         weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
         isNight: Boolean = true,
-        isSunset: Boolean = false
+        isSunset: Boolean = false,
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
     ) {
         val floorY = ch * 0.55f
         val windowStartX = cw * 0.32f
@@ -195,7 +196,7 @@ object LoftSprites {
         drawLowerWallPanels(scope, cw, windowStartX, windowBottomY, floorY, p, lampLit)
 
         // 5. POLISHED WOODEN FLOOR & VINTAGE PERSIAN RUG
-        drawLoftFloorAndRug(scope, cw, ch, floorY, p)
+        drawLoftFloorAndRug(scope, cw, ch, floorY, p, roomTheme)
 
         // 6. WALL-TO-CEILING LIBRARY BOOKSHELF (LEFT WALL)
         drawLibraryBookshelf(scope, cw, ch, windowStartX, floorY, p, timeSeconds, lampLit)
@@ -535,12 +536,13 @@ object LoftSprites {
         timeSeconds: Float,
         lampLit: Boolean,
         isSnow: Boolean = false,
-        drawCat: () -> Unit = {}
+        drawCat: () -> Unit = {},
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
     ) {
         val floorY = ch * 0.55f
 
         // 1. Plaid patchwork blanket draped across the spacious daybed & couple laps
-        drawPatchworkBlanket(scope, cw, floorY, p)
+        drawPatchworkBlanket(scope, cw, floorY, p, roomTheme)
 
         // 2. Pet Mochi sleeping peacefully curled up on the left side of the blanket (dedicated loft sleeping cat, matches reference image!)
         val sofaStartX = cw * 0.38f
@@ -549,7 +551,7 @@ object LoftSprites {
         drawLoftSleepingCat(scope, mochiX, mochiY, p, timeSeconds, isSnow)
 
         // 3. Coffee Table with flower vase, books, lantern, mugs, and cookies
-        drawCoffeeTable(scope, cw, floorY, p, timeSeconds, lampLit)
+        drawCoffeeTable(scope, cw, floorY, p, timeSeconds, lampLit, roomTheme)
 
         // 4. Footstool with red checkered cushion
         drawFootstool(scope, cw, floorY, p)
@@ -558,7 +560,7 @@ object LoftSprites {
         drawLoftFloorDecorations(scope, cw, floorY, ch * 0.72f - floorY, p, timeSeconds, lampLit)
 
         // 6. Loft Balcony Railing in immediate foreground with fairy string lights and vines
-        drawBalconyRailing(scope, cw, ch, p, timeSeconds, lampLit)
+        drawBalconyRailing(scope, cw, ch, p, timeSeconds, lampLit, roomTheme)
 
         // 7. Lighting ambiance overlay (dim romantic blue if lamp is off, warm amber if lit)
         if (!lampLit) {
@@ -1090,7 +1092,8 @@ object LoftSprites {
         cw: Float,
         ch: Float,
         floorY: Float,
-        p: Float
+        p: Float,
+        roomTheme: RoomTheme
     ) {
         val floorH = ch - floorY
 
@@ -1118,14 +1121,15 @@ object LoftSprites {
         }
 
         // VINTAGE ORNATE PERSIAN AREA RUG IN FRONT OF SOFA
-        drawPersianRug(scope, cw, floorY, p)
+        drawPersianRug(scope, cw, floorY, p, roomTheme)
     }
 
     private fun drawPersianRug(
         scope: DrawScope,
         cw: Float,
         floorY: Float,
-        p: Float
+        p: Float,
+        roomTheme: RoomTheme
     ) {
         val rugW = 56 * p
         val rugH = 22 * p
@@ -1133,17 +1137,17 @@ object LoftSprites {
         val rugY = floorY - 2 * p
 
         // 1. Fringe Tassels along left and right ends
-        scope.drawRect(RugBorder, Offset(rugX - 2.5f * p, rugY + 2 * p), Size(2.5f * p, rugH - 4 * p))
-        scope.drawRect(RugBorder, Offset(rugX + rugW, rugY + 2 * p), Size(2.5f * p, rugH - 4 * p))
+        scope.drawRect(roomTheme.rugTrim, Offset(rugX - 2.5f * p, rugY + 2 * p), Size(2.5f * p, rugH - 4 * p))
+        scope.drawRect(roomTheme.rugTrim, Offset(rugX + rugW, rugY + 2 * p), Size(2.5f * p, rugH - 4 * p))
 
         // 2. Main Crimson Red Rug Field
-        scope.drawRect(RugCrimson, Offset(rugX, rugY), Size(rugW, rugH))
-        scope.drawRect(RugDark, Offset(rugX + p, rugY + p), Size(rugW - 2 * p, rugH - 2 * p))
-        scope.drawRect(RugCrimson, Offset(rugX + 2 * p, rugY + 2 * p), Size(rugW - 4 * p, rugH - 4 * p))
+        scope.drawRect(roomTheme.rugTrim, Offset(rugX, rugY), Size(rugW, rugH))
+        scope.drawRect(roomTheme.rug.copy(alpha = 0.65f), Offset(rugX + p, rugY + p), Size(rugW - 2 * p, rugH - 2 * p))
+        scope.drawRect(roomTheme.rug, Offset(rugX + 2 * p, rugY + 2 * p), Size(rugW - 4 * p, rugH - 4 * p))
 
         // 3. Ornate Floral & Medallion Border (Ivory / Gold / Teal)
-        scope.drawRect(RugBorder, Offset(rugX + 2.5f * p, rugY + 2.5f * p), Size(rugW - 5 * p, rugH - 5 * p))
-        scope.drawRect(RugCrimson, Offset(rugX + 4f * p, rugY + 4f * p), Size(rugW - 8 * p, rugH - 8 * p))
+        scope.drawRect(roomTheme.wall, Offset(rugX + 2.5f * p, rugY + 2.5f * p), Size(rugW - 5 * p, rugH - 5 * p))
+        scope.drawRect(roomTheme.rug, Offset(rugX + 4f * p, rugY + 4f * p), Size(rugW - 8 * p, rugH - 8 * p))
 
         // 4. Central Geometric Medallions (4 repeating diamond medallions)
         val medW = 8 * p
@@ -1153,9 +1157,9 @@ object LoftSprites {
         for (i in 0 until medCount) {
             val mx = rugX + 5 * p + i * gap
             val my = rugY + rugH / 2f - medH / 2f
-            scope.drawRect(RugGold, Offset(mx, my), Size(medW, medH))
-            scope.drawRect(RugTeal, Offset(mx + 1.5f * p, my + 1.5f * p), Size(medW - 3 * p, medH - 3 * p))
-            scope.drawRect(RugBorder, Offset(mx + 2.8f * p, my + 2.8f * p), Size(medW - 5.6f * p, medH - 5.6f * p))
+            scope.drawRect(roomTheme.rugTrim, Offset(mx, my), Size(medW, medH))
+            scope.drawRect(roomTheme.beddingAccent, Offset(mx + 1.5f * p, my + 1.5f * p), Size(medW - 3 * p, medH - 3 * p))
+            scope.drawRect(roomTheme.wall, Offset(mx + 2.8f * p, my + 2.8f * p), Size(medW - 5.6f * p, medH - 5.6f * p))
         }
     }
 
@@ -1427,7 +1431,8 @@ object LoftSprites {
         scope: DrawScope,
         cw: Float,
         floorY: Float,
-        p: Float
+        p: Float,
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
     ) {
         val sofaStartX = cw * 0.38f
         val sofaEndX = cw * 0.81f
@@ -1438,7 +1443,7 @@ object LoftSprites {
         val blanketY = floorY - 7 * p
 
         // Base dark fleece shadow
-        scope.drawRect(BlanketDark, Offset(blanketStartX, blanketY), Size(blanketW, blanketH))
+        scope.drawRect(roomTheme.beddingAccent, Offset(blanketStartX, blanketY), Size(blanketW, blanketH))
 
         // Checkered patchwork fleece blanket covering daybed & couple laps
         val checkW = 3.6f * p
@@ -1448,10 +1453,10 @@ object LoftSprites {
             var cx = 0
             while (cx * checkW < blanketW) {
                 val color = when ((cx + cy) % 4) {
-                    0 -> BlanketRed
-                    1 -> BlanketOrange
-                    2 -> BlanketYellow
-                    else -> BlanketCream
+                    0 -> roomTheme.bedding
+                    1 -> roomTheme.beddingAccent
+                    2 -> roomTheme.rugTrim
+                    else -> roomTheme.wall
                 }
                 val curW = checkW.coerceAtMost(blanketW - cx * checkW)
                 val curH = checkH.coerceAtMost(blanketH - cy * checkH)
@@ -1462,13 +1467,13 @@ object LoftSprites {
         }
 
         // Folded blanket edge draping down the sofa front
-        scope.drawRect(BlanketCream, Offset(blanketStartX - p, blanketY + blanketH - 1.8f * p), Size(blanketW + 2 * p, 1.8f * p))
+        scope.drawRect(roomTheme.wall, Offset(blanketStartX - p, blanketY + blanketH - 1.8f * p), Size(blanketW + 2 * p, 1.8f * p))
 
         // Cozy fringe threads along bottom edge
         val tasselCount = (blanketW / (2.6f * p)).toInt()
         for (i in 0..tasselCount) {
             val fx = blanketStartX + i * 2.6f * p
-            scope.drawRect(Color(0xFFE8CA72), Offset(fx, blanketY + blanketH), Size(1.2f * p, 2.5f * p))
+            scope.drawRect(roomTheme.rugTrim, Offset(fx, blanketY + blanketH), Size(1.2f * p, 2.5f * p))
         }
     }
 
@@ -1478,7 +1483,8 @@ object LoftSprites {
         floorY: Float,
         p: Float,
         timeSeconds: Float,
-        lampLit: Boolean
+        lampLit: Boolean,
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
     ) {
         val tableW = 34 * p
         val tableH = 13 * p
@@ -1535,9 +1541,9 @@ object LoftSprites {
         // 5. Hot Ceramic Mugs with Red Heart & Gentle Steam
         val mugX = tableX + tableW - 5.5f * p
         val mugY = tableY - 4.5f * p
-        scope.drawRect(Color(0xFFFFF0F5), Offset(mugX, mugY), Size(3.5f * p, 4.5f * p))
-        scope.drawRect(Color(0xFFFFF0F5), Offset(mugX + 3.5f * p, mugY + 0.6f * p), Size(1.2f * p, 2.5f * p))
-        scope.drawRect(Color(0xFFFF4D6D), Offset(mugX + p, mugY + 1.2f * p), Size(1.5f * p, 1.5f * p))
+        scope.drawRect(roomTheme.mugAccent, Offset(mugX, mugY), Size(3.5f * p, 4.5f * p))
+        scope.drawRect(roomTheme.mugAccent, Offset(mugX + 3.5f * p, mugY + 0.6f * p), Size(1.2f * p, 2.5f * p))
+        scope.drawRect(roomTheme.mug, Offset(mugX + p, mugY + 1.2f * p), Size(1.5f * p, 1.5f * p))
 
         // Gentle steam rising
         val steamSway = sin(timeSeconds * 3f) * 1.2f * p
@@ -1705,7 +1711,8 @@ object LoftSprites {
         ch: Float,
         p: Float,
         timeSeconds: Float,
-        lampLit: Boolean
+        lampLit: Boolean,
+        roomTheme: RoomTheme
     ) {
         val railTopY = ch * 0.72f
         val railBottomY = ch
@@ -1746,11 +1753,29 @@ object LoftSprites {
 
             // Glowing mini Edison bulb
             scope.drawRect(DarkWoodBeam, Offset(bx, by), Size(3 * p, 4 * p))
-            val bulbGlow = if (lampLit) Color(0xFFFFD166) else Color(0x80FFEAA7)
-            scope.drawRect(bulbGlow, Offset(bx + 0.8f * p, by + 0.8f * p), Size(1.4f * p, 2.4f * p))
+            val bulbGlow = if (lampLit) roomTheme.light else roomTheme.light.copy(alpha = 0.55f)
+            when (roomTheme.ordinal) {
+                1 -> {
+                    scope.drawRect(bulbGlow, Offset(bx + p, by + p), Size(p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + 0.4f*p, by + 2*p), Size(2.2f*p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + p, by + 3*p), Size(p, p))
+                }
+                2 -> {
+                    scope.drawRect(bulbGlow, Offset(bx + 0.7f*p, by + p), Size(0.8f*p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + 2*p, by + p), Size(0.8f*p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + 0.4f*p, by + 2*p), Size(2.7f*p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + p, by + 3*p), Size(1.5f*p, p))
+                }
+                3 -> {
+                    scope.drawRect(bulbGlow, Offset(bx + p, by + 0.5f*p), Size(p, 3*p))
+                    scope.drawRect(bulbGlow, Offset(bx + 0.3f*p, by + 1.5f*p), Size(3*p, p))
+                    scope.drawRect(bulbGlow, Offset(bx + 0.8f*p, by + p), Size(2*p, 2*p))
+                }
+                else -> scope.drawRect(bulbGlow, Offset(bx + 0.8f * p, by + 0.8f * p), Size(1.4f * p, 2.4f * p))
+            }
             if (lampLit) {
                 val flicker = sin(timeSeconds * 4f + bxRel * 8f) * 0.06f + 0.94f
-                scope.drawCircle(AmberLightMid.copy(alpha = 0.20f * flicker), 8 * p, Offset(bx + 1.5f * p, by + 2 * p))
+                scope.drawCircle(roomTheme.light.copy(alpha = 0.20f * flicker), 8 * p, Offset(bx + 1.5f * p, by + 2 * p))
             }
         }
 

@@ -38,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
 import androidx.compose.material3.Icon
@@ -79,6 +80,8 @@ import com.example.data.PolaroidMemory
 import com.example.engine.AmbientAudio
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
+import com.example.scene.EnvironmentType
+import com.example.engine.RoomTheme
 import com.example.ui.theme.DarkSlate
 import com.example.ui.theme.DeepRose
 import kotlinx.coroutines.delay
@@ -132,6 +135,7 @@ fun MainScreen(
     var showSpecialCalendar by remember { mutableStateOf(false) }
     var showWardrobe by remember { mutableStateOf(false) }
     var showDreamJournal by remember { mutableStateOf(false) }
+    var showRoomCustomizer by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
 
     var showDateAdventures by remember { mutableStateOf(false) }
@@ -214,6 +218,7 @@ fun MainScreen(
         ).apply {
             updateNames(prefs.boyfriendName, prefs.girlfriendName)
             updateAtmosphereMode(prefs.atmosphereMode)
+            setRoomTheme(RoomTheme.values().firstOrNull { it.name == prefs.roomThemeId } ?: RoomTheme.WARM_AUTUMN_COTTAGE, announce = false)
             gardenStage = prefs.gardenStage
             girl.outfitIndex = prefs.girlOutfitIndex
             girl.accessoryIndex = prefs.girlAccessoryIndex
@@ -672,6 +677,24 @@ fun MainScreen(
                             clearFactor = clearFactor,
                             isDark = isDark
                         )
+                    }
+                }
+
+                if (engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
+                    Box(
+                        modifier = Modifier.size(buttonTouchSize).clip(CircleShape).clickable(role = Role.Button) {
+                            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                            showRoomCustomizer = true
+                        }.testTag("room_customizer_button"),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Box(
+                            modifier = Modifier.size(buttonVisualSize).shadow(buttonElevation, glassyCircleShape, ambientColor = glassShadowAmbient, spotColor = glassShadowSpot)
+                                .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            ContrastIcon(Icons.Default.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                        }
                     }
                 }
 
@@ -1145,6 +1168,18 @@ fun MainScreen(
                     prefs.boyAccessoryIndex = index
                 },
                 onDismiss = { showWardrobe = false }
+            )
+        }
+
+        if (showRoomCustomizer) {
+            RoomCustomizerDialog(
+                selectedTheme = engine.roomTheme,
+                isLoft = engine.currentScene.environment == EnvironmentType.COZY_LOFT,
+                onSelectTheme = { theme ->
+                    engine.setRoomTheme(theme)
+                    prefs.roomThemeId = theme.name
+                },
+                onDismiss = { showRoomCustomizer = false }
             )
         }
 

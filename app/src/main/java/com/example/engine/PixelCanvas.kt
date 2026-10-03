@@ -119,9 +119,13 @@ data class PixelCharacter(
     var targetWorldY: Float = worldY,
     var startWorldX: Float = worldX,
     var startWorldY: Float = worldY,
+    var startVelocityX: Float = 0f,
+    var startVelocityY: Float = 0f,
     var posTransitionProgress: Float = 1f,
     var posTransitionDuration: Float = 0f,
+    var posTransitionSpeed: Float = CharacterMotionTween.SHARED_WALKING_SPEED,
     var isTransitioningPosition: Boolean = false,
+    var walkCycleProgress: Float = 0f,
 
     var targetPose: CharacterPose = pose,
     var previousPose: CharacterPose = pose,
@@ -143,9 +147,18 @@ data class PixelCharacter(
         speed: Float = CharacterMotionTween.SHARED_WALKING_SPEED,
         arrivePose: CharacterPose? = null
     ) {
-        if (arrivePose != null) {
-            targetPose = arrivePose
+        // Carry a little momentum when a live target changes, avoiding an abrupt stop
+        // followed by a fresh ease-in. A reversal still settles before turning around.
+        var carriedVx = 0f
+        var carriedVy = 0f
+        if (isTransitioningPosition && posTransitionDuration > 0f) {
+            val t = posTransitionProgress.coerceIn(0f, 1f)
+            val easeVelocity = if (t < 0.5f) 12f * t * t else 12f * (1f - t) * (1f - t)
+            carriedVx = (targetWorldX - startWorldX) * (easeVelocity / posTransitionDuration)
+            carriedVy = (targetWorldY - startWorldY) * (easeVelocity / posTransitionDuration)
         }
+        // Every walk ends in a settled pose unless the caller requests an interaction.
+        targetPose = arrivePose ?: CharacterPose.IDLE
         isTransitioningPose = false
         val dist = kotlin.math.hypot(newX - worldX, newY - worldY)
         if (dist < 0.002f) {
@@ -155,9 +168,7 @@ data class PixelCharacter(
             targetWorldY = newY
             isTransitioningPosition = false
             posTransitionProgress = 1f
-            if (arrivePose != null) {
-                pose = arrivePose
-            }
+            pose = targetPose
             return
         }
         startWorldX = worldX
@@ -165,8 +176,25 @@ data class PixelCharacter(
         targetWorldX = newX
         targetWorldY = newY
         posTransitionProgress = 0f
-        posTransitionDuration = (dist / speed).coerceAtLeast(0.08f)
+        posTransitionSpeed = speed.coerceAtLeast(0.001f)
+        posTransitionDuration = (dist / posTransitionSpeed).coerceAtLeast(0.08f)
+        val targetDx = newX - worldX
+        val targetDy = newY - worldY
+        if (carriedVx * targetDx + carriedVy * targetDy > 0f) {
+            val carriedSpeed = kotlin.math.hypot(carriedVx, carriedVy)
+            val scale = if (carriedSpeed > posTransitionSpeed) posTransitionSpeed / carriedSpeed else 1f
+            startVelocityX = carriedVx * scale
+            startVelocityY = carriedVy * scale
+        } else {
+            startVelocityX = 0f
+            startVelocityY = 0f
+        }
         isTransitioningPosition = true
+        if (dist >= 0.03f) {
+            walkCycleProgress = 0f
+            walkFrame = 0
+            pose = CharacterPose.WALK_1
+        }
         if (newX < worldX - 0.005f) {
             direction = Direction.LEFT
         } else if (newX > worldX + 0.005f) {
@@ -201,6 +229,8 @@ data class PixelCharacter(
         targetWorldY = y
         startWorldX = x
         startWorldY = y
+        startVelocityX = 0f
+        startVelocityY = 0f
         posTransitionProgress = 1f
         posTransitionDuration = 0f
         isTransitioningPosition = false
@@ -213,6 +243,7 @@ data class PixelCharacter(
         direction = newDir
         bounceOffset = 0f
         walkFrame = 0
+        walkCycleProgress = 0f
     }
 
     /**
@@ -221,15 +252,26 @@ data class PixelCharacter(
     fun updateMotion(dt: Float) {
         // 1. Position tweening
         if (isTransitioningPosition) {
+            val previousX = worldX
+            val previousY = worldY
             posTransitionProgress = (posTransitionProgress + dt / posTransitionDuration).coerceAtMost(1f)
-            val eased = CharacterMotionTween.easeInOutCubic(posTransitionProgress)
-            worldX = startWorldX + (targetWorldX - startWorldX) * eased
-            worldY = startWorldY + (targetWorldY - startWorldY) * eased
+            val t = posTransitionProgress
+            val t2 = t * t
+            val t3 = t2 * t
+            val h00 = 2f * t3 - 3f * t2 + 1f
+            val h10 = t3 - 2f * t2 + t
+            val h01 = -2f * t3 + 3f * t2
+            val duration = posTransitionDuration
+            worldX = h00 * startWorldX + h10 * duration * startVelocityX + h01 * targetWorldX
+            worldY = h00 * startWorldY + h10 * duration * startVelocityY + h01 * targetWorldY
 
-            val totalDist = kotlin.math.abs(targetWorldX - startWorldX)
+            val totalDist = kotlin.math.hypot(targetWorldX - startWorldX, targetWorldY - startWorldY)
             if (totalDist >= 0.03f) {
-                // Cycle walk frames during movement (6.5 steps per second of physical time)
-                val step = ((posTransitionProgress * posTransitionDuration * 6.5f).toInt() % 4)
+                // Advance footfalls from distance actually travelled so eased starts and
+                // arrivals cannot show fast feet while barely moving (or sliding feet).
+                val travelled = kotlin.math.hypot(worldX - previousX, worldY - previousY)
+                walkCycleProgress += travelled * (6.5f / posTransitionSpeed)
+                val step = walkCycleProgress.toInt() % 4
                 walkFrame = step
                 pose = when (step) {
                     0 -> CharacterPose.WALK_1
@@ -246,6 +288,7 @@ data class PixelCharacter(
                 isTransitioningPosition = false
                 pose = targetPose
                 bounceOffset = 0f
+                walkCycleProgress = 0f
             }
         }
 
@@ -679,6 +722,10 @@ object PixelArtRenderer {
         // --- 2. Face Skin ---
         fillRect(6, 7, 7, 4, skinColor)
         fillRect(7, 11, 5, 1, skinColor)
+        // Tiny warm planes under the fringe and along the jaw keep the face readable at sprite scale.
+        px(6, 10, skinShadow)
+        px(12, 10, skinShadow)
+        px(8, 7, Color(0x30FFFFFF))
         // Ear
         px(5, 8, skinShadow)
 
@@ -746,6 +793,18 @@ object PixelArtRenderer {
         // Side shadows
         fillRect(5, 13, 1, 4, sweaterColor)
         fillRect(12, 13, 1, 4, sweaterColor)
+        val sweaterShadow = if (isSnow) {
+            if (isGirl) Color(0xFFB85E66) else Color(0xFF12352A)
+        } else if (isGirl) {
+            girlDress.skirtShadow
+        } else {
+            boyOutfit.collar
+        }
+        // Narrow edge shade and stitch marks give the knit a rounder, less block-filled read.
+        px(6, 15, sweaterShadow)
+        px(12, 16, sweaterShadow)
+        px(7, 16, sweaterHighlight)
+        px(11, 14, sweaterHighlight)
 
         // Hoodie features: cozy rolled hood collar around neck, dropped shoulders, front kangaroo pouch, and drawstrings
         if (!isSnow) {

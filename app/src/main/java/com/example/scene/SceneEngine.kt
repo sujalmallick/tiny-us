@@ -18,12 +18,14 @@ import com.example.engine.EmoteType
 import com.example.engine.ParticleSystem
 import com.example.engine.PixelCharacter
 import com.example.engine.CharacterMotionTween
+import com.example.engine.RoomTheme
 import com.example.engine.TimeOfDayPhase
 import com.example.engine.BirdEntity
 import com.example.engine.BirdSpecies
 import com.example.engine.BirdSystem
 import com.example.engine.PerchSurface
 import kotlin.math.abs
+import kotlin.math.exp
 import kotlin.math.sin
 import kotlin.random.Random
 
@@ -35,6 +37,10 @@ private val OUTDOOR_ENVIRONMENTS = setOf(
     EnvironmentType.EVENING_ROAD,
     EnvironmentType.MOMO_STALL
 )
+
+/** Converts a per-second event rate to a frame-rate-independent per-frame chance. */
+private fun eventChance(ratePerSecond: Float, deltaSeconds: Float): Boolean =
+    Random.nextFloat() < (1f - exp(-ratePerSecond * deltaSeconds.coerceAtLeast(0f)))
 
 class SceneEngine(
     val audio: AmbientAudio,
@@ -105,6 +111,36 @@ class SceneEngine(
     var idleAffectionTimer: Float = 0f
     var catWorldX: Float = 0.82f
     var catWorldY: Float = 0.69f
+
+    var roomTheme: RoomTheme by mutableStateOf(RoomTheme.WARM_AUTUMN_COTTAGE)
+        private set
+    var cafeLatteTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var cafeWindowHeartTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var cafePastryBites: Int by mutableIntStateOf(0)
+        private set
+    var cafeWindowHeartX: Float by mutableFloatStateOf(0.50f)
+        private set
+    var cafeWindowHeartY: Float by mutableFloatStateOf(0.30f)
+        private set
+    var sunroomSkylightTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var sunroomMistTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var sunroomBloomStage: Int by mutableIntStateOf(0)
+        private set
+    var catTreatJarTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var catTreatDropTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var catTreatMunchTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var mochiCollarStyle: Int by mutableIntStateOf(0)
+        private set
+    private var catTreatInProgress = false
+    private var catTreatWalking = false
+    val isCatTreatOnFloor: Boolean get() = catTreatInProgress && catTreatDropTimer <= 0f && catTreatMunchTimer <= 0f
 
     // Feature 1: Mochi Matchmaker state
     var mochiMatchmakerActive: Boolean by mutableStateOf(false)
@@ -179,6 +215,7 @@ class SceneEngine(
     // Evening Ride tap-interaction animation timers
     var scooterHonkTimer: Float by mutableFloatStateOf(0f)     // drives scooter hop + headlight flash + exhaust puff (0.8 s)
     var templeGlowTimer: Float by mutableFloatStateOf(0f)      // drives golden blessing aura & falling sparkles from spire (2.0 s)
+    var rideFireflyTimer: Float by mutableFloatStateOf(0f)
 
     // Midnight Loft tap-interaction animation timers
     var loftTableTimer: Float by mutableFloatStateOf(0f)       // drives tea cup tilt + steam + crumb drop (1.4 s)
@@ -310,7 +347,16 @@ class SceneEngine(
 
     // Autonomous spontaneous interaction timer (frequent cute movements!)
     private var autonomousTimer: Float = 0f
-    private var nextAutonomousInterval = 5.5f
+    private var nextAutonomousInterval = 14f
+    private var lastIdleBehavior = -1
+    private var boyIdleWaveTimer = 0f
+    private var girlIdleWaveTimer = 0f
+    private var boyIdleWaveReturnPose: CharacterPose? = null
+    private var girlIdleWaveReturnPose: CharacterPose? = null
+    private var groundInteractionCharacter: PixelCharacter? = null
+    private var groundInteractionWait = 0f
+    private var groundInteractionX = 0f
+    private var groundInteractionY = 0f
 
     /** Smooth sitting/snuggle/kiss offset interpolation progress (0f = separated, 1f = fully cuddled) */
     var cuddleProgress: Float by mutableFloatStateOf(0f)
@@ -467,6 +513,11 @@ class SceneEngine(
         messageTimer = 0f
         ambientDimming = 0f
         autonomousTimer = 0f
+        lastIdleBehavior = -1
+        boyIdleWaveTimer = 0f
+        girlIdleWaveTimer = 0f
+        boyIdleWaveReturnPose = null
+        girlIdleWaveReturnPose = null
         boySpeechText = null
         boySpeechTimer = 0f
         girlSpeechText = null
@@ -516,12 +567,15 @@ class SceneEngine(
         streetDiningTableTimer = 0f
         scooterHonkTimer = 0f
         templeGlowTimer = 0f
+        rideFireflyTimer = 0f
         loftTableTimer = 0f
         loftBookNookTimer = 0f
         loftFairyLightsTimer = 0f
         loftWindowTimer = 0f
         livingRoomReturnTimer = 0f
         livingRoomReturnChar = null
+        groundInteractionCharacter = null
+        groundInteractionWait = 0f
         cuddleProgress = 0f
         teakettleWhistleTimer = 0f
         cuddleBlanketTimer = 0f
@@ -529,6 +583,16 @@ class SceneEngine(
         featherWandWiggleTimer = 0f
         plantWaterTimer = 0f
         telescopeStarTimer = 0f
+        cafeLatteTimer = 0f
+        cafeWindowHeartTimer = 0f
+        cafePastryBites = 0
+        sunroomSkylightTimer = 0f
+        sunroomMistTimer = 0f
+        catTreatJarTimer = 0f
+        catTreatDropTimer = 0f
+        catTreatMunchTimer = 0f
+        catTreatInProgress = false
+        catTreatWalking = false
 
         // Reset Feature 1 (Mochi Matchmaker) & compute Feature 2 (Tree Bark Growth)
         mochiMatchmakerActive = false
@@ -729,10 +793,59 @@ class SceneEngine(
                 loftBookReading = false
                 ambientDimming = 0.08f
             }
+            SceneType.RAINY_CAFE -> {
+                boy.worldX = 0.40f
+                boy.worldY = 0.68f
+                boy.direction = Direction.RIGHT
+                boy.pose = CharacterPose.SIT
+                boy.emotion = CharacterEmotion.LOVING
+                boy.emote = EmoteType.NONE
+
+                girl.worldX = 0.60f
+                girl.worldY = 0.68f
+                girl.direction = Direction.LEFT
+                girl.pose = CharacterPose.SIT_SNUGGLE
+                girl.emotion = CharacterEmotion.HAPPY
+                girl.emote = EmoteType.NONE
+
+                catSleeping = true
+                catState = CatState.SLEEPING
+                catWorldX = 0.84f
+                catWorldY = 0.70f
+            }
+            SceneType.SUNROOM -> {
+                boy.worldX = 0.42f
+                boy.worldY = 0.68f
+                boy.direction = Direction.RIGHT
+                boy.pose = CharacterPose.IDLE
+                boy.emotion = CharacterEmotion.HAPPY
+                boy.emote = EmoteType.NONE
+
+                girl.worldX = 0.58f
+                girl.worldY = 0.68f
+                girl.direction = Direction.LEFT
+                girl.pose = CharacterPose.IDLE
+                girl.emotion = CharacterEmotion.HAPPY
+                girl.emote = EmoteType.NONE
+
+                catSleeping = false
+                catState = CatState.SITTING_PURR
+                catWorldX = 0.82f
+                catWorldY = 0.70f
+            }
         }
         catTargetX = catWorldX
         catTargetY = catWorldY
         catFacingLeft = false
+    }
+
+    fun setRoomTheme(theme: RoomTheme, announce: Boolean = true) {
+        if (roomTheme == theme) return
+        roomTheme = theme
+        if (announce) {
+            audio.playBubblePop()
+            showMessage("${theme.title} is ready for a cozy evening.", duration = 2.4f)
+        }
     }
 
     /**
@@ -848,7 +961,7 @@ class SceneEngine(
                             girl.pose = CharacterPose.HUG
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
-                            if (kotlin.random.Random.nextFloat() < 0.10f) {
+                            if (eventChance(0.9f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.49f + (kotlin.random.Random.nextFloat() - 0.5f) * 30f, ch * 0.55f)
                             }
                         }
@@ -906,7 +1019,7 @@ class SceneEngine(
                             girl.pose = CharacterPose.SIT_SNUGGLE
                             boy.emotion = CharacterEmotion.SLEEPY
                             girl.emotion = CharacterEmotion.SLEEPY
-                            if (kotlin.random.Random.nextFloat() < 0.05f) {
+                            if (eventChance(0.42f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.47f, ch * 0.55f)
                             }
                         }
@@ -980,7 +1093,7 @@ class SceneEngine(
                                 girlSpeechText = "So yummy though"
                                 girlSpeechTimer = 3.0f
                             }
-                            if (kotlin.random.Random.nextFloat() < 0.10f) {
+                            if (eventChance(0.9f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.53f, ch * 0.55f)
                             }
                         }
@@ -1041,7 +1154,7 @@ class SceneEngine(
                                 girl.emote = EmoteType.SLEEP_Z
                                 girl.emoteTimer = 3.0f
                             }
-                            if (kotlin.random.Random.nextFloat() < 0.06f) {
+                            if (eventChance(0.52f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.47f, ch * 0.52f)
                             }
                         }
@@ -1107,7 +1220,7 @@ class SceneEngine(
                             boy.direction = Direction.RIGHT
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
-                            if (kotlin.random.Random.nextFloat() < 0.08f) {
+                            if (eventChance(0.7f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.49f, ch * 0.55f)
                             }
                         }
@@ -1172,7 +1285,7 @@ class SceneEngine(
                                 boy.pose = CharacterPose.HUG
                                 girl.pose = CharacterPose.HUG
                             }
-                            if (kotlin.random.Random.nextFloat() < 0.08f) {
+                            if (eventChance(0.7f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.48f + (kotlin.random.Random.nextFloat() - 0.5f) * 25f, ch * 0.45f)
                             }
                         }
@@ -1235,7 +1348,7 @@ class SceneEngine(
                             girl.worldX = 0.56f
                             boy.emotion = CharacterEmotion.HAPPY
                             girl.emotion = CharacterEmotion.HAPPY
-                            if (kotlin.random.Random.nextFloat() < 0.12f) {
+                            if (eventChance(1.05f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.49f + (kotlin.random.Random.nextFloat() - 0.5f) * 40f, ch * 0.52f)
                             }
                         }
@@ -1288,7 +1401,7 @@ class SceneEngine(
                             girl.pose = CharacterPose.IDLE
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
-                            if (kotlin.random.Random.nextFloat() < 0.12f) {
+                            if (eventChance(1.05f, deltaSeconds)) {
                                 particles.spawnHeart(
                                     cw * 0.30f + (kotlin.random.Random.nextFloat() - 0.5f) * 20f,
                                     ch * 0.58f + (kotlin.random.Random.nextFloat() - 0.5f) * 10f
@@ -1336,10 +1449,10 @@ class SceneEngine(
                             girl.worldX = 0.60f
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
-                            if (kotlin.random.Random.nextFloat() < 0.08f) {
+                            if (eventChance(0.7f, deltaSeconds)) {
                                 particles.spawnSparkles(cw * 0.55f + (kotlin.random.Random.nextFloat() - 0.5f) * 30f, ch * 0.45f, 1)
                             }
-                            if (kotlin.random.Random.nextFloat() < 0.07f) {
+                            if (eventChance(0.62f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.55f, ch * 0.50f)
                             }
                         }
@@ -1399,7 +1512,7 @@ class SceneEngine(
                                 particles.spawnHeart(canvasWidth * kissMidX, canvasHeight * boy.worldY - 32f * pxScale)
                                 particles.spawnSparkles(canvasWidth * kissMidX, canvasHeight * boy.worldY - 26f * pxScale, 4)
                             }
-                            if (kotlin.random.Random.nextFloat() < 0.12f) {
+                            if (eventChance(1.05f, deltaSeconds)) {
                                 particles.spawnHeart(canvasWidth * kissMidX + (kotlin.random.Random.nextFloat() - 0.5f) * 40f, canvasHeight * boy.worldY - 32f * pxScale)
                             }
                         }
@@ -1431,7 +1544,7 @@ class SceneEngine(
             val rhythm = kotlin.math.abs(sin(sceneTime * 6.5f)) * (2.8f * pixelScale)
             boy.bounceOffset = rhythm
             girl.bounceOffset = kotlin.math.abs(sin(sceneTime * 6.5f + 0.35f)) * (2.8f * pixelScale)
-            if (Random.nextFloat() < 0.045f) {
+            if (eventChance(1.1f, deltaSeconds)) {
                 particles.spawnMusicNote(
                     canvasWidth * ((boy.worldX + girl.worldX) / 2f) + (Random.nextFloat() - 0.5f) * 60f,
                     canvasHeight * boy.worldY - (28f * pixelScale)
@@ -1445,6 +1558,9 @@ class SceneEngine(
         // Shared motion tweening update (smooth transitions using deltaSeconds)
         boy.updateMotion(deltaSeconds)
         girl.updateMotion(deltaSeconds)
+        updateIdleWaveReturn(boy, deltaSeconds, true)
+        updateIdleWaveReturn(girl, deltaSeconds, false)
+        this.updateGroundInteraction(deltaSeconds, canvasWidth, canvasHeight)
 
         // Smooth sitting / cuddle / kiss offset interpolation
         val isCuddled = (boy.pose == CharacterPose.KISS || girl.pose == CharacterPose.KISS ||
@@ -1570,7 +1686,7 @@ class SceneEngine(
         girl.isSpeaking = !girlSpeechText.isNullOrEmpty()
 
         // Extra floating hearts during warm couple hug or kiss
-        if ((boy.pose == CharacterPose.HUG || boy.pose == CharacterPose.KISS) && Random.nextFloat() < 0.10f) {
+        if ((boy.pose == CharacterPose.HUG || boy.pose == CharacterPose.KISS) && eventChance(1.4f, deltaSeconds)) {
             particles.spawnHeart(canvasWidth * ((boy.worldX + girl.worldX) / 2f), canvasHeight * boy.worldY - 25f)
         }
 
@@ -1598,6 +1714,7 @@ class SceneEngine(
             SceneType.MOMO_STALL -> sceneTime < 6.2f
             SceneType.EVENING_RIDE -> sceneTime < 7.0f
             SceneType.COZY_LOFT -> sceneTime < 5.6f
+            SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
         }
         autonomousTimer += deltaSeconds
         if (!isScriptActive && !isWatchSceneActive && autonomousTimer >= nextAutonomousInterval &&
@@ -1605,7 +1722,7 @@ class SceneEngine(
             !boy.isMovingOrTransitioning && !girl.isMovingOrTransitioning &&
             livingRoomReturnTimer <= 0f) {
             autonomousTimer = 0f
-            nextAutonomousInterval = 3.5f + Random.nextFloat() * 2.5f
+            nextAutonomousInterval = 11f + Random.nextFloat() * 9f
             triggerAutonomousMoment(canvasWidth, canvasHeight)
         }
 
@@ -1635,8 +1752,18 @@ class SceneEngine(
             audio.playWeatherBgm(weather, isAutomaticDrift = false)
         }
         val isNight = timeOfDayPhase.isNight
+        // Match rain contact to the visible floor in each outdoor backdrop. Path scenes
+        // include their raised cobbled strip; meadow scenes meet the grass sooner.
+        val rainGroundY = when (currentScene) {
+            SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING -> canvasHeight * 0.74f
+            SceneType.WALK, SceneType.MOMO_STALL -> canvasHeight * 0.66f + 30f * pixelScale
+            SceneType.EVENING_RIDE -> canvasHeight * 0.73f
+            else -> canvasHeight * 0.84f
+        }
         // Spawn and update weather particles every frame!
-        particles.updateWeatherEffects(weather, canvasWidth, canvasHeight, isOutdoor, isNight, deltaSeconds)
+        particles.updateWeatherEffects(
+            weather, canvasWidth, canvasHeight, isOutdoor, isNight, deltaSeconds, rainGroundY
+        )
 
         if (weather == WeatherType.RAIN && audio.isEnabled) {
             if (!isRainAmbientPlaying) {
@@ -1658,16 +1785,16 @@ class SceneEngine(
         if (isOutdoor && audio.isEnabled && !audio.isPlayingMusic) {
             when (weather) {
                 WeatherType.AUTUMN -> {
-                    if (Random.nextFloat() < 0.005f) audio.playLeafRustle()
+                    if (eventChance(0.08f, deltaSeconds)) audio.playLeafRustle()
                 }
                 WeatherType.SAKURA -> {
-                    if (Random.nextFloat() < 0.004f) audio.playStarTwinkle()
+                    if (eventChance(0.035f, deltaSeconds)) audio.playStarTwinkle()
                 }
                 WeatherType.SUNNY -> {
-                    if (!isNight && Random.nextFloat() < 0.005f) audio.playBirdChirp()
+                    if (!isNight && eventChance(0.10f, deltaSeconds)) audio.playBirdChirp()
                 }
                 WeatherType.SNOW -> {
-                    if (Random.nextFloat() < 0.003f) audio.playStarTwinkle()
+                    if (eventChance(0.025f, deltaSeconds)) audio.playStarTwinkle()
                 }
                 else -> {}
             }
@@ -1675,7 +1802,7 @@ class SceneEngine(
 
         // Cute sleeping Z particles rising from sleeping cat
         if (catState == CatState.SLEEPING && currentScene != SceneType.EVENING_RIDE) {
-            if (Random.nextFloat() < 0.008f) {
+            if (eventChance(0.18f, deltaSeconds)) {
                 particles.spawnSleepZ(canvasWidth * catWorldX + 6f, canvasHeight * catWorldY - 14f * pixelScale)
             }
         }
@@ -1718,6 +1845,12 @@ class SceneEngine(
         if (crateShakeTimer > 0f) crateShakeTimer = (crateShakeTimer - deltaSeconds).coerceAtLeast(0f)
         if (planterAnimTimer > 0f) planterAnimTimer = (planterAnimTimer - deltaSeconds).coerceAtLeast(0f)
         if (stoolWobbleTimer > 0f) stoolWobbleTimer = (stoolWobbleTimer - deltaSeconds).coerceAtLeast(0f)
+        if (cafeLatteTimer > 0f) cafeLatteTimer = (cafeLatteTimer - deltaSeconds).coerceAtLeast(0f)
+        if (cafeWindowHeartTimer > 0f) cafeWindowHeartTimer = (cafeWindowHeartTimer - deltaSeconds).coerceAtLeast(0f)
+        if (sunroomSkylightTimer > 0f) sunroomSkylightTimer = (sunroomSkylightTimer - deltaSeconds).coerceAtLeast(0f)
+        if (sunroomMistTimer > 0f) sunroomMistTimer = (sunroomMistTimer - deltaSeconds).coerceAtLeast(0f)
+        if (catTreatJarTimer > 0f) catTreatJarTimer = (catTreatJarTimer - deltaSeconds).coerceAtLeast(0f)
+        if (catTreatDropTimer > 0f) catTreatDropTimer = (catTreatDropTimer - deltaSeconds).coerceAtLeast(0f)
 
         // Living Room tap-interaction animation countdowns
         if (tableCandleTimer > 0f)  tableCandleTimer  = (tableCandleTimer  - deltaSeconds).coerceAtLeast(0f)
@@ -1744,6 +1877,7 @@ class SceneEngine(
         // Evening Ride tap-interaction countdowns
         if (scooterHonkTimer > 0f) scooterHonkTimer = (scooterHonkTimer - deltaSeconds).coerceAtLeast(0f)
         if (templeGlowTimer > 0f) templeGlowTimer = (templeGlowTimer - deltaSeconds).coerceAtLeast(0f)
+        if (rideFireflyTimer > 0f) rideFireflyTimer = (rideFireflyTimer - deltaSeconds).coerceAtLeast(0f)
 
         // Midnight Loft tap-interaction countdowns
         if (loftTableTimer > 0f) loftTableTimer = (loftTableTimer - deltaSeconds).coerceAtLeast(0f)
@@ -1781,6 +1915,7 @@ class SceneEngine(
 
         // Continuous smooth cat roaming across the scene
         updateCatMovement(deltaSeconds, canvasWidth, canvasHeight)
+        updateKitchenTreat(deltaSeconds, canvasWidth, canvasHeight)
 
         // Scripted scene animations
         when (currentScene) {
@@ -1793,6 +1928,7 @@ class SceneEngine(
             SceneType.MOMO_STALL -> updateMomoScene(deltaSeconds, canvasWidth, canvasHeight)
             SceneType.EVENING_RIDE -> updateEveningRideScene(deltaSeconds, canvasWidth, canvasHeight)
             SceneType.COZY_LOFT -> updateCozyLoftScene(deltaSeconds, canvasWidth, canvasHeight)
+            SceneType.RAINY_CAFE, SceneType.SUNROOM -> Unit
         }
 
         // Feature 2: High-level CharacterState synchronization (wrapper layer only)
@@ -1926,7 +2062,7 @@ class SceneEngine(
             // Cozy living idle together
             if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
             if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.RECEIVE_FLOWER
-            if (Random.nextFloat() < 0.025f) {
+            if (eventChance(0.35f, dt)) {
                 particles.spawnPetals(cw * Random.nextFloat(), ch * 0.35f, 1)
             }
         }
@@ -1936,7 +2072,7 @@ class SceneEngine(
         val t = sceneTime
 
         // Leaves constantly drift down from canopy
-        if (Random.nextFloat() < 0.045f) {
+        if (eventChance(0.8f, dt)) {
             particles.spawnLeaf(cw * 0.5f + (Random.nextFloat() - 0.5f) * (cw * 0.35f), ch * 0.28f)
         }
 
@@ -1969,7 +2105,7 @@ class SceneEngine(
         } else {
             if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.SIT_SNUGGLE
             if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.SIT_SNUGGLE
-            if (Random.nextFloat() < 0.015f) {
+            if (eventChance(0.18f, dt)) {
                 audio.playBirdChirp()
             }
         }
@@ -1979,10 +2115,10 @@ class SceneEngine(
         val t = sceneTime
 
         // Stew pot always simmering with steam & bubbling
-        if (Random.nextFloat() < 0.22f) {
+        if (eventChance(3.0f, dt)) {
             particles.spawnSteam(cw * 0.58f, ch * 0.60f)
         }
-        if (Random.nextFloat() < 0.03f) {
+        if (eventChance(0.18f, dt)) {
             audio.playCookingBubbles()
         }
 
@@ -2158,7 +2294,7 @@ class SceneEngine(
                         }
                         catSleeping = true
                         catState = CatState.SLEEPING
-                        if (Random.nextFloat() < 0.04f) {
+                        if (eventChance(0.55f, dt)) {
                             particles.spawnSleepZ(cw * 0.44f, ch * 0.55f)
                             particles.spawnSleepZ(cw * 0.56f, ch * 0.55f)
                         }
@@ -2304,7 +2440,7 @@ class SceneEngine(
             if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.HOLD_HANDS
             boy.direction = Direction.RIGHT
             girl.direction = Direction.LEFT
-            if (Random.nextFloat() < 0.02f) {
+            if (eventChance(0.20f, dt)) {
                 particles.spawnSparkles(cw * 0.48f, ch * 0.62f, 3)
             }
         }
@@ -2346,7 +2482,7 @@ class SceneEngine(
         } else {
             if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
             if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.HOLD_HANDS
-            if (Random.nextFloat() < 0.02f) {
+            if (eventChance(0.20f, dt)) {
                 particles.spawnSparkles(cw * 0.50f, ch * 0.65f, 3)
             }
         }
@@ -2357,7 +2493,7 @@ class SceneEngine(
         val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
 
         // Continuous steam wisps rising softly from the momo steamer
-        if (Random.nextFloat() < 0.14f) {
+        if (eventChance(1.8f, dt)) {
             particles.spawnSteam(cw * 0.44f + (Random.nextFloat() - 0.5f) * 16f, ch * 0.69f - 24f * pixelScale)
         }
 
@@ -2436,7 +2572,7 @@ class SceneEngine(
     private fun updateEveningRideScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
         // Subtle roadside breeze & wind particles
-        if (Random.nextFloat() < 0.16f) {
+        if (eventChance(0.75f, dt)) {
             particles.spawnWindBreezeStreak(cw + 30f, ch * (0.64f + Random.nextFloat() * 0.14f), cw)
         }
 
@@ -2465,20 +2601,20 @@ class SceneEngine(
         val floorY = ch * 0.58f
 
         // 1. Gentle steam wisps rising from hot mugs on coffee table
-        if (Random.nextFloat() < 0.12f) {
+        if (eventChance(0.90f, dt)) {
             val mugX = cw * 0.50f + 15 * pixelScale + (Random.nextFloat() - 0.5f) * 6f
             particles.spawnSteam(mugX, floorY + 2 * pixelScale)
         }
 
         // 2. Vinyl music notes floating from turntable
         if (recordSpinning || audio.isPlayingMusic) {
-            if (Random.nextFloat() < 0.08f) {
+            if (eventChance(0.22f, dt)) {
                 particles.spawnMusicNote(cw * 0.88f + (Random.nextFloat() - 0.5f) * 16f, floorY - 14 * pixelScale)
             }
         }
 
         // 3. Occasional shooting star across panoramic window
-        if (Random.nextFloat() < 0.007f) {
+        if (timeOfDayPhase.isNight && weather != WeatherType.RAIN && eventChance(1f / 85f, dt)) {
             val windowStartX = cw * 0.35f
             val starX = windowStartX + Random.nextFloat() * (cw * 0.50f)
             val starY = ch * (0.05f + Random.nextFloat() * 0.20f)
@@ -2570,6 +2706,7 @@ class SceneEngine(
             SceneType.MOMO_STALL -> sceneTime < 6.2f
             SceneType.EVENING_RIDE -> sceneTime < 7.0f
             SceneType.COZY_LOFT -> sceneTime < 5.6f
+            SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
         }
         if (isScriptActive || isWatchSceneActive) return false
 
@@ -2592,6 +2729,7 @@ class SceneEngine(
             }
         }
 
+        if (catTreatInProgress) return false
         if (catState == CatState.WALK_FOLLOW && (kotlin.math.abs(catTargetX - catWorldX) > 0.02f || kotlin.math.abs(catTargetY - catWorldY) > 0.02f)) {
             return false
         }
@@ -2740,7 +2878,7 @@ class SceneEngine(
                 else if (dx < 0) catWorldX = (catWorldX + stepX).coerceAtLeast(catTargetX)
                 if (dy > 0) catWorldY = (catWorldY + stepY).coerceAtMost(catTargetY)
                 else if (dy < 0) catWorldY = (catWorldY + stepY).coerceAtLeast(catTargetY)
-                if (Random.nextFloat() < 0.02f) {
+                if (eventChance(0.20f, dt)) {
                     particles.spawnSparkles(cw * catWorldX, ch * catWorldY - 5f, 1)
                 }
             } else {
@@ -2808,7 +2946,7 @@ class SceneEngine(
                 } else if (dy < 0) {
                     catWorldY = (catWorldY + stepY).coerceAtLeast(catTargetY)
                 }
-                if (Random.nextFloat() < 0.02f) {
+                if (eventChance(0.20f, dt)) {
                     particles.spawnSparkles(cw * catWorldX, ch * catWorldY - 5f, 1)
                 }
             } else {
@@ -2879,6 +3017,7 @@ class SceneEngine(
     }
 
     private fun triggerAutonomousPetBehavior(cw: Float, ch: Float) {
+        if (catTreatInProgress) return
         if (currentScene == SceneType.COZY_LOFT) {
             val states = listOf(
                 CatState.SLEEPING,
@@ -3152,10 +3291,16 @@ class SceneEngine(
 
     // Autonomous Spontaneous Affectionate Moments — scene-aware (Feature 2 & 8)
     private fun triggerAutonomousMoment(cw: Float, ch: Float) {
-        nextAutonomousInterval = 4.5f + Random.nextFloat() * 3.5f
+        nextAutonomousInterval = 12f + Random.nextFloat() * 10f
 
-        // Scenes with no autonomous walking
+        // Quiet idle beats carry most of the time; existing scene-specific moments remain
+        // occasional surprises. Loft and scooter poses stay planted by design.
         if (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.EVENING_RIDE) {
+            triggerWeightedIdleMoment(cw, ch)
+            return
+        }
+        if (Random.nextInt(100) < 72) {
+            triggerWeightedIdleMoment(cw, ch)
             return
         }
 
@@ -3673,108 +3818,283 @@ class SceneEngine(
             else -> { /* fall through to generic */ }
         }
 
-        triggerGenericAutonomousMoment(cw, ch)
+        triggerWeightedIdleMoment(cw, ch)
     }
 
-    // Generic cross-scene autonomous moments (posture shifts, head turns, affectionate moments)
-    private fun triggerGenericAutonomousMoment(cw: Float, ch: Float) {
-        val rand = Random.nextInt(6)
-        when (rand) {
+    private fun triggerWeightedIdleMoment(cw: Float, ch: Float) {
+        // Cumulative weights: shared glance 32, conversation 23, look-around 17,
+        // small gesture 12, pet/weather reaction 11, short stroll 5.
+        val roll = Random.nextInt(100)
+        var behavior = when {
+            roll < 32 -> 0
+            roll < 55 -> 1
+            roll < 72 -> 2
+            roll < 84 -> 3
+            roll < 95 -> 4
+            else -> 5
+        }
+        if (behavior == lastIdleBehavior) behavior = (behavior + 1) % 6
+        lastIdleBehavior = behavior
+
+        when (behavior) {
             0 -> {
-                // Boyfriend turns and blows a kiss
-                boy.direction = Direction.RIGHT
-                boy.reactionTimer = 2.2f
-                boy.emote = EmoteType.KISS
-                boy.emoteTimer = 2.0f
-                audio.playHeartChime()
-                particles.spawnHeart(cw * boy.worldX + 15f, ch * boy.worldY - 20f)
-                girl.emotion = CharacterEmotion.SHY
-                girl.reactionTimer = 2.0f
+                // A quiet glance, then a shared pause.
+                boy.direction = if (girl.worldX >= boy.worldX) Direction.RIGHT else Direction.LEFT
+                girl.direction = if (boy.worldX >= girl.worldX) Direction.RIGHT else Direction.LEFT
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.HAPPY
+                boy.reactionTimer = 1.8f
+                girl.reactionTimer = 1.8f
             }
             1 -> {
-                // Girlfriend waves happily and hops
-                girl.pose = CharacterPose.JOY_JUMP
-                girl.reactionTimer = 2.2f
-                girl.emote = EmoteType.HEART
-                girl.emoteTimer = 2.0f
-                girl.bounceOffset = 8f
-                audio.playBubblePop()
-                particles.spawnSparkles(cw * girl.worldX, ch * girl.worldY - 20f, 4)
+                // Short personal conversation rather than a large scripted event.
+                val speaker = if (Random.nextBoolean()) boy else girl
+                val reply = if (speaker === boy) girl else boy
+                speaker.direction = if (reply.worldX >= speaker.worldX) Direction.RIGHT else Direction.LEFT
+                reply.direction = if (speaker.worldX >= reply.worldX) Direction.RIGHT else Direction.LEFT
+                speaker.emotion = CharacterEmotion.LOVING
+                reply.emotion = CharacterEmotion.HAPPY
+                speakerSpeech(speaker, when (Random.nextInt(4)) {
+                    0 -> "I like being right here with you."
+                    1 -> "This little moment is my favorite."
+                    2 -> if (weather == WeatherType.RAIN) "I could listen to this rain with you all day." else "You make this place feel like home."
+                    else -> "Look how peaceful everything feels."
+                }, 2.7f)
+                speaker.reactionTimer = 2.7f
+                reply.reactionTimer = 1.8f
             }
             2 -> {
-                // Gentle head pat
-                if (abs(boy.worldX - girl.worldX) < 0.28f) {
-                    boy.pose = CharacterPose.HEAD_PAT
-                    girl.pose = CharacterPose.HEAD_PAT_RECEIVE
-                    boy.reactionTimer = 2.8f
-                    girl.reactionTimer = 2.8f
-                    audio.playHeartChime()
-                    particles.spawnHeart(cw * girl.worldX, ch * girl.worldY - 30f)
-                } else {
-                    boy.emote = EmoteType.HEART
-                    boy.emoteTimer = 2.0f
-                    boy.reactionTimer = 2.0f
-                    audio.playHeartChime()
-                }
+                // One partner looks around while the other stays relaxed.
+                val observer = if (Random.nextBoolean()) boy else girl
+                observer.direction = if (Random.nextBoolean()) Direction.LEFT else Direction.RIGHT
+                observer.emotion = CharacterEmotion.CURIOUS
+                observer.emote = EmoteType.DOTS
+                observer.emoteTimer = 1.4f
+                observer.reactionTimer = 1.6f
             }
             3 -> {
-                // Mutual melody moment
-                boy.reactionTimer = 2.0f
-                girl.reactionTimer = 2.0f
-                boy.emote = EmoteType.MUSIC_NOTE
-                boy.emoteTimer = 2.0f
-                girl.emote = EmoteType.MUSIC_NOTE
-                girl.emoteTimer = 2.0f
+                // Small wave / hair-adjusting beat. Restore the exact idle pose afterward.
+                val observer = if (Random.nextBoolean()) boy else girl
+                if ((observer.pose == CharacterPose.IDLE || observer.pose == CharacterPose.IDLE_BLINK) &&
+                    !observer.isMovingOrTransitioning
+                ) {
+                    observer.transitionPoseTo(CharacterPose.WAVE)
+                    if (observer === boy) {
+                        boyIdleWaveReturnPose = CharacterPose.IDLE
+                        boyIdleWaveTimer = 1.35f
+                    } else {
+                        girlIdleWaveReturnPose = CharacterPose.IDLE
+                        girlIdleWaveTimer = 1.35f
+                    }
+                } else {
+                    observer.isBlinking = true
+                    observer.emote = EmoteType.SPARKLE
+                    observer.emoteTimer = 1.2f
+                }
+                observer.emotion = CharacterEmotion.HAPPY
+                observer.reactionTimer = 1.35f
                 audio.playStarTwinkle()
             }
             4 -> {
-                // Sweet spontaneous kiss or affectionate wave
-                if (abs(boy.worldX - girl.worldX) < 0.28f) {
-                    val kissMidX = (boy.worldX + girl.worldX) / 2f
-                    boy.worldX = kissMidX - 0.02f
-                    girl.worldX = kissMidX + 0.02f
-                    boy.direction = Direction.RIGHT
-                    girl.direction = Direction.LEFT
-                    boy.pose = CharacterPose.KISS
-                    girl.pose = CharacterPose.KISS
-                    boy.emotion = CharacterEmotion.LOVING
-                    girl.emotion = CharacterEmotion.LOVING
-                    boy.reactionTimer = 3.0f
-                    girl.reactionTimer = 3.0f
-                    audio.playHeartChime()
-                    particles.spawnHeart(cw * kissMidX, ch * boy.worldY - 30f)
-                    showMessage("A sweet surprise kiss", duration = 3.0f)
+                val isRainyWindow = currentScene == SceneType.RAINY_CAFE
+                val isFallingFoliage = weather == WeatherType.SAKURA || weather == WeatherType.AUTUMN
+                val isNight = timeOfDayPhase.isNight
+                if (isNight && Random.nextFloat() < 0.12f) {
+                    boy.emotion = CharacterEmotion.CURIOUS
+                    girl.emotion = CharacterEmotion.CURIOUS
+                    boy.emote = EmoteType.SPARKLE
+                    girl.emote = EmoteType.SPARKLE
+                    boy.emoteTimer = 1.8f
+                    girl.emoteTimer = 1.8f
+                    particles.spawnShootingStar(cw * (0.22f + Random.nextFloat() * 0.56f), ch * 0.12f)
+                    boy.reactionTimer = 1.8f
+                    girl.reactionTimer = 1.8f
+                } else if (isFallingFoliage || isRainyWindow || (isCurrentSceneOutdoor && weather == WeatherType.SNOW)) {
+                    boy.emotion = CharacterEmotion.CURIOUS
+                    girl.emotion = CharacterEmotion.HAPPY
+                    boy.emote = EmoteType.SPARKLE
+                    girl.emote = EmoteType.SPARKLE
+                    boy.emoteTimer = 1.5f
+                    girl.emoteTimer = 1.5f
+                    boy.reactionTimer = 1.6f
+                    girl.reactionTimer = 1.6f
                 } else {
-                    boy.pose = CharacterPose.WAVE
+                    boy.direction = if (catWorldX >= boy.worldX) Direction.RIGHT else Direction.LEFT
+                    girl.direction = if (catWorldX >= girl.worldX) Direction.RIGHT else Direction.LEFT
+                    boy.emotion = CharacterEmotion.HAPPY
+                    girl.emotion = CharacterEmotion.HAPPY
                     boy.emote = EmoteType.HEART
-                    boy.emoteTimer = 2.0f
-                    boy.reactionTimer = 2.0f
-                    girl.pose = CharacterPose.JOY_JUMP
-                    girl.emote = EmoteType.BLUSH
-                    girl.emoteTimer = 2.0f
-                    girl.reactionTimer = 2.0f
-                    audio.playHeartChime()
+                    girl.emote = EmoteType.HEART
+                    boy.emoteTimer = 1.5f
+                    girl.emoteTimer = 1.5f
+                    boy.reactionTimer = 1.6f
+                    girl.reactionTimer = 1.6f
+                    if (catState != CatState.SLEEPING) {
+                        particles.spawnHeart(cw * catWorldX, ch * catWorldY - 16f, Color(0xFFFF8FA3))
+                    }
                 }
             }
             5 -> {
-                // Spontaneous cozy thought / weather-reactive dialogue
-                boy.direction = Direction.RIGHT
-                girl.direction = Direction.LEFT
-                boy.emotion = CharacterEmotion.LOVING
-                girl.emotion = CharacterEmotion.HAPPY
-                boy.reactionTimer = 2.5f
-                girl.reactionTimer = 2.5f
-                if (sceneMessage == null) {
-                    val thought = pickSpontaneousThought()
-                    showMessage(thought, duration = 3.8f)
-                    audio.playHeartChime()
-                    particles.spawnHeart(cw * (boy.worldX + girl.worldX) / 2f, ch * boy.worldY - 24f)
+                // A few unhurried steps around the open meadow or greenhouse aisle.
+                if (currentScene == SceneType.FLOWER || currentScene == SceneType.SUNROOM) {
+                    val walker = if (Random.nextBoolean()) boy else girl
+                    val step = if (Random.nextBoolean()) 0.045f else -0.045f
+                    val targetX = (walker.worldX + step).coerceIn(0.16f, 0.84f)
+                    walker.moveTo(targetX, walker.worldY, arrivePose = CharacterPose.IDLE)
+                    walker.emotion = CharacterEmotion.CURIOUS
+                    walker.reactionTimer = abs(targetX - walker.worldX) / CharacterMotionTween.SHARED_WALKING_SPEED + 0.8f
+                    audio.playFootstep()
+                } else {
+                    // Replace an inapplicable walk with a calm mutual glance.
+                    boy.direction = Direction.RIGHT
+                    girl.direction = Direction.LEFT
+                    boy.reactionTimer = 1.4f
+                    girl.reactionTimer = 1.4f
                 }
             }
         }
     }
 
+    private fun speakerSpeech(character: PixelCharacter, text: String, duration: Float) {
+        if (character === boy) {
+            boySpeechText = text
+            boySpeechTimer = duration
+            boy.isSpeaking = true
+        } else {
+            girlSpeechText = text
+            girlSpeechTimer = duration
+            girl.isSpeaking = true
+        }
+    }
+
+    private fun updateIdleWaveReturn(character: PixelCharacter, dt: Float, isBoy: Boolean) {
+        val timer = if (isBoy) boyIdleWaveTimer else girlIdleWaveTimer
+        if (timer <= 0f) return
+        val next = (timer - dt).coerceAtLeast(0f)
+        if (isBoy) boyIdleWaveTimer = next else girlIdleWaveTimer = next
+        if (next > 0f) return
+        val returnPose = if (isBoy) boyIdleWaveReturnPose else girlIdleWaveReturnPose
+        if (character.pose == CharacterPose.WAVE && returnPose != null && !character.isMovingOrTransitioning) {
+            character.transitionPoseTo(returnPose)
+        }
+        if (isBoy) boyIdleWaveReturnPose = null else girlIdleWaveReturnPose = null
+    }
+
     // Touch Interactions
+    /** A quiet, scene-aware stroll toward a tapped open spot on the floor/ground. */
+    fun onTouchWalkableGround(touchX: Float, touchY: Float, cw: Float, ch: Float): Boolean {
+        if (isDreamMode || isWatchSceneActive || isSceneOpeningScriptActive() ||
+            boy.isMovingOrTransitioning || girl.isMovingOrTransitioning ||
+            groundInteractionCharacter != null
+        ) return false
+
+        val px = (cw / 115f).coerceIn(3f, 5f)
+        val minY: Float
+        val maxY: Float
+        val minX: Float
+        val maxX: Float
+        when (currentScene) {
+            SceneType.FLOWER, SceneType.LOOKING -> { minY = 0.68f; maxY = 0.80f; minX = 0.12f; maxX = 0.88f }
+            SceneType.UNDER_TREE -> { minY = 0.69f; maxY = 0.80f; minX = 0.14f; maxX = 0.86f }
+            SceneType.WALK -> {
+                minY = 0.68f
+                maxY = (0.66f + (30f * px / ch) + 0.08f).coerceAtMost(0.84f)
+                minX = 0.12f
+                maxX = 0.88f
+            }
+            SceneType.MOMO_STALL -> {
+                minY = 0.69f
+                maxY = (0.66f + (30f * px / ch) + 0.10f).coerceAtMost(0.86f)
+                minX = 0.12f
+                maxX = 0.88f
+            }
+            SceneType.COOKING -> { minY = 0.69f; maxY = 0.79f; minX = 0.16f; maxX = 0.84f }
+            SceneType.SLEEP -> { minY = 0.68f; maxY = 0.77f; minX = 0.18f; maxX = 0.82f }
+            SceneType.COZY_LOFT -> { minY = 0.56f; maxY = 0.66f; minX = 0.40f; maxX = 0.80f }
+            SceneType.RAINY_CAFE -> { minY = 0.69f; maxY = 0.79f; minX = 0.16f; maxX = 0.84f }
+            SceneType.SUNROOM -> { minY = 0.67f; maxY = 0.80f; minX = 0.14f; maxX = 0.86f }
+            SceneType.EVENING_RIDE -> return false // They are sharing the scooter in this scene.
+        }
+
+        val requestedX = touchX / cw
+        val requestedY = touchY / ch
+        if (requestedX !in minX..maxX || requestedY !in minY..maxY) return false
+
+        val boyDistance = kotlin.math.hypot(boy.worldX - requestedX, boy.worldY - requestedY)
+        val girlDistance = kotlin.math.hypot(girl.worldX - requestedX, girl.worldY - requestedY)
+        val walker = if (boyDistance <= girlDistance) boy else girl
+        val partner = if (walker === boy) girl else boy
+        val targetX = requestedX.coerceIn(minX, maxX)
+        val targetY = requestedY.coerceIn(minY, maxY)
+
+        // Leave a little personal space so a depth walk cannot end with the sprites stacked.
+        if (kotlin.math.hypot(partner.worldX - targetX, partner.worldY - targetY) < 0.105f) return false
+        val distance = kotlin.math.hypot(walker.worldX - targetX, walker.worldY - targetY)
+        if (distance < 0.035f) return false
+
+        walker.moveTo(targetX, targetY, arrivePose = CharacterPose.IDLE)
+        walker.emotion = CharacterEmotion.CURIOUS
+        walker.reactionTimer = distance / CharacterMotionTween.SHARED_WALKING_SPEED + 1.8f
+        partner.direction = if (targetX < partner.worldX) Direction.LEFT else Direction.RIGHT
+        partner.reactionTimer = distance / CharacterMotionTween.SHARED_WALKING_SPEED + 1.2f
+        groundInteractionCharacter = walker
+        groundInteractionX = targetX
+        groundInteractionY = targetY
+        groundInteractionWait = distance / CharacterMotionTween.SHARED_WALKING_SPEED + 0.55f
+        audio.playFootstep()
+        return true
+    }
+
+    private fun isSceneOpeningScriptActive(): Boolean = when (currentScene) {
+        SceneType.FLOWER -> sceneTime < 8.2f
+        SceneType.UNDER_TREE -> sceneTime < 7.2f
+        SceneType.COOKING -> sceneTime < 7.6f
+        SceneType.SLEEP -> sceneTime < 6.9f
+        SceneType.WALK -> sceneTime < 6.6f
+        SceneType.LOOKING -> sceneTime < 7.6f
+        SceneType.MOMO_STALL -> sceneTime < 6.2f
+        SceneType.EVENING_RIDE -> sceneTime < 7.0f
+        SceneType.COZY_LOFT -> sceneTime < 5.6f
+        SceneType.RAINY_CAFE, SceneType.SUNROOM -> sceneTime < 4.5f
+    }
+
+    private fun updateGroundInteraction(dt: Float, cw: Float, ch: Float) {
+        val walker = groundInteractionCharacter ?: return
+        groundInteractionWait = (groundInteractionWait - dt).coerceAtLeast(0f)
+        if (groundInteractionWait > 0f || walker.isMovingOrTransitioning) return
+
+        walker.emotion = CharacterEmotion.HAPPY
+        walker.emote = EmoteType.SPARKLE
+        walker.emoteTimer = 1.3f
+        audio.playStarTwinkle()
+        val x = cw * groundInteractionX
+        val y = ch * groundInteractionY
+        when (weather) {
+            WeatherType.RAIN -> particles.spawnRainSplash(x, y)
+            WeatherType.SAKURA -> particles.spawnPetals(x, y - 8f, 2)
+            WeatherType.AUTUMN -> particles.spawnLeaf(x, y - 8f)
+            WeatherType.SNOW, WeatherType.SUNNY -> particles.spawnSparkles(x, y - 12f, 3)
+        }
+        groundInteractionCharacter = null
+    }
+
+    /** A little roadside firefly moment for the ride scene, where walking is not appropriate. */
+    fun onTouchRideFireflies(touchX: Float, touchY: Float, cw: Float, ch: Float) {
+        if (rideFireflyTimer > 0f) return
+        rideFireflyTimer = 1.5f
+        audio.playStarTwinkle()
+        particles.spawnSparkles(touchX, touchY, 5, Color(0xFFFFD166))
+        boy.direction = if (touchX < cw * boy.worldX) Direction.LEFT else Direction.RIGHT
+        girl.direction = if (touchX < cw * girl.worldX) Direction.LEFT else Direction.RIGHT
+        boy.emotion = CharacterEmotion.CURIOUS
+        girl.emotion = CharacterEmotion.CURIOUS
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.SPARKLE
+        boy.emoteTimer = 1.5f
+        girl.emoteTimer = 1.5f
+        particles.spawnHeart(cw * 0.50f, ch * 0.60f, Color(0xFFFFD166))
+    }
+
     fun onTouchBoy(cw: Float, ch: Float) {
         if (mochiNudgeActiveTimer > 0f && kotlin.math.abs(boy.worldX - girl.worldX) >= 0.16f) {
             mochiNudgeActiveTimer = 0f
@@ -4310,6 +4630,11 @@ class SceneEngine(
     }
 
     fun onTouchCat(cw: Float, ch: Float) {
+        if (currentScene == SceneType.COOKING) {
+            mochiCollarStyle = if (mochiCollarStyle >= 2) 1 else mochiCollarStyle + 1
+            audio.playStarTwinkle()
+            showMessage(if (mochiCollarStyle == 1) "Mochi looks dapper in a tiny red bowtie!" else "A little daisy collar for Mochi!", duration = 2.6f)
+        }
         if (currentScene == SceneType.COZY_LOFT) {
             onTouchLoftMochi(cw, ch)
             return
@@ -4507,6 +4832,109 @@ class SceneEngine(
         girl.emote = EmoteType.MUSIC_NOTE
         girl.emoteTimer = 1.8f
         girl.reactionTimer = 2.0f
+    }
+
+    fun onTouchKitchenTreatJar() {
+        if (catTreatInProgress) {
+            showMessage("Mochi is still enjoying the last little treat.", duration = 1.8f)
+            return
+        }
+        catTreatInProgress = true
+        catTreatWalking = false
+        catTreatJarTimer = 0.85f
+        catTreatDropTimer = 0.48f
+        catTreatMunchTimer = 0f
+        audio.playBubblePop()
+        showMessage("A crunchy little treat drops for Mochi!", duration = 2.2f)
+    }
+
+    private fun updateKitchenTreat(dt: Float, cw: Float, ch: Float) {
+        if (currentScene != SceneType.COOKING || !catTreatInProgress) return
+        if (catTreatDropTimer > 0f) return
+
+        if (catTreatMunchTimer > 0f) {
+            catTreatMunchTimer = (catTreatMunchTimer - dt).coerceAtLeast(0f)
+            if (eventChance(1.2f, dt)) particles.spawnHeart(cw * 0.48f, ch * 0.67f, Color(0xFFFF6B8A))
+            if (catTreatMunchTimer <= 0f) {
+                catTreatInProgress = false
+                catTreatWalking = false
+                catState = CatState.SITTING_PURR
+                catTargetX = catWorldX
+                catTargetY = catWorldY
+            }
+            return
+        }
+
+        if (!catTreatWalking) {
+            catTreatWalking = true
+            catTargetX = 0.48f
+            catTargetY = 0.72f
+            catFacingLeft = catTargetX < catWorldX
+            catState = CatState.WALK_FOLLOW
+            catSleeping = false
+        }
+
+        val distance = kotlin.math.hypot(catTargetX - catWorldX, catTargetY - catWorldY)
+        if (distance <= 0.018f) {
+            catWorldX = catTargetX
+            catWorldY = catTargetY
+            catState = CatState.SITTING_PURR
+            catTreatMunchTimer = 2.6f
+            audio.playCatPurr()
+            particles.spawnHeart(cw * catWorldX, ch * catWorldY - 14f * (cw / 115f).coerceIn(3f, 5f), Color(0xFFFF6B8A))
+            showMessage("Mochi munches happily with a swishy tail!", duration = 2.5f)
+        }
+    }
+
+    fun onTouchMochiCollar() {
+        mochiCollarStyle = if (mochiCollarStyle >= 2) 1 else mochiCollarStyle + 1
+        audio.playStarTwinkle()
+        showMessage(if (mochiCollarStyle == 1) "Mochi looks dapper in a tiny red bowtie!" else "A little daisy collar for Mochi!", duration = 2.6f)
+    }
+
+    fun onTouchCafeLatte(cw: Float, ch: Float) {
+        cafeLatteTimer = 2.2f
+        audio.playHeartChime()
+        particles.spawnHeart(cw * 0.31f, ch * 0.59f, Color(0xFFFF729F))
+        showMessage("A tiny heart in the latte foam, made just for you.", duration = 2.4f)
+    }
+
+    fun onTouchCafePastry(cw: Float, ch: Float) {
+        cafePastryBites = (cafePastryBites + 1).coerceAtMost(3)
+        audio.playBubblePop()
+        particles.spawnSparkles(cw * 0.69f, ch * 0.61f, 3, Color(0xFFFFD166))
+        showMessage(if (cafePastryBites >= 3) "The croissant disappeared between you!" else "A tiny croissant nibble for two.", duration = 2.0f)
+    }
+
+    fun onTouchCafeWindow(touchX: Float, touchY: Float, cw: Float, ch: Float) {
+        cafeWindowHeartTimer = 2.8f
+        cafeWindowHeartX = (touchX / cw).coerceIn(0.12f, 0.88f)
+        cafeWindowHeartY = (touchY / ch).coerceIn(0.12f, 0.47f)
+        audio.playWaterDrip()
+        particles.spawnHeart(touchX, touchY, Color(0xFFFFB6C9))
+        showMessage("A little heart fogs the rainy window.", duration = 2.2f)
+    }
+
+    fun onTouchSunroomSkylight(touchX: Float, touchY: Float) {
+        sunroomSkylightTimer = 1.8f
+        audio.playWaterDrip()
+        particles.spawnRainSplash(touchX, touchY)
+        showMessage("Raindrops patter softly on the glass roof.", duration = 2.0f)
+    }
+
+    fun onTouchSunroomPlants(cw: Float, ch: Float) {
+        sunroomBloomStage = (sunroomBloomStage + 1).coerceAtMost(4)
+        sunroomMistTimer = 1.4f
+        audio.playWaterDrip()
+        particles.spawnSparkles(cw * 0.70f, ch * 0.55f, 5, Color(0xFFFFC1D7))
+        showMessage(if (sunroomBloomStage == 1) "Fresh water reaches the little seedlings." else "Tiny flowers open among the succulents!", duration = 2.4f)
+    }
+
+    fun onTouchSunroomWateringCan(cw: Float, ch: Float) {
+        sunroomMistTimer = 1.8f
+        audio.playWaterDrip()
+        particles.spawnSparkles(cw * 0.24f, ch * 0.69f, 6, Color(0xFFBFE9F7))
+        showMessage("A cool morning mist curls through the greenhouse.", duration = 2.3f)
     }
 
     fun onTouchKitchenStool(touchX: Float, touchY: Float) {

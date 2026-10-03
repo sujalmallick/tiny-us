@@ -115,6 +115,12 @@ object WorldSprites {
         // Trunk & Roots
         scope.drawRect(TreeTrunk, Offset(trunkX, trunkY), Size(trunkW, trunkH))
         scope.drawRect(TreeTrunkDark, Offset(trunkX, trunkY), Size(4 * p, trunkH))
+        // Hand-placed bark grain follows the trunk, with a warm lit edge and a few dark knots.
+        scope.drawRect(Color(0xFF8B5A36), Offset(trunkX + 5 * p, trunkY + 5 * p), Size(1.2f * p, trunkH - 13 * p))
+        scope.drawRect(Color(0xFF7A4A2D), Offset(trunkX + 11 * p, trunkY + 11 * p), Size(1.1f * p, 18 * p))
+        scope.drawRect(Color(0xFF53321F), Offset(trunkX + 8 * p, trunkY + 24 * p), Size(2.4f * p, 1.2f * p))
+        scope.drawRect(Color(0xFF53321F), Offset(trunkX + 7 * p, trunkY + 26 * p), Size(1.2f * p, 1.2f * p))
+        scope.drawRect(Color(0xFF9B6840), Offset(trunkX + 5 * p, groundY - 8 * p), Size(2 * p, 4 * p))
         // Root buttresses
         scope.drawRect(TreeTrunk, Offset(trunkX - 8 * p, groundY - 10 * p), Size(8 * p, 10 * p))
         scope.drawRect(TreeTrunkDark, Offset(trunkX - 8 * p, groundY - 4 * p), Size(8 * p, 4 * p))
@@ -160,6 +166,17 @@ object WorldSprites {
             scope.drawRect(color, Offset(cx + r, cy - r + 3 * p), Size(3 * p, (r * 2) - 6 * p))
             scope.drawRect(color, Offset(cx - r + 3 * p, cy - r - 3 * p), Size((r * 2) - 6 * p, 3 * p))
             scope.drawRect(color, Offset(cx - r + 3 * p, cy + r), Size((r * 2) - 6 * p, 3 * p))
+
+            // A small highlight notch and underside shade break the canopy into pixel clusters.
+            val notch = (radiusP.toInt() % 3) * p
+            val leafGlint = when {
+                isSnow -> Color(0xFFDCECF0)
+                isSakura -> Color(0xFFFFD5E0)
+                isAutumn -> Color(0xFFFFD982)
+                else -> Color(0xFF9AD5A2)
+            }
+            scope.drawRect(leafGlint.copy(alpha = 0.72f), Offset(cx - r + (7 * p) + notch, cy - r + 7 * p), Size(4 * p, 2 * p))
+            scope.drawRect(Color(0x350D2418), Offset(cx + r - 7 * p, cy + r - 4 * p), Size(4 * p, 2 * p))
 
             if (isSnow) {
                 // Fluffy snow caps on top of foliage cluster
@@ -375,6 +392,13 @@ object WorldSprites {
         val wallTop = groundY - wallH
         val isSnow = weather == com.example.scene.WeatherType.SNOW
 
+        // Low contact shadow separates the little house from the meadow.
+        scope.drawOval(
+            Color(0x30151A1D),
+            Offset(houseLeft - 6 * p, groundY - 3 * p),
+            Size(houseW + 12 * p, 7 * p)
+        )
+
         // Chimney on left side
         val chimneyW = 10 * p
         val chimneyH = 22 * p
@@ -399,6 +423,11 @@ object WorldSprites {
 
         // Main Wall (warm cream stucco)
         scope.drawRect(WallStucco, Offset(houseLeft, wallTop), Size(houseW, wallH - 4 * p))
+        // Quiet stucco variation and the shaded underside of the eaves add depth without visual noise.
+        scope.drawRect(Color(0xFFE9DCCE), Offset(houseLeft + 3 * p, wallTop + 3 * p), Size(houseW - 6 * p, 1.2f * p))
+        scope.drawRect(Color(0x267A5138), Offset(houseLeft + 3 * p, wallTop + wallH - 9 * p), Size(houseW - 6 * p, 3 * p))
+        scope.drawRect(Color(0xFFE8D7C9), Offset(houseLeft + 6 * p, wallTop + 12 * p), Size(1.2f * p, 2 * p))
+        scope.drawRect(Color(0xFFE8D7C9), Offset(houseLeft + 31 * p, wallTop + 18 * p), Size(1.2f * p, 2 * p))
         // Timber framing beams
         scope.drawRect(WallTimber, Offset(houseLeft, wallTop), Size(3 * p, wallH - 4 * p))
         scope.drawRect(WallTimber, Offset(houseLeft + houseW - 3 * p, wallTop), Size(3 * p, wallH - 4 * p))
@@ -418,6 +447,13 @@ object WorldSprites {
                 Offset(houseLeft - roofOverhang + inset, tierY),
                 Size(roofW - inset * 2, 2 * p)
             )
+            if (!isSnow) {
+                scope.drawRect(
+                    Color(0xFFB96C4E),
+                    Offset(houseLeft - roofOverhang + inset + 3 * p, tierY),
+                    Size((roofW - inset * 2 - 6 * p).coerceAtLeast(0f), 0.7f * p)
+                )
+            }
             if (isSnow) {
                 // Blanket of snow covering each roof tier
                 val snowThick = if (i >= 8) 3 * p else 2 * p
@@ -448,7 +484,9 @@ object WorldSprites {
         val atticWindowX = cx
         val atticWindowY = wallTop - 8 * p
         scope.drawRect(WallTimber, Offset(atticWindowX - 4 * p, atticWindowY - 4 * p), Size(8 * p, 8 * p))
-        scope.drawRect(if (isNight) Color(0xFFFFD166) else Color(0xFFA2D2FF), Offset(atticWindowX - 3 * p, atticWindowY - 3 * p), Size(6 * p, 6 * p))
+        val windowPulse = 0.92f + sin(timeSeconds * 1.15f + 0.6f) * 0.08f
+        val atticGlass = if (isNight) Color(0xFFFFD166).copy(alpha = windowPulse) else Color(0xFFA2D2FF)
+        scope.drawRect(atticGlass, Offset(atticWindowX - 3 * p, atticWindowY - 3 * p), Size(6 * p, 6 * p))
 
         // Wooden Front Door (Enterable!)
         val doorW = 12 * p
@@ -457,6 +495,8 @@ object WorldSprites {
         val doorY = groundY - doorH - 4 * p
         scope.drawRect(WallTimber, Offset(doorX - p, doorY - p), Size(doorW + 2 * p, doorH + 2 * p))
         scope.drawRect(DoorWood, Offset(doorX, doorY), Size(doorW, doorH))
+        scope.drawRect(Color(0xFF9B6032), Offset(doorX + p, doorY + 2 * p), Size(1.2f * p, doorH - 4 * p))
+        scope.drawRect(Color(0xFF5C3218), Offset(doorX + doorW - 2 * p, doorY + 2 * p), Size(p, doorH - 4 * p))
         // Door panels & brass knocker
         scope.drawRect(Color(0xFF5B3012), Offset(doorX + 2 * p, doorY + 3 * p), Size(8 * p, 6 * p))
         scope.drawRect(Color(0xFF5B3012), Offset(doorX + 2 * p, doorY + 11 * p), Size(8 * p, 6 * p))
@@ -468,8 +508,12 @@ object WorldSprites {
         val winX = houseLeft + 36 * p
         val winY = wallTop + 6 * p
         scope.drawRect(WallTimber, Offset(winX - p, winY - p), Size(winW + 2 * p, winH + 2 * p))
-        val winGlass = if (isNight) Color(0xFFFFE66D) else Color(0xFFBDE0FE)
+        val winGlass = if (isNight) Color(0xFFFFE66D).copy(alpha = windowPulse) else Color(0xFFBDE0FE)
         scope.drawRect(winGlass, Offset(winX, winY), Size(winW, winH))
+        if (isNight) {
+            // One soft square of spill light on the sill anchors the cottage in the night.
+            scope.drawRect(Color(0xFFFFD166).copy(alpha = 0.10f + windowPulse * 0.035f), Offset(winX + 2 * p, winY + winH + 3 * p), Size(winW - 4 * p, 1.5f * p))
+        }
         // Window mullions
         scope.drawRect(WallTimber, Offset(winX + winW / 2f - p, winY), Size(2 * p, winH))
         scope.drawRect(WallTimber, Offset(winX, winY + winH / 2f - p), Size(winW, 2 * p))
@@ -502,7 +546,8 @@ object WorldSprites {
         catState: com.example.scene.CatState = com.example.scene.CatState.SLEEPING,
         isSleeping: Boolean = catState == com.example.scene.CatState.SLEEPING,
         isSnow: Boolean = false,
-        facingLeft: Boolean = false
+        facingLeft: Boolean = false,
+        collarStyle: Int = 0
     ) {
         scope.withTransform({
             if (facingLeft) {
@@ -756,6 +801,24 @@ object WorldSprites {
                 }
             }
         }
+        if (collarStyle == 1 || collarStyle == 2) {
+            // Small neck accessory, drawn consistently over each of Mochi's poses.
+            val neckX = cx - 2.2f * p
+            val neckY = groundY - 6.2f * p
+            if (collarStyle == 1) {
+                scope.drawRect(Color(0xFFD62839), Offset(neckX, neckY), Size(5.2f * p, 1.3f * p))
+                scope.drawRect(Color(0xFFFF5A66), Offset(cx - 3.1f * p, neckY - 1.3f * p), Size(1.8f * p, 1.8f * p))
+                scope.drawRect(Color(0xFFB21E35), Offset(cx - 1.4f * p, neckY - 1.3f * p), Size(1.8f * p, 1.8f * p))
+                scope.drawRect(Color(0xFFFFD166), Offset(cx - 1.3f * p, neckY - 0.8f * p), Size(0.8f * p, 0.8f * p))
+            } else {
+                scope.drawRect(Color(0xFF669966), Offset(neckX, neckY), Size(5.2f * p, 1.1f * p))
+                scope.drawRect(Color.White, Offset(cx - 1.7f * p, neckY - 2.3f * p), Size(1.4f * p, 1.4f * p))
+                scope.drawRect(Color.White, Offset(cx - 0.2f * p, neckY - 2.3f * p), Size(1.4f * p, 1.4f * p))
+                scope.drawRect(Color.White, Offset(cx - 2.4f * p, neckY - 1.2f * p), Size(1.4f * p, 1.4f * p))
+                scope.drawRect(Color.White, Offset(cx + 0.5f * p, neckY - 1.2f * p), Size(1.4f * p, 1.4f * p))
+                scope.drawRect(Color(0xFFFFD166), Offset(cx - 0.9f * p, neckY - 1.4f * p), Size(1.4f * p, 1.4f * p))
+            }
+        }
         }
     }
 
@@ -763,26 +826,29 @@ object WorldSprites {
         scope: DrawScope,
         centerX: Float,
         groundY: Float,
-        p: Float = 3.5f
+        p: Float = 3.5f,
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
     ) {
+        val couchFabric = roomTheme.bedding
+        val couchFabricDark = roomTheme.beddingAccent
         val w = 58 * p
         val h = 28 * p
         val left = centerX - w / 2f
         val top = groundY - h
 
         // Couch Backrest
-        scope.drawRect(CouchFabricDark, Offset(left, top), Size(w, 15 * p))
-        scope.drawRect(CouchFabric, Offset(left + 2 * p, top + 2 * p), Size(w - 4 * p, 12 * p))
+        scope.drawRect(couchFabricDark, Offset(left, top), Size(w, 15 * p))
+        scope.drawRect(couchFabric, Offset(left + 2 * p, top + 2 * p), Size(w - 4 * p, 12 * p))
 
         // Couch Armrests
-        scope.drawRect(CouchFabricDark, Offset(left, top + 8 * p), Size(8 * p, 16 * p))
-        scope.drawRect(CouchFabricDark, Offset(left + w - 8 * p, top + 8 * p), Size(8 * p, 16 * p))
-        scope.drawRect(CouchFabric, Offset(left + 2 * p, top + 9 * p), Size(5 * p, 14 * p))
-        scope.drawRect(CouchFabric, Offset(left + w - 7 * p, top + 9 * p), Size(5 * p, 14 * p))
+        scope.drawRect(couchFabricDark, Offset(left, top + 8 * p), Size(8 * p, 16 * p))
+        scope.drawRect(couchFabricDark, Offset(left + w - 8 * p, top + 8 * p), Size(8 * p, 16 * p))
+        scope.drawRect(couchFabric, Offset(left + 2 * p, top + 9 * p), Size(5 * p, 14 * p))
+        scope.drawRect(couchFabric, Offset(left + w - 7 * p, top + 9 * p), Size(5 * p, 14 * p))
 
         // Seat Cushion
-        scope.drawRect(CouchFabric, Offset(left + 7 * p, top + 14 * p), Size(w - 14 * p, 10 * p))
-        scope.drawRect(CouchFabricDark, Offset(left + 7 * p, top + 23 * p), Size(w - 14 * p, 2 * p))
+        scope.drawRect(couchFabric, Offset(left + 7 * p, top + 14 * p), Size(w - 14 * p, 10 * p))
+        scope.drawRect(couchFabricDark, Offset(left + 7 * p, top + 23 * p), Size(w - 14 * p, 2 * p))
 
         // Heart throw pillow on left
         scope.drawRect(CushionPink, Offset(left + 9 * p, top + 10 * p), Size(9 * p, 9 * p))
@@ -2697,7 +2763,9 @@ object WorldSprites {
         rightX: Float,
         topY: Float,
         p: Float,
-        timeSeconds: Float
+        timeSeconds: Float,
+        bulbColor: Color = Color(0xFFFFD166),
+        bulbStyle: Int = 0
     ) {
         val totalW = rightX - leftX
         val swags = 4
@@ -2725,9 +2793,32 @@ object WorldSprites {
             val bulbPulse = (sin(timeSeconds * 3f + s * 1.5f) * 0.3f + 0.7f).coerceIn(0.4f, 1f)
             val bx = sx + swagW / 2f
             val by = topY + sag + 1.5f * p
-            scope.drawCircle(Color(0xFFFFD166).copy(alpha = bulbPulse * 0.40f), 5 * p, Offset(bx, by))
-            scope.drawCircle(Color(0xFFFFF3B0), 2 * p, Offset(bx, by))
-            scope.drawCircle(Color.White, p, Offset(bx, by - 0.5f * p))
+            scope.drawCircle(bulbColor.copy(alpha = bulbPulse * 0.40f), 5 * p, Offset(bx, by))
+            when (bulbStyle) {
+                1 -> {
+                    scope.drawRect(bulbColor, Offset(bx - 2*p, by - 2*p), Size(4*p, 4*p))
+                    scope.drawRect(bulbColor, Offset(bx - 3*p, by - p), Size(6*p, 2*p))
+                    scope.drawRect(Color.White, Offset(bx - p, by - p), Size(p, p))
+                }
+                2 -> {
+                    scope.drawRect(bulbColor, Offset(bx - 2*p, by - 2*p), Size(2*p, 2*p))
+                    scope.drawRect(bulbColor, Offset(bx + p, by - 2*p), Size(2*p, 2*p))
+                    scope.drawRect(bulbColor, Offset(bx - 3*p, by - p), Size(6*p, 2*p))
+                    scope.drawRect(bulbColor, Offset(bx - 2*p, by + p), Size(4*p, p))
+                    scope.drawRect(bulbColor, Offset(bx - p, by + 2*p), Size(2*p, p))
+                    scope.drawRect(Color.White.copy(alpha = 0.8f), Offset(bx - p, by - p), Size(p, p))
+                }
+                3 -> {
+                    scope.drawRect(bulbColor, Offset(bx - p, by - 3*p), Size(2*p, 6*p))
+                    scope.drawRect(bulbColor, Offset(bx - 3*p, by - p), Size(6*p, 2*p))
+                    scope.drawRect(bulbColor, Offset(bx - 2*p, by - 2*p), Size(4*p, 4*p))
+                    scope.drawRect(Color.White, Offset(bx - p, by - p), Size(p, p))
+                }
+                else -> {
+                    scope.drawCircle(bulbColor, 2 * p, Offset(bx, by))
+                    scope.drawCircle(Color.White, p, Offset(bx, by - 0.5f * p))
+                }
+            }
         }
     }
 
@@ -3224,4 +3315,3 @@ object WorldSprites {
         scope.drawRect(Color(0xFFBCE7FD).copy(alpha = glintAlpha), Offset(barrelEndX + 1.5f * p, barrelEndY - 2 * p), Size(1.2f * p, 4f * p))
     }
 }
-

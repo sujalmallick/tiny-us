@@ -107,6 +107,10 @@ class PreferencesManager(
         get() = prefs.getString("cottage_room_state", "LIVING_ROOM") ?: "LIVING_ROOM"
         set(value) = prefs.edit().putString("cottage_room_state", value).apply()
 
+    var roomThemeId: String
+        get() = prefs.getString("room_theme_id", "WARM_AUTUMN_COTTAGE") ?: "WARM_AUTUMN_COTTAGE"
+        set(value) = prefs.edit().putString("room_theme_id", value).apply()
+
     var characterMoodState: String
         get() = prefs.getString("character_mood_state", "COZY") ?: "COZY"
         set(value) = prefs.edit().putString("character_mood_state", value).apply()

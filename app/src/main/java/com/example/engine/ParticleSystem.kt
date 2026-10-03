@@ -3,6 +3,7 @@ package com.example.engine
 import android.util.Log
 import androidx.compose.ui.graphics.Color
 import kotlin.math.sin
+import kotlin.math.exp
 import kotlin.random.Random
 
 data class PixelParticle(
@@ -18,7 +19,10 @@ data class PixelParticle(
     var type: ParticleType = ParticleType.LEAF,
     var text: String = "",
     var phase: Float = 0f,
-    var targetGroundY: Float = 0f
+    var targetGroundY: Float = 0f,
+    var depth: Float = 1f,
+    var weatherFadeRemaining: Float = -1f,
+    var weatherFadeStartAlpha: Float = 1f
 )
 
 data class FallenParticle(
@@ -32,7 +36,8 @@ data class FallenParticle(
     var isSwept: Boolean = false,
     var sweptVx: Float = 0f,
     var sweptVy: Float = 0f,
-    var sweptLife: Float = 0f
+    var sweptLife: Float = 0f,
+    var fadeRemaining: Float = -1f
 )
 
 enum class ParticleType {
@@ -117,7 +122,14 @@ private val SUN_SPARKLE_COLORS = arrayOf(
     Color(0xFFFFFFFF)
 )
 
+private fun eventChance(ratePerSecond: Float, deltaSeconds: Float): Boolean =
+    Random.nextFloat() < (1f - exp(-ratePerSecond * deltaSeconds.coerceAtLeast(0f)))
+
 class ParticleSystem {
+    private companion object {
+        const val WEATHER_FADE_SECONDS = 0.42f
+    }
+
     val particles = mutableListOf<PixelParticle>()
     private val pendingParticles = mutableListOf<PixelParticle>()
     val fallenParticles = mutableListOf<FallenParticle>()
@@ -126,7 +138,8 @@ class ParticleSystem {
     private val particlePool = ArrayList<PixelParticle>(256)
     private var lastChimneySmokeNanos = 0L
     private var rainSpawnAccumulator = 0f
-    private var speedAuditTimer = 0f
+    private var seasonalSpawnAccumulator = 0f
+    private var activeWeather: com.example.scene.WeatherType? = null
 
     fun obtainParticle(
         x: Float,
@@ -140,7 +153,8 @@ class ParticleSystem {
         text: String = "",
         phase: Float = 0f,
         targetGroundY: Float = 0f,
-        alpha: Float = 1f
+        alpha: Float = 1f,
+        depth: Float = 1f
     ): PixelParticle {
         if (particlePool.isNotEmpty()) {
             val p = particlePool.removeAt(particlePool.size - 1)
@@ -157,6 +171,9 @@ class ParticleSystem {
             p.text = text
             p.phase = phase
             p.targetGroundY = targetGroundY
+            p.depth = depth
+            p.weatherFadeRemaining = -1f
+            p.weatherFadeStartAlpha = alpha
             return p
         }
         return PixelParticle(
@@ -172,7 +189,9 @@ class ParticleSystem {
             type = type,
             text = text,
             phase = phase,
-            targetGroundY = targetGroundY
+            targetGroundY = targetGroundY,
+            depth = depth,
+            weatherFadeStartAlpha = alpha
         )
     }
 
@@ -191,10 +210,15 @@ class ParticleSystem {
                 p.type == ParticleType.SNOWFLAKE ||
                 p.type == ParticleType.RAIN_DROP ||
                 p.type == ParticleType.RAIN_SPLASH ||
+                p.type == ParticleType.WATER_RIPPLE ||
                 p.type == ParticleType.DANDELION_FLUFF ||
                 p.type == ParticleType.WIND_BREEZE
             if (isSeasonal) {
-                recycleParticle(p)
+                if (p.weatherFadeRemaining < 0f) {
+                    p.weatherFadeRemaining = WEATHER_FADE_SECONDS
+                    p.weatherFadeStartAlpha = p.alpha
+                }
+                particles[write++] = p
             } else {
                 particles[write++] = p
             }
@@ -202,7 +226,12 @@ class ParticleSystem {
         while (particles.size > write) {
             particles.removeAt(particles.size - 1)
         }
-        fallenParticles.clear()
+        // Pending particles are deferred rain splash details; discard them on weather change.
+        for (p in pendingParticles) recycleParticle(p)
+        pendingParticles.clear()
+        for (fp in fallenParticles) {
+            if (fp.fadeRemaining < 0f) fp.fadeRemaining = WEATHER_FADE_SECONDS
+        }
         groundSeededWeather = null
     }
 
@@ -291,7 +320,7 @@ class ParticleSystem {
             // to exactly normY=0.67 (which caused a continuous horizontal line at the
             // grass horizon). The jitter is derived from the particle's X position so
             // no extra allocation occurs per frame.
-            val yJitter = ((normX * 5003f).toLong() % 13) / 13f * 0.04f - 0.02f
+            val yJitter = (Random.nextFloat() - 0.5f) * 0.035f
             val normY = (p.y / ch + yJitter).coerceIn(0.68f, 0.96f)
 
             // Avoid spawning directly on top of an already-landed particle of the same
@@ -352,7 +381,8 @@ class ParticleSystem {
     }
 
     fun update(deltaSeconds: Float, cw: Float = 1000f, ch: Float = 2000f) {
-        val dtFactor = deltaSeconds * 60f
+        val dt = deltaSeconds.coerceIn(0f, 0.05f)
+        val dtFactor = dt * 60f
         var writeIndex = 0
         val size = particles.size
         for (i in 0 until size) {
@@ -363,7 +393,26 @@ class ParticleSystem {
                 continue
             }
 
-            p.phase += deltaSeconds * 4f
+            if (p.weatherFadeRemaining >= 0f) {
+                p.weatherFadeRemaining = (p.weatherFadeRemaining - dt).coerceAtLeast(0f)
+                if (p.weatherFadeRemaining <= 0f) {
+                    recycleParticle(p)
+                    continue
+                }
+                p.x += p.vx * dt
+                p.y += p.vy * dt
+                p.alpha = p.weatherFadeStartAlpha * (p.weatherFadeRemaining / WEATHER_FADE_SECONDS)
+                particles[writeIndex++] = p
+                continue
+            }
+
+            val phaseRate = when (p.type) {
+                ParticleType.SAKURA_PETAL -> 1.05f
+                ParticleType.AUTUMN_LEAF -> 0.82f
+                ParticleType.SNOWFLAKE -> 0.52f
+                else -> 4f
+            }
+            p.phase += dt * phaseRate
             val lifeRatio = p.currentLife / p.maxLife
 
             when (p.type) {
@@ -429,9 +478,9 @@ class ParticleSystem {
                     p.alpha = (1f - lifeRatio).coerceIn(0f, 1f)
                 }
                 ParticleType.RAIN_DROP -> {
-                    p.x += p.vx * deltaSeconds
-                    p.y += p.vy * deltaSeconds
-                    p.alpha = 0.85f
+                    p.x += p.vx * dt
+                    p.y += p.vy * dt
+                    p.alpha = if (p.depth < 0.88f) 0.56f else 0.86f
                     if (p.targetGroundY > 0f && p.y >= p.targetGroundY) {
                         spawnRainSplash(p.x, p.targetGroundY)
                         recycleParticle(p)
@@ -440,11 +489,11 @@ class ParticleSystem {
                 }
                 ParticleType.SAKURA_PETAL -> {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
-                    p.y += p.vy * deltaSeconds
+                    p.y += p.vy * dt
                     // Romantic fluttering side-to-side sway strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.55f) * 55f + kotlin.math.cos(p.phase * 0.25f) * 25f) * (cw / 1000f).coerceIn(0.8f, 1.8f)
-                    p.x += (swayX + p.vx) * deltaSeconds
-                    p.alpha = 0.95f
+                    val swayX = (sin(p.phase * 0.55f) * 10f + kotlin.math.cos(p.phase * 0.25f) * 4f) * p.depth
+                    p.x += (swayX + p.vx) * dt
+                    p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
                     if (p.targetGroundY > 0f && p.y >= p.targetGroundY) {
                         landSeasonalParticle(p, cw, ch)
@@ -454,11 +503,11 @@ class ParticleSystem {
                 }
                 ParticleType.AUTUMN_LEAF -> {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
-                    p.y += p.vy * deltaSeconds
+                    p.y += p.vy * dt
                     // Romantic tumbling autumn drift strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.45f) * 65f + kotlin.math.cos(p.phase * 0.20f) * 30f) * (cw / 1000f).coerceIn(0.8f, 1.8f)
-                    p.x += (swayX + p.vx) * deltaSeconds
-                    p.alpha = 0.95f
+                    val swayX = (sin(p.phase * 0.45f) * 12f + kotlin.math.cos(p.phase * 0.20f) * 5f) * p.depth
+                    p.x += (swayX + p.vx) * dt
+                    p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
                     if (p.targetGroundY > 0f && p.y >= p.targetGroundY) {
                         landSeasonalParticle(p, cw, ch)
@@ -468,11 +517,11 @@ class ParticleSystem {
                 }
                 ParticleType.SNOWFLAKE -> {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
-                    p.y += p.vy * deltaSeconds
+                    p.y += p.vy * dt
                     // Peaceful lazy winter snow drift strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.35f) * 30f + kotlin.math.cos(p.phase * 0.18f) * 15f) * (cw / 1000f).coerceIn(0.8f, 1.8f)
-                    p.x += (swayX + p.vx) * deltaSeconds
-                    p.alpha = 0.95f
+                    val swayX = (sin(p.phase * 0.35f) * 5f + kotlin.math.cos(p.phase * 0.18f) * 2.5f) * p.depth
+                    p.x += (swayX + p.vx) * dt
+                    p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
                     if (p.targetGroundY > 0f && p.y >= p.targetGroundY) {
                         landSeasonalParticle(p, cw, ch)
@@ -502,11 +551,16 @@ class ParticleSystem {
         var fpWrite = 0
         for (i in fallenParticles.indices) {
             val fp = fallenParticles[i]
+            if (fp.fadeRemaining >= 0f) {
+                fp.fadeRemaining = (fp.fadeRemaining - dt).coerceAtLeast(0f)
+                fp.alpha = minOf(fp.alpha, fp.fadeRemaining / WEATHER_FADE_SECONDS)
+                if (fp.fadeRemaining <= 0f) continue
+            }
             if (fp.isSwept) {
-                fp.sweptLife += deltaSeconds * 2.8f
+                fp.sweptLife += dt * 2.8f
                 fp.normX += (fp.sweptVx / cw) * dtFactor
                 fp.normY += (fp.sweptVy / ch) * dtFactor
-                fp.sweptVy += 5.5f * (ch / 1000f) * deltaSeconds
+                fp.sweptVy += 5.5f * (ch / 1000f) * dt
                 fp.alpha = (1f - fp.sweptLife).coerceIn(0f, 1f)
                 if (fp.sweptLife >= 1f || fp.alpha <= 0.02f) {
                     continue // permanently removed — swipe gesture cleared it
@@ -609,7 +663,7 @@ class ParticleSystem {
 
     fun spawnChimneySmoke(x: Float, y: Float) {
         val now = System.nanoTime()
-        if (now - lastChimneySmokeNanos < 250_000_000L) return
+        if (now - lastChimneySmokeNanos < 1_050_000_000L) return
         lastChimneySmokeNanos = now
         particles.add(
             obtainParticle(
@@ -742,26 +796,30 @@ class ParticleSystem {
         )
     }
 
-    fun spawnRainDrop(cw: Float, ch: Float) {
+    fun spawnRainDrop(cw: Float, ch: Float, groundY: Float = ch * 0.84f) {
         val rx = Random.nextFloat() * (cw + 120f) - 40f
-        val groundY = ch * (0.64f + Random.nextFloat() * 0.32f)
-        val isBackgroundDrizzle = Random.nextFloat() < 0.35f
-        val baseSpeedPxPerSec = if (isBackgroundDrizzle) ch / 2.1f else ch / 1.75f
-        val rainSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.20f)
-        val rainSize = if (isBackgroundDrizzle) 8f + Random.nextFloat() * 5f else 15f + Random.nextFloat() * 7f
+        val depth = 0.62f + Random.nextFloat() * 0.76f
+        val isBackgroundDrizzle = depth < 0.88f
+        val baseSpeedPxPerSec = ch / 1.85f
+        val rainSpeed = baseSpeedPxPerSec * depth * (0.94f + Random.nextFloat() * 0.12f)
+        val rainSize = (if (isBackgroundDrizzle) 7f else 12f) + depth * 5f + Random.nextFloat() * 3f
         val rainColor = if (isBackgroundDrizzle) Color(0x65BAE6FD) else Color(0xC8E0F2FE)
+        val startY = -Random.nextFloat() * ch * 0.42f - 12f
+        val lifeFrames = (((groundY - startY) / rainSpeed) + 1.5f) * 60f
         particles.add(
             obtainParticle(
                 x = rx,
-                y = -25f,
-                vx = if (isBackgroundDrizzle) -0.10f * cw else -0.14f * cw,
+                y = startY,
+                vx = (if (Random.nextBoolean()) -1f else 1f) * cw * (0.018f + Random.nextFloat() * 0.035f) * depth,
                 vy = rainSpeed,
                 size = rainSize,
                 color = rainColor,
-                maxLife = 180f,
+                maxLife = lifeFrames,
                 type = ParticleType.RAIN_DROP,
                 phase = 0f,
-                targetGroundY = groundY
+                targetGroundY = groundY,
+                alpha = if (isBackgroundDrizzle) 0.56f else 0.86f,
+                depth = depth
             )
         )
     }
@@ -795,89 +853,76 @@ class ParticleSystem {
                 )
             )
         }
-        repeat(2) { idx ->
-            val dir = if (idx == 0) -1.2f else 1.2f
-            pendingParticles.add(
-                obtainParticle(
-                    x = x,
-                    y = y,
-                    vx = dir * (0.6f + Random.nextFloat() * 0.8f),
-                    vy = -(2.0f + Random.nextFloat() * 1.5f),
-                    size = 2.0f,
-                    color = Color(0xDDE0F2FE),
-                    maxLife = 12f,
-                    type = ParticleType.SPARKLE,
-                    phase = 0f
-                )
-            )
-        }
     }
 
     fun spawnSakuraPetal(cw: Float, ch: Float, startY: Float? = null) {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.20f)
-        val yPos = startY ?: (-15f - Random.nextFloat() * 25f)
-        // Explicit pixels-per-second: target traversal 13s-16s (avg 14.5s), ±8% variation.
-        // Very slow, dreamy, romantic drift.
-        val baseSpeedPxPerSec = ch / 14.5f
-        val fallSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.16f)
+        val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.50f)
+        val depth = 0.62f + Random.nextFloat() * 0.72f
+        val fallSpeed = (ch / 15.5f) * depth * (0.91f + Random.nextFloat() * 0.18f)
+        val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
                 x = Random.nextFloat() * (cw + 60f) - 30f,
                 y = yPos,
-                vx = 0.025f * cw, // Steady slight ambient breeze
+                vx = (Random.nextFloat() - 0.5f) * 0.018f * cw * depth,
                 vy = fallSpeed,
-                size = 3.2f + Random.nextFloat() * 1.4f,
+                size = 2.6f + depth * 1.3f + Random.nextFloat() * 0.9f,
                 color = SAKURA_PETAL_COLORS.random(),
-                maxLife = 3600f,
+                maxLife = lifeFrames,
                 type = ParticleType.SAKURA_PETAL,
                 phase = Random.nextFloat() * 6.28f,
-                targetGroundY = targetGroundY
+                targetGroundY = targetGroundY,
+                alpha = 0.48f + depth * 0.34f,
+                depth = depth
             )
         )
     }
 
     fun spawnAutumnLeaf(cw: Float, ch: Float, startY: Float? = null) {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.20f)
-        val yPos = startY ?: (-15f - Random.nextFloat() * 25f)
-        // Explicit pixels-per-second: target traversal 12s-15s (avg 13.0s), ±8% variation.
-        // Slightly faster than sakura (heavier leaves), still slow and romantic.
-        val baseSpeedPxPerSec = ch / 13.0f
-        val fallSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.16f)
+        val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.50f)
+        val depth = 0.64f + Random.nextFloat() * 0.70f
+        val fallSpeed = (ch / 13.5f) * depth * (0.90f + Random.nextFloat() * 0.20f)
+        val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
                 x = Random.nextFloat() * (cw + 60f) - 30f,
                 y = yPos,
-                vx = 0.030f * cw, // Steady slight ambient breeze
+                vx = (Random.nextFloat() - 0.46f) * 0.015f * cw * depth,
                 vy = fallSpeed,
-                size = 3.4f + Random.nextFloat() * 1.5f,
+                size = 2.9f + depth * 1.4f + Random.nextFloat() * 0.9f,
                 color = AUTUMN_LEAF_COLORS.random(),
-                maxLife = 3600f,
+                maxLife = lifeFrames,
                 type = ParticleType.AUTUMN_LEAF,
                 phase = Random.nextFloat() * 6.28f,
-                targetGroundY = targetGroundY
+                targetGroundY = targetGroundY,
+                alpha = 0.48f + depth * 0.34f,
+                depth = depth
             )
         )
     }
 
     fun spawnSnowflake(cw: Float, ch: Float, startY: Float? = null) {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.18f)
-        val yPos = startY ?: (-15f - Random.nextFloat() * 25f)
-        // Explicit pixels-per-second: target traversal 15s-18s (avg 16.5s), ±8% variation.
-        // Slowest — snow floats almost weightlessly.
-        val baseSpeedPxPerSec = ch / 16.5f
-        val fallSpeed = baseSpeedPxPerSec * (1.0f + (Random.nextFloat() - 0.5f) * 0.16f)
+        val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.48f)
+        val depth = 0.52f + Random.nextFloat() * 0.78f
+        val fallSpeed = (ch / 17.5f) * depth * (0.88f + Random.nextFloat() * 0.24f)
+        val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
                 x = Random.nextFloat() * (cw + 60f) - 30f,
                 y = yPos,
-                vx = 0f,
+                vx = (Random.nextFloat() - 0.5f) * 0.008f * cw * depth,
                 vy = fallSpeed,
-                size = if (Random.nextFloat() < 0.40f) 3.2f + Random.nextFloat() * 1.0f else 2.0f + Random.nextFloat() * 0.8f,
+                size = 1.8f + depth * 1.4f + Random.nextFloat() * 0.9f,
                 color = SNOW_COLORS.random(),
-                maxLife = 3600f,
+                maxLife = lifeFrames,
                 type = ParticleType.SNOWFLAKE,
                 phase = Random.nextFloat() * 6.28f,
-                targetGroundY = targetGroundY
+                targetGroundY = targetGroundY,
+                alpha = 0.48f + depth * 0.34f,
+                depth = depth
             )
         )
     }
@@ -904,9 +949,25 @@ class ParticleSystem {
         ch: Float,
         isOutdoor: Boolean,
         isNight: Boolean = false,
-        deltaSeconds: Float = 0.016f
+        deltaSeconds: Float = 0.016f,
+        rainGroundY: Float = ch * 0.84f
     ) {
-        if (!isOutdoor) return
+        val dt = deltaSeconds.coerceIn(0f, 0.05f)
+        // Weather-specific particles belong to the weather that created them. Clear them
+        // together at a transition so old rain/petals cannot drift into a new climate.
+        if (!isOutdoor) {
+            if (activeWeather != null) clearSeasonalParticles()
+            activeWeather = null
+            rainSpawnAccumulator = 0f
+            seasonalSpawnAccumulator = 0f
+            return
+        }
+        if (activeWeather != weather) {
+            clearSeasonalParticles()
+            activeWeather = weather
+            rainSpawnAccumulator = 0f
+            seasonalSpawnAccumulator = 0f
+        }
         if (particles.size > 400) {
             val removeCount = particles.size - 400
             for (i in 0 until removeCount) {
@@ -917,100 +978,82 @@ class ParticleSystem {
 
         // Track weather change so stale ground particles of the old type are removed.
         // Do NOT pre-seed the ground — let it accumulate naturally from falling particles.
-        if (groundSeededWeather != weather) {
-            groundSeededWeather = weather
-            // Remove ground particles that belong to the previous weather type
-            var fw = 0
-            for (i in fallenParticles.indices) {
-                val fp = fallenParticles[i]
-                val keep = when (weather) {
-                    com.example.scene.WeatherType.SAKURA -> fp.type == ParticleType.SAKURA_PETAL
-                    com.example.scene.WeatherType.AUTUMN -> fp.type == ParticleType.AUTUMN_LEAF
-                    com.example.scene.WeatherType.SNOW   -> fp.type == ParticleType.SNOWFLAKE
-                    else -> false // RAIN/SUNNY: no ground particles
-                }
-                if (keep) fallenParticles[fw++] = fp
-            }
-            while (fallenParticles.size > fw) fallenParticles.removeAt(fallenParticles.size - 1)
-        }
+        groundSeededWeather = weather
 
         when (weather) {
             com.example.scene.WeatherType.RAIN -> {
-                // Soft, cozy, romantic rain shower rate-limited to 130 drops/sec
-                rainSpawnAccumulator += deltaSeconds * 130f
-                val count = rainSpawnAccumulator.toInt().coerceAtMost(5)
+                // Steady rain rate with a bounded catch-up so a delayed frame never bursts.
+                rainSpawnAccumulator += dt * 115f
+                val count = rainSpawnAccumulator.toInt().coerceAtMost(6)
                 if (count > 0) {
                     rainSpawnAccumulator -= count
-                    repeat(count) { spawnRainDrop(cw, ch) }
+                    repeat(count) { spawnRainDrop(cw, ch, rainGroundY) }
                 }
             }
             com.example.scene.WeatherType.SAKURA -> {
                 // Cherry Blossom: slow, gentle, romantic drift
-                var sakuraCount = 0
-                for (idx in 0 until particles.size) {
-                    if (particles[idx].type == ParticleType.SAKURA_PETAL) sakuraCount++
-                }
-                if (sakuraCount == 0) {
-                    // Seed initial petals distributed across the full screen height — immediately visible
-                    repeat(34) { i ->
-                        spawnSakuraPetal(cw, ch, ch * (0.02f + i * 0.028f))
-                    }
-                } else if (sakuraCount < 55 && Random.nextFloat() < (0.25f * deltaSeconds * 60f)) {
-                    spawnSakuraPetal(cw, ch)
-                }
+                val count = countWeatherParticles(ParticleType.SAKURA_PETAL)
+                seasonalSpawnAccumulator = spawnSeasonalWeather(
+                    seasonalSpawnAccumulator, count, 55, 4.0f, dt, cw, ch
+                )
             }
             com.example.scene.WeatherType.AUTUMN -> {
                 // Autumn: slow, gentle, romantic falling leaves
-                var leafCount = 0
-                for (idx in 0 until particles.size) {
-                    if (particles[idx].type == ParticleType.AUTUMN_LEAF) leafCount++
-                }
-                if (leafCount == 0) {
-                    // Seed initial leaves distributed across the full screen height — immediately visible
-                    repeat(28) { i ->
-                        spawnAutumnLeaf(cw, ch, ch * (0.02f + i * 0.032f))
-                    }
-                } else if (leafCount < 45 && Random.nextFloat() < (0.22f * deltaSeconds * 60f)) {
-                    spawnAutumnLeaf(cw, ch)
-                }
+                val count = countWeatherParticles(ParticleType.AUTUMN_LEAF)
+                seasonalSpawnAccumulator = spawnSeasonalWeather(
+                    seasonalSpawnAccumulator, count, 45, 3.2f, dt, cw, ch
+                )
             }
             com.example.scene.WeatherType.SNOW -> {
                 // Winter: slow, quiet, peaceful snowfall
-                var snowCount = 0
-                for (idx in 0 until particles.size) {
-                    if (particles[idx].type == ParticleType.SNOWFLAKE) snowCount++
-                }
-                if (snowCount == 0) {
-                    // Seed initial snowflakes distributed across full screen height — immediately visible
-                    repeat(50) { i ->
-                        spawnSnowflake(cw, ch, ch * (0.01f + i * 0.018f))
-                    }
-                } else if (snowCount < 75 && Random.nextFloat() < (0.35f * deltaSeconds * 60f)) {
-                    spawnSnowflake(cw, ch)
-                }
+                val count = countWeatherParticles(ParticleType.SNOWFLAKE)
+                seasonalSpawnAccumulator = spawnSeasonalWeather(
+                    seasonalSpawnAccumulator, count, 75, 5.0f, dt, cw, ch
+                )
             }
             com.example.scene.WeatherType.SUNNY -> {
-                // Summer season — UNTOUCHED as requested!
-                if (Random.nextFloat() < 0.12f) {
+                // Keep the sunny air gentle and stable at both 60 and 120 Hz.
+                if (eventChance(0.18f, dt)) {
                     spawnDandelionFluff(-10f, ch * (0.35f + Random.nextFloat() * 0.45f))
                 }
                 // Only spawn sun sparkles during the day, never at night
-                if (!isNight && Random.nextFloat() < 0.10f) {
+                if (!isNight && eventChance(0.32f, dt)) {
                     spawnSunSparkle(cw * Random.nextFloat(), ch * (0.25f + Random.nextFloat() * 0.50f))
                 }
-                if (Random.nextFloat() < 0.04f) {
+                if (eventChance(0.07f, dt)) {
                     spawnWindBreezeStreak(-40f, ch * (0.45f + Random.nextFloat() * 0.35f), cw)
                 }
             }
         }
+    }
 
-        if (weather != com.example.scene.WeatherType.SUNNY) {
-            speedAuditTimer += deltaSeconds
-            if (speedAuditTimer >= 2.0f) {
-                speedAuditTimer = 0f
-                logSpeedAudit(weather, ch)
+    private fun countWeatherParticles(type: ParticleType): Int {
+        var count = 0
+        for (particle in particles) if (particle.type == type) count++
+        return count
+    }
+
+    private fun spawnSeasonalWeather(
+        accumulator: Float,
+        count: Int,
+        cap: Int,
+        perSecond: Float,
+        deltaSeconds: Float,
+        cw: Float,
+        ch: Float
+    ): Float {
+        if (count >= cap) return accumulator.coerceAtMost(0.99f)
+        var next = accumulator + deltaSeconds.coerceAtMost(0.05f) * perSecond
+        while (next >= 1f && count < cap) {
+            when (activeWeather) {
+                com.example.scene.WeatherType.SAKURA -> spawnSakuraPetal(cw, ch)
+                com.example.scene.WeatherType.AUTUMN -> spawnAutumnLeaf(cw, ch)
+                com.example.scene.WeatherType.SNOW -> spawnSnowflake(cw, ch)
+                else -> break
             }
+            next -= 1f
         }
+        return next
     }
 
     fun logSpeedAudit(weather: com.example.scene.WeatherType, ch: Float) {
