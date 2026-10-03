@@ -1034,8 +1034,7 @@ class PreferencesManager(
             timePhase = timePhase,
             dailyMomentPrompt = prompt.question,
             dailyMomentAnswered = momentResp.isBothAnswered || momentResp.isRevealed,
-            latestSignalText = latestSig?.let { "${it.type.emoji} ${it.type.title}" },
-            sharedMoodEmoji = mood.boyMood.emoji,
+            latestSignalText = latestSig?.type?.title,
             sharedMoodText = mood.boyMood.displayName,
             lastUpdatedTimestamp = System.currentTimeMillis()
         )

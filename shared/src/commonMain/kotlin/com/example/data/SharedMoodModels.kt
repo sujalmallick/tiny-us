@@ -7,14 +7,13 @@ package com.example.data
 enum class SharedMoodType(
     val id: String,
     val displayName: String,
-    val emoji: String,
     val subtleDescription: String
 ) {
-    GREAT("great", "Great", "✨", "Full of bright energy and warm smiles"),
-    GOOD("good", "Good", "🌸", "Peaceful, cozy, and content"),
-    TIRED("tired", "Tired", "☕", "Gentle, sleepy, and in need of quiet rest"),
-    LOW("low", "A Bit Low", "🌧️", "Needs extra soft warmth and sweet reassurance"),
-    MISSING_YOU("missing_you", "Missing You", "💌", "Thinking of you across the distance");
+    GREAT("great", "Great", "Full of bright energy and warm smiles"),
+    GOOD("good", "Good", "Peaceful, cozy, and content"),
+    TIRED("tired", "Tired", "Gentle, sleepy, and in need of quiet rest"),
+    LOW("low", "A Bit Low", "Needs extra soft warmth and sweet reassurance"),
+    MISSING_YOU("missing_you", "Missing You", "Thinking of you across the distance");
 
     companion object {
         fun fromId(id: String): SharedMoodType = values().find { it.id.equals(id, ignoreCase = true) } ?: GOOD

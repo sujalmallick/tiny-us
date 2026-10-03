@@ -4,7 +4,6 @@ package com.example.data
 data class KeepsakePlant(
     val id: String,
     val name: String,
-    val emoji: String,
     val petal: Long,
     val center: Long
 )
@@ -26,21 +25,21 @@ object GardenGrowth {
     const val WELCOME_BACK_AFTER_DAYS = 3
 
     val keepsakePlants: List<KeepsakePlant> = listOf(
-        KeepsakePlant("sunflower", "Sunflower", "🌻", 0xFFFFC93C, 0xFF7A4B1E),
-        KeepsakePlant("lavender", "Lavender", "💜", 0xFFB497E7, 0xFF7B5EA7),
-        KeepsakePlant("tulip", "Tulip", "🌷", 0xFFFF6F91, 0xFFFFD166),
-        KeepsakePlant("forget_me_not", "Forget-me-not", "💙", 0xFF7EC8F2, 0xFFFFE066),
-        KeepsakePlant("daisy", "Daisy", "🌼", 0xFFFFFFFF, 0xFFFFC93C),
-        KeepsakePlant("rose", "Little Rose", "🌹", 0xFFE63946, 0xFF9D0208),
-        KeepsakePlant("poppy", "Poppy", "🌺", 0xFFFF7F50, 0xFF2B2D42),
-        KeepsakePlant("bluebell", "Bluebell", "🔔", 0xFF5E7CE2, 0xFFDDE5FF),
-        KeepsakePlant("marigold", "Marigold", "🧡", 0xFFFF9F1C, 0xFFB5651D),
-        KeepsakePlant("cosmos", "Cosmos", "🌸", 0xFFF7A1C4, 0xFFFFD166),
-        KeepsakePlant("lily", "Lily of the Valley", "🤍", 0xFFFFF8F0, 0xFF95D5B2),
-        KeepsakePlant("moonflower", "Moonflower", "🌙", 0xFFE0E7FF, 0xFFFFF3B0)
+        KeepsakePlant("sunflower", "Sunflower", 0xFFFFC93C, 0xFF7A4B1E),
+        KeepsakePlant("lavender", "Lavender", 0xFFB497E7, 0xFF7B5EA7),
+        KeepsakePlant("tulip", "Tulip", 0xFFFF6F91, 0xFFFFD166),
+        KeepsakePlant("forget_me_not", "Forget-me-not", 0xFF7EC8F2, 0xFFFFE066),
+        KeepsakePlant("daisy", "Daisy", 0xFFFFFFFF, 0xFFFFC93C),
+        KeepsakePlant("rose", "Little Rose", 0xFFE63946, 0xFF9D0208),
+        KeepsakePlant("poppy", "Poppy", 0xFFFF7F50, 0xFF2B2D42),
+        KeepsakePlant("bluebell", "Bluebell", 0xFF5E7CE2, 0xFFDDE5FF),
+        KeepsakePlant("marigold", "Marigold", 0xFFFF9F1C, 0xFFB5651D),
+        KeepsakePlant("cosmos", "Cosmos", 0xFFF7A1C4, 0xFFFFD166),
+        KeepsakePlant("lily", "Lily of the Valley", 0xFFFFF8F0, 0xFF95D5B2),
+        KeepsakePlant("moonflower", "Moonflower", 0xFFE0E7FF, 0xFFFFF3B0)
     )
 
-    private val goldenPlant = KeepsakePlant("golden", "Golden Bloom", "✨", 0xFFFFD700, 0xFFFFF3B0)
+    private val goldenPlant = KeepsakePlant("golden", "Golden Bloom", 0xFFFFD700, 0xFFFFF3B0)
 
     /** Meadow stage 0..6 (unchanged from the original growth curve). */
     fun stageFor(visitDays: Int): Int = when {
@@ -85,7 +84,7 @@ object GardenGrowth {
      */
     fun welcomeBackMessage(daysAway: Int, catName: String): String? = when {
         daysAway < WELCOME_BACK_AFTER_DAYS -> null
-        daysAway < 14 -> "$catName kept the garden watered while you were away 🌱"
-        else -> "Welcome back! The garden saved every flower for you 🌼"
+        daysAway < 14 -> "$catName kept the garden watered while you were away."
+        else -> "Welcome back! The garden saved every flower for you."
     }
 }

@@ -7,15 +7,14 @@ package com.example.data
 enum class LongDistanceSignalType(
     val id: String,
     val title: String,
-    val emoji: String,
     val animationKey: String
 ) {
-    THINKING_OF_YOU("thinking_of_you", "Thinking of You", "💭", "THOUGHT_BUBBLE"),
-    GOOD_MORNING("good_morning", "Good Morning", "☀️", "SUNSHINE_WAVE"),
-    GOOD_NIGHT("good_night", "Good Night", "🌙", "STARRY_SLEEP"),
-    SEND_HEART("send_heart", "Sending a Heart", "💖", "HEART_BURST"),
-    NEED_A_HUG("need_a_hug", "Need a Hug", "🫂", "COZY_HUG"),
-    TINY_GIFT("tiny_gift", "Tiny Sweet Gift", "🎁", "GIFT_BOX");
+    THINKING_OF_YOU("thinking_of_you", "Thinking of You", "THOUGHT_BUBBLE"),
+    GOOD_MORNING("good_morning", "Good Morning", "SUNSHINE_WAVE"),
+    GOOD_NIGHT("good_night", "Good Night", "STARRY_SLEEP"),
+    SEND_HEART("send_heart", "Sending a Heart", "HEART_BURST"),
+    NEED_A_HUG("need_a_hug", "Need a Hug", "COZY_HUG"),
+    TINY_GIFT("tiny_gift", "Tiny Sweet Gift", "GIFT_BOX");
 
     companion object {
         fun fromId(id: String): LongDistanceSignalType =

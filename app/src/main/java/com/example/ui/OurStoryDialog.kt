@@ -207,7 +207,7 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
                 Modifier.padding(top = 10.dp).size(30.dp).background(if (entry.kind == StoryKind.MILESTONE) RibbonPink else CardFill, CircleShape)
                     .border(1.dp, Rail, CircleShape),
                 contentAlignment = Alignment.Center
-            ) { Text(entry.emoji, fontSize = 14.sp) }
+            ) { Icon(TinyIcons.story(entry.iconKey), contentDescription = null, tint = com.example.ui.theme.TinyColors.Rose, modifier = Modifier.size(16.dp)) }
         }
         Spacer(Modifier.width(8.dp))
         val isRibbon = entry.kind == StoryKind.MILESTONE || entry.kind == StoryKind.GARDEN
@@ -267,7 +267,7 @@ private fun loadThumbnail(path: String): Bitmap? = runCatching {
 @Composable
 private fun EmptyStory() {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
-        Text("📖", fontSize = 40.sp)
+        TinyIconBadge(TinyIcons.OurStory, size = 64.dp, iconSize = 30.dp)
         Spacer(Modifier.height(12.dp))
         Text(stringResource(R.string.story_empty_title), fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Ink)
         Spacer(Modifier.height(6.dp))

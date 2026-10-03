@@ -17,7 +17,8 @@ data class StoryEntry(
     val date: LocalDate?,
     val title: String,
     val body: String = "",
-    val emoji: String,
+    /** Plain key the UI maps to an icon (see storyIcon in the app). */
+    val iconKey: String,
     val imagePath: String? = null,
     /** Milestones still ahead (only the next one is ever included). */
     val isUpcoming: Boolean = false
@@ -57,7 +58,7 @@ object StoryTimeline {
                 id = "memory:${m.id}", kind = StoryKind.MEMORY,
                 // The date the couple typed is when it happened; createdAt is only a fallback.
                 date = parseLooseDate(m.date) ?: fromEpoch(m.createdAt),
-                title = m.title, body = m.note, emoji = memoryEmoji(m.iconType)
+                title = m.title, body = m.note, iconKey = m.iconType.ifBlank { "heart" }
             )
         }
         // Only letters the couple wrote; the bundled sample letters aren't part of their story.
@@ -65,26 +66,26 @@ object StoryTimeline {
             entries += StoryEntry(
                 id = "letter:${n.id}", kind = StoryKind.LETTER,
                 date = fromEpoch(n.createdAt) ?: parseLooseDate(n.date),
-                title = n.author.ifBlank { "A letter" }, body = n.text, emoji = "💌"
+                title = n.author.ifBlank { "A letter" }, body = n.text, iconKey = "letter"
             )
         }
         input.photos.forEach { p ->
             entries += StoryEntry(
                 id = "photo:${p.id}", kind = StoryKind.PHOTO,
                 date = fromEpoch(captureMillis(p)) ?: parseLooseDate(p.date),
-                title = p.title, body = p.sceneName, emoji = "📸", imagePath = p.imagePath
+                title = p.title, body = p.sceneName, iconKey = "photo", imagePath = p.imagePath
             )
         }
         input.dreams.forEach { d ->
             entries += StoryEntry(
                 id = "dream:${d.id}", kind = StoryKind.DREAM, date = fromEpoch(d.timestamp),
-                title = "A shared dream", body = d.text, emoji = "🌙"
+                title = "A shared dream", body = d.text, iconKey = "dream"
             )
         }
         input.adventures.filter { it.status == AdventureStatus.COMPLETED }.forEach { a ->
             entries += StoryEntry(
                 id = "adventure:${a.id}", kind = StoryKind.ADVENTURE, date = fromEpoch(a.completedTimestamp),
-                title = a.title, body = a.description, emoji = "🧺"
+                title = a.title, body = a.description, iconKey = "adventure"
             )
         }
         input.dailyMoments.filter { it.isAnsweredByBoy || it.isAnsweredByGirl }.forEach { r ->
@@ -93,7 +94,7 @@ object StoryTimeline {
                 date = parseLooseDate(r.dateString) ?: fromEpoch(r.completedTimestamp),
                 title = input.promptText(r.promptId) ?: "Daily moment",
                 body = listOfNotNull(r.boyAnswer, r.girlAnswer).filter { it.isNotBlank() }.joinToString("\n"),
-                emoji = "☕"
+                iconKey = "moment"
             )
         }
         input.gardenBloomDates.toSortedMap().forEach { (index, date) ->
@@ -101,7 +102,7 @@ object StoryTimeline {
             entries += StoryEntry(
                 id = "garden:$index", kind = StoryKind.GARDEN, date = date,
                 title = if (bloom.isGolden) "A golden bloom in our garden" else "${bloom.plant.name} bloomed in our garden",
-                emoji = bloom.plant.emoji
+                iconKey = if (bloom.isGolden) "golden" else "garden"
             )
         }
         input.anniversary?.let { entries += milestones(it, today) }
@@ -134,8 +135,8 @@ object StoryTimeline {
         val sorted = candidates.sortedBy { it.first }
         val past = sorted.filter { it.first <= today }
         val next = sorted.firstOrNull { it.first > today }
-        return past.map { (d, title) -> StoryEntry("milestone:$d", StoryKind.MILESTONE, d, title, emoji = "🎀") } +
-            listOfNotNull(next?.let { (d, title) -> StoryEntry("milestone:$d", StoryKind.MILESTONE, d, title, emoji = "⏳", isUpcoming = true) })
+        return past.map { (d, title) -> StoryEntry("milestone:$d", StoryKind.MILESTONE, d, title, iconKey = "milestone") } +
+            listOfNotNull(next?.let { (d, title) -> StoryEntry("milestone:$d", StoryKind.MILESTONE, d, title, iconKey = "upcoming", isUpcoming = true) })
     }
 
     /** Polaroid images are saved as "pol_<epochMillis>_<id>.png"; use that as the capture time. */
@@ -174,12 +175,4 @@ object StoryTimeline {
 
     private fun kindOrder(kind: StoryKind) = if (kind == StoryKind.MILESTONE) 0 else 1
 
-    private fun memoryEmoji(iconType: String) = when (iconType) {
-        "tree" -> "🌳"
-        "flower" -> "🌸"
-        "cooking" -> "🍳"
-        "stars" -> "⭐"
-        "couch" -> "🛋️"
-        else -> "💖"
-    }
 }

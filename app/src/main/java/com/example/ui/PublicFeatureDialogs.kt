@@ -1128,7 +1128,7 @@ private fun PartnerMoodSection(
                             horizontalAlignment = Alignment.CenterHorizontally,
                             modifier = Modifier.padding(vertical = 6.dp)
                         ) {
-                            Text(text = mood.emoji, fontSize = 16.sp)
+                            Icon(TinyIcons.mood(mood), contentDescription = null, tint = if (isSelected) DeepRose else DarkSlate, modifier = Modifier.size(18.dp))
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
                                 text = mood.displayName,
@@ -1360,7 +1360,7 @@ private fun SignalTypeChip(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.Center
         ) {
-            Text(text = sig.emoji, fontSize = 13.sp)
+            Icon(TinyIcons.signal(sig), contentDescription = null, tint = if (isSelected) DeepRose else DarkSlate, modifier = Modifier.size(16.dp))
             Spacer(modifier = Modifier.width(4.dp))
             Text(
                 text = sig.title,
@@ -1386,7 +1386,7 @@ private fun SignalHistoryCard(signal: LongDistanceSignal, senderDisplayName: Str
             modifier = Modifier.padding(10.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = signal.type.emoji, fontSize = 20.sp)
+            TinyIconBadge(TinyIcons.signal(signal.type), size = 36.dp, iconSize = 18.dp)
             Spacer(modifier = Modifier.width(10.dp))
             Column(modifier = Modifier.weight(1f)) {
                 Text(

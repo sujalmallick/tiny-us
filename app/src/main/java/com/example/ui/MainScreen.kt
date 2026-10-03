@@ -378,8 +378,8 @@ fun MainScreen(
                 if (newBloom != null) delay(5000)
             }
             if (newBloom != null) {
-                val text = if (newBloom.isGolden) "A golden bloom sparkles in your garden ✨"
-                else "A ${newBloom.plant.name} bloomed in your garden ${newBloom.plant.emoji}"
+                val text = if (newBloom.isGolden) "A golden bloom sparkles in your garden."
+                else "A ${newBloom.plant.name} bloomed in your garden."
                 engine.showMessage(text, duration = 4.5f)
             }
         }

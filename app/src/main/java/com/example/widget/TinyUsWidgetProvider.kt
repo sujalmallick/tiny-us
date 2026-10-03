@@ -30,7 +30,7 @@ class TinyUsWidgetProvider : AppWidgetProvider() {
 
             val statusText = when {
                 !data.latestSignalText.isNullOrBlank() -> data.latestSignalText
-                !data.sharedMoodText.isNullOrBlank() -> "${data.sharedMoodEmoji ?: "✨"} Mood: ${data.sharedMoodText}"
+                !data.sharedMoodText.isNullOrBlank() -> "Mood: ${data.sharedMoodText}"
                 !data.dailyMomentPrompt.isNullOrBlank() -> data.dailyMomentPrompt
                 else -> "Quiet peaceful moments together."
             }
