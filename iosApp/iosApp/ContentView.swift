@@ -352,7 +352,8 @@ struct TinySave: Codable {
     var homeLevel = 1
     var homeKeepsakes: Set<String> = []
     var plantsGrowing = 0
-    var mood = "🥰"
+    /// Shared mood, stored as an SF Symbol name from `TinySave.moodSymbols`.
+    var mood = "heart.fill"
     var dailyPromptDate = ""
     var dailyPrompt = "What tiny thing made you smile today?"
     var soundOn = true
@@ -373,6 +374,10 @@ struct TinySave: Codable {
     /// Tic-tac-toe tally: [hearts wins, stars wins, draws].
     var ticTacToeScore: [Int] = [0, 0, 0]
     var memoryBestMoves: Int?
+
+    /// Mood picker options (SF Symbol names) and their spoken/toast labels, index-aligned.
+    static let moodSymbols = ["heart.fill", "sun.max.fill", "leaf.fill", "sparkles", "moon.fill"]
+    static let moodLabels = ["loved", "sunny", "growing", "sparkly", "sleepy"]
 
     private enum CodingKeys: String, CodingKey {
         case nameOne, nameTwo, anniversary, scene, weather, previousWeather, weatherChangedAt, weatherDriftStartedAt, entries, gardenSeeds
@@ -399,7 +404,8 @@ struct TinySave: Codable {
         homeLevel = (try? values.decode(Int.self, forKey: .homeLevel)) ?? 1
         homeKeepsakes = (try? values.decode(Set<String>.self, forKey: .homeKeepsakes)) ?? []
         plantsGrowing = (try? values.decode(Int.self, forKey: .plantsGrowing)) ?? 0
-        mood = (try? values.decode(String.self, forKey: .mood)) ?? "🥰"
+        let decodedMood = (try? values.decode(String.self, forKey: .mood)) ?? "heart.fill"
+        mood = TinySave.moodSymbols.contains(decodedMood) ? decodedMood : "heart.fill"
         dailyPromptDate = (try? values.decode(String.self, forKey: .dailyPromptDate)) ?? ""
         dailyPrompt = (try? values.decode(String.self, forKey: .dailyPrompt)) ?? "What tiny thing made you smile today?"
         soundOn = (try? values.decode(Bool.self, forKey: .soundOn)) ?? true
@@ -465,7 +471,7 @@ struct TinySave: Codable {
         _ = startOfToday
         let answeredToday=save.momentAnswers[TinyWorld.dayKey(Date()), default: []].contains { !$0.isEmpty }
         let model = TinyUsWidgetData(
-            coupleNames: "\(save.nameOne) ♥ \(save.nameTwo)", daysTogether: days,
+            coupleNames: "\(save.nameOne) & \(save.nameTwo)", daysTogether: days,
             sceneName: save.scene.title, weatherName: save.weather.label, timePhase: phase,
             dailyMomentPrompt: save.dailyPrompt, dailyMomentAnswered: answeredToday,
             latestSignalText: signal, sharedMoodEmoji: save.mood,
@@ -474,7 +480,7 @@ struct TinySave: Codable {
             coupleNames: model.coupleNames, daysTogether: model.daysTogether, anniversaryDate: save.anniversary,
             sceneName: model.sceneName, weatherName: model.weatherName, timePhase: model.timePhase,
             dailyMomentPrompt: model.dailyMomentPrompt ?? "A little moment together",
-            sharedMoodEmoji: model.sharedMoodEmoji ?? "💛",
+            sharedMoodEmoji: model.sharedMoodEmoji ?? "heart.fill",
             latestSignalText: model.latestSignalText ?? "A little hello from your world.", updatedAt: Date())
         guard let encoded = try? JSONEncoder().encode(payload) else { return }
         TinyAppGroup.defaults.set(encoded, forKey: TinyAppGroup.payloadKey)
@@ -533,18 +539,18 @@ struct TinySave: Codable {
     func interactWithScene() {
         let moments: [String]
         switch save.scene {
-        case .meadow: moments=["A flower tucked behind an ear 🌼","They make a tiny daisy chain 🌸","A shy little hand finds another 💛"]
-        case .tree: moments=["A leaf lands softly in their hair 🍃","They share the shady patch beneath their tree 🌳","One tells the other a secret under the branches 🤫"]
-        case .kitchen: moments=["A stolen taste, then a giggle 🥄","They make room for one more pinch of cinnamon 🍪","A warm mug is passed across the counter ☕️"]
-        case .living: moments=["A blanket is tucked around them both 🧺","They settle into a sleepy shoulder cuddle 💤","Mochi gets the soft middle cushion 🐾"]
-        case .nightWalk: moments=["They pause to watch the lanterns sway 🏮","A mittened hand reaches for the other 🧤","They make a wish on the first star ✨"]
-        case .cafe: moments=["Two warm cups meet at the window ☕️","They draw a tiny heart in the fogged glass 💗","A pastry is quietly split in half 🥐"]
-        case .sunroom: moments=["A little plant gets a careful drink 🌱","They turn a leaf toward the afternoon sun 🌿","A new sprout earns a very proud smile 🌼"]
-        case .loft: moments=["They pick a song for the next slow dance 🎶","A sleepy head finds a warm shoulder 🌙","The city lights become a tiny constellation ✨"]
-        case .momo: moments=["One last dumpling is split exactly in two 🥟","They blow on each other's too-hot tea 🍵","The cook sneaks them an extra bite 🥢"]
-        case .scooter: moments=["They stop to feel the evening breeze 🛵","A scarf flutters between two happy waves 🧣","They take the long way home 🌆"]
-        case .twilight: moments=["A gentle head pat says everything 💛","They share a quiet look and a little smile ☺️","A tiny heart appears between them 💕"]
-        case .campfire: moments=["Two marshmallows, one shared stick 🍡","Sparks drift up to meet the stars ✨","A plaid blanket around both shoulders 🔥"]
+        case .meadow: moments=["A flower tucked behind an ear","They make a tiny daisy chain","A shy little hand finds another"]
+        case .tree: moments=["A leaf lands softly in their hair","They share the shady patch beneath their tree","One tells the other a secret under the branches"]
+        case .kitchen: moments=["A stolen taste, then a giggle","They make room for one more pinch of cinnamon","A warm mug is passed across the counter"]
+        case .living: moments=["A blanket is tucked around them both","They settle into a sleepy shoulder cuddle","Mochi gets the soft middle cushion"]
+        case .nightWalk: moments=["They pause to watch the lanterns sway","A mittened hand reaches for the other","They make a wish on the first star"]
+        case .cafe: moments=["Two warm cups meet at the window","They draw a tiny heart in the fogged glass","A pastry is quietly split in half"]
+        case .sunroom: moments=["A little plant gets a careful drink","They turn a leaf toward the afternoon sun","A new sprout earns a very proud smile"]
+        case .loft: moments=["They pick a song for the next slow dance","A sleepy head finds a warm shoulder","The city lights become a tiny constellation"]
+        case .momo: moments=["One last dumpling is split exactly in two","They blow on each other's too-hot tea","The cook sneaks them an extra bite"]
+        case .scooter: moments=["They stop to feel the evening breeze","A scarf flutters between two happy waves","They take the long way home"]
+        case .twilight: moments=["A gentle head pat says everything","They share a quiet look and a little smile","A tiny heart appears between them"]
+        case .campfire: moments=["Two marshmallows, one shared stick","Sparks drift up to meet the stars","A plaid blanket around both shoulders"]
         }
         let options=moments.filter { $0 != save.lastWorldMoment }
         let moment=options.randomElement() ?? moments[0]
@@ -575,21 +581,21 @@ struct TinySave: Codable {
         let fresh = TinyScene.allCases.filter { $0 != save.scene && !save.recentScenes.contains($0) }
         let pick = (fresh.isEmpty ? TinyScene.allCases.filter { $0 != save.scene } : fresh).randomElement() ?? .meadow
         select(pick)
-        showToast("Surprise! \(pick.title) ✨")
+        showToast("Surprise! \(pick.title)")
     }
     func fridgeNote() -> String {
         if let note = save.entries[TinyFeature.notes.rawValue]?.randomElement()?.text, !note.isEmpty { return note }
-        return ["You make ordinary days feel special.", "Tea later? I will bring the biscuits.", "Thank you for being you.", "Cannot wait to see you tonight 💕"].randomElement() ?? "💕"
+        return ["You make ordinary days feel special.", "Tea later? I will bring the biscuits.", "Thank you for being you.", "Cannot wait to see you tonight"].randomElement() ?? "Thank you for being you."
     }
     /// Renders the current scene as a Polaroid and tucks it into Our Memories.
     func capturePolaroid() {
         let image = TinyPolaroid.render(scene: save.scene, weather: save.weather, outfit: save.outfit, collar: save.mochiCollar)
         guard let data = image?.jpegData(compressionQuality: 0.9) else { showToast("Couldn’t capture that moment"); return }
         TinySoundBoard.shared.play(.cardFlip)
-        add("📸 \(save.scene.title) • \(Date().formatted(date: .abbreviated, time: .omitted))", to: .memories, imageData: data)
+        add("\(save.scene.title) • \(Date().formatted(date: .abbreviated, time: .omitted))", to: .memories, imageData: data)
     }
     func interactWithCharacters() {
-        let moments=["They lean together for a quiet second 💛","One offers a tiny hand to the other 🫶","Their little people share a shy smile 😊"]
+        let moments=["They lean together for a quiet second","One offers a tiny hand to the other","Their little people share a shy smile"]
         let choices=moments.filter { $0 != save.lastWorldMoment }
         let moment=choices.randomElement() ?? moments[0]
         save.lastWorldMoment=moment
@@ -703,7 +709,7 @@ struct ContentView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text("TINY US").font(.system(size: 18, weight: .black, design: .monospaced)).tracking(2)
                     .foregroundStyle(Color(red: 1, green: 0.83, blue: 0.58))
-                Text("\(world.save.nameOne)  ♥  \(world.save.nameTwo)")
+                Text("\(world.save.nameOne)  &  \(world.save.nameTwo)")
                     .font(.system(.caption, design: .rounded, weight: .medium)).foregroundStyle(.white.opacity(0.72))
                     .lineLimit(1)
             }
@@ -928,24 +934,24 @@ private struct FeatureSheet: View {
                         Text("Since \(world.save.anniversary.formatted(date:.long,time:.omitted))").foregroundStyle(.secondary)
                     } else if feature == .mood {
                         Text("How are you feeling about us today?").font(.system(.headline,design:.rounded))
-                        HStack { ForEach(["🥰","😊","🌱","🫶","🌙"],id:\.self) { emoji in Button(emoji) { world.save.mood=emoji; world.showToast("Your shared mood is \(emoji)") }.font(.largeTitle).buttonStyle(.plain) } }
+                        HStack(spacing:16) { ForEach(Array(TinySave.moodSymbols.enumerated()),id:\.offset) { index,symbol in Button { world.save.mood=symbol; world.showToast("Your shared mood is \(TinySave.moodLabels[index])") } label: { Image(systemName:symbol) }.font(.largeTitle).foregroundStyle(.pink).opacity(world.save.mood==symbol ? 1 : 0.5).buttonStyle(.plain).accessibilityLabel(TinySave.moodLabels[index]) } }
                         Text("Your mood is kept privately on this device.").font(.footnote).foregroundStyle(.secondary)
                     } else if feature == .garden {
                         Text("A little corner to grow together.").font(.system(.headline,design:.rounded))
-                        Text("\(String(repeating:"🌿",count:min(world.save.plantsGrowing,12)))").font(.title2)
-                        Text("🌱  \(world.save.gardenSeeds) seeds waiting to bloom").font(.system(.title3,design:.rounded))
-                        Button("Plant a seed") { world.save.gardenSeeds=max(0,world.save.gardenSeeds-1); world.save.plantsGrowing+=1; world.save.homeKeepsakes.insert("A windowsill plant"); world.showToast("A new little sprout is growing 🌱") }.buttonStyle(.borderedProminent).disabled(world.save.gardenSeeds==0)
+                        HStack(spacing:4) { ForEach(0..<max(0,min(world.save.plantsGrowing,12)),id:\.self) { _ in Image(systemName:"leaf.fill") } }.font(.title2).foregroundStyle(.green)
+                        Label("\(world.save.gardenSeeds) seeds waiting to bloom",systemImage:"leaf").font(.system(.title3,design:.rounded))
+                        Button("Plant a seed") { world.save.gardenSeeds=max(0,world.save.gardenSeeds-1); world.save.plantsGrowing+=1; world.save.homeKeepsakes.insert("A windowsill plant"); world.showToast("A new little sprout is growing") }.buttonStyle(.borderedProminent).disabled(world.save.gardenSeeds==0)
                     } else if feature == .wardrobe {
                         Text("Choose a cozy outfit for your tiny people.").font(.system(.headline,design:.rounded))
                         ForEach(Array(["Soft Sunday","Picnic gingham","Rainy day knits","Starlight pajamas"].enumerated()),id:\.offset) { index,title in
-                            Button { world.save.outfit=index; world.showToast("Outfit changed to \(title)") } label: { HStack { Text(["🧺","🌼","☔️","🌙"][index]); Text(title); Spacer(); if index==world.save.outfit { Image(systemName:"checkmark.circle.fill") } }.padding(12).background(.quaternary,in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
+                            Button { world.save.outfit=index; world.showToast("Outfit changed to \(title)") } label: { HStack { Image(systemName:["sun.max.fill","square.grid.3x3.fill","umbrella.fill","moon.stars.fill"][index]).frame(width:26); Text(title); Spacer(); if index==world.save.outfit { Image(systemName:"checkmark.circle.fill") } }.padding(12).background(.quaternary,in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
                         }
                         Text("Mochi’s collar").font(.system(.headline,design:.rounded)).padding(.top,6)
                         ForEach(Array(["Tiny red bowtie","Daisy collar","Blue bowtie","Just Mochi"].enumerated()),id:\.offset) { index,title in
                             Button {
                                 world.save.mochiCollar=index
-                                world.showToast(index == 0 ? "Mochi looks dapper in a tiny red bowtie!" : index == 1 ? "A little daisy collar for Mochi!" : "Mochi approves 🐾")
-                            } label: { HStack { Text(["🎀","🌼","💙","🐈"][index]); Text(title); Spacer(); if index==world.save.mochiCollar { Image(systemName:"checkmark.circle.fill") } }.padding(12).background(.quaternary,in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
+                                world.showToast(index == 0 ? "Mochi looks dapper in a tiny red bowtie!" : index == 1 ? "A little daisy collar for Mochi!" : "Mochi approves")
+                            } label: { HStack { Image(systemName:["gift.fill","leaf.fill","heart.fill","pawprint.fill"][index]).frame(width:26); Text(title); Spacer(); if index==world.save.mochiCollar { Image(systemName:"checkmark.circle.fill") } }.padding(12).background(.quaternary,in:RoundedRectangle(cornerRadius:12)) }.buttonStyle(.plain)
                         }
                     } else if feature == .home {
                         Text("Your home gathers little reminders of the life you share.").font(.system(.headline,design:.rounded))
@@ -953,7 +959,7 @@ private struct FeatureSheet: View {
                         ForEach(world.save.homeKeepsakes.sorted(),id:\.self) { item in Label(item,systemImage:"sparkle").padding(12).frame(maxWidth:.infinity,alignment:.leading).background(.quaternary,in:RoundedRectangle(cornerRadius:12)) }
                         Button("Tuck a keepsake onto the shelf") {
                             let options=["A cozy knit throw","A copper tea kettle","A little string of lights","An origami heart"]
-                            if let item=options.first(where:{ !world.save.homeKeepsakes.contains($0) }) { world.save.homeKeepsakes.insert(item); world.showToast("\(item) found a home 🏡") }
+                            if let item=options.first(where:{ !world.save.homeKeepsakes.contains($0) }) { world.save.homeKeepsakes.insert(item); world.showToast("\(item) found a home") }
                         }.buttonStyle(.borderedProminent).disabled(["A cozy knit throw","A copper tea kettle","A little string of lights","An origami heart"].allSatisfy(world.save.homeKeepsakes.contains))
                     } else if feature == .adventures {
                         Text("Small real-world ideas from your shared date-adventure collection.").font(.system(.headline,design:.rounded))
@@ -961,17 +967,17 @@ private struct FeatureSheet: View {
                             VStack(alignment:.leading,spacing:9) {
                                 Text(adventure.title).font(.system(.body,design:.rounded,weight:.bold))
                                 Text(adventure.description).font(.system(.subheadline,design:.rounded)).foregroundStyle(.secondary)
-                                Button(world.save.completedAdventureIDs.contains(adventure.id) ? "A little date completed ✓" : "We did this together") {
+                                Button(world.save.completedAdventureIDs.contains(adventure.id) ? "A little date completed" : "We did this together") {
                                     world.save.completedAdventureIDs.insert(adventure.id)
                                     world.save.gardenSeeds += 1
                                     world.save.homeKeepsakes.insert("A picnic basket from your date")
-                                    world.showToast("A new keepsake for your little home 🏡")
+                                    world.showToast("A new keepsake for your little home")
                                 }.font(.system(.caption,design:.rounded,weight:.semibold)).buttonStyle(.bordered).disabled(world.save.completedAdventureIDs.contains(adventure.id))
                             }.padding(13).frame(maxWidth:.infinity,alignment:.leading).background(.quaternary,in:RoundedRectangle(cornerRadius:14))
                         }
                     } else if feature == .longDistance {
                         Text("Send a little signal when you’re thinking of them.").font(.system(.headline,design:.rounded))
-                        HStack { ForEach(["💌","☀️","🫂","🌙"],id:\.self) { emoji in Button(emoji) { world.add("\(emoji) A tiny hello, sent with love.",to:.longDistance) }.font(.largeTitle).buttonStyle(.plain) } }
+                        HStack(spacing:16) { ForEach(Array(["A little letter","Some sunshine","A warm hug","A goodnight wish"].enumerated()),id:\.offset) { index,signal in Button { world.add("\(signal): a tiny hello, sent with love.",to:.longDistance) } label: { Image(systemName:["envelope.fill","sun.max.fill","person.2.fill","moon.fill"][index]) }.font(.largeTitle).foregroundStyle(.pink).buttonStyle(.plain).accessibilityLabel(signal) } }
                         Text("Signals are saved here. Sharing to another device can be added when a sync service is configured.").font(.footnote).foregroundStyle(.secondary)
                     } else if feature == .dreams {
                         Text("Leave a few words for the morning.").font(.system(.headline,design:.rounded))

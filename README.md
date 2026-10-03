@@ -1,20 +1,20 @@
-# Tiny Us 🌸
+# Tiny Us
 
 A tiny, cozy pixel-art world for two. Tiny Us combines an Android Jetpack Compose app with a native SwiftUI iOS app, backed by Kotlin Multiplatform catalogs and relationship logic. The core world, memories, weather, music, and reminders work offline.
 
 ---
 
-## ✨ Features
+## Features
 
 - **60 FPS Procedural Pixel Canvas**: Fully custom procedural pixel-art characters, environments, and animations drawn directly with Jetpack Compose Canvas.
 - **Offline & Private**: Zero network requests, remote APIs, analytics or accounts — Tiny Us never sends your data anywhere. The only copies that can leave the phone are ones you make: a password-protected backup file you save yourself, or Android's own end-to-end encrypted device backup (photos excluded; see `app/src/main/res/xml/data_extraction_rules.xml`).
 - **Interactive Scenes**:
-  - 🌸 **A Flower For You**: Presenting a sweet flower in the meadow.
-  - 🌳 **Under Our Tree**: Sitting peacefully under a swaying cherry blossom tree.
-  - 🍳 **Kitchen Secret**: Playfully stealing bites from the simmering stew pot.
-  - 🛋️ **Couch Snooze**: Falling asleep together on the couch as the room gently dims.
-  - 🏮 **Lantern Stroll**: Walking hand in hand under the night streetlamp and stars.
-  - 💖 **Just Looking at You**: Shared quiet glance with a gentle head pat.
+  - **A Flower For You**: Presenting a sweet flower in the meadow.
+  - **Under Our Tree**: Sitting peacefully under a swaying cherry blossom tree.
+  - **Kitchen Secret**: Playfully stealing bites from the simmering stew pot.
+  - **Couch Snooze**: Falling asleep together on the couch as the room gently dims.
+  - **Lantern Stroll**: Walking hand in hand under the night streetlamp and stars.
+  - **Just Looking at You**: Shared quiet glance with a gentle head pat.
 - **Ambient Audio**: Real-time procedural lullaby and music-box synthesis using Android `AudioTrack`, plus a small bundled soundtrack.
 - **Dynamic Particle System**: Floating hearts, falling leaves, drifting petals, bubbling steam, starry sparkles, and sleep 'Z's.
 - **Our Keepsakes**: Local journal of special memories with retro icons.
@@ -30,7 +30,7 @@ A tiny, cozy pixel-art world for two. Tiny Us combines an Android Jetpack Compos
 
 ---
 
-## 🛠️ Tech Stack & Architecture
+## Tech Stack & Architecture
 
 - **Shared language**: Kotlin 2.2 Multiplatform
 - **UI frameworks**: Android Jetpack Compose (Material 3), native iOS SwiftUI and WidgetKit
@@ -41,7 +41,7 @@ A tiny, cozy pixel-art world for two. Tiny Us combines an Android Jetpack Compos
 
 ---
 
-## 🚀 How to Build and Run
+## How to Build and Run
 
 ### Prerequisites
 - [Android Studio](https://developer.android.com/studio) (Ladybug / Meerkat or newer recommended)

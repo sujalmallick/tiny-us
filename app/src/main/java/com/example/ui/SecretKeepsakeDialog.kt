@@ -160,6 +160,10 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.ui.text.font.FontStyle
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 @Composable
 fun TbSecretDialog(
@@ -178,83 +182,58 @@ fun SecretKeepsakeDialog(
         "Not in money or gold,\nbut in endless love, quiet cuddles,\nand a heart that belongs\nentirely to you."
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            shape = RoundedCornerShape(22.dp),
-            color = Color(0xFFFFFDFB),
-            shadowElevation = 10.dp,
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .fillMaxWidth(0.92f)
+            .testTag("tb_secret_dialog"),
+        contentPadding = PaddingValues(horizontal = TinySpace.xxl, vertical = 28.dp),
+        verticalSpacing = 0.dp,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        // Letter-style header
+        Text(
+            text = title,
+            style = TinyType.Display.copy(letterSpacing = 2.sp),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(TinySpace.xs))
+
+        Text(
+            text = subtitle,
+            style = TinyType.Body.copy(
+                fontFamily = FontFamily.Serif,
+                fontStyle = FontStyle.Italic,
+                color = TinyColors.Rose
+            ),
+            textAlign = TextAlign.Center
+        )
+
+        Spacer(modifier = Modifier.height(TinySpace.lg))
+
+        // Hairline separator
+        Box(
             modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .testTag("tb_secret_dialog")
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 26.dp, vertical = 26.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Intimate header
-                Spacer(modifier = Modifier.height(4.dp))
+                .width(32.dp)
+                .height(1.dp)
+                .background(TinyColors.Line)
+        )
 
-                Text(
-                    text = title,
-                    fontSize = 28.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    letterSpacing = 2.sp,
-                    color = DarkSlate
-                )
+        Spacer(modifier = Modifier.height(TinySpace.lg))
 
-                Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = body,
+            style = TinyType.Body.copy(fontFamily = FontFamily.Serif, lineHeight = 22.sp),
+            textAlign = TextAlign.Center
+        )
 
-                Text(
-                    text = subtitle,
-                    fontSize = 14.sp,
-                    fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                    fontFamily = FontFamily.Serif,
-                    color = DeepRose,
-                    textAlign = TextAlign.Center
-                )
+        Spacer(modifier = Modifier.height(TinySpace.xxl))
 
-                Spacer(modifier = Modifier.height(16.dp))
-
-                // Subtle minimalist hair-thin separator
-                Box(
-                    modifier = Modifier
-                        .width(32.dp)
-                        .height(1.dp)
-                        .background(Color(0xFFE8E5E0))
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Text(
-                    text = body,
-                    fontSize = 13.5.sp,
-                    fontFamily = FontFamily.Serif,
-                    lineHeight = 22.sp,
-                    color = DarkSlate.copy(alpha = 0.78f),
-                    textAlign = TextAlign.Center
-                )
-
-                Spacer(modifier = Modifier.height(24.dp))
-
-                // Minimalist button
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(Color(0xFFF7F4EF))
-                        .padding(horizontal = 24.dp, vertical = 2.dp)
-                ) {
-                    Text(
-                        text = "Close",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkSlate.copy(alpha = 0.8f)
-                    )
-                }
-            }
-        }
+        TinyButton(
+            text = "Close",
+            onClick = onDismiss,
+            style = TinyButtonStyle.Secondary
+        )
     }
 }

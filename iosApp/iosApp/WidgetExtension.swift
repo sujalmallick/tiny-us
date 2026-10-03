@@ -49,7 +49,8 @@ private struct TinyUsWidgetView: View {
                 HStack {
                     Text("TINY US").font(.system(size: 10, weight: .black, design: .monospaced)).tracking(1.3).foregroundStyle(cream)
                     Spacer()
-                    Text(entry.payload.sharedMoodEmoji).font(.system(size: 16))
+                    // SF Symbol name; an unknown name (e.g. an older payload) simply renders nothing.
+                    Image(systemName: entry.payload.sharedMoodEmoji).font(.system(size: 14, weight: .semibold)).foregroundStyle(cream)
                 }
                 HStack(alignment: .bottom, spacing: 8) {
                     PixelCouple().frame(width: family == .systemSmall ? 57 : 70, height: family == .systemSmall ? 50 : 58)

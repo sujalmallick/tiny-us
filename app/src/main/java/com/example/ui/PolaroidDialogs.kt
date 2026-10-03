@@ -161,9 +161,22 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
-// ──────────────────────────────────────────────────────────────────────────────
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.DeleteOutline
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.PhotoCamera
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
+
+// -----------------------------------------------------------------------------
 // POLAROID CAPTURE OVERLAY
-// ──────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /**
  * Full-screen overlay shown immediately after the heart button captures a frame.
@@ -233,11 +246,11 @@ fun PolaroidCaptureOverlay(
                 Box(
                     modifier = Modifier
                         .fillMaxSize()
-                        .background(Color.Black.copy(alpha = 0.65f))
+                        .background(TinyColors.Scrim.copy(alpha = 0.72f))
                 )
             }
 
-            // ── 1. Shutter Flash ─────────────────────────────────────────────────
+            // 1. Shutter Flash
             if (flashAlpha > 0.01f) {
                 Box(
                     modifier = Modifier
@@ -247,7 +260,7 @@ fun PolaroidCaptureOverlay(
                 )
             }
 
-            // ── 2. Polaroid Card & Actions ───────────────────────────────────────
+            // 2. Polaroid Card & Actions
             if (cardVisible) {
                 Column(
                     modifier = Modifier
@@ -267,16 +280,17 @@ fun PolaroidCaptureOverlay(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(TinySpace.lg))
 
                     // Action buttons row below Polaroid
                     Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // 1. Save to Device option (prominent primary button)
-                        Surface(
+                        // 1. Save to Device (primary action)
+                        TinyButton(
+                            text = if (savedToDevice) "Saved to Photos" else "Save to Device",
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(bitmap, memory.title)
                                 if (success) {
@@ -284,78 +298,37 @@ fun PolaroidCaptureOverlay(
                                     audio?.playHeartChime()
                                 }
                             },
-                            shape = RoundedCornerShape(22.dp),
-                            color = if (savedToDevice) Color(0xFF2D6A4F) else DeepRose,
-                            shadowElevation = 4.dp,
-                            modifier = Modifier.weight(1.2f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = if (savedToDevice) Icons.Default.Check else Icons.Default.Download,
-                                    contentDescription = "Save to Device",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(16.dp)
-                                )
-                                Spacer(modifier = Modifier.width(6.dp))
-                                Text(
-                                    text = if (savedToDevice) "Saved to Photos ♥" else "Save to Device",
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White,
-                                    maxLines = 1
-                                )
-                            }
-                        }
+                            modifier = Modifier
+                                .weight(1.2f)
+                                .semantics { contentDescription = "Save to Device" },
+                            style = if (savedToDevice) TinyButtonStyle.Success else TinyButtonStyle.Primary,
+                            icon = if (savedToDevice) Icons.Rounded.Check else Icons.Rounded.Download
+                        )
 
                         // 2. All Memories button
-                        Surface(
+                        TinyButton(
+                            text = "Memories",
                             onClick = onOpenGallery,
-                            shape = RoundedCornerShape(22.dp),
-                            color = Color.White.copy(alpha = 0.94f),
-                            shadowElevation = 3.dp,
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 11.dp),
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.Center
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Default.Favorite,
-                                    contentDescription = "Memories",
-                                    tint = DeepRose,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = "Memories",
-                                    fontSize = 12.5.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = DarkSlate,
-                                    maxLines = 1
-                                )
-                            }
-                        }
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics { contentDescription = "Memories" },
+                            style = TinyButtonStyle.Secondary,
+                            icon = TinyIcons.Heart
+                        )
                     }
 
-                    Spacer(modifier = Modifier.height(10.dp))
+                    Spacer(modifier = Modifier.height(TinySpace.sm))
 
-                    // Done / dismiss button
-                    Surface(
+                    // Done / dismiss button (ghost, white on the dark backdrop)
+                    TextButton(
                         onClick = onDismiss,
-                        shape = RoundedCornerShape(16.dp),
-                        color = Color.White.copy(alpha = 0.18f)
+                        modifier = Modifier.heightIn(min = 48.dp),
+                        shape = TinyRadius.Medium,
+                        colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
                     ) {
                         Text(
                             text = "Done",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = Color.White.copy(alpha = 0.9f),
-                            modifier = Modifier.padding(horizontal = 20.dp, vertical = 6.dp)
+                            style = TinyType.Label.copy(color = Color.Unspecified)
                         )
                     }
                 }
@@ -478,32 +451,38 @@ fun PolaroidCard(
             }
         }
 
-        // Delete button (shown when in gallery full view)
+        // Delete button (shown when in gallery full view): 28dp visual inside a 48dp touch target
         if (showDeleteButton && onDelete != null) {
             Box(
                 modifier = Modifier
                     .align(Alignment.TopEnd)
-                    .offset(x = 6.dp, y = (-6).dp)
-                    .size(28.dp)
+                    .offset(x = 16.dp, y = (-16).dp)
+                    .size(48.dp)
                     .clip(CircleShape)
-                    .background(DeepRose)
                     .clickable { onDelete() },
                 contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    Icons.Default.DeleteOutline,
-                    contentDescription = "Delete memory",
-                    tint = Color.White,
-                    modifier = Modifier.size(16.dp)
-                )
+                Box(
+                    modifier = Modifier
+                        .size(28.dp)
+                        .background(TinyColors.Rose, CircleShape),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                        Icons.Rounded.DeleteOutline,
+                        contentDescription = "Delete memory",
+                        tint = Color.White,
+                        modifier = Modifier.size(16.dp)
+                    )
+                }
             }
         }
     }
 }
 
-// ──────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // POLAROID GALLERY DIALOG
-// ──────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 /**
  * Shows all saved Polaroid memories in a scrollable 2-column grid.
@@ -549,46 +528,30 @@ fun PolaroidGalleryDialog(
                         modifier = Modifier.fillMaxWidth()
                     )
 
-                    Spacer(modifier = Modifier.height(18.dp))
+                    Spacer(modifier = Modifier.height(TinySpace.lg))
 
                     var savedInInspector by remember(selectedMemory!!.id) { mutableStateOf(false) }
 
                     Row(
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // 1. Back button
-                        Surface(
+                        TinyButton(
+                            text = "Back",
                             onClick = {
                                 selectedMemory = null
                                 selectedBitmap = null
                             },
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color.White.copy(alpha = 0.95f),
-                            shadowElevation = 3.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                                    contentDescription = "Back",
-                                    tint = DarkSlate,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(4.dp))
-                                Text(
-                                    text = "Back",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    color = DarkSlate
-                                )
-                            }
-                        }
+                            modifier = Modifier.semantics { contentDescription = "Back" },
+                            style = TinyButtonStyle.Secondary,
+                            icon = Icons.AutoMirrored.Rounded.ArrowBack
+                        )
 
                         // 2. Save to Device button
-                        Surface(
+                        TinyButton(
+                            text = if (savedInInspector) "Saved" else "Save to Device",
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(
                                     selectedBitmap!!,
@@ -599,29 +562,12 @@ fun PolaroidGalleryDialog(
                                     audio?.playHeartChime()
                                 }
                             },
-                            shape = RoundedCornerShape(20.dp),
-                            color = if (savedInInspector) Color(0xFF2D6A4F) else DeepRose,
-                            shadowElevation = 3.dp
-                        ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 14.dp, vertical = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Icon(
-                                    imageVector = if (savedInInspector) Icons.Default.Check else Icons.Default.Download,
-                                    contentDescription = "Save to Device",
-                                    tint = Color.White,
-                                    modifier = Modifier.size(15.dp)
-                                )
-                                Spacer(modifier = Modifier.width(5.dp))
-                                Text(
-                                    text = if (savedInInspector) "Saved ♥" else "Save to Device",
-                                    fontSize = 12.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Color.White
-                                )
-                            }
-                        }
+                            modifier = Modifier
+                                .weight(1f)
+                                .semantics { contentDescription = "Save to Device" },
+                            style = if (savedInInspector) TinyButtonStyle.Success else TinyButtonStyle.Primary,
+                            icon = if (savedInInspector) Icons.Rounded.Check else Icons.Rounded.Download
+                        )
 
                         // 3. Delete button
                         Surface(
@@ -631,19 +577,17 @@ fun PolaroidGalleryDialog(
                                 selectedMemory = null
                                 selectedBitmap = null
                             },
-                            shape = RoundedCornerShape(20.dp),
-                            color = Color.White.copy(alpha = 0.95f),
-                            shadowElevation = 3.dp
+                            modifier = Modifier.size(48.dp),
+                            shape = TinyRadius.Medium,
+                            color = TinyColors.Muted,
+                            contentColor = TinyColors.Rose
                         ) {
-                            Row(
-                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 9.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
+                            Box(contentAlignment = Alignment.Center) {
                                 Icon(
-                                    imageVector = Icons.Default.DeleteOutline,
+                                    imageVector = Icons.Rounded.DeleteOutline,
                                     contentDescription = "Delete",
-                                    tint = Color(0xFFB00020),
-                                    modifier = Modifier.size(15.dp)
+                                    tint = TinyColors.Rose,
+                                    modifier = Modifier.size(20.dp)
                                 )
                             }
                         }
@@ -654,108 +598,71 @@ fun PolaroidGalleryDialog(
         return
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .heightIn(max = 620.dp),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        maxHeight = 620.dp
+    ) {
+        TinyDialogHeader(
+            title = "Polaroid Memories",
+            subtitle = if (polaroids.isEmpty()) "No moments captured yet" else "${polaroids.size} moments captured",
+            icon = Icons.Rounded.PhotoCamera,
+            onClose = onDismiss
+        )
+
+        if (polaroids.isEmpty()) {
+            Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .heightIn(min = 240.dp),
+                contentAlignment = Alignment.Center
             ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Polaroid Memories",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            color = DarkSlate
-                        )
-                        Text(
-                            text = if (polaroids.isEmpty()) "No moments captured yet" else "${polaroids.size} moments captured",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.55f)
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    TinyIconBadge(
+                        icon = TinyIcons.Heart,
+                        size = 64.dp,
+                        iconSize = 32.dp
+                    )
+                    Spacer(modifier = Modifier.height(TinySpace.md))
+                    Text(
+                        text = "Your album is waiting",
+                        style = TinyType.Section,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(modifier = Modifier.height(TinySpace.xs))
+                    Text(
+                        text = "Tap the heart button anytime to\ncapture a cozy Polaroid moment",
+                        style = TinyType.Caption,
+                        textAlign = TextAlign.Center
+                    )
                 }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                if (polaroids.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(240.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                            Icon(
-                                Icons.Default.Favorite,
-                                contentDescription = null,
-                                tint = DeepRose.copy(alpha = 0.35f),
-                                modifier = Modifier.size(52.dp)
-                            )
-                            Spacer(modifier = Modifier.height(12.dp))
-                            Text(
-                                text = "Your album is waiting",
-                                fontSize = 15.sp,
-                                fontFamily = FontFamily.Serif,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkSlate.copy(alpha = 0.65f),
-                                textAlign = TextAlign.Center
-                            )
-                            Spacer(modifier = Modifier.height(4.dp))
-                            Text(
-                                text = "Tap the heart button anytime to\ncapture a cozy Polaroid moment",
-                                fontSize = 12.sp,
-                                color = DarkSlate.copy(alpha = 0.45f),
-                                textAlign = TextAlign.Center
-                            )
-                        }
+            }
+        } else {
+            LazyVerticalGrid(
+                columns = GridCells.Fixed(2),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f, fill = false),
+                horizontalArrangement = Arrangement.spacedBy(TinySpace.md),
+                verticalArrangement = Arrangement.spacedBy(TinySpace.md),
+                contentPadding = PaddingValues(top = TinySpace.sm, bottom = TinySpace.xs)
+            ) {
+                items(polaroids, key = { it.id }) { memory ->
+                    val bmp = remember(memory.imagePath) {
+                        polaroidManager.loadPolaroidBitmap(memory)
                     }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(2),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = false),
-                        horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        verticalArrangement = Arrangement.spacedBy(12.dp),
-                        contentPadding = PaddingValues(vertical = 4.dp)
-                    ) {
-                        items(polaroids, key = { it.id }) { memory ->
-                            val bmp = remember(memory.imagePath) {
-                                polaroidManager.loadPolaroidBitmap(memory)
+                    if (bmp != null) {
+                        PolaroidGridTile(
+                            bitmap = bmp,
+                            memory = memory,
+                            onTap = {
+                                selectedMemory = memory
+                                selectedBitmap = bmp
+                            },
+                            onDelete = {
+                                polaroidManager.deletePolaroid(memory.id)
+                                polaroids = polaroidManager.getPolaroids()
                             }
-                            if (bmp != null) {
-                                PolaroidGridTile(
-                                    bitmap = bmp,
-                                    memory = memory,
-                                    onTap = {
-                                        selectedMemory = memory
-                                        selectedBitmap = bmp
-                                    },
-                                    onDelete = {
-                                        polaroidManager.deletePolaroid(memory.id)
-                                        polaroids = polaroidManager.getPolaroids()
-                                    }
-                                )
-                            }
-                        }
+                        )
                     }
                 }
             }
@@ -788,8 +695,7 @@ internal fun PolaroidGridTile(
                     .aspectRatio(1080f / 1440f),
                 shape = RoundedCornerShape(6.dp),
                 color = Color(0xFFFAF8F5),
-                shadowElevation = 2.dp,
-                border = BorderStroke(1.dp, Color(0xFFE5E0D6))
+                border = BorderStroke(1.dp, TinyColors.Line)
             ) {
                 Image(
                     painter = BitmapPainter(imageBitmap),
@@ -803,7 +709,7 @@ internal fun PolaroidGridTile(
                 modifier = Modifier
                     .fillMaxWidth()
                     .background(Color(0xFFFCFBF9), RoundedCornerShape(4.dp))
-                    .border(1.dp, Color(0xFFE2E0DB), RoundedCornerShape(4.dp))
+                    .border(1.dp, TinyColors.Line, RoundedCornerShape(4.dp))
                     .padding(start = 6.dp, end = 6.dp, top = 6.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -842,23 +748,29 @@ internal fun PolaroidGridTile(
             }
         }
 
-        // Delete button
+        // Delete button: ~26dp visual inside a 48dp touch target, kept at the tile's top-right corner
         Box(
             modifier = Modifier
                 .align(Alignment.TopEnd)
-                .offset(x = 4.dp, y = (-4).dp)
-                .size(22.dp)
+                .offset(x = 14.dp, y = (-14).dp)
+                .size(48.dp)
                 .clip(CircleShape)
-                .background(DeepRose.copy(alpha = 0.90f))
                 .clickable { onDelete() },
             contentAlignment = Alignment.Center
         ) {
-            Icon(
-                Icons.Default.DeleteOutline,
-                contentDescription = "Delete",
-                tint = Color.White,
-                modifier = Modifier.size(13.dp)
-            )
+            Box(
+                modifier = Modifier
+                    .size(26.dp)
+                    .background(TinyColors.Rose, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    Icons.Rounded.DeleteOutline,
+                    contentDescription = "Delete",
+                    tint = Color.White,
+                    modifier = Modifier.size(15.dp)
+                )
+            }
         }
     }
 }

@@ -50,8 +50,11 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -67,19 +70,16 @@ import com.example.data.StoryKind
 import com.example.data.StorySection
 import com.example.data.StoryTimeline
 import com.example.ui.theme.DeepRose
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
-
-private val PageCream = Color(0xFFFFF6EE)
-private val Ink = Color(0xFF553D36)
-private val Muted = Color(0xFF8A7568)
-private val Rail = Color(0xFFEBD3C4)
-private val CardFill = Color(0xFFFFFCF8)
-private val RibbonPink = Color(0xFFFFE3E8)
 
 private enum class StoryFilter(val labelRes: Int, val kinds: Set<StoryKind>?) {
     ALL(R.string.story_filter_all, null),
@@ -124,38 +124,47 @@ fun OurStoryDialog(onDismiss: () -> Unit) {
     val scope = rememberCoroutineScope()
 
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
-        Column(Modifier.fillMaxSize().background(PageCream).statusBarsPadding().testTag("our_story_dialog")) {
-            Row(Modifier.fillMaxWidth().padding(start = 20.dp, end = 8.dp, top = 12.dp), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.fillMaxSize().background(TinyColors.Paper).statusBarsPadding().testTag("our_story_dialog")) {
+            Row(
+                Modifier.fillMaxWidth().padding(start = TinySpace.xl, end = TinySpace.xs, top = TinySpace.md),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.story_title), fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 24.sp, color = Ink)
+                    Text(stringResource(R.string.story_title), style = TinyType.Display, modifier = Modifier.semantics { heading() })
                     val count = story?.count { !it.isUpcoming && it.kind != StoryKind.MILESTONE } ?: 0
-                    Text(stringResource(R.string.story_subtitle, prefs.getDaysTogether(), count), fontSize = 13.sp, color = Muted)
+                    Text(
+                        stringResource(R.string.story_subtitle, prefs.getDaysTogether(), count),
+                        style = TinyType.Caption,
+                        modifier = Modifier.padding(top = 2.dp)
+                    )
                 }
-                IconButton(onClick = onDismiss, modifier = Modifier.testTag("our_story_close")) {
-                    Icon(Icons.Default.Close, contentDescription = stringResource(R.string.action_close), tint = Ink)
-                }
+                TinyCloseButton(
+                    onClick = onDismiss,
+                    testTag = "our_story_close",
+                    contentDescription = stringResource(R.string.action_close)
+                )
             }
 
             Row(
-                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 16.dp, vertical = 10.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = TinySpace.lg, vertical = TinySpace.sm),
+                horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                verticalAlignment = Alignment.CenterVertically
             ) {
                 StoryFilter.values().forEach { f ->
-                    val selected = f == filter
-                    Box(
-                        Modifier
-                            .border(if (selected) 2.dp else 1.dp, if (selected) DeepRose else Rail, RoundedCornerShape(50))
-                            .background(if (selected) DeepRose.copy(alpha = 0.08f) else CardFill, RoundedCornerShape(50))
-                            .clickable { filter = f; scope.launch { listState.scrollToItem(0) } }
-                            .padding(horizontal = 14.dp, vertical = 8.dp)
-                    ) { Text(stringResource(f.labelRes), fontSize = 13.sp, color = if (selected) DeepRose else Ink) }
+                    TinyChip(
+                        text = stringResource(f.labelRes),
+                        selected = f == filter,
+                        onClick = { filter = f; scope.launch { listState.scrollToItem(0) } }
+                    )
                 }
             }
+
+            TinyDivider()
 
             val all = story
             when {
                 all == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.story_loading), color = Muted)
+                    Text(stringResource(R.string.story_loading), style = TinyType.Body.copy(color = TinyColors.InkMuted))
                 }
                 else -> {
                     val visible = filter.kinds?.let { kinds -> all.filter { it.kind in kinds } } ?: all
@@ -165,7 +174,7 @@ fun OurStoryDialog(onDismiss: () -> Unit) {
                         val sections = StoryTimeline.groupByMonth(visible)
                         LazyColumn(
                             state = listState,
-                            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 32.dp),
+                            contentPadding = PaddingValues(start = TinySpace.lg, end = TinySpace.lg, bottom = 32.dp),
                             modifier = Modifier.fillMaxSize()
                         ) {
                             sections.forEach { section ->
@@ -190,8 +199,8 @@ private fun SectionHeader(section: StorySection) {
     }
     Text(
         title,
-        fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, fontSize = 17.sp, color = Ink,
-        modifier = Modifier.padding(top = 18.dp, bottom = 6.dp)
+        style = TinyType.Section.copy(fontSize = 17.sp, lineHeight = 22.sp),
+        modifier = Modifier.padding(top = TinySpace.xl, bottom = TinySpace.sm).semantics { heading() }
     )
 }
 
@@ -202,22 +211,24 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 64.dp)) {
         // Timeline rail with the entry's badge
         Box(Modifier.width(40.dp).fillMaxHeight(), contentAlignment = Alignment.TopCenter) {
-            Box(Modifier.width(2.dp).fillMaxHeight().background(Rail))
+            Box(Modifier.width(1.dp).fillMaxHeight().background(TinyColors.Line))
             Box(
-                Modifier.padding(top = 10.dp).size(30.dp).background(if (entry.kind == StoryKind.MILESTONE) RibbonPink else CardFill, CircleShape)
-                    .border(1.dp, Rail, CircleShape),
+                Modifier.padding(top = 10.dp).size(30.dp)
+                    .background(if (entry.kind == StoryKind.MILESTONE) TinyColors.RoseSoft else TinyColors.Card, CircleShape)
+                    .border(1.dp, TinyColors.Line, CircleShape),
                 contentAlignment = Alignment.Center
-            ) { Icon(TinyIcons.story(entry.iconKey), contentDescription = null, tint = com.example.ui.theme.TinyColors.Rose, modifier = Modifier.size(16.dp)) }
+            ) { Icon(TinyIcons.story(entry.iconKey), contentDescription = null, tint = TinyColors.Rose, modifier = Modifier.size(16.dp)) }
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(TinySpace.sm))
         val isRibbon = entry.kind == StoryKind.MILESTONE || entry.kind == StoryKind.GARDEN
         Column(
             Modifier.weight(1f).padding(vertical = 6.dp)
-                .clip(RoundedCornerShape(16.dp))
-                .background(if (isRibbon) RibbonPink.copy(alpha = if (entry.isUpcoming) 0.45f else 1f) else CardFill)
-                .border(1.dp, Rail, RoundedCornerShape(16.dp))
+                .clip(TinyRadius.Large)
+                .background(if (isRibbon) TinyColors.RoseSoft.copy(alpha = if (entry.isUpcoming) 0.45f else 1f) else TinyColors.Card)
+                .border(1.dp, TinyColors.Line, TinyRadius.Large)
                 .clickable(enabled = entry.body.isNotBlank()) { expanded = !expanded }
-                .padding(12.dp)
+                .padding(TinySpace.md),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             val dateText = entry.date?.let {
                 java.time.LocalDate.of(it.year, it.monthNumber, it.dayOfMonth)
@@ -226,15 +237,15 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
             if (dateText != null) {
                 Text(
                     if (entry.isUpcoming) stringResource(R.string.story_upcoming, dateText) else dateText,
-                    fontSize = 11.sp, color = Muted
+                    style = TinyType.Micro
                 )
             }
-            Text(entry.title, fontSize = 15.sp, fontWeight = FontWeight.SemiBold, color = Ink)
+            Text(entry.title, style = TinyType.BodyStrong)
             if (entry.body.isNotBlank()) {
                 Text(
-                    entry.body, fontSize = 13.sp, color = Ink.copy(alpha = 0.85f),
-                    maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis,
-                    modifier = Modifier.padding(top = 2.dp)
+                    entry.body,
+                    style = TinyType.Body.copy(color = TinyColors.InkMuted),
+                    maxLines = if (expanded) Int.MAX_VALUE else 3, overflow = TextOverflow.Ellipsis
                 )
             }
             entry.imagePath?.let { path ->
@@ -242,12 +253,12 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
                     value = withContext(Dispatchers.IO) { loadThumbnail(path) }
                 }
                 thumb?.let {
-                    Spacer(Modifier.height(8.dp))
+                    Spacer(Modifier.height(6.dp))
                     Image(
                         bitmap = it.asImageBitmap(),
                         contentDescription = entry.title,
                         contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxWidth().height(150.dp).clip(RoundedCornerShape(10.dp))
+                        modifier = Modifier.fillMaxWidth().height(150.dp).clip(TinyRadius.Medium)
                     )
                 }
             }
@@ -268,9 +279,9 @@ private fun loadThumbnail(path: String): Bitmap? = runCatching {
 private fun EmptyStory() {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         TinyIconBadge(TinyIcons.OurStory, size = 64.dp, iconSize = 30.dp)
-        Spacer(Modifier.height(12.dp))
-        Text(stringResource(R.string.story_empty_title), fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, fontSize = 18.sp, color = Ink)
+        Spacer(Modifier.height(TinySpace.lg))
+        Text(stringResource(R.string.story_empty_title), style = TinyType.Title, textAlign = TextAlign.Center)
         Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.story_empty_body), fontSize = 13.sp, color = Muted)
+        Text(stringResource(R.string.story_empty_body), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
     }
 }

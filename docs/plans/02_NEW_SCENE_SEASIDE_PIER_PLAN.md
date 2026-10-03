@@ -44,8 +44,8 @@ This scene earns a place in the roster for two reasons:
 
 | NPC | Role | Behavior |
 |---|---|---|
-| **Grandpa Bao** 🎣 | Kind old fisherman at the far end of the pier | Sits on an upturned crate with a rod. Tap him: he casts, waits, then reels in a catch. The catch comes from an `AntiRepeatRandomPicker` (shared): fish, old boot, starfish, a love letter in a jar or seaweed. A fish goes to Mochi with hearts. Dialogue lines are gentle grandpa wisdom about long relationships. |
-| **Pip the Seagull** 🐦 | Cheeky recurring troublemaker | Moves through the states FLYING → LANDING → PERCHED (on the railing) → SNEAKING (toward the ice cream) → STEALING → ESCAPING. Tap Pip to shoo it away: feathers fly and it squawks. If Pip reaches an ice cream that is out, it steals a bite and the couple laugh (`JOY_JUMP`). Mochi's eyes track Pip, and she crouches when Pip is close. |
+| **Grandpa Bao** | Kind old fisherman at the far end of the pier | Sits on an upturned crate with a rod. Tap him: he casts, waits, then reels in a catch. The catch comes from an `AntiRepeatRandomPicker` (shared): fish, old boot, starfish, a love letter in a jar or seaweed. A fish goes to Mochi with hearts. Dialogue lines are gentle grandpa wisdom about long relationships. |
+| **Pip the Seagull** | Cheeky recurring troublemaker | Moves through the states FLYING → LANDING → PERCHED (on the railing) → SNEAKING (toward the ice cream) → STEALING → ESCAPING. Tap Pip to shoo it away: feathers fly and it squawks. If Pip reaches an ice cream that is out, it steals a bite and the couple laugh (`JOY_JUMP`). Mochi's eyes track Pip, and she crouches when Pip is close. |
 
 ### Props and interactions
 
@@ -136,14 +136,14 @@ In `SceneEngine.kt`, next to the cafe and camp handlers (around L4940-5065). All
 | `onTouchPierIceCream(cw, ch)` | Sets `pierIceCreamTimer = 8f`; `audio.playHeartChime()`; sparkles at `PierLayout.cart`; both characters get HAPPY with the HEART emote. |
 | `onTouchGrandpaBao(cw, ch)` | `IDLE` → `CASTING` (plays `playReelClick`); Bao says a line from `BAO_LINES` (about 10 lines). Tapping during WAITING says "Shh… something's nibbling". |
 | `onTouchPip(cw, ch)` | If Pip is not FLYING or ESCAPING: state becomes `ESCAPING`; `audio.playSeagullCall()`; feather sparkles. The message changes if Pip was SNEAKING ("Caught red-beaked!"). |
-| `onTouchPierBottle(cw, ch)` | If visible: hide it, start the respawn timer, `audio.playPaperFlip()`, and `showMessage("💌 " + DailyPromptCatalog.getPromptForDay(dayIndex).text, 5f)`. Get `dayIndex` from `RelationshipTimeCalculator` the same way Android Daily Moments does (`PreferencesManager.kt:963`). |
+| `onTouchPierBottle(cw, ch)` | If visible: hide it, start the respawn timer, `audio.playPaperFlip()`, and `showMessage("" + DailyPromptCatalog.getPromptForDay(dayIndex).text, 5f)`. Get `dayIndex` from `RelationshipTimeCalculator` the same way Android Daily Moments does (`PreferencesManager.kt:963`). |
 | `onTouchLighthouse(cw, ch)` | `pierLighthouseTimer = 4f`. Night: `audio.playFoghorn()` plus a beam burst. Day: spawn 3 flock birds via `birdSystem`, or sparkles if birdSystem isn't wired in. |
 | `onTouchSea(cw, ch, x, y)` | Splash particles at the tap point (`spawnSparkles` in blue/white). |
 
 **Theft event** (inside `updateGull`): when Pip reaches the cones while `pierIceCreamTimer > 0`:
 1. `pierIceCreamTimer = 0`
 2. `react(boy, SURPRISED, JOY_JUMP)` and `react(girl, …)`
-3. message: "Pip stole the ice cream!! 🐦🍦"
+3. message: "Pip stole the ice cream!!"
 4. state becomes `ESCAPING`
 
 ### Step 4: Rendering

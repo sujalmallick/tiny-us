@@ -779,7 +779,7 @@ struct TinyWorldPainter {
             g.rect(&c, hx, hy, 0.01, 0.004, Color.white.opacity(0.5))
             for i in 0..<3 {
                 let rise = CGFloat(fract(t * 0.35 + Double(i) / 3))
-                c.draw(Text(i % 2 == 0 ? "♪" : "♫").font(.system(size: 12 * g.u, weight: .bold)).foregroundColor(Pal.warm.opacity(Double(1 - rise))),
+                c.draw(Text(Image(systemName: i % 2 == 0 ? "music.note" : "music.quarternote.3")).font(.system(size: 12 * g.u, weight: .bold)).foregroundColor(Pal.warm.opacity(Double(1 - rise))),
                        at: CGPoint(x: (deck.midX + CGFloat(sin(t + Double(i) * 2)) * 0.04) * g.w, y: (deck.minY - rise * 0.18) * g.h))
             }
         }
@@ -1017,7 +1017,7 @@ struct TinyWorldPainter {
                 let r = (5 + CGFloat(a) * 10) * s * (p.kind == .mist ? 0.5 : 1)
                 c.fill(Path(ellipseIn: CGRect(x: x - r / 2, y: y - r / 2, width: r, height: r)), with: .color(Color.white.opacity(0.4 * alpha)))
             case .note:
-                c.draw(Text(p.seed > 0.5 ? "♪" : "♫").font(.system(size: 13 * s, weight: .bold)).foregroundColor(Pal.warm.opacity(alpha)),
+                c.draw(Text(Image(systemName: p.seed > 0.5 ? "music.note" : "music.quarternote.3")).font(.system(size: 13 * s, weight: .bold)).foregroundColor(Pal.warm.opacity(alpha)),
                        at: CGPoint(x: x + CGFloat(sin(age * 4 + p.seed * 6)) * 6 * s, y: y))
             case .petal, .leaf:
                 y += CGFloat(age * age) * 6 * s

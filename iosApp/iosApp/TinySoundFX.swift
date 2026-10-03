@@ -8,7 +8,7 @@ enum TinySFX: CaseIterable {
     case cardFlip, gameWin, musicBox
 }
 
-/// Tiny PCM → WAV encoder so synthesized buffers can be played through AVAudioPlayer.
+/// Tiny PCM-to-WAV encoder so synthesized buffers can be played through AVAudioPlayer.
 enum TinyWav {
     static let sampleRate = 22_050
 

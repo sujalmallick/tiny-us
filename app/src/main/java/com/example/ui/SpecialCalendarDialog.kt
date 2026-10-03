@@ -161,6 +161,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
+
 @Composable
 fun SpecialCalendarDialog(
     onDismiss: () -> Unit,
@@ -173,296 +180,257 @@ fun SpecialCalendarDialog(
     val today = remember { LocalDate.now() }
     val todayMemories = remember(displayedYearMonth) { SpecialCalendarManager.getMemoriesForDate(today) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9F5)),
-            border = BorderStroke(2.dp, SoftRose.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("special_calendar_dialog"),
+        widthFraction = 0.92f,
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = 0.dp
+    ) {
+        TinyDialogHeader(
+            title = "Our Special Calendar",
+            subtitle = "$boyfriendName & $girlfriendName • Precious Moments",
+            icon = TinyIcons.Heart,
+            onClose = onDismiss,
+            modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.sm, top = TinySpace.lg, bottom = TinySpace.sm)
+        )
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 4.dp)
-                .testTag("special_calendar_dialog")
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(start = TinySpace.lg, end = TinySpace.lg, bottom = TinySpace.xl),
+            horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Column(
-                modifier = Modifier
-                    .padding(horizontal = 16.dp, vertical = 18.dp)
-                    .verticalScroll(rememberScrollState()),
-                horizontalAlignment = Alignment.CenterHorizontally
+            // Today's Special Event Banner (if today has an event!)
+            if (todayMemories.isNotEmpty()) {
+                val firstToday = todayMemories.first()
+                Surface(
+                    shape = TinyRadius.Medium,
+                    color = TinyColors.RoseSoft,
+                    border = BorderStroke(1.dp, TinyColors.Rose.copy(alpha = 0.35f)),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = TinySpace.sm)
+                        .clip(TinyRadius.Medium)
+                        .clickable {
+                            audio?.playHeartChime()
+                            selectedMemory = firstToday
+                        }
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = TinySpace.md, vertical = TinySpace.sm),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            imageVector = TinyIcons.Heart,
+                            contentDescription = null,
+                            tint = TinyColors.Rose,
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(modifier = Modifier.width(TinySpace.sm))
+                        Column {
+                            Text(
+                                text = "TODAY • ${firstToday.title.uppercase()}",
+                                style = TinyType.Label.copy(color = TinyColors.Rose)
+                            )
+                            Text(
+                                text = "Tap to view today's memory",
+                                style = TinyType.Caption
+                            )
+                        }
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            // Month Navigation Controls
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header Row
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                IconButton(
+                    onClick = {
+                        audio?.playBubblePop()
+                        displayedYearMonth = displayedYearMonth.minusMonths(1)
+                    },
+                    modifier = Modifier.testTag("calendar_prev_month")
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = null,
-                                tint = DeepRose,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "OUR SPECIAL CALENDAR",
-                                fontSize = 15.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DeepRose,
-                                letterSpacing = 0.8.sp
-                            )
-                        }
-                        Text(
-                            text = "$boyfriendName & $girlfriendName • Precious Moments",
-                            fontSize = 11.sp,
-                            color = DarkSlate.copy(alpha = 0.55f),
-                            fontFamily = FontFamily.Serif
-                        )
-                    }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.size(30.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = DarkSlate.copy(alpha = 0.6f),
-                            modifier = Modifier.size(18.dp)
-                        )
-                    }
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                        contentDescription = "Previous Month",
+                        tint = TinyColors.Rose,
+                        modifier = Modifier.size(20.dp)
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Today's Special Event Banner (if today has an event!)
-                if (todayMemories.isNotEmpty()) {
-                    val firstToday = todayMemories.first()
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = DeepRose.copy(alpha = 0.10f),
-                        border = BorderStroke(1.dp, DeepRose.copy(alpha = 0.35f)),
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                audio?.playHeartChime()
-                                selectedMemory = firstToday
-                            }
-                    ) {
-                        Row(
-                            modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "❤️", fontSize = 14.sp)
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Column {
-                                Text(
-                                    text = "TODAY • ${firstToday.title.uppercase()}",
-                                    fontSize = 11.5.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = DeepRose
-                                )
-                                Text(
-                                    text = "Tap to view today's memory",
-                                    fontSize = 10.sp,
-                                    color = DarkSlate.copy(alpha = 0.6f)
-                                )
-                            }
-                        }
-                    }
-                    Spacer(modifier = Modifier.height(10.dp))
-                }
-
-                // Month Navigation Controls
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                Column(
+                    modifier = Modifier.weight(1f),
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    IconButton(
-                        onClick = {
-                            audio?.playBubblePop()
-                            displayedYearMonth = displayedYearMonth.minusMonths(1)
-                        },
-                        modifier = Modifier.size(32.dp).testTag("calendar_prev_month")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Previous Month",
-                            tint = DeepRose,
-                            modifier = Modifier.size(18.dp)
-                        )
+                    val monthTitle = remember(displayedYearMonth) {
+                        displayedYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
                     }
-
-                    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-                        val monthTitle = remember(displayedYearMonth) {
-                            displayedYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
-                        }
-                        Text(
-                            text = monthTitle,
-                            fontSize = 16.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            color = DarkSlate
-                        )
-                        if (displayedYearMonth != YearMonth.from(today)) {
-                            Text(
-                                text = "Jump to Today",
-                                fontSize = 10.sp,
-                                color = DeepRose,
-                                fontWeight = FontWeight.SemiBold,
-                                modifier = Modifier.clickable {
-                                    audio?.playBubblePop()
-                                    displayedYearMonth = YearMonth.from(today)
-                                }
-                            )
-                        }
-                    }
-
-                    IconButton(
-                        onClick = {
-                            audio?.playBubblePop()
-                            displayedYearMonth = displayedYearMonth.plusMonths(1)
-                        },
-                        modifier = Modifier.size(32.dp).testTag("calendar_next_month")
-                    ) {
-                        Icon(
-                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                            contentDescription = "Next Month",
-                            tint = DeepRose,
-                            modifier = Modifier.size(18.dp)
+                    Text(
+                        text = monthTitle,
+                        style = TinyType.Section.copy(fontSize = 16.sp),
+                        textAlign = TextAlign.Center
+                    )
+                    if (displayedYearMonth != YearMonth.from(today)) {
+                        TinyButton(
+                            text = "Jump to Today",
+                            onClick = {
+                                audio?.playBubblePop()
+                                displayedYearMonth = YearMonth.from(today)
+                            },
+                            style = TinyButtonStyle.Ghost,
+                            compact = true
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(12.dp))
+                IconButton(
+                    onClick = {
+                        audio?.playBubblePop()
+                        displayedYearMonth = displayedYearMonth.plusMonths(1)
+                    },
+                    modifier = Modifier.testTag("calendar_next_month")
+                ) {
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
+                        contentDescription = "Next Month",
+                        tint = TinyColors.Rose,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
+            }
 
-                // Days of Week Header
-                val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            // Days of Week Header
+            val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                daysOfWeek.forEach { d ->
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = d,
+                            style = TinyType.Micro,
+                            maxLines = 1
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            // Calendar Days Grid
+            val firstDayOfWeek = displayedYearMonth.atDay(1).dayOfWeek.value // 1=Mon, 7=Sun
+            val daysInMonth = displayedYearMonth.lengthOfMonth()
+            val emptySlotsBefore = firstDayOfWeek - 1
+            val totalCells = emptySlotsBefore + daysInMonth
+            val totalRows = (totalCells + 6) / 7
+
+            for (row in 0 until totalRows) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
-                    daysOfWeek.forEach { d ->
-                        Box(
-                            modifier = Modifier.weight(1f),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = d,
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate.copy(alpha = 0.45f)
-                            )
-                        }
-                    }
-                }
+                    for (col in 0 until 7) {
+                        val cellIndex = row * 7 + col
+                        val dayNum = cellIndex - emptySlotsBefore + 1
+                        if (dayNum in 1..daysInMonth) {
+                            val cellDate = displayedYearMonth.atDay(dayNum)
+                            val isCellToday = (cellDate == today)
+                            val cellMemories = SpecialCalendarManager.getMemoriesForDate(cellDate)
+                            val hasEvent = cellMemories.isNotEmpty()
+                            val memoryType = cellMemories.firstOrNull()?.type
 
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Calendar Days Grid
-                val firstDayOfWeek = displayedYearMonth.atDay(1).dayOfWeek.value // 1=Mon, 7=Sun
-                val daysInMonth = displayedYearMonth.lengthOfMonth()
-                val emptySlotsBefore = firstDayOfWeek - 1
-                val totalCells = emptySlotsBefore + daysInMonth
-                val totalRows = (totalCells + 6) / 7
-
-                for (row in 0 until totalRows) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        for (col in 0 until 7) {
-                            val cellIndex = row * 7 + col
-                            val dayNum = cellIndex - emptySlotsBefore + 1
-                            if (dayNum in 1..daysInMonth) {
-                                val cellDate = displayedYearMonth.atDay(dayNum)
-                                val isCellToday = (cellDate == today)
-                                val cellMemories = SpecialCalendarManager.getMemoriesForDate(cellDate)
-                                val hasEvent = cellMemories.isNotEmpty()
-                                val memoryType = cellMemories.firstOrNull()?.type
-
-                                Box(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .padding(2.dp)
-                                        .height(40.dp)
-                                        .clip(RoundedCornerShape(8.dp))
-                                        .background(
-                                            when {
-                                                isCellToday -> DeepRose.copy(alpha = 0.14f)
-                                                hasEvent -> SoftRose.copy(alpha = 0.22f)
-                                                else -> Color.Transparent
-                                            }
-                                        )
-                                        .border(
-                                            width = if (isCellToday) 1.5.dp else if (hasEvent) 1.dp else 0.dp,
-                                            color = if (isCellToday) DeepRose else if (hasEvent) SoftRose.copy(alpha = 0.6f) else Color.Transparent,
-                                            shape = RoundedCornerShape(8.dp)
-                                        )
-                                        .clickable(enabled = hasEvent) {
-                                            audio?.playHeartChime()
-                                            selectedMemory = cellMemories.first()
+                            Box(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .padding(2.dp)
+                                    .heightIn(min = 40.dp)
+                                    .clip(TinyRadius.Small)
+                                    .background(
+                                        when {
+                                            isCellToday -> TinyColors.RoseSoft
+                                            hasEvent -> TinyColors.Blush.copy(alpha = 0.18f)
+                                            else -> Color.Transparent
                                         }
-                                        .testTag(if (hasEvent) "calendar_event_$cellDate" else "calendar_day_$dayNum"),
-                                    contentAlignment = Alignment.Center
+                                    )
+                                    .border(
+                                        width = if (isCellToday) 1.5.dp else if (hasEvent) 1.dp else 0.dp,
+                                        color = if (isCellToday) TinyColors.Rose else if (hasEvent) TinyColors.Blush.copy(alpha = 0.7f) else Color.Transparent,
+                                        shape = TinyRadius.Small
+                                    )
+                                    .clickable(enabled = hasEvent) {
+                                        audio?.playHeartChime()
+                                        selectedMemory = cellMemories.first()
+                                    }
+                                    .testTag(if (hasEvent) "calendar_event_$cellDate" else "calendar_day_$dayNum"),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.padding(vertical = TinySpace.xs)
                                 ) {
-                                    Column(
-                                        horizontalAlignment = Alignment.CenterHorizontally,
-                                        verticalArrangement = Arrangement.Center
-                                    ) {
-                                        Text(
-                                            text = dayNum.toString(),
-                                            fontSize = 12.sp,
+                                    Text(
+                                        text = dayNum.toString(),
+                                        style = TinyType.Body.copy(
+                                            fontSize = 13.sp,
+                                            lineHeight = 16.sp,
                                             fontWeight = if (isCellToday || hasEvent) FontWeight.Bold else FontWeight.Normal,
-                                            color = when {
-                                                isCellToday -> DeepRose
-                                                hasEvent -> Color(0xFF8B1E22)
-                                                else -> DarkSlate.copy(alpha = 0.85f)
-                                            }
-                                        )
+                                            color = if (isCellToday) TinyColors.Rose else TinyColors.Ink
+                                        ),
+                                        maxLines = 1
+                                    )
 
-                                        if (hasEvent) {
-                                            Spacer(modifier = Modifier.height(2.dp))
-                                            CalendarPixelMarker(type = memoryType ?: SpecialMemoryType.RELATIONSHIP)
-                                        }
+                                    if (hasEvent) {
+                                        Spacer(modifier = Modifier.height(2.dp))
+                                        CalendarPixelMarker(type = memoryType ?: SpecialMemoryType.RELATIONSHIP)
                                     }
                                 }
-                            } else {
-                                Box(modifier = Modifier.weight(1f).height(40.dp))
                             }
+                        } else {
+                            Box(modifier = Modifier.weight(1f).heightIn(min = 40.dp))
                         }
                     }
-                    Spacer(modifier = Modifier.height(3.dp))
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Scrapbook Legend Row
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 4.dp),
-                    horizontalArrangement = Arrangement.SpaceEvenly,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    LegendItem(icon = "❤️", label = "Moments")
-                    LegendItem(icon = "🎂", label = "Birthdays")
-                    LegendItem(icon = "✨", label = "Next Meet")
-                    LegendItem(icon = "🌸", label = "Special")
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().testTag("calendar_close_button")
-                ) {
-                    Text("Close Scrapbook", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
+                Spacer(modifier = Modifier.height(2.dp))
             }
+
+            Spacer(modifier = Modifier.height(TinySpace.md))
+
+            // Scrapbook Legend Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceEvenly,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                LegendItem(icon = TinyIcons.Heart, label = "Moments")
+                LegendItem(icon = TinyIcons.Birthday, label = "Birthdays")
+                LegendItem(icon = TinyIcons.Sparkle, label = "Next Meet")
+                LegendItem(icon = TinyIcons.Flower, label = "Special")
+            }
+
+            Spacer(modifier = Modifier.height(TinySpace.lg))
+
+            TinyButton(
+                text = "Close Scrapbook",
+                onClick = onDismiss,
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Secondary,
+                testTag = "calendar_close_button"
+            )
         }
     }
 
@@ -493,210 +461,148 @@ fun CalendarMemoryDetailCard(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            shape = RoundedCornerShape(26.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9F6)),
-            border = BorderStroke(2.dp, SoftRose.copy(alpha = 0.5f)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 10.dp),
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 8.dp)
-                .testTag("memory_detail_card")
-        ) {
-            Column(
-                modifier = Modifier.padding(22.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                val iconEmoji = when (memory.type) {
-                    SpecialMemoryType.BIRTHDAY -> "🎂"
-                    SpecialMemoryType.FUTURE_MEETING -> "✨"
-                    SpecialMemoryType.KISS -> "💋"
-                    SpecialMemoryType.PRIVATE -> "🌸"
-                    else -> "❤️"
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("memory_detail_card"),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TinyIconBadge(
+                icon = calendarTypeIcon(memory.type),
+                size = 56.dp,
+                iconSize = 28.dp
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.md))
+
+            Text(
+                text = memory.title,
+                style = TinyType.Title,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.xs))
+
+            val formattedDate = remember(memory.date) {
+                memory.date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+            }
+            Text(
+                text = formattedDate,
+                style = TinyType.Caption
+            )
+        }
+
+        TinyDivider(modifier = Modifier.width(48.dp))
+
+        if (memory.isFuture) {
+            if (countdown.isToday) {
+                TinyCard(selected = true) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text(
+                            text = "TODAY",
+                            style = TinyType.Title.copy(color = TinyColors.Rose)
+                        )
+                        Spacer(modifier = Modifier.height(TinySpace.xs))
+                        Text(
+                            text = "You're finally together again.",
+                            style = TinyType.Body.copy(fontFamily = FontFamily.Serif),
+                            textAlign = TextAlign.Center
+                        )
+                    }
                 }
+            } else if (countdown.isPassed) {
                 Text(
-                    text = iconEmoji,
-                    fontSize = 32.sp
-                )
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                Text(
-                    text = memory.title.uppercase(),
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DeepRose,
-                    letterSpacing = 1.sp,
+                    text = memory.description,
+                    style = TinyType.Body,
                     textAlign = TextAlign.Center
                 )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                val formattedDate = remember(memory.date) {
-                    memory.date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
-                }
-                Text(
-                    text = formattedDate,
-                    fontSize = 12.5.sp,
-                    fontFamily = FontFamily.Serif,
-                    fontWeight = FontWeight.Medium,
-                    color = DarkSlate.copy(alpha = 0.70f)
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Text(
-                    text = "• • •",
-                    fontSize = 12.sp,
-                    color = SoftRose
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                if (memory.isFuture) {
-                    if (countdown.isToday) {
-                        Surface(
-                            shape = RoundedCornerShape(14.dp),
-                            color = DeepRose.copy(alpha = 0.12f),
-                            border = BorderStroke(1.dp, DeepRose.copy(alpha = 0.4f)),
-                            modifier = Modifier.fillMaxWidth().padding(horizontal = 8.dp)
+            } else {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Text(
+                        text = "Coming in...",
+                        style = TinyType.Caption
+                    )
+                    Spacer(modifier = Modifier.height(TinySpace.sm))
+                    TinyCard(color = TinyColors.Muted, padding = TinySpace.md) {
+                        Column(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalAlignment = Alignment.CenterHorizontally
                         ) {
-                            Column(
-                                modifier = Modifier.padding(14.dp),
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                Text(
-                                    text = "TODAY ❤️",
-                                    fontSize = 18.sp,
-                                    fontWeight = FontWeight.ExtraBold,
-                                    color = DeepRose
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "You're finally together again.",
-                                    fontSize = 13.sp,
-                                    fontFamily = FontFamily.Serif,
-                                    color = DarkSlate
-                                )
-                            }
-                        }
-                    } else if (countdown.isPassed) {
-                        Text(
-                            text = memory.description,
-                            fontSize = 13.sp,
-                            fontFamily = FontFamily.Serif,
-                            color = DarkSlate.copy(alpha = 0.85f),
-                            textAlign = TextAlign.Center,
-                            lineHeight = 20.sp
-                        )
-                    } else {
-                        Column(horizontalAlignment = Alignment.CenterHorizontally) {
                             Text(
-                                text = "Coming in...",
-                                fontSize = 11.5.sp,
-                                fontWeight = FontWeight.SemiBold,
-                                color = DarkSlate.copy(alpha = 0.55f),
-                                letterSpacing = 0.5.sp
+                                text = "${countdown.days} DAYS",
+                                style = TinyType.Title.copy(color = TinyColors.Rose)
                             )
-                            Spacer(modifier = Modifier.height(8.dp))
-                            Surface(
-                                shape = RoundedCornerShape(14.dp),
-                                color = Color(0xFFF7ECE1),
-                                border = BorderStroke(1.dp, Color(0xFFE0C9B3)),
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = 4.dp)
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(12.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = "${countdown.days} DAYS",
-                                        fontSize = 18.sp,
-                                        fontWeight = FontWeight.ExtraBold,
-                                        color = DeepRose
-                                    )
-                                    Spacer(modifier = Modifier.height(3.dp))
-                                    Text(
-                                        text = String.format("%02d HOURS  %02d MINUTES  %02d SECONDS", countdown.hours, countdown.minutes, countdown.seconds),
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Bold,
-                                        fontFamily = FontFamily.Monospace,
-                                        color = DarkSlate.copy(alpha = 0.8f)
-                                    )
-                                }
-                            }
-                            Spacer(modifier = Modifier.height(10.dp))
+                            Spacer(modifier = Modifier.height(TinySpace.xs))
                             Text(
-                                text = memory.description,
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Serif,
-                                color = DarkSlate.copy(alpha = 0.75f),
-                                textAlign = TextAlign.Center,
-                                lineHeight = 18.sp
+                                text = String.format("%02d HOURS  %02d MINUTES  %02d SECONDS", countdown.hours, countdown.minutes, countdown.seconds),
+                                style = TinyType.Micro.copy(
+                                    fontFamily = FontFamily.Monospace,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TinyColors.Ink
+                                ),
+                                textAlign = TextAlign.Center
                             )
                         }
                     }
-                } else {
+                    Spacer(modifier = Modifier.height(TinySpace.md))
                     Text(
                         text = memory.description,
-                        fontSize = 13.sp,
-                        fontFamily = FontFamily.Serif,
-                        color = DarkSlate.copy(alpha = 0.85f),
-                        textAlign = TextAlign.Center,
-                        lineHeight = 20.sp
+                        style = TinyType.Body,
+                        textAlign = TextAlign.Center
                     )
                 }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier.fillMaxWidth().testTag("memory_detail_close_button")
-                ) {
-                    Text("Close", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
             }
+        } else {
+            Text(
+                text = memory.description,
+                style = TinyType.Body,
+                textAlign = TextAlign.Center
+            )
         }
+
+        TinyButton(
+            text = "Close",
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth(),
+            style = TinyButtonStyle.Secondary,
+            testTag = "memory_detail_close_button"
+        )
     }
 }
 
+/** Vector icon for each special memory type (calendar markers, legend and detail card). */
+private fun calendarTypeIcon(type: SpecialMemoryType): ImageVector = when (type) {
+    SpecialMemoryType.BIRTHDAY -> TinyIcons.Birthday
+    SpecialMemoryType.FUTURE_MEETING -> TinyIcons.Sparkle
+    SpecialMemoryType.KISS -> TinyIcons.HeartOutline
+    SpecialMemoryType.PRIVATE -> TinyIcons.Flower
+    else -> TinyIcons.Heart
+}
+
+/** Tiny day-cell marker showing the memory type. */
 @Composable
 internal fun CalendarPixelMarker(type: SpecialMemoryType) {
-    Canvas(modifier = Modifier.size(8.dp, 8.dp)) {
-        val p = size.width / 4f
-        when (type) {
-            SpecialMemoryType.BIRTHDAY -> {
-                drawRect(Color(0xFFD4A373), Offset(0f, 2 * p), Size(4 * p, 2 * p))
-                drawRect(Color(0xFFFFD166), Offset(1.5f * p, 0.5f * p), Size(p, 1.5f * p))
-                drawRect(Color(0xFFFF4D6D), Offset(1.5f * p, 0f), Size(p, 0.8f * p))
-            }
-            SpecialMemoryType.FUTURE_MEETING -> {
-                drawRect(Color(0xFFFFB703), Offset(p, 0f), Size(2 * p, 4 * p))
-                drawRect(Color(0xFFFFB703), Offset(0f, p), Size(4 * p, 2 * p))
-                drawRect(Color(0xFFFFD166), Offset(p, p), Size(2 * p, 2 * p))
-            }
-            SpecialMemoryType.PRIVATE -> {
-                drawRect(Color(0xFFB5838D), Offset(0.5f * p, 0.5f * p), Size(3 * p, 2 * p))
-                drawRect(Color(0xFFB5838D), Offset(p, 2.5f * p), Size(2 * p, p))
-                drawRect(Color(0xFFB5838D), Offset(1.5f * p, 3.5f * p), Size(p, 0.5f * p))
-            }
-            else -> {
-                drawRect(DeepRose, Offset(0.5f * p, 0.5f * p), Size(3 * p, 2 * p))
-                drawRect(DeepRose, Offset(p, 2.5f * p), Size(2 * p, p))
-                drawRect(DeepRose, Offset(1.5f * p, 3.5f * p), Size(p, 0.5f * p))
-            }
-        }
-    }
+    Icon(
+        imageVector = calendarTypeIcon(type),
+        contentDescription = null,
+        tint = TinyColors.Rose,
+        modifier = Modifier.size(11.dp)
+    )
 }
 
 @Composable
-internal fun LegendItem(icon: String, label: String) {
+internal fun LegendItem(icon: ImageVector, label: String) {
     Row(verticalAlignment = Alignment.CenterVertically) {
-        Text(text = icon, fontSize = 11.sp)
-        Spacer(modifier = Modifier.width(3.dp))
-        Text(text = label, fontSize = 10.sp, color = DarkSlate.copy(alpha = 0.6f), fontWeight = FontWeight.Medium)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = TinyColors.Rose,
+            modifier = Modifier.size(12.dp)
+        )
+        Spacer(modifier = Modifier.width(TinySpace.xs))
+        Text(text = label, style = TinyType.Micro, maxLines = 1)
     }
 }

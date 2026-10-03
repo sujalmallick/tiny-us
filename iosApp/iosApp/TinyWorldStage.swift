@@ -370,7 +370,7 @@ struct TinyStageSnapshot {
         case .windChime:
             chimeSwingAt = now; sound.play(.windChime)
             burst(.sparkle, at: center, count: 5, now: now, spread: 0.04, rise: 0.04)
-            world.showToast("The crystalline porch wind chime sings in the breeze 🎐")
+            world.showToast("The crystalline porch wind chime sings in the breeze")
         case .flowers:
             flowersPicked += 1; sound.play(.bubblePop)
             burst(.flower, at: p, count: 3, now: now, spread: 0.03, rise: 0.1)
@@ -378,24 +378,24 @@ struct TinyStageSnapshot {
         case .sakura:
             sound.play(.windChime, gain: 0.6)
             burst(.petal, at: center, count: 14, now: now, spread: 0.12, rise: -0.08)
-            world.showToast("Sakura petals swirl down around you 🌸")
+            world.showToast("Sakura petals swirl down around you")
         case .treeCanopy:
             sound.play(.bubblePop, gain: 0.6)
             burst(.leaf, at: center, count: 10, now: now, spread: 0.12, rise: -0.07)
-            world.showToast("A leaf lands softly in their hair 🍃")
+            world.showToast("A leaf lands softly in their hair")
         case .carvedHeart:
             sound.play(.heartChime)
             burst(.heart, at: center, count: 6, now: now, spread: 0.04, rise: 0.1)
-            world.showToast("Your initials, still carved in the old bark 💕")
+            world.showToast("Your initials, still carved in the old bark")
         case .kettle:
             kettleSteamAt = now; sound.play(.kettleWhistle)
             burst(.steam, at: CGPoint(x: r.midX + 0.03, y: r.minY), count: 8, now: now, spread: 0.02, rise: 0.12)
-            world.showToast("Whistling teakettle! Fresh hot tea steeping for both of us ☕")
+            world.showToast("Whistling teakettle! Fresh hot tea steeping for both of us")
         case .stewPot:
             sound.play(.bubblePop)
             burst(.bubble, at: CGPoint(x: r.midX, y: r.minY + 0.02), count: 6, now: now, spread: 0.03, rise: 0.06)
             burst(.steam, at: CGPoint(x: r.midX, y: r.minY), count: 4, now: now, spread: 0.02, rise: 0.1)
-            world.showToast("The stew bubbles away, smelling like home 🍲")
+            world.showToast("The stew bubbles away, smelling like home")
         case .cuttingBoard:
             poseOverride = .cook; poseUntil = now + 2.5; sound.play(.cardFlip)
             world.showToast("Chopping sweet carrots and fresh herbs together.")
@@ -410,11 +410,11 @@ struct TinyStageSnapshot {
         case .blanket:
             blanketSnuggle.toggle(); sound.play(blanketSnuggle ? .heartChime : .bubblePop)
             if blanketSnuggle { burst(.heart, at: center, count: 5, now: now, spread: 0.06, rise: 0.08) }
-            world.showToast(blanketSnuggle ? "Snuggling warm under the chunky knit throw together 💕" : "They stretch and fold the blanket")
+            world.showToast(blanketSnuggle ? "Snuggling warm under the chunky knit throw together" : "They stretch and fold the blanket")
         case .candle:
             candleLit.toggle(); sound.play(.lampClick)
             if candleLit { burst(.ember, at: CGPoint(x: r.midX, y: r.minY), count: 6, now: now, spread: 0.01, rise: 0.08) }
-            world.showToast(candleLit ? "Lit the lavender soy candle... warm, calming scent fills the room 🕯️" : "Blew out the candle with a gentle breath. Time to rest.")
+            world.showToast(candleLit ? "Lit the lavender soy candle... warm, calming scent fills the room" : "Blew out the candle with a gentle breath. Time to rest.")
         case .floorLamp:
             floorLampOn.toggle(); sound.play(.lampClick)
             world.showToast(floorLampOn ? "Lamp on — warm amber light fills the room." : "Lamp off — time to drift away together.")
@@ -423,32 +423,32 @@ struct TinyStageSnapshot {
             catTargetX = nil; catMoveStart = nil; catX = 0.64
             sound.play(.bubblePop)
             burst(.sparkle, at: center, count: 5, now: now, spread: 0.04, rise: 0.06)
-            world.showToast("Mochi pounces on the feather wand with pure joy! 🐾")
+            world.showToast("Mochi pounces on the feather wand with pure joy!")
         case .catBox:
             catTargetX = nil; catMoveStart = nil
             catX = TinyHotspot.catBox.rect.midX; catY = 0.84
             catState = catState == .boxNap ? .sittingPurr : .boxNap; catStateUntil = now + 4
             sound.play(.catPurr)
-            world.showToast(catState == .boxNap ? "Mochi curls up in the cardboard box 📦" : "Mochi peeks out of the box 🐈")
+            world.showToast(catState == .boxNap ? "Mochi curls up in the cardboard box" : "Mochi peeks out of the box")
         case .streetLamp:
             streetLampsOn.toggle(); sound.play(.lampClick)
-            world.showToast(streetLampsOn ? "The vintage streetlamp glows again 🏮" : "The lamp dims so the stars can shine ✨")
+            world.showToast(streetLampsOn ? "The vintage streetlamp glows again" : "The lamp dims so the stars can shine")
         case .telescope:
             spawnShootingStar(at: CGPoint(x: 0.3 + CGFloat.random(in: 0...0.4), y: 0.08), now: now)
             sound.play(.starTwinkle)
-            world.showToast("A shooting star crossed the night sky! Made a quiet wish for us 🌠")
+            world.showToast("A shooting star crossed the night sky! Made a quiet wish for us")
         case .barista:
             baristaBrewAt = now; sound.play(.steamHiss)
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.85) { sound.play(.cafeBell) }
             burst(.steam, at: CGPoint(x: r.minX + 0.04, y: r.minY + 0.08), count: 7, now: now, spread: 0.02, rise: 0.1)
-            world.showToast("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.' ☕✨")
+            world.showToast("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.'")
         case .chalkboard:
             sound.play(.cardFlip)
             world.showToast("Today’s special: \(TinyStage.cafeSpecial(for: Date()))")
         case .boba:
             bobaWagAt = now; sound.play(.bubblePop)
             burst(.heart, at: center, count: 3, now: now, spread: 0.03, rise: 0.08)
-            world.showToast("Boba wags so hard the whole pup wiggles 🐶")
+            world.showToast("Boba wags so hard the whole pup wiggles")
         case .latte:
             latteHeartAt = now; sound.play(.bubblePop, gain: 0.7)
             burst(.heart, at: CGPoint(x: r.midX, y: r.minY), count: 2, now: now, spread: 0.01, rise: 0.06)
@@ -464,7 +464,7 @@ struct TinyStageSnapshot {
         case .terrarium:
             sound.play(.starTwinkle, gain: 0.7)
             burst(.sparkle, at: center, count: 8, now: now, spread: 0.05, rise: 0.05)
-            world.showToast("A tiny world inside a tiny world 🪴")
+            world.showToast("A tiny world inside a tiny world")
         case .turntable:
             vinylSpinning.toggle(); sound.play(vinylSpinning ? .vinylSpin : .lampClick)
             if vinylSpinning { burst(.note, at: center, count: 4, now: now, spread: 0.04, rise: 0.1) }
@@ -473,40 +473,40 @@ struct TinyStageSnapshot {
             spawnShootingStar(at: CGPoint(x: r.midX - 0.1, y: r.minY), now: now)
             spawnShootingStar(at: CGPoint(x: r.midX + 0.05, y: r.minY + 0.03), now: now + 0.25)
             sound.play(.shootingStar)
-            world.showToast("Shooting stars streak past the crescent moon 🌙")
+            world.showToast("Shooting stars streak past the crescent moon")
         case .nightlight:
             nightlightOn.toggle(); sound.play(.lampClick)
-            world.showToast(nightlightOn ? "The bedside nightlight glows soft pink 🌸" : "Nightlight off — the city twinkles instead")
+            world.showToast(nightlightOn ? "The bedside nightlight glows soft pink" : "Nightlight off — the city twinkles instead")
         case .fairyLights:
             fairyLightsOn.toggle(); sound.play(.starTwinkle, gain: 0.7)
-            world.showToast(fairyLightsOn ? "Balcony fairy lights twinkle on ✨" : "The fairy lights rest for the night")
+            world.showToast(fairyLightsOn ? "Balcony fairy lights twinkle on" : "The fairy lights rest for the night")
         case .momoCart:
             poseOverride = .eatSneak; poseUntil = now + 2.6; sound.play(.steamHiss, gain: 0.8)
             TinySoundBoard.shared.play(.bubblePop, gain: 0.5)
             burst(.steam, at: CGPoint(x: r.midX, y: r.minY + 0.06), count: 8, now: now, spread: 0.04, rise: 0.1)
-            world.showToast("Fresh momos! One is quietly stolen 🥟")
+            world.showToast("Fresh momos! One is quietly stolen")
         case .scooter:
             hornAt = now; sound.play(.scooterHorn)
             burst(.text, at: CGPoint(x: r.midX, y: r.minY), count: 1, now: now, spread: 0, rise: 0.08, label: "beep beep!")
-            world.showToast("Scooter road trip with my favourite person 🛵")
+            world.showToast("Scooter road trip with my favourite person")
         case .firePit:
             fireStokedAt = now; marshmallowsRoasted += 1; sound.play(.fireCrackle)
             burst(.ember, at: CGPoint(x: r.midX, y: r.minY + 0.05), count: 12, now: now, spread: 0.04, rise: 0.16)
             burst(.marshmallow, at: CGPoint(x: r.midX, y: r.minY), count: 1, now: now, spread: 0, rise: 0.05)
-            world.showToast("Roasting sweet golden marshmallows over the crackling campfire embers 🪵🔥")
+            world.showToast("Roasting sweet golden marshmallows over the crackling campfire embers")
         case .guitar:
             guitarStrumAt = now; sound.play(.guitarStrum)
             burst(.note, at: CGPoint(x: r.midX + 0.03, y: r.minY), count: 5, now: now, spread: 0.04, rise: 0.12)
-            world.showToast("Strumming a quiet acoustic melody beneath the pine trees and starlight 🎸✨")
+            world.showToast("Strumming a quiet acoustic melody beneath the pine trees and starlight")
         case .lantern:
             lanternOn.toggle(); sound.play(.lampClick)
-            world.showToast(lanternOn ? "The warm camp lantern glows bright beside our tent ⛺💡" : "Dimmed the lantern for better stargazing 🌌")
+            world.showToast(lanternOn ? "The warm camp lantern glows bright beside our tent" : "Dimmed the lantern for better stargazing")
         case .plaidBlanket:
             petMochi(world: world, now: now)
         }
     }
 
-    /// Mirrors Android's tap cycle: sleeping → purring → belly roll → back to a snooze.
+    /// Mirrors Android's tap cycle: sleeping -> purring -> belly roll -> back to a snooze.
     func petMochi(world: TinyWorld, now: Double) {
         let cat = catPosition(at: now)
         let wasWalking = catTargetX != nil
@@ -532,7 +532,7 @@ struct TinyStageSnapshot {
         let (a, b) = world.save.scene.characterAnchors
         burst(.sparkle, at: CGPoint(x: (a.x + b.x) / 2, y: a.y - 0.14), count: 8, now: now, spread: 0.08, rise: 0.08)
         TinySoundBoard.shared.play(.gameWin, gain: 0.7)
-        world.showToast("A little jump for joy! ✨")
+        world.showToast("A little jump for joy!")
     }
 
     private func traceConstellation(_ index: Int, at p: CGPoint, world: TinyWorld, now: Double) {
@@ -597,10 +597,10 @@ struct TinyStageSnapshot {
                                           "Make a wish on the shooting star!", "Wrapped in starlight and gentle evening whispers."])
 
     static func cafeSpecial(for date: Date) -> String {
-        let specials = ["Honey oat latte & a warm cinnamon roll 🥐", "Rainy-day hot cocoa with tiny marshmallows ☕️",
-                        "Matcha cloud latte & strawberry shortcake 🍰", "Caramel cortado & a buttery croissant 🥐",
-                        "Chai for two & ginger snap cookies 🍪", "Lavender mocha & a blueberry muffin 🫐",
-                        "Iced vanilla cold brew & lemon tart 🍋"]
+        let specials = ["Honey oat latte & a warm cinnamon roll", "Rainy-day hot cocoa with tiny marshmallows",
+                        "Matcha cloud latte & strawberry shortcake", "Caramel cortado & a buttery croissant",
+                        "Chai for two & ginger snap cookies", "Lavender mocha & a blueberry muffin",
+                        "Iced vanilla cold brew & lemon tart"]
         let day = Calendar.current.ordinality(of: .day, in: .era, for: date) ?? 0
         return specials[day % specials.count]
     }

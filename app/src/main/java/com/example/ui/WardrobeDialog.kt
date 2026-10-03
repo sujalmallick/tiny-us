@@ -160,6 +160,11 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.Checkroom
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 data class WardrobeItem(
     val id: Int,
@@ -401,431 +406,332 @@ fun WardrobeDialog(
         )
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("wardrobe_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Cottage Wardrobe",
+            subtitle = "Outfits & accessories for both of you",
+            icon = Icons.Rounded.Checkroom
+        )
+
+        // His / Hers segmented switcher
+        Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 16.dp)
-                .testTag("wardrobe_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            shadowElevation = 12.dp
+                .background(TinyColors.Muted, TinyRadius.Medium)
+                .padding(TinySpace.xs),
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)
         ) {
-            Column(
+            WardrobeSegment(
+                text = "$girlfriendName",
+                selected = selectedTab == 0,
+                onClick = { selectedTab = 0 },
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("wardrobe_tab_girl")
+            )
+            WardrobeSegment(
+                text = "$boyfriendName",
+                selected = selectedTab == 1,
+                onClick = { selectedTab = 1 },
+                modifier = Modifier
+                    .weight(1f)
+                    .testTag("wardrobe_tab_boy")
+            )
+        }
+
+        // Scrollable main content
+        val currentAccessory = if (selectedTab == 0) selectedGirlAccessory else selectedBoyAccessory
+        val currentOutfit = if (selectedTab == 0) selectedGirlOutfit else selectedBoyOutfit
+        val tabWearsDress = if (selectedTab == 0) girlWearsDress else boyWearsDress
+        val rawOutfitList = if (tabWearsDress) girlDresses else boyOutfits
+        val outfitList = if (filterHoodiesOnly) rawOutfitList.filter { it.isHoodie } else rawOutfitList
+
+        Column(
+            modifier = Modifier
+                .weight(1f, fill = false)
+                .heightIn(max = 440.dp)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.md)
+        ) {
+            // Accessories Section Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = "Accessories",
+                    style = TinyType.Section
+                )
+                Text(
+                    text = if (selectedTab == 1) "Glasses stay on" else "Layers over outfits",
+                    style = TinyType.Caption
+                )
+            }
+
+            // Accessories Chips
+            Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(18.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                // Header
-                Text(
-                    text = "Cottage Wardrobe",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    fontFamily = FontFamily.Serif,
-                    color = Color(0xFFC9184A)
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "Outfits & accessories for both of you",
-                    fontSize = 11.5.sp,
-                    fontFamily = FontFamily.Serif,
-                    color = DarkSlate.copy(alpha = 0.7f)
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // His / Hers Tab Switcher
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(Color(0xFFEDE0D4).copy(alpha = 0.6f), RoundedCornerShape(14.dp))
-                        .padding(4.dp),
-                    horizontalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
+                accessories.forEach { acc ->
+                    val isAccWearing = (currentAccessory == acc.id)
+                    // TinyChip styling, with the pixel accessory preview (content) in a small Card-coloured disc
                     Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { selectedTab = 0 }
-                            .testTag("wardrobe_tab_girl"),
-                        shape = RoundedCornerShape(11.dp),
-                        color = if (selectedTab == 0) DeepRose else Color.Transparent
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "$girlfriendName",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (selectedTab == 0) Color.White else DarkSlate.copy(alpha = 0.75f)
-                            )
-                        }
-                    }
-                    Surface(
-                        modifier = Modifier
-                            .weight(1f)
-                            .clickable { selectedTab = 1 }
-                            .testTag("wardrobe_tab_boy"),
-                        shape = RoundedCornerShape(11.dp),
-                        color = if (selectedTab == 1) DeepRose else Color.Transparent
-                    ) {
-                        Box(
-                            modifier = Modifier.padding(vertical = 7.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "$boyfriendName",
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = if (selectedTab == 1) Color.White else DarkSlate.copy(alpha = 0.75f)
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Scrollable main content
-                val currentAccessory = if (selectedTab == 0) selectedGirlAccessory else selectedBoyAccessory
-                val currentOutfit = if (selectedTab == 0) selectedGirlOutfit else selectedBoyOutfit
-                val tabWearsDress = if (selectedTab == 0) girlWearsDress else boyWearsDress
-                val rawOutfitList = if (tabWearsDress) girlDresses else boyOutfits
-                val outfitList = if (filterHoodiesOnly) rawOutfitList.filter { it.isHoodie } else rawOutfitList
-
-                Column(
-                    modifier = Modifier
-                        .weight(1f, fill = false)
-                        .heightIn(max = 440.dp)
-                        .verticalScroll(rememberScrollState()),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    // Accessories Section Header
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = "Accessories",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate
-                        )
-                        Text(
-                            text = if (selectedTab == 1) "Glasses stay on" else "Layers over outfits",
-                            fontSize = 10.sp,
-                            color = DarkSlate.copy(alpha = 0.6f)
-                        )
-                    }
-
-                    // Accessories Chips
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .horizontalScroll(rememberScrollState()),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        accessories.forEach { acc ->
-                            val isAccWearing = (currentAccessory == acc.id)
-                            Surface(
-                                onClick = {
-                                    if (selectedTab == 0) {
-                                        selectedGirlAccessory = acc.id
-                                        onSelectGirlAccessory(acc.id)
-                                    } else {
-                                        selectedBoyAccessory = acc.id
-                                        onSelectBoyAccessory(acc.id)
-                                    }
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isAccWearing) Color(0xFFFFECEF) else Color.White,
-                                border = BorderStroke(
-                                    width = if (isAccWearing) 1.5.dp else 1.dp,
-                                    color = if (isAccWearing) DeepRose else Color(0xFFE9ECEF)
-                                ),
-                                modifier = Modifier.testTag("wardrobe_accessory_${acc.id}")
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 9.dp, vertical = 7.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    Canvas(modifier = Modifier.size(18.dp)) {
-                                        val p = size.width / 12f
-                                        when (acc.iconType) {
-                                            "beanie" -> {
-                                                val pomCol = if (selectedTab == 0) Color(0xFFFFF0F3) else Color(0xFFE9C46A)
-                                                val beanCol = if (selectedTab == 0) Color(0xFFE8998D) else Color(0xFF264653)
-                                                val brimCol = if (selectedTab == 0) Color(0xFFD6587A) else Color(0xFF1B4332)
-                                                drawRect(pomCol, Offset(5 * p, p), Size(2 * p, 2 * p))
-                                                drawRect(beanCol, Offset(3 * p, 3 * p), Size(6 * p, 4 * p))
-                                                drawRect(brimCol, Offset(2 * p, 7 * p), Size(8 * p, 2 * p))
-                                            }
-                                            "scarf" -> {
-                                                val scCol = if (selectedTab == 0) Color(0xFFFFB5A7) else Color(0xFFE9C46A)
-                                                val scDk = if (selectedTab == 0) Color(0xFFFFF0F3) else Color(0xFFD4A373)
-                                                drawRect(scCol, Offset(2 * p, 3 * p), Size(8 * p, 3 * p))
-                                                drawRect(scDk, Offset(6 * p, 6 * p), Size(3 * p, 4 * p))
-                                            }
-                                            "cap" -> {
-                                                val capCol = if (selectedTab == 0) Color(0xFF6B9080) else Color(0xFF1D3557)
-                                                val brimCol = if (selectedTab == 0) Color(0xFF4E6E60) else Color(0xFF0F172A)
-                                                drawRect(capCol, Offset(3 * p, 3 * p), Size(6 * p, 4 * p))
-                                                drawRect(brimCol, Offset(6 * p, 7 * p), Size(5 * p, 2 * p))
-                                            }
-                                            else -> {
-                                                drawCircle(
-                                                    color = Color(0xFFADB5BD),
-                                                    radius = 4.5f * p,
-                                                    center = Offset(6 * p, 6 * p),
-                                                    style = androidx.compose.ui.graphics.drawscope.Stroke(1.2f * p)
-                                                )
-                                            }
-                                        }
-                                    }
-                                    Spacer(modifier = Modifier.width(5.dp))
-                                    Text(
-                                        text = acc.name,
-                                        fontSize = 11.sp,
-                                        fontWeight = if (isAccWearing) FontWeight.Bold else FontWeight.Medium,
-                                        color = if (isAccWearing) DeepRose else DarkSlate
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(4.dp))
-
-                    // Outfits Section Header with filter
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.SpaceBetween
-                    ) {
-                        Text(
-                            text = if (selectedTab == 0) "Dresses & Hoodies" else "Sweaters & Hoodies",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate
-                        )
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                        ) {
-                            Surface(
-                                onClick = { filterHoodiesOnly = false },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (!filterHoodiesOnly) DeepRose.copy(alpha = 0.15f) else Color.White,
-                                border = BorderStroke(1.dp, if (!filterHoodiesOnly) DeepRose else Color(0xFFE9ECEF))
-                            ) {
-                                Text(
-                                    text = "All",
-                                    fontSize = 10.sp,
-                                    fontWeight = if (!filterHoodiesOnly) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (!filterHoodiesOnly) DeepRose else DarkSlate.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                            Surface(
-                                onClick = { filterHoodiesOnly = true },
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (filterHoodiesOnly) DeepRose.copy(alpha = 0.15f) else Color.White,
-                                border = BorderStroke(1.dp, if (filterHoodiesOnly) DeepRose else Color(0xFFE9ECEF))
-                            ) {
-                                Text(
-                                    text = "Hoodies Only",
-                                    fontSize = 10.sp,
-                                    fontWeight = if (filterHoodiesOnly) FontWeight.Bold else FontWeight.Normal,
-                                    color = if (filterHoodiesOnly) DeepRose else DarkSlate.copy(alpha = 0.7f),
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                                )
-                            }
-                        }
-                    }
-
-                    // Outfits List
-                    outfitList.forEach { item ->
-                        val isWearing = (currentOutfit == item.id)
-                        val onWearThisOutfit = {
+                        onClick = {
                             if (selectedTab == 0) {
-                                selectedGirlOutfit = item.id
-                                onSelectGirlOutfit(item.id)
+                                selectedGirlAccessory = acc.id
+                                onSelectGirlAccessory(acc.id)
                             } else {
-                                selectedBoyOutfit = item.id
-                                onSelectBoyOutfit(item.id)
+                                selectedBoyAccessory = acc.id
+                                onSelectBoyAccessory(acc.id)
                             }
-                        }
-                        Surface(
-                            onClick = onWearThisOutfit,
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .testTag("wardrobe_item_${item.id}"),
-                            shape = RoundedCornerShape(16.dp),
-                            color = if (isWearing) Color(0xFFFFECEF) else Color.White,
-                            border = BorderStroke(
-                                width = if (isWearing) 1.5.dp else 1.dp,
-                                color = if (isWearing) DeepRose else Color(0xFFE9ECEF)
-                            ),
-                            shadowElevation = if (isWearing) 2.dp else 1.dp
+                        },
+                        shape = TinyRadius.Pill,
+                        color = if (isAccWearing) TinyColors.Rose else TinyColors.Muted,
+                        contentColor = if (isAccWearing) Color.White else TinyColors.Ink,
+                        modifier = Modifier.testTag("wardrobe_accessory_${acc.id}")
+                    ) {
+                        Row(
+                            modifier = Modifier.padding(start = 6.dp, end = 14.dp, top = 6.dp, bottom = 6.dp),
+                            verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Row(
+                            Box(
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
+                                    .size(24.dp)
+                                    .background(TinyColors.Card, CircleShape),
+                                contentAlignment = Alignment.Center
                             ) {
-                                // Pixel Mini Preview Icon
-                                Surface(
-                                    modifier = Modifier.size(46.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    color = item.primaryColor.copy(alpha = 0.25f),
-                                    border = BorderStroke(1.dp, item.accentColor.copy(alpha = 0.4f))
-                                ) {
-                                    Canvas(modifier = Modifier.fillMaxSize()) {
-                                        val p = size.width / 16f
-                                        // Hanger
-                                        drawRect(Color(0xFFFFD166), Offset(6 * p, 2 * p), Size(4 * p, p))
-                                        drawRect(Color(0xFF8C6D37), Offset(7.5f * p, p), Size(p, p))
-
-                                        if (selectedTab == 0) {
-                                            // Girl outfit / dress / hoodie preview
-                                            drawRect(item.primaryColor, Offset(5 * p, 3.5f * p), Size(6 * p, 4 * p))
-                                            drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
-                                            if (item.isHoodie) {
-                                                // Kangaroo pouch & drawstrings
-                                                drawRect(item.accentColor, Offset(5.5f * p, 5.5f * p), Size(5 * p, 2 * p))
-                                                drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2 * p))
-                                                drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2 * p))
-                                                // Pleated skirt below
-                                                drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
-                                            } else {
-                                                // Flared Skirt
-                                                drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
-                                                drawRect(item.primaryColor, Offset(4 * p, 13 * p), Size(8 * p, 1.2f * p))
-                                            }
-                                        } else {
-                                            // Boy outfit / sweater / hoodie preview
-                                            drawRect(item.primaryColor, Offset(4.5f * p, 3.5f * p), Size(7 * p, 6 * p))
-                                            drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
-                                            if (item.isHoodie) {
-                                                drawRect(item.accentColor, Offset(5.5f * p, 6.5f * p), Size(5 * p, 2.5f * p))
-                                                drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
-                                                drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
-                                            }
-                                            // Trousers
-                                            drawRect(item.accentColor, Offset(5 * p, 9.5f * p), Size(3 * p, 5 * p))
-                                            drawRect(item.accentColor, Offset(8 * p, 9.5f * p), Size(3 * p, 5 * p))
+                                Canvas(modifier = Modifier.size(18.dp)) {
+                                    val p = size.width / 12f
+                                    when (acc.iconType) {
+                                        "beanie" -> {
+                                            val pomCol = if (selectedTab == 0) Color(0xFFFFF0F3) else Color(0xFFE9C46A)
+                                            val beanCol = if (selectedTab == 0) Color(0xFFE8998D) else Color(0xFF264653)
+                                            val brimCol = if (selectedTab == 0) Color(0xFFD6587A) else Color(0xFF1B4332)
+                                            drawRect(pomCol, Offset(5 * p, p), Size(2 * p, 2 * p))
+                                            drawRect(beanCol, Offset(3 * p, 3 * p), Size(6 * p, 4 * p))
+                                            drawRect(brimCol, Offset(2 * p, 7 * p), Size(8 * p, 2 * p))
                                         }
-                                    }
-                                }
-
-                                Spacer(modifier = Modifier.width(12.dp))
-
-                                Column(modifier = Modifier.weight(1f)) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.SpaceBetween,
-                                        modifier = Modifier.fillMaxWidth()
-                                    ) {
-                                        Text(
-                                            text = item.name,
-                                            fontSize = 13.sp,
-                                            fontWeight = FontWeight.Bold,
-                                            fontFamily = FontFamily.Serif,
-                                            color = DarkSlate,
-                                            maxLines = 1,
-                                            modifier = Modifier.weight(1f, fill = false)
-                                        )
-                                        Row(
-                                            verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(4.dp)
-                                        ) {
-                                            if (item.isHoodie) {
-                                                Surface(
-                                                    shape = RoundedCornerShape(6.dp),
-                                                    color = DeepRose.copy(alpha = 0.15f),
-                                                    border = BorderStroke(0.5.dp, DeepRose.copy(alpha = 0.4f))
-                                                ) {
-                                                    Text(
-                                                        text = "HOODIE",
-                                                        fontSize = 9.sp,
-                                                        fontWeight = FontWeight.ExtraBold,
-                                                        color = DeepRose,
-                                                        modifier = Modifier.padding(horizontal = 5.dp, vertical = 2.dp)
-                                                    )
-                                                }
-                                            }
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = item.accentColor.copy(alpha = 0.15f)
-                                            ) {
-                                                Text(
-                                                    text = item.tag,
-                                                    fontSize = 9.5.sp,
-                                                    fontWeight = FontWeight.Bold,
-                                                    color = item.accentColor,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
+                                        "scarf" -> {
+                                            val scCol = if (selectedTab == 0) Color(0xFFFFB5A7) else Color(0xFFE9C46A)
+                                            val scDk = if (selectedTab == 0) Color(0xFFFFF0F3) else Color(0xFFD4A373)
+                                            drawRect(scCol, Offset(2 * p, 3 * p), Size(8 * p, 3 * p))
+                                            drawRect(scDk, Offset(6 * p, 6 * p), Size(3 * p, 4 * p))
                                         }
-                                    }
-
-                                    Spacer(modifier = Modifier.height(4.dp))
-
-                                    Text(
-                                        text = item.description,
-                                        fontSize = 11.sp,
-                                        color = DarkSlate.copy(alpha = 0.7f),
-                                        lineHeight = 15.sp
-                                    )
-
-                                    Spacer(modifier = Modifier.height(8.dp))
-
-                                    if (isWearing) {
-                                        Surface(
-                                            shape = RoundedCornerShape(8.dp),
-                                            color = DeepRose.copy(alpha = 0.12f),
-                                            border = BorderStroke(1.dp, DeepRose.copy(alpha = 0.3f))
-                                        ) {
-                                            Text(
-                                                text = "Wearing Now",
-                                                fontSize = 11.sp,
-                                                fontWeight = FontWeight.Bold,
-                                                color = DeepRose,
-                                                modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                        "cap" -> {
+                                            val capCol = if (selectedTab == 0) Color(0xFF6B9080) else Color(0xFF1D3557)
+                                            val brimCol = if (selectedTab == 0) Color(0xFF4E6E60) else Color(0xFF0F172A)
+                                            drawRect(capCol, Offset(3 * p, 3 * p), Size(6 * p, 4 * p))
+                                            drawRect(brimCol, Offset(6 * p, 7 * p), Size(5 * p, 2 * p))
+                                        }
+                                        else -> {
+                                            drawCircle(
+                                                color = Color(0xFFADB5BD),
+                                                radius = 4.5f * p,
+                                                center = Offset(6 * p, 6 * p),
+                                                style = androidx.compose.ui.graphics.drawscope.Stroke(1.2f * p)
                                             )
                                         }
-                                    } else {
-                                        Button(
-                                            onClick = onWearThisOutfit,
-                                            colors = ButtonDefaults.buttonColors(containerColor = item.accentColor),
-                                            shape = RoundedCornerShape(8.dp),
-                                            contentPadding = PaddingValues(horizontal = 12.dp, vertical = 4.dp),
-                                            modifier = Modifier.height(28.dp)
-                                        ) {
-                                            Text("Wear Outfit", fontSize = 11.sp, fontWeight = FontWeight.Bold)
-                                        }
                                     }
                                 }
+                            }
+                            Spacer(modifier = Modifier.width(TinySpace.sm))
+                            Text(
+                                text = acc.name,
+                                style = TinyType.Label.copy(color = Color.Unspecified),
+                                maxLines = 1
+                            )
+                        }
+                    }
+                }
+            }
+
+            // Outfits Section Header with filter
+            Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                Text(
+                    text = if (selectedTab == 0) "Dresses & Hoodies" else "Sweaters & Hoodies",
+                    style = TinyType.Section
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                    TinyChip(
+                        text = "All",
+                        selected = !filterHoodiesOnly,
+                        onClick = { filterHoodiesOnly = false }
+                    )
+                    TinyChip(
+                        text = "Hoodies Only",
+                        selected = filterHoodiesOnly,
+                        onClick = { filterHoodiesOnly = true }
+                    )
+                }
+            }
+
+            // Outfits List
+            outfitList.forEach { item ->
+                val isWearing = (currentOutfit == item.id)
+                val onWearThisOutfit = {
+                    if (selectedTab == 0) {
+                        selectedGirlOutfit = item.id
+                        onSelectGirlOutfit(item.id)
+                    } else {
+                        selectedBoyOutfit = item.id
+                        onSelectBoyOutfit(item.id)
+                    }
+                }
+                TinyCard(
+                    onClick = onWearThisOutfit,
+                    selected = isWearing,
+                    padding = TinySpace.md,
+                    modifier = Modifier.testTag("wardrobe_item_${item.id}")
+                ) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.Top
+                    ) {
+                        // Pixel Mini Preview Icon (outfit colours are data)
+                        Surface(
+                            modifier = Modifier.size(48.dp),
+                            shape = TinyRadius.Medium,
+                            color = item.primaryColor.copy(alpha = 0.25f),
+                            border = BorderStroke(1.dp, item.accentColor.copy(alpha = 0.4f))
+                        ) {
+                            Canvas(modifier = Modifier.fillMaxSize()) {
+                                val p = size.width / 16f
+                                // Hanger
+                                drawRect(Color(0xFFFFD166), Offset(6 * p, 2 * p), Size(4 * p, p))
+                                drawRect(Color(0xFF8C6D37), Offset(7.5f * p, p), Size(p, p))
+
+                                if (selectedTab == 0) {
+                                    // Girl outfit / dress / hoodie preview
+                                    drawRect(item.primaryColor, Offset(5 * p, 3.5f * p), Size(6 * p, 4 * p))
+                                    drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
+                                    if (item.isHoodie) {
+                                        // Kangaroo pouch & drawstrings
+                                        drawRect(item.accentColor, Offset(5.5f * p, 5.5f * p), Size(5 * p, 2 * p))
+                                        drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2 * p))
+                                        drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2 * p))
+                                        // Pleated skirt below
+                                        drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
+                                    } else {
+                                        // Flared Skirt
+                                        drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
+                                        drawRect(item.primaryColor, Offset(4 * p, 13 * p), Size(8 * p, 1.2f * p))
+                                    }
+                                } else {
+                                    // Boy outfit / sweater / hoodie preview
+                                    drawRect(item.primaryColor, Offset(4.5f * p, 3.5f * p), Size(7 * p, 6 * p))
+                                    drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
+                                    if (item.isHoodie) {
+                                        drawRect(item.accentColor, Offset(5.5f * p, 6.5f * p), Size(5 * p, 2.5f * p))
+                                        drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
+                                        drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
+                                    }
+                                    // Trousers
+                                    drawRect(item.accentColor, Offset(5 * p, 9.5f * p), Size(3 * p, 5 * p))
+                                    drawRect(item.accentColor, Offset(8 * p, 9.5f * p), Size(3 * p, 5 * p))
+                                }
+                            }
+                        }
+
+                        Spacer(modifier = Modifier.width(TinySpace.md))
+
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
+                        ) {
+                            Text(
+                                text = item.name,
+                                style = TinyType.Section.copy(fontSize = 14.sp, lineHeight = 19.sp),
+                                maxLines = 2,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)
+                            ) {
+                                if (item.isHoodie) {
+                                    TinyTag(
+                                        text = "HOODIE",
+                                        color = TinyColors.Rose,
+                                        background = if (isWearing) TinyColors.Card else TinyColors.RoseSoft
+                                    )
+                                }
+                                TinyTag(
+                                    text = item.tag,
+                                    background = if (isWearing) TinyColors.Card else TinyColors.Muted
+                                )
+                            }
+
+                            Text(
+                                text = item.description,
+                                style = TinyType.Caption
+                            )
+
+                            Spacer(modifier = Modifier.height(TinySpace.xs))
+
+                            if (isWearing) {
+                                TinyTag(
+                                    text = "Wearing Now",
+                                    color = TinyColors.Rose,
+                                    background = TinyColors.Card
+                                )
+                            } else {
+                                TinyButton(
+                                    text = "Wear Outfit",
+                                    onClick = onWearThisOutfit,
+                                    style = TinyButtonStyle.Secondary,
+                                    compact = true
+                                )
                             }
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("wardrobe_close_button")
-                ) {
-                    Text("Close Wardrobe", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                }
             }
+        }
+
+        TinyButton(
+            text = "Close Wardrobe",
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth(),
+            style = TinyButtonStyle.Secondary,
+            testTag = "wardrobe_close_button"
+        )
+    }
+}
+
+/** One half of the His / Hers segmented switcher. */
+@Composable
+private fun WardrobeSegment(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier.heightIn(min = 40.dp),
+        shape = TinyRadius.Small,
+        color = if (selected) TinyColors.Card else Color.Transparent,
+        contentColor = if (selected) TinyColors.Rose else TinyColors.InkMuted,
+        border = if (selected) BorderStroke(1.dp, TinyColors.Line) else null
+    ) {
+        Box(
+            modifier = Modifier.padding(horizontal = TinySpace.sm, vertical = TinySpace.sm),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TinyType.Label.copy(color = Color.Unspecified),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
         }
     }
 }

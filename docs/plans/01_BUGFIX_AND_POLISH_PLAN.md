@@ -55,7 +55,7 @@
 
 ## Phase 1: Android behavior bugs in the new scenes (high impact)
 
-### 1.1 Couple stays stuck in reaction poses in RAINY_CAFE, SUNROOM and CAMPFIRE ⚠️ biggest bug
+### 1.1 Couple stays stuck in reaction poses in RAINY_CAFE, SUNROOM and CAMPFIRE (biggest bug)
 
 **What happens**
 - `SceneEngine.kt:1975` sends all three scenes to `-> Unit`, so nothing restores their seated pose.
@@ -173,7 +173,7 @@ The drawing code and the hit-test code use separate magic numbers, and they have
 - `docs/STORE_COMPLIANCE_CHECKLIST.md:32` says "8 scenes".
 - Write the missing **Interactive Objects Catalog** (`docs/INTERACTIVE_OBJECTS.md`). The earlier session's notes are not in the repo. Generate it from the `SceneLayouts` objects so it can't drift from the code.
 
-**⚖️ Licensing risk:** this public repo bundles commercial recordings (`wicked_game.mp3`, `golden_brown.mp3`, `cant_take_my_eyes_off_you.mp3`, `died_in_your_arms.mp3`). This is the owner's call: remove them, replace them with original or chiptune tracks, or make sure you have the rights.
+**Licensing risk:** this public repo bundles commercial recordings (`wicked_game.mp3`, `golden_brown.mp3`, `cant_take_my_eyes_off_you.mp3`, `died_in_your_arms.mp3`). This is the owner's call: remove them, replace them with original or chiptune tracks, or make sure you have the rights.
 
 ---
 

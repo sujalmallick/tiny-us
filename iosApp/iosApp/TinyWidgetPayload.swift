@@ -18,6 +18,7 @@ struct TinyWidgetPayload: Codable {
     var weatherName: String
     var timePhase: String
     var dailyMomentPrompt: String
+    /// SF Symbol name for the shared mood (field name kept for the shared JSON contract).
     var sharedMoodEmoji: String
     var latestSignalText: String
     var updatedAt: Date
@@ -26,6 +27,6 @@ struct TinyWidgetPayload: Codable {
         coupleNames: "Tiny Us", daysTogether: 0, anniversaryDate: .now, sceneName: "A little world",
         weatherName: "Sunny breeze", timePhase: "A cozy moment",
         dailyMomentPrompt: "What tiny thing made you smile today?",
-        sharedMoodEmoji: "💛", latestSignalText: "Open Tiny Us for a little hello.", updatedAt: .now
+        sharedMoodEmoji: "heart.fill", latestSignalText: "Open Tiny Us for a little hello.", updatedAt: .now
     )
 }

@@ -1,12 +1,13 @@
 package com.example.ui
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
@@ -16,25 +17,16 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Refresh
-import androidx.compose.material.icons.filled.Send
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.automirrored.rounded.Send
+import androidx.compose.material.icons.rounded.CardGiftcard
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -43,8 +35,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
@@ -52,9 +42,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import com.example.data.AdventureStatus
 import com.example.data.DailyMomentResponse
 import com.example.data.DailyPromptCatalog
@@ -70,23 +57,19 @@ import com.example.data.RelationshipTimeManager
 import com.example.data.SharedMoodType
 import com.example.data.WorldEvent
 import com.example.data.WorldEventBus
-import com.example.ui.theme.BlushPink
-import com.example.ui.theme.CozyCream
-import com.example.ui.theme.DarkSlate
-import com.example.ui.theme.DeepRose
-import com.example.ui.theme.PeachMuted
-import com.example.ui.theme.SageGreen
-import com.example.ui.theme.SoftRose
-import com.example.ui.theme.WarmSand
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 import com.example.widget.TinyUsWidgetProvider
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // 1. TINY DATE ADVENTURES DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 @Composable
 fun DateAdventuresDialog(
@@ -106,119 +89,78 @@ fun DateAdventuresDialog(
         else savedAdventures.filter { it.category == selectedCategory }
     }
 
-    Dialog(
+    TinyDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.testTag("date_adventures_dialog"),
+        widthFraction = 0.94f,
+        maxHeight = 680.dp
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .heightIn(max = 680.dp)
-                .testTag("date_adventures_dialog"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
+        TinyDialogHeader(
+            title = "Tiny Date Adventures",
+            subtitle = "Real-world moments to experience together",
+            icon = TinyIcons.DateAdventures,
+            onClose = onDismiss,
+            closeTestTag = "close_date_adventures"
+        )
+
+        // Category Chips
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🧺", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Tiny Date Adventures",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate
+            item {
+                CategoryChip(
+                    label = "All",
+                    isSelected = selectedCategory == null,
+                    onClick = { selectedCategory = null }
+                )
+            }
+            items(categories) { cat ->
+                CategoryChip(
+                    label = cat.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                    isSelected = selectedCategory == cat,
+                    onClick = { selectedCategory = if (selectedCategory == cat) null else cat }
+                )
+            }
+        }
+
+        // Adventures List
+        LazyColumn(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.md)
+        ) {
+            items(filteredList, key = { it.id }) { adventure ->
+                DateAdventureCard(
+                    adventure = adventure,
+                    boyfriendName = prefs.boyfriendName,
+                    girlfriendName = prefs.girlfriendName,
+                    onUpdate = { updated ->
+                        val list = savedAdventures.toMutableList()
+                        val idx = list.indexOfFirst { it.id == updated.id }
+                        if (idx != -1) {
+                            list[idx] = updated
+                        } else {
+                            list.add(updated)
+                        }
+                        prefs.saveDateAdventures(list)
+                        savedAdventures = prefs.getDateAdventures()
+
+                        if (updated.isFullyCompleted) {
+                            WorldEventBus.post(
+                                WorldEvent.DateAdventureCompleted(
+                                    id = UUID.randomUUID().toString(),
+                                    timestamp = System.currentTimeMillis(),
+                                    adventureId = updated.id,
+                                    title = updated.title,
+                                    completedBy = if (updated.completedByBoy && updated.completedByGirl) "both" else if (updated.completedByBoy) "boy" else "girl"
+                                )
                             )
                         }
-                        Text(
-                            text = "Real-world moments to experience together",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.65f)
-                        )
+                        TinyUsWidgetProvider.updateAllWidgets(context)
                     }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("close_date_adventures")
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Category Chips
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    item {
-                        CategoryChip(
-                            label = "All",
-                            isSelected = selectedCategory == null,
-                            onClick = { selectedCategory = null }
-                        )
-                    }
-                    items(categories) { cat ->
-                        CategoryChip(
-                            label = cat.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
-                            isSelected = selectedCategory == cat,
-                            onClick = { selectedCategory = if (selectedCategory == cat) null else cat }
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Adventures List
-                LazyColumn(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    verticalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    items(filteredList, key = { it.id }) { adventure ->
-                        DateAdventureCard(
-                            adventure = adventure,
-                            boyfriendName = prefs.boyfriendName,
-                            girlfriendName = prefs.girlfriendName,
-                            onUpdate = { updated ->
-                                val list = savedAdventures.toMutableList()
-                                val idx = list.indexOfFirst { it.id == updated.id }
-                                if (idx != -1) {
-                                    list[idx] = updated
-                                } else {
-                                    list.add(updated)
-                                }
-                                prefs.saveDateAdventures(list)
-                                savedAdventures = prefs.getDateAdventures()
-
-                                if (updated.isFullyCompleted) {
-                                    WorldEventBus.post(
-                                        WorldEvent.DateAdventureCompleted(
-                                            id = UUID.randomUUID().toString(),
-                                            timestamp = System.currentTimeMillis(),
-                                            adventureId = updated.id,
-                                            title = updated.title,
-                                            completedBy = if (updated.completedByBoy && updated.completedByGirl) "both" else if (updated.completedByBoy) "boy" else "girl"
-                                        )
-                                    )
-                                }
-                                TinyUsWidgetProvider.updateAllWidgets(context)
-                            }
-                        )
-                    }
-                }
+                )
             }
         }
     }
@@ -230,22 +172,7 @@ private fun CategoryChip(
     isSelected: Boolean,
     onClick: () -> Unit
 ) {
-    Surface(
-        modifier = Modifier
-            .clip(RoundedCornerShape(12.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(12.dp),
-        color = if (isSelected) DeepRose else WarmSand,
-        border = BorderStroke(1.dp, if (isSelected) DeepRose else Color(0xFFE2D6CA))
-    ) {
-        Text(
-            text = label,
-            fontSize = 12.sp,
-            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-            color = if (isSelected) Color.White else DarkSlate,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-    }
+    TinyChip(text = label, selected = isSelected, onClick = onClick)
 }
 
 @Composable
@@ -258,242 +185,193 @@ private fun DateAdventureCard(
     val isCompleted = adventure.isFullyCompleted
     val isAccepted = adventure.status == AdventureStatus.ACCEPTED || adventure.status == AdventureStatus.IN_PROGRESS
 
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isCompleted) Color(0xFFF3FAF6) else Color.White
-        ),
-        border = BorderStroke(
-            1.dp,
-            if (isCompleted) SageGreen.copy(alpha = 0.6f) else Color(0xFFE8E0D8)
-        )
+    TinyCard(
+        color = if (isCompleted) TinyColors.SageSoft else TinyColors.Card,
+        spacing = TinySpace.sm
     ) {
-        Column(modifier = Modifier.padding(14.dp)) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = adventure.title,
+                style = TinyType.Section,
+                modifier = Modifier.weight(1f)
+            )
+            Spacer(modifier = Modifier.width(TinySpace.sm))
+            when {
+                isCompleted -> TinyTag("Completed", color = TinyColors.Sage, background = TinyColors.Card)
+                isAccepted -> TinyTag("Active", color = TinyColors.Rose, background = TinyColors.RoseSoft)
+                adventure.status == AdventureStatus.SKIPPED -> TinyTag("Skipped")
+                else -> TinyTag("Available")
+            }
+        }
+
+        Text(
+            text = adventure.description,
+            style = TinyType.Body.copy(color = TinyColors.InkMuted)
+        )
+
+        val artifact = adventure.unlockedArtifact
+        if (!artifact.isNullOrEmpty()) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Rounded.CardGiftcard,
+                    contentDescription = null,
+                    tint = TinyColors.Rose,
+                    modifier = Modifier.size(14.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Unlocks: ${artifact.replace("_", " ")} in Tiny Home",
+                    style = TinyType.Micro.copy(color = TinyColors.Rose)
+                )
+            }
+        }
+
+        // Action / Lifecycle buttons
+        if (isCompleted) {
             Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(
+                    Icons.Rounded.Check,
+                    contentDescription = null,
+                    tint = TinyColors.Sage,
+                    modifier = Modifier.size(16.dp)
+                )
+                Spacer(modifier = Modifier.width(6.dp))
+                Text(
+                    text = "Cherished memory unlocked in our Tiny Us world",
+                    style = TinyType.Caption.copy(color = TinyColors.Sage, fontWeight = FontWeight.Medium)
+                )
+            }
+        } else if (isAccepted) {
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
                 Text(
-                    text = adventure.title,
-                    fontSize = 15.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate,
-                    modifier = Modifier.weight(1f)
+                    text = "Asynchronous progress:",
+                    style = TinyType.Micro
                 )
-                Surface(
-                    shape = RoundedCornerShape(8.dp),
-                    color = when {
-                        isCompleted -> SageGreen.copy(alpha = 0.2f)
-                        isAccepted -> BlushPink.copy(alpha = 0.35f)
-                        adventure.status == AdventureStatus.SKIPPED -> Color.LightGray.copy(alpha = 0.3f)
-                        else -> WarmSand
-                    }
-                ) {
-                    Text(
-                        text = when {
-                            isCompleted -> "Completed 🌸"
-                            isAccepted -> "Active 💫"
-                            adventure.status == AdventureStatus.SKIPPED -> "Skipped"
-                            else -> "Available"
-                        },
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = when {
-                            isCompleted -> SageGreen
-                            isAccepted -> DeepRose
-                            else -> DarkSlate.copy(alpha = 0.7f)
-                        },
-                        modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                    )
-                }
-            }
-
-            Spacer(modifier = Modifier.height(4.dp))
-
-            Text(
-                text = adventure.description,
-                fontSize = 13.sp,
-                color = DarkSlate.copy(alpha = 0.8f),
-                lineHeight = 18.sp
-            )
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            val artifact = adventure.unlockedArtifact
-            if (!artifact.isNullOrEmpty()) {
-                Text(
-                    text = "🎁 Unlocks: ${artifact.replace("_", " ")} in Tiny Home",
-                    fontSize = 11.sp,
-                    color = DeepRose.copy(alpha = 0.85f),
-                    fontWeight = FontWeight.Medium
-                )
-                Spacer(modifier = Modifier.height(6.dp))
-            }
-
-            // Action / Lifecycle buttons
-            if (isCompleted) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Icon(
-                        Icons.Default.Check,
-                        contentDescription = null,
-                        tint = SageGreen,
-                        modifier = Modifier.size(16.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "Cherished memory unlocked in our Tiny Us world",
-                        fontSize = 12.sp,
-                        color = SageGreen,
-                        fontWeight = FontWeight.Medium
-                    )
-                }
-            } else if (isAccepted) {
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = "Asynchronous progress:",
-                            fontSize = 11.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkSlate.copy(alpha = 0.7f)
-                        )
-                        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                            // Partner A completion (Boy)
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (adventure.completedByBoy) SageGreen.copy(alpha = 0.15f) else WarmSand,
-                                border = BorderStroke(1.dp, if (adventure.completedByBoy) SageGreen else Color.LightGray),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        val nextBoy = !adventure.completedByBoy
-                                        val completeBoth = nextBoy && adventure.completedByGirl
-                                        onUpdate(
-                                            adventure.copy(
-                                                completedByBoy = nextBoy,
-                                                status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
-                                                completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
-                                            )
-                                        )
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (adventure.completedByBoy) {
-                                        Icon(Icons.Default.Check, contentDescription = null, tint = SageGreen, modifier = Modifier.size(12.dp))
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                    }
-                                    Text(
-                                        text = boyfriendName,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (adventure.completedByBoy) SageGreen else DarkSlate
-                                    )
-                                }
-                            }
-
-                            // Partner B completion (Girl)
-                            Surface(
-                                shape = RoundedCornerShape(8.dp),
-                                color = if (adventure.completedByGirl) SageGreen.copy(alpha = 0.15f) else WarmSand,
-                                border = BorderStroke(1.dp, if (adventure.completedByGirl) SageGreen else Color.LightGray),
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .clickable {
-                                        val nextGirl = !adventure.completedByGirl
-                                        val completeBoth = adventure.completedByBoy && nextGirl
-                                        onUpdate(
-                                            adventure.copy(
-                                                completedByGirl = nextGirl,
-                                                status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
-                                                completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
-                                            )
-                                        )
-                                    }
-                            ) {
-                                Row(
-                                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    if (adventure.completedByGirl) {
-                                        Icon(Icons.Default.Check, contentDescription = null, tint = SageGreen, modifier = Modifier.size(12.dp))
-                                        Spacer(modifier = Modifier.width(2.dp))
-                                    }
-                                    Text(
-                                        text = girlfriendName,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (adventure.completedByGirl) SageGreen else DarkSlate
-                                    )
-                                }
-                            }
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        Button(
-                            onClick = {
-                                onUpdate(
-                                    adventure.copy(
-                                        completedByBoy = true,
-                                        completedByGirl = true,
-                                        status = AdventureStatus.COMPLETED,
-                                        completedTimestamp = System.currentTimeMillis()
-                                    )
+                Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                    // Partner A completion (Boy)
+                    PartnerProgressToggle(
+                        name = boyfriendName,
+                        done = adventure.completedByBoy,
+                        onClick = {
+                            val nextBoy = !adventure.completedByBoy
+                            val completeBoth = nextBoy && adventure.completedByGirl
+                            onUpdate(
+                                adventure.copy(
+                                    completedByBoy = nextBoy,
+                                    status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
+                                    completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
                                 )
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Complete Together ✨", fontSize = 12.sp, fontWeight = FontWeight.Bold)
+                            )
                         }
-                        TextButton(
-                            onClick = {
-                                onUpdate(adventure.copy(status = AdventureStatus.SKIPPED))
-                            },
-                            shape = RoundedCornerShape(10.dp)
-                        ) {
-                            Text("Skip", fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+                    )
+
+                    // Partner B completion (Girl)
+                    PartnerProgressToggle(
+                        name = girlfriendName,
+                        done = adventure.completedByGirl,
+                        onClick = {
+                            val nextGirl = !adventure.completedByGirl
+                            val completeBoth = adventure.completedByBoy && nextGirl
+                            onUpdate(
+                                adventure.copy(
+                                    completedByGirl = nextGirl,
+                                    status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
+                                    completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
+                                )
+                            )
                         }
-                    }
+                    )
                 }
-            } else {
-                Button(
-                    onClick = {
-                        onUpdate(
-                            adventure.copy(status = AdventureStatus.ACCEPTED)
-                        )
-                    },
+
+                Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = SoftRose),
-                    shape = RoundedCornerShape(10.dp)
+                    horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text("Accept Adventure 💌", fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    TinyButton(
+                        text = "Complete Together",
+                        onClick = {
+                            onUpdate(
+                                adventure.copy(
+                                    completedByBoy = true,
+                                    completedByGirl = true,
+                                    status = AdventureStatus.COMPLETED,
+                                    completedTimestamp = System.currentTimeMillis()
+                                )
+                            )
+                        },
+                        modifier = Modifier.weight(1f),
+                        style = TinyButtonStyle.Primary,
+                        icon = Icons.Rounded.Check
+                    )
+                    TinyButton(
+                        text = "Skip",
+                        onClick = {
+                            onUpdate(adventure.copy(status = AdventureStatus.SKIPPED))
+                        },
+                        style = TinyButtonStyle.Ghost
+                    )
                 }
             }
+        } else {
+            TinyButton(
+                text = "Accept Adventure",
+                onClick = {
+                    onUpdate(
+                        adventure.copy(status = AdventureStatus.ACCEPTED)
+                    )
+                },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary
+            )
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+/** Per-partner completion toggle on an active adventure. Visual pill; Surface keeps a 48dp touch target. */
+@Composable
+private fun PartnerProgressToggle(
+    name: String,
+    done: Boolean,
+    onClick: () -> Unit
+) {
+    Surface(
+        onClick = onClick,
+        shape = TinyRadius.Pill,
+        color = if (done) TinyColors.SageSoft else TinyColors.Muted,
+        contentColor = if (done) TinyColors.Sage else TinyColors.Ink,
+        border = BorderStroke(1.dp, if (done) TinyColors.Sage.copy(alpha = 0.6f) else TinyColors.Line)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = TinySpace.md, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            if (done) {
+                Icon(Icons.Rounded.Check, contentDescription = null, tint = TinyColors.Sage, modifier = Modifier.size(14.dp))
+                Spacer(modifier = Modifier.width(TinySpace.xs))
+            }
+            Text(
+                text = name,
+                style = TinyType.Micro.copy(color = if (done) TinyColors.Sage else TinyColors.Ink),
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 // 2. DAILY TINY MOMENT (DAILY REFLECTION) DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 @Composable
 fun DailyMomentPromptDialog(
@@ -512,180 +390,114 @@ fun DailyMomentPromptDialog(
         mutableStateOf(savedResponse.isRevealed || savedResponse.isBothAnswered)
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("daily_moment_prompt_dialog"),
+        verticalSpacing = TinySpace.md
+    ) {
+        TinyDialogHeader(
+            title = "Daily Tiny Moment",
+            subtitle = "One gentle reflection for both of you today",
+            icon = TinyIcons.DailyMoment,
+            onClose = onDismiss
+        )
+
+        // Prompt Card
+        TinyCard(spacing = TinySpace.sm) {
+            TinyTag(
+                text = currentPrompt.category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
+                color = TinyColors.Rose,
+                background = TinyColors.RoseSoft
+            )
+            Text(
+                text = currentPrompt.question,
+                style = TinyType.Section
+            )
+        }
+
+        // Partner A Response (Boy)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
+        ) {
+            Text(
+                text = "${prefs.boyfriendName}'s reflection:",
+                style = TinyType.Label
+            )
+            OutlinedTextField(
+                value = answerA,
+                onValueChange = { answerA = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Write your thoughts...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                maxLines = 3,
+                shape = TinyFieldShape,
+                colors = tinyTextFieldColors()
+            )
+        }
+
+        // Partner B Response (Girl)
+        Column(
+            modifier = Modifier.fillMaxWidth(),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
+        ) {
+            Text(
+                text = "${prefs.girlfriendName}'s reflection:",
+                style = TinyType.Label
+            )
+            OutlinedTextField(
+                value = answerB,
+                onValueChange = { answerB = it },
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Write your thoughts...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                maxLines = 3,
+                shape = TinyFieldShape,
+                colors = tinyTextFieldColors()
+            )
+        }
+
+        // Save Controls
+        Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .testTag("daily_moment_prompt_dialog"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
+                .padding(top = TinySpace.xs),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "💭", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Daily Tiny Moment",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate
-                            )
-                        }
-                        Text(
-                            text = "One gentle reflection for both of you today",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.65f)
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Prompt Card
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFFFCCD5))
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = BlushPink.copy(alpha = 0.35f)
-                        ) {
-                            Text(
-                                text = currentPrompt.category.replace("_", " ").lowercase().replaceFirstChar { it.uppercase() },
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DeepRose,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 3.dp)
-                            )
-                        }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = currentPrompt.question,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate,
-                            lineHeight = 22.sp
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Partner A Response (Boy)
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "${prefs.boyfriendName}'s reflection:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkSlate
+            TinyButton(
+                text = "Save Our Daily Moment",
+                onClick = {
+                    val hasBoth = answerA.isNotBlank() && answerB.isNotBlank()
+                    val updated = DailyMomentResponse(
+                        promptId = currentPrompt.id,
+                        dateString = todayStr,
+                        boyAnswer = answerA.ifBlank { null },
+                        girlAnswer = answerB.ifBlank { null },
+                        isRevealed = revealPartnerAnswers || hasBoth,
+                        completedTimestamp = if (hasBoth) System.currentTimeMillis() else null
                     )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = answerA,
-                        onValueChange = { answerA = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Write your thoughts...", fontSize = 13.sp) },
-                        maxLines = 3,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DeepRose,
-                            unfocusedBorderColor = Color(0xFFDDD2C6),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
-                    )
-                }
+                    prefs.saveDailyMomentResponse(updated)
+                    savedResponse = updated
+                    revealPartnerAnswers = updated.isRevealed
+                    TinyUsWidgetProvider.updateAllWidgets(context)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary
+            )
 
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Partner B Response (Girl)
-                Column(modifier = Modifier.fillMaxWidth()) {
-                    Text(
-                        text = "${prefs.girlfriendName}'s reflection:",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = DarkSlate
-                    )
-                    Spacer(modifier = Modifier.height(4.dp))
-                    OutlinedTextField(
-                        value = answerB,
-                        onValueChange = { answerB = it },
-                        modifier = Modifier.fillMaxWidth(),
-                        placeholder = { Text("Write your thoughts...", fontSize = 13.sp) },
-                        maxLines = 3,
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = DeepRose,
-                            unfocusedBorderColor = Color(0xFFDDD2C6),
-                            focusedContainerColor = Color.White,
-                            unfocusedContainerColor = Color.White
-                        )
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Save Controls
-                Button(
-                    onClick = {
-                        val hasBoth = answerA.isNotBlank() && answerB.isNotBlank()
-                        val updated = DailyMomentResponse(
-                            promptId = currentPrompt.id,
-                            dateString = todayStr,
-                            boyAnswer = answerA.ifBlank { null },
-                            girlAnswer = answerB.ifBlank { null },
-                            isRevealed = revealPartnerAnswers || hasBoth,
-                            completedTimestamp = if (hasBoth) System.currentTimeMillis() else null
-                        )
-                        prefs.saveDailyMomentResponse(updated)
-                        savedResponse = updated
-                        revealPartnerAnswers = updated.isRevealed
-                        TinyUsWidgetProvider.updateAllWidgets(context)
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text("Save Our Daily Moment ✨", fontWeight = FontWeight.SemiBold)
-                }
-
-                if (savedResponse.isAnsweredByBoy || savedResponse.isAnsweredByGirl) {
-                    Spacer(modifier = Modifier.height(8.dp))
-                    Text(
-                        text = if (revealPartnerAnswers) "Both reflections shared & unlocked on Bedside Notepad 📝" else "Reflections preserved privately until both share 🔒",
-                        fontSize = 11.5.sp,
-                        textAlign = TextAlign.Center,
-                        color = if (revealPartnerAnswers) SageGreen else DarkSlate.copy(alpha = 0.6f),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
+            if (savedResponse.isAnsweredByBoy || savedResponse.isAnsweredByGirl) {
+                Text(
+                    text = if (revealPartnerAnswers) "Both reflections shared & unlocked on Bedside Notepad" else "Reflections preserved privately until both share",
+                    style = TinyType.Caption.copy(color = if (revealPartnerAnswers) TinyColors.Sage else TinyColors.InkMuted),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // 3. TWO-PERSON MINI-GAMES DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 @Composable
 fun TwoPersonMiniGameDialog(
@@ -707,260 +519,210 @@ fun TwoPersonMiniGameDialog(
     var choiceBIndex by remember { mutableStateOf<Int?>(null) }
     var isRevealed by remember { mutableStateOf(false) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .testTag("mini_games_dialog"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("mini_games_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Two-Person Mini-Games",
+            subtitle = "Playful 1-minute relationship moments",
+            icon = TinyIcons.MiniGames,
+            onClose = onDismiss
+        )
+
+        // Game Type Tabs
+        LazyRow(
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+            modifier = Modifier.fillMaxWidth()
         ) {
+            items(MiniGameType.values()) { type ->
+                CategoryChip(
+                    label = type.title,
+                    isSelected = selectedType == type,
+                    onClick = {
+                        selectedType = type
+                        questionIndex = 0
+                        choiceAIndex = null
+                        choiceBIndex = null
+                        isRevealed = false
+                    }
+                )
+            }
+        }
+
+        // Question Box
+        TinyCard(spacing = TinySpace.sm) {
             Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
+                modifier = Modifier.fillMaxWidth(),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
-                // Header
+                Text(
+                    text = currentQuestion.prompt,
+                    style = TinyType.Section,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(TinySpace.xs))
+
+                // Choices Section for Partner A (Boy)
+                Text(
+                    text = "${prefs.boyfriendName}'s choice:",
+                    style = TinyType.Label.copy(color = TinyColors.InkMuted)
+                )
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🎲", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Two-Person Mini-Games",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate
-                            )
-                        }
-                        Text(
-                            text = "Playful 1-minute relationship moments",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.65f)
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(10.dp))
-
-                // Game Type Tabs
-                LazyRow(
-                    horizontalArrangement = Arrangement.spacedBy(6.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    items(MiniGameType.values()) { type ->
-                        CategoryChip(
-                            label = type.title,
-                            isSelected = selectedType == type,
-                            onClick = {
-                                selectedType = type
-                                questionIndex = 0
-                                choiceAIndex = null
-                                choiceBIndex = null
-                                isRevealed = false
-                            }
+                    currentQuestion.options.forEachIndexed { idx, opt ->
+                        GameOptionTile(
+                            text = opt,
+                            selected = choiceAIndex == idx,
+                            onClick = { choiceAIndex = idx },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
                         )
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
+                Spacer(modifier = Modifier.height(TinySpace.xs))
 
-                // Question Box
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(18.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFE8E0D8))
+                // Choices Section for Partner B (Girl)
+                Text(
+                    text = "${prefs.girlfriendName}'s choice:",
+                    style = TinyType.Label.copy(color = TinyColors.InkMuted)
+                )
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
                 ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally
+                    currentQuestion.options.forEachIndexed { idx, opt ->
+                        GameOptionTile(
+                            text = opt,
+                            selected = choiceBIndex == idx,
+                            onClick = { choiceBIndex = idx },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
+                        )
+                    }
+                }
+
+                // Reveal results
+                if (isRevealed) {
+                    Spacer(modifier = Modifier.height(TinySpace.xs))
+                    val isMatch = choiceAIndex != null && choiceAIndex == choiceBIndex
+                    Surface(
+                        shape = TinyRadius.Medium,
+                        color = if (isMatch) TinyColors.SageSoft else TinyColors.Muted,
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Text(
-                            text = currentQuestion.prompt,
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate,
-                            textAlign = TextAlign.Center
-                        )
-
-                        Spacer(modifier = Modifier.height(14.dp))
-
-                        // Choices Section for Partner A (Boy)
-                        Text(
-                            text = "${prefs.boyfriendName}'s choice:",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkSlate.copy(alpha = 0.8f)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
+                        Column(
+                            modifier = Modifier.padding(TinySpace.md),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
-                            currentQuestion.options.forEachIndexed { idx, opt ->
-                                val selected = choiceAIndex == idx
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { choiceAIndex = idx },
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (selected) DeepRose else WarmSand,
-                                    border = BorderStroke(1.dp, if (selected) DeepRose else Color(0xFFDDD2C6))
-                                ) {
-                                    Text(
-                                        text = opt,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (selected) Color.White else DarkSlate,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(12.dp))
-
-                        // Choices Section for Partner B (Girl)
-                        Text(
-                            text = "${prefs.girlfriendName}'s choice:",
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkSlate.copy(alpha = 0.8f)
-                        )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            currentQuestion.options.forEachIndexed { idx, opt ->
-                                val selected = choiceBIndex == idx
-                                Surface(
-                                    modifier = Modifier
-                                        .weight(1f)
-                                        .clip(RoundedCornerShape(10.dp))
-                                        .clickable { choiceBIndex = idx },
-                                    shape = RoundedCornerShape(10.dp),
-                                    color = if (selected) SoftRose else WarmSand,
-                                    border = BorderStroke(1.dp, if (selected) SoftRose else Color(0xFFDDD2C6))
-                                ) {
-                                    Text(
-                                        text = opt,
-                                        fontSize = 12.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = if (selected) Color.White else DarkSlate,
-                                        textAlign = TextAlign.Center,
-                                        modifier = Modifier.padding(vertical = 8.dp, horizontal = 4.dp),
-                                        maxLines = 2,
-                                        overflow = TextOverflow.Ellipsis
-                                    )
-                                }
-                            }
-                        }
-
-                        // Reveal results
-                        if (isRevealed) {
-                            Spacer(modifier = Modifier.height(14.dp))
-                            val isMatch = choiceAIndex != null && choiceAIndex == choiceBIndex
-                            Surface(
-                                shape = RoundedCornerShape(12.dp),
-                                color = if (isMatch) SageGreen.copy(alpha = 0.15f) else PeachMuted.copy(alpha = 0.15f),
-                                border = BorderStroke(1.dp, if (isMatch) SageGreen else PeachMuted),
-                                modifier = Modifier.fillMaxWidth()
-                            ) {
-                                Column(
-                                    modifier = Modifier.padding(10.dp),
-                                    horizontalAlignment = Alignment.CenterHorizontally
-                                ) {
-                                    Text(
-                                        text = if (isMatch) "Match Made in Heaven! 💕" else "Playful Perspectives! 🌟",
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 13.sp,
-                                        color = if (isMatch) SageGreen else DarkSlate
-                                    )
-                                    val optA = choiceAIndex?.let { currentQuestion.options.getOrNull(it) } ?: "—"
-                                    val optB = choiceBIndex?.let { currentQuestion.options.getOrNull(it) } ?: "—"
-                                    Text(
-                                        text = "${prefs.boyfriendName}: \"$optA\" • ${prefs.girlfriendName}: \"$optB\"",
-                                        fontSize = 11.5.sp,
-                                        color = DarkSlate.copy(alpha = 0.75f)
-                                    )
-                                }
-                            }
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    if (!isRevealed) {
-                        Button(
-                            onClick = {
-                                isRevealed = true
-                                val round = MiniGameRound(
-                                    id = UUID.randomUUID().toString(),
-                                    questionId = currentQuestion.id,
-                                    type = selectedType,
-                                    prompt = currentQuestion.prompt,
-                                    options = currentQuestion.options,
-                                    boyChosenIndex = choiceAIndex,
-                                    girlChosenIndex = choiceBIndex,
-                                    isRevealed = true,
-                                    timestamp = System.currentTimeMillis()
-                                )
-                                prefs.saveMiniGameRound(round)
-                                TinyUsWidgetProvider.updateAllWidgets(context)
-                            },
-                            enabled = choiceAIndex != null || choiceBIndex != null,
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Text("Reveal Answers 💖", fontWeight = FontWeight.SemiBold)
-                        }
-                    } else {
-                        Button(
-                            onClick = {
-                                questionIndex = (questionIndex + 1) % currentQuestions.size.coerceAtLeast(1)
-                                choiceAIndex = null
-                                choiceBIndex = null
-                                isRevealed = false
-                            },
-                            modifier = Modifier.weight(1f),
-                            colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Refresh, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Next Question", fontWeight = FontWeight.SemiBold)
+                            Text(
+                                text = if (isMatch) "Match Made in Heaven!" else "Playful Perspectives!",
+                                style = TinyType.Label.copy(color = if (isMatch) TinyColors.Sage else TinyColors.Ink)
+                            )
+                            val optA = choiceAIndex?.let { currentQuestion.options.getOrNull(it) } ?: "—"
+                            val optB = choiceBIndex?.let { currentQuestion.options.getOrNull(it) } ?: "—"
+                            Text(
+                                text = "${prefs.boyfriendName}: \"$optA\" • ${prefs.girlfriendName}: \"$optB\"",
+                                style = TinyType.Caption,
+                                textAlign = TextAlign.Center
+                            )
                         }
                     }
                 }
             }
         }
+
+        if (!isRevealed) {
+            TinyButton(
+                text = "Reveal Answers",
+                onClick = {
+                    isRevealed = true
+                    val round = MiniGameRound(
+                        id = UUID.randomUUID().toString(),
+                        questionId = currentQuestion.id,
+                        type = selectedType,
+                        prompt = currentQuestion.prompt,
+                        options = currentQuestion.options,
+                        boyChosenIndex = choiceAIndex,
+                        girlChosenIndex = choiceBIndex,
+                        isRevealed = true,
+                        timestamp = System.currentTimeMillis()
+                    )
+                    prefs.saveMiniGameRound(round)
+                    TinyUsWidgetProvider.updateAllWidgets(context)
+                },
+                enabled = choiceAIndex != null || choiceBIndex != null,
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary
+            )
+        } else {
+            TinyButton(
+                text = "Next Question",
+                onClick = {
+                    questionIndex = (questionIndex + 1) % currentQuestions.size.coerceAtLeast(1)
+                    choiceAIndex = null
+                    choiceBIndex = null
+                    isRevealed = false
+                },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary,
+                icon = Icons.Rounded.Refresh
+            )
+        }
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+/** One answer option in a mini-game round. Muted tile; selected = RoseSoft fill + Rose border. */
+@Composable
+private fun GameOptionTile(
+    text: String,
+    selected: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        onClick = onClick,
+        modifier = modifier,
+        shape = TinyRadius.Medium,
+        color = if (selected) TinyColors.RoseSoft else TinyColors.Muted,
+        contentColor = if (selected) TinyColors.Rose else TinyColors.Ink,
+        border = BorderStroke(1.dp, if (selected) TinyColors.Rose else TinyColors.Line)
+    ) {
+        Box(
+            modifier = Modifier
+                .heightIn(min = 48.dp)
+                .padding(vertical = TinySpace.sm, horizontal = TinySpace.xs),
+            contentAlignment = Alignment.Center
+        ) {
+            Text(
+                text = text,
+                style = TinyType.Label.copy(
+                    color = if (selected) TinyColors.Rose else TinyColors.Ink,
+                    fontWeight = if (selected) FontWeight.Bold else FontWeight.Medium
+                ),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
+    }
+}
+
+// -----------------------------------------------------------------------------
 // 4. SHARED MOOD DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 @Composable
 fun SharedMoodDialog(
@@ -976,88 +738,46 @@ fun SharedMoodDialog(
     var selectedMoodB by remember { mutableStateOf(currentMoodState.girlMood) }
     var isSharedB by remember { mutableStateOf(currentMoodState.girlMoodShared) }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 12.dp)
-                .testTag("shared_mood_dialog"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "🌸", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Shared Mood",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate
-                            )
-                        }
-                        Text(
-                            text = "A gentle whisper of how you feel today",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.65f)
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
-                }
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("shared_mood_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Shared Mood",
+            subtitle = "A gentle whisper of how you feel today",
+            icon = TinyIcons.SharedMood,
+            onClose = onDismiss
+        )
 
-                Spacer(modifier = Modifier.height(14.dp))
+        // Partner A Mood Section (Boy)
+        PartnerMoodSection(
+            partnerName = prefs.boyfriendName,
+            selectedMood = selectedMoodA,
+            onSelectMood = { selectedMoodA = it },
+            isShared = isSharedA,
+            onToggleShared = { isSharedA = it }
+        )
 
-                // Partner A Mood Section (Boy)
-                PartnerMoodSection(
-                    partnerName = prefs.boyfriendName,
-                    selectedMood = selectedMoodA,
-                    onSelectMood = { selectedMoodA = it },
-                    isShared = isSharedA,
-                    onToggleShared = { isSharedA = it }
-                )
+        // Partner B Mood Section (Girl)
+        PartnerMoodSection(
+            partnerName = prefs.girlfriendName,
+            selectedMood = selectedMoodB,
+            onSelectMood = { selectedMoodB = it },
+            isShared = isSharedB,
+            onToggleShared = { isSharedB = it }
+        )
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Partner B Mood Section (Girl)
-                PartnerMoodSection(
-                    partnerName = prefs.girlfriendName,
-                    selectedMood = selectedMoodB,
-                    onSelectMood = { selectedMoodB = it },
-                    isShared = isSharedB,
-                    onToggleShared = { isSharedB = it }
-                )
-
-                Spacer(modifier = Modifier.height(18.dp))
-
-                Button(
-                    onClick = {
-                        prefs.setPartnerMood("boy", selectedMoodA, isSharedA)
-                        prefs.setPartnerMood("girl", selectedMoodB, isSharedB)
-                        TinyUsWidgetProvider.updateAllWidgets(context)
-                        onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                    shape = RoundedCornerShape(14.dp)
-                ) {
-                    Text(if (com.example.FeatureFlags.PARTNER_SYNC) "Share With Each Other 💌" else "Save Our Moods 🌸", fontWeight = FontWeight.SemiBold)
-                }
-            }
-        }
+        TinyButton(
+            text = if (com.example.FeatureFlags.PARTNER_SYNC) "Share With Each Other" else "Save Our Moods",
+            onClick = {
+                prefs.setPartnerMood("boy", selectedMoodA, isSharedA)
+                prefs.setPartnerMood("girl", selectedMoodB, isSharedB)
+                TinyUsWidgetProvider.updateAllWidgets(context)
+                onDismiss()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            style = TinyButtonStyle.Primary
+        )
     }
 }
 
@@ -1069,76 +789,73 @@ private fun PartnerMoodSection(
     isShared: Boolean,
     onToggleShared: (Boolean) -> Unit
 ) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFE8E0D8))
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
+    TinyCard(padding = TinySpace.md, spacing = TinySpace.sm) {
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Text(
+                text = "$partnerName's feeling:",
+                style = TinyType.Label,
+                modifier = Modifier.weight(1f)
+            )
+            if (com.example.FeatureFlags.PARTNER_SYNC) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = "$partnerName's feeling:",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
+                    text = if (isShared) "Shared" else "Private",
+                    style = TinyType.Micro.copy(color = if (isShared) TinyColors.Sage else TinyColors.InkMuted)
                 )
-                if (com.example.FeatureFlags.PARTNER_SYNC) Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = if (isShared) "Shared" else "Private",
-                        fontSize = 11.sp,
-                        color = if (isShared) SageGreen else DarkSlate.copy(alpha = 0.5f)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Switch(
-                        checked = isShared,
-                        onCheckedChange = onToggleShared,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = DeepRose,
-                            checkedTrackColor = BlushPink
-                        ),
-                        modifier = Modifier.size(24.dp)
-                    )
-                }
+                Spacer(modifier = Modifier.width(TinySpace.sm))
+                Switch(
+                    checked = isShared,
+                    onCheckedChange = onToggleShared,
+                    colors = tinySwitchColors()
+                )
             }
+        }
 
-            Spacer(modifier = Modifier.height(8.dp))
-
-            // 5 Mood Chips
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(4.dp),
-                modifier = Modifier.fillMaxWidth()
-            ) {
-                SharedMoodType.values().forEach { mood ->
-                    val isSelected = selectedMood == mood
-                    Surface(
+        // 5 Mood Chips
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.xs),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(IntrinsicSize.Min)
+        ) {
+            SharedMoodType.values().forEach { mood ->
+                val isSelected = selectedMood == mood
+                Surface(
+                    onClick = { onSelectMood(mood) },
+                    modifier = Modifier
+                        .weight(1f)
+                        .fillMaxHeight(),
+                    shape = TinyRadius.Medium,
+                    color = if (isSelected) TinyColors.RoseSoft else TinyColors.Muted,
+                    contentColor = if (isSelected) TinyColors.Rose else TinyColors.Ink,
+                    border = BorderStroke(1.dp, if (isSelected) TinyColors.Rose else TinyColors.Line)
+                ) {
+                    Column(
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center,
                         modifier = Modifier
-                            .weight(1f)
-                            .clip(RoundedCornerShape(10.dp))
-                            .clickable { onSelectMood(mood) },
-                        shape = RoundedCornerShape(10.dp),
-                        color = if (isSelected) BlushPink.copy(alpha = 0.4f) else WarmSand,
-                        border = BorderStroke(1.dp, if (isSelected) DeepRose else Color(0xFFE2D6CA))
+                            .heightIn(min = 56.dp)
+                            .padding(vertical = TinySpace.sm, horizontal = 2.dp)
                     ) {
-                        Column(
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            modifier = Modifier.padding(vertical = 6.dp)
-                        ) {
-                            Icon(TinyIcons.mood(mood), contentDescription = null, tint = if (isSelected) DeepRose else DarkSlate, modifier = Modifier.size(18.dp))
-                            Spacer(modifier = Modifier.height(2.dp))
-                            Text(
-                                text = mood.displayName,
-                                fontSize = 10.sp,
-                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal,
-                                color = if (isSelected) DeepRose else DarkSlate,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                        }
+                        Icon(
+                            TinyIcons.mood(mood),
+                            contentDescription = null,
+                            tint = if (isSelected) TinyColors.Rose else TinyColors.InkMuted,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.height(TinySpace.xs))
+                        Text(
+                            text = mood.displayName,
+                            style = TinyType.Micro.copy(
+                                color = if (isSelected) TinyColors.Rose else TinyColors.Ink,
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                            ),
+                            textAlign = TextAlign.Center,
+                            maxLines = 2,
+                            overflow = TextOverflow.Ellipsis
+                        )
                     }
                 }
             }
@@ -1146,9 +863,9 @@ private fun PartnerMoodSection(
     }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 // 5. LONG-DISTANCE MODE SIGNALS DIALOG
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
 
 @Composable
 fun LongDistanceSheet(
@@ -1160,179 +877,129 @@ fun LongDistanceSheet(
     var customNote by remember { mutableStateOf("") }
     var selectedSignalType by remember { mutableStateOf(LongDistanceSignalType.SEND_HEART) }
 
-    Dialog(
+    TinyDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.testTag("long_distance_sheet"),
+        widthFraction = 0.94f,
+        maxHeight = 680.dp
     ) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .heightIn(max = 680.dp)
-                .testTag("long_distance_sheet"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                // Header
+        TinyDialogHeader(
+            title = "Long-Distance Signals",
+            subtitle = "Send tender asynchronous love across the miles",
+            icon = TinyIcons.LongDistance,
+            onClose = onDismiss
+        )
+
+        // 6 Signal Types
+        TinyCard(spacing = TinySpace.md) {
+            Text(
+                text = "Choose a signal to send:",
+                style = TinyType.Label
+            )
+
+            val signalsList = LongDistanceSignalType.values()
+            Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
                 ) {
-                    Column {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Text(text = "💌", fontSize = 20.sp)
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "Long-Distance Signals",
-                                fontSize = 19.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate
-                            )
-                        }
-                        Text(
-                            text = "Send tender asynchronous love across the miles",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.65f)
+                    signalsList.take(3).forEach { sig ->
+                        SignalTypeChip(
+                            sig = sig,
+                            isSelected = selectedSignalType == sig,
+                            onClick = { selectedSignalType = sig },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
                         )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
                     }
                 }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // 6 Signal Types
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White),
-                    border = BorderStroke(1.dp, Color(0xFFE8E0D8))
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(IntrinsicSize.Min)
                 ) {
-                    Column(modifier = Modifier.padding(14.dp)) {
-                        Text(
-                            text = "Choose a signal to send:",
-                            fontSize = 12.5.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = DarkSlate
+                    signalsList.drop(3).forEach { sig ->
+                        SignalTypeChip(
+                            sig = sig,
+                            isSelected = selectedSignalType == sig,
+                            onClick = { selectedSignalType = sig },
+                            modifier = Modifier
+                                .weight(1f)
+                                .fillMaxHeight()
                         )
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        val signalsList = LongDistanceSignalType.values()
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            signalsList.take(3).forEach { sig ->
-                                SignalTypeChip(
-                                    sig = sig,
-                                    isSelected = selectedSignalType == sig,
-                                    onClick = { selectedSignalType = sig },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Row(
-                            horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            signalsList.drop(3).forEach { sig ->
-                                SignalTypeChip(
-                                    sig = sig,
-                                    isSelected = selectedSignalType == sig,
-                                    onClick = { selectedSignalType = sig },
-                                    modifier = Modifier.weight(1f)
-                                )
-                            }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        OutlinedTextField(
-                            value = customNote,
-                            onValueChange = { customNote = it },
-                            placeholder = { Text("Add a warm note (optional)...", fontSize = 12.sp) },
-                            modifier = Modifier.fillMaxWidth(),
-                            maxLines = 2,
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = DeepRose,
-                                unfocusedBorderColor = Color(0xFFDDD2C6),
-                                focusedContainerColor = CozyCream,
-                                unfocusedContainerColor = CozyCream
-                            )
-                        )
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Button(
-                            onClick = {
-                                val newSignal = LongDistanceSignal(
-                                    id = UUID.randomUUID().toString(),
-                                    sender = "boy",
-                                    type = selectedSignalType,
-                                    note = customNote.ifBlank { null },
-                                    timestamp = System.currentTimeMillis()
-                                )
-                                prefs.sendLongDistanceSignal(newSignal)
-                                savedSignals = prefs.getLongDistanceSignals()
-                                customNote = ""
-                                TinyUsWidgetProvider.updateAllWidgets(context)
-                            },
-                            modifier = Modifier.fillMaxWidth(),
-                            colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                            shape = RoundedCornerShape(12.dp)
-                        ) {
-                            Icon(Icons.Default.Send, contentDescription = null, modifier = Modifier.size(16.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Send Signal ✨", fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                        }
                     }
                 }
+            }
 
-                Spacer(modifier = Modifier.height(14.dp))
+            OutlinedTextField(
+                value = customNote,
+                onValueChange = { customNote = it },
+                placeholder = { Text("Add a warm note (optional)...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                modifier = Modifier.fillMaxWidth(),
+                maxLines = 2,
+                shape = TinyFieldShape,
+                colors = tinyTextFieldColors()
+            )
 
-                Text(
-                    text = "Recent Signals History:",
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
-                )
+            TinyButton(
+                text = "Send Signal",
+                onClick = {
+                    val newSignal = LongDistanceSignal(
+                        id = UUID.randomUUID().toString(),
+                        sender = "boy",
+                        type = selectedSignalType,
+                        note = customNote.ifBlank { null },
+                        timestamp = System.currentTimeMillis()
+                    )
+                    prefs.sendLongDistanceSignal(newSignal)
+                    savedSignals = prefs.getLongDistanceSignals()
+                    customNote = ""
+                    TinyUsWidgetProvider.updateAllWidgets(context)
+                },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary,
+                icon = Icons.AutoMirrored.Rounded.Send
+            )
+        }
 
-                Spacer(modifier = Modifier.height(6.dp))
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
+        ) {
+            Text(
+                text = "Recent Signals History:",
+                style = TinyType.Section
+            )
 
-                if (savedSignals.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(
-                            text = "No signals yet. Send your first signal to unlock the Origami Heart! 🦢",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.5f),
-                            textAlign = TextAlign.Center
-                        )
-                    }
-                } else {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(savedSignals) { signal ->
-                            val senderDisplayName = if (signal.sender == "boy") prefs.boyfriendName else prefs.girlfriendName
-                            SignalHistoryCard(signal, senderDisplayName)
-                        }
+            if (savedSignals.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "No signals yet. Send your first signal to unlock the Origami Heart!",
+                        style = TinyType.Caption,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
+                ) {
+                    items(savedSignals) { signal ->
+                        val senderDisplayName = if (signal.sender == "boy") prefs.boyfriendName else prefs.girlfriendName
+                        SignalHistoryCard(signal, senderDisplayName)
                     }
                 }
             }
@@ -1348,26 +1015,35 @@ private fun SignalTypeChip(
     modifier: Modifier = Modifier
 ) {
     Surface(
-        modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
-            .clickable(onClick = onClick),
-        shape = RoundedCornerShape(10.dp),
-        color = if (isSelected) BlushPink.copy(alpha = 0.4f) else WarmSand,
-        border = BorderStroke(1.dp, if (isSelected) DeepRose else Color(0xFFDDD2C6))
+        onClick = onClick,
+        modifier = modifier,
+        shape = TinyRadius.Medium,
+        color = if (isSelected) TinyColors.RoseSoft else TinyColors.Muted,
+        contentColor = if (isSelected) TinyColors.Rose else TinyColors.Ink,
+        border = BorderStroke(1.dp, if (isSelected) TinyColors.Rose else TinyColors.Line)
     ) {
-        Row(
-            modifier = Modifier.padding(horizontal = 6.dp, vertical = 6.dp),
-            verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.Center
+        Column(
+            modifier = Modifier
+                .heightIn(min = 56.dp)
+                .padding(horizontal = TinySpace.xs, vertical = TinySpace.sm),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            Icon(TinyIcons.signal(sig), contentDescription = null, tint = if (isSelected) DeepRose else DarkSlate, modifier = Modifier.size(16.dp))
-            Spacer(modifier = Modifier.width(4.dp))
+            Icon(
+                TinyIcons.signal(sig),
+                contentDescription = null,
+                tint = if (isSelected) TinyColors.Rose else TinyColors.InkMuted,
+                modifier = Modifier.size(18.dp)
+            )
+            Spacer(modifier = Modifier.height(TinySpace.xs))
             Text(
                 text = sig.title,
-                fontSize = 11.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
-                color = if (isSelected) DeepRose else DarkSlate,
-                maxLines = 1,
+                style = TinyType.Micro.copy(
+                    color = if (isSelected) TinyColors.Rose else TinyColors.Ink,
+                    fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                ),
+                textAlign = TextAlign.Center,
+                maxLines = 2,
                 overflow = TextOverflow.Ellipsis
             )
         }
@@ -1376,31 +1052,19 @@ private fun SignalTypeChip(
 
 @Composable
 private fun SignalHistoryCard(signal: LongDistanceSignal, senderDisplayName: String) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(12.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        border = BorderStroke(1.dp, Color(0xFFEDE5DC))
-    ) {
-        Row(
-            modifier = Modifier.padding(10.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
+    TinyCard(padding = TinySpace.md) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
             TinyIconBadge(TinyIcons.signal(signal.type), size = 36.dp, iconSize = 18.dp)
-            Spacer(modifier = Modifier.width(10.dp))
+            Spacer(modifier = Modifier.width(TinySpace.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
                     text = "${signal.type.title} from $senderDisplayName",
-                    fontSize = 12.5.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
+                    style = TinyType.Label
                 )
                 if (!signal.note.isNullOrBlank()) {
                     Text(
                         text = "\"${signal.note}\"",
-                        fontSize = 11.5.sp,
-                        fontStyle = FontStyle.Italic,
-                        color = DarkSlate.copy(alpha = 0.7f)
+                        style = TinyType.Caption.copy(fontStyle = FontStyle.Italic)
                     )
                 }
             }

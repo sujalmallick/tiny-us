@@ -2,30 +2,32 @@ package com.example.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Check
+import androidx.compose.material.icons.rounded.Weekend
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.example.engine.RoomTheme
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 @Composable
 fun RoomCustomizerDialog(
@@ -34,43 +36,70 @@ fun RoomCustomizerDialog(
     onSelectTheme: (RoomTheme) -> Unit,
     onDismiss: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = Color(0xFFFFF9F1)),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = 0.dp
+    ) {
+        TinyDialogHeader(
+            title = "Room Customizer",
+            subtitle = if (isLoft) "Choose the little details in your loft." else "Choose the little details in your living room.",
+            icon = Icons.Rounded.Weekend,
+            modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
+        )
+
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(start = TinySpace.xl, end = TinySpace.xl, bottom = TinySpace.lg),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
         ) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text("Room Customizer", color = Color(0xFF553D36), fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(
-                    if (isLoft) "Choose the little details in your loft." else "Choose the little details in your living room.",
-                    color = Color(0xFF755F56), fontSize = 14.sp
-                )
-                RoomThemePreview(selectedTheme)
-                RoomTheme.values().forEach { theme ->
-                    val selected = theme == selectedTheme
+            RoomThemePreview(selectedTheme)
+            RoomTheme.values().forEach { theme ->
+                val selected = theme == selectedTheme
+                TinyCard(
+                    onClick = { onSelectTheme(theme) },
+                    selected = selected,
+                    padding = TinySpace.md
+                ) {
                     Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .border(if (selected) 2.dp else 1.dp, if (selected) Color(0xFFD76A7C) else Color(0xFFE8D8C9), RoundedCornerShape(16.dp))
-                            .background(if (selected) Color(0xFFFFEFF1) else Color(0xFFFFFCF8), RoundedCornerShape(16.dp))
-                            .clickable { onSelectTheme(theme) }
-                            .padding(horizontal = 12.dp, vertical = 10.dp),
+                        modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
+                        // Theme swatch is data; it shows the rug colours.
                         Box(Modifier.size(34.dp).background(theme.rug, CircleShape).border(2.dp, theme.rugTrim, CircleShape))
-                        Column(Modifier.weight(1f).padding(start = 10.dp)) {
-                            Text(theme.title, color = Color(0xFF493832), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
-                            Text(theme.description, color = Color(0xFF816E62), fontSize = 12.sp)
+                        Column(Modifier.weight(1f).padding(start = TinySpace.md)) {
+                            Text(theme.title, style = TinyType.BodyStrong)
+                            Text(theme.description, style = TinyType.Caption)
                         }
-                        if (selected) Text("✓", color = Color(0xFFB74C65), fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                        if (selected) {
+                            Icon(
+                                Icons.Rounded.Check,
+                                contentDescription = null,
+                                tint = TinyColors.Rose,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
                     }
                 }
-                Text("Rugs · bedding · fairy lights · coffee mugs", color = Color(0xFF90776A), fontSize = 12.sp)
-                Spacer(Modifier.height(2.dp))
-                Text("Done", modifier = Modifier.align(Alignment.End).clickable(onClick = onDismiss).padding(8.dp), color = Color(0xFFB74C65), fontSize = 15.sp, fontWeight = FontWeight.Bold)
             }
+            Text(
+                "Rugs · bedding · fairy lights · coffee mugs",
+                style = TinyType.Caption,
+                modifier = Modifier.padding(top = TinySpace.xs)
+            )
+        }
+
+        TinyDivider()
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = TinySpace.md, vertical = TinySpace.sm),
+            horizontalArrangement = Arrangement.End
+        ) {
+            TinyButton(text = "Done", onClick = onDismiss, style = TinyButtonStyle.Ghost)
         }
     }
 }

@@ -160,6 +160,10 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.Favorite
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 @Composable
 fun LoveNotesDialog(
@@ -173,130 +177,96 @@ fun LoveNotesDialog(
     var noteText by remember { mutableStateOf("") }
     var noteAuthor by remember { mutableStateOf("From $boyfriendName") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-                .testTag("love_notes_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .padding(vertical = TinySpace.lg)
+            .testTag("love_notes_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Secret Love Letters",
+            subtitle = "Heartfelt words left for each other",
+            icon = TinyIcons.LongDistance,
+            onClose = onDismiss,
+            closeTestTag = "close_love_notes"
+        )
+
+        if (!showWriteMode) {
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .weight(1f, fill = false),
+                verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
-                // Header
-                Row(
+                items(notes) { note ->
+                    NoteCard(note)
+                }
+            }
+
+            TinyButton(
+                text = "Write Secret Letter",
+                onClick = { showWriteMode = true },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary,
+                icon = Icons.Rounded.Favorite,
+                testTag = "write_note_button"
+            )
+        } else {
+            // Write note form
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(TinySpace.md)
+            ) {
+                OutlinedTextField(
+                    value = noteText,
+                    onValueChange = { noteText = it },
+                    label = { Text("Your Message") },
+                    placeholder = { Text("Write something sweet that will make them smile...") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Secret Love Letters",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate
-                        )
-                        Text(
-                            text = "Heartfelt words left for each other",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.6f)
-                        )
-                    }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("close_love_notes")
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
+                    minLines = 3,
+                    maxLines = 6,
+                    shape = TinyFieldShape,
+                    colors = tinyTextFieldColors()
+                )
+
+                Text("From:", style = TinyType.Label)
+                Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                    TinyChip(
+                        text = "From $boyfriendName",
+                        selected = noteAuthor == "From $boyfriendName",
+                        onClick = { noteAuthor = "From $boyfriendName" }
+                    )
+                    TinyChip(
+                        text = "From $girlfriendName",
+                        selected = noteAuthor == "From $girlfriendName",
+                        onClick = { noteAuthor = "From $girlfriendName" }
+                    )
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                if (!showWriteMode) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = false),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(notes) { note ->
-                            NoteCard(note)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showWriteMode = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("write_note_button"),
-                        colors = ButtonDefaults.buttonColors(containerColor = SoftRose),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Default.Favorite, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Write Secret Letter", fontWeight = FontWeight.SemiBold)
-                    }
-                } else {
-                    // Write Note Form
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(12.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = noteText,
-                            onValueChange = { noteText = it },
-                            label = { Text("Your Message") },
-                            placeholder = { Text("Write something sweet that will make them smile...") },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 3,
-                            maxLines = 6
-                        )
-
-                        Text("From:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = DarkSlate)
-                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            FilterChip(
-                                selected = noteAuthor == "From $boyfriendName",
-                                onClick = { noteAuthor = "From $boyfriendName" },
-                                label = { Text("From $boyfriendName") }
-                            )
-                            FilterChip(
-                                selected = noteAuthor == "From $girlfriendName",
-                                onClick = { noteAuthor = "From $girlfriendName" },
-                                label = { Text("From $girlfriendName") }
-                            )
-                        }
-
-                        Spacer(modifier = Modifier.height(8.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { showWriteMode = false }) {
-                                Text("Cancel", color = DarkSlate)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = TinySpace.xs),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TinyButton(
+                        text = "Cancel",
+                        onClick = { showWriteMode = false },
+                        style = TinyButtonStyle.Ghost
+                    )
+                    Spacer(modifier = Modifier.width(TinySpace.sm))
+                    TinyButton(
+                        text = "Send to Mailbox",
+                        onClick = {
+                            if (noteText.isNotBlank()) {
+                                onAddNote(noteText, noteAuthor)
+                                showWriteMode = false
+                                noteText = ""
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    if (noteText.isNotBlank()) {
-                                        onAddNote(noteText, noteAuthor)
-                                        showWriteMode = false
-                                        noteText = ""
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = SoftRose)
-                            ) {
-                                Text("Send to Mailbox")
-                            }
-                        }
-                    }
+                        },
+                        style = TinyButtonStyle.Primary
+                    )
                 }
             }
         }
@@ -305,40 +275,27 @@ fun LoveNotesDialog(
 
 @Composable
 internal fun NoteCard(note: LoveNoteItem) {
-    Box(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(16.dp))
-            .background(Color.White)
-            .border(1.dp, BlushPink.copy(alpha = 0.5f), RoundedCornerShape(16.dp))
-            .padding(14.dp)
-    ) {
-        Column {
+    TinyCard(padding = 14.dp, spacing = TinySpace.sm) {
+        Text(
+            text = "“${note.text}”",
+            style = TinyType.Body.copy(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Medium)
+        )
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
             Text(
-                text = "“${note.text}”",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = FontFamily.Serif,
-                color = DarkSlate,
-                lineHeight = 20.sp
+                text = note.author,
+                style = TinyType.Label.copy(color = TinyColors.Rose),
+                modifier = Modifier.weight(1f, fill = false)
             )
-            Spacer(modifier = Modifier.height(8.dp))
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = note.author,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DeepRose
-                )
-                Text(
-                    text = note.date,
-                    fontSize = 11.sp,
-                    color = DarkSlate.copy(alpha = 0.4f)
-                )
-            }
+            Spacer(modifier = Modifier.width(TinySpace.sm))
+            Text(
+                text = note.date,
+                style = TinyType.Micro,
+                maxLines = 1
+            )
         }
     }
 }

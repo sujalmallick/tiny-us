@@ -8,19 +8,19 @@ import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Face
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -29,15 +29,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import com.example.R
 import com.example.data.AvatarAppearance
 import com.example.data.AvatarPalette
@@ -47,12 +45,10 @@ import com.example.engine.CharacterEmotion
 import com.example.engine.Direction
 import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelCharacter
-
-private val CardCream = Color(0xFFFFF9F1)
-private val InkBrown = Color(0xFF553D36)
-private val MutedBrown = Color(0xFF816E62)
-private val AccentRose = Color(0xFFD76A7C)
-private val ChipBorder = Color(0xFFE8D8C9)
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 /**
  * "Make Us": each partner picks skin tone, hair colour, hair length and outfit style.
@@ -81,71 +77,85 @@ fun AvatarCustomizerDialog(
     val editingB = tab == 1
     val current = if (editingB) lookB else lookA
 
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth().testTag("avatar_customizer"),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = CardCream),
-            elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("avatar_customizer"),
+        contentPadding = PaddingValues(0.dp),
+        verticalSpacing = 0.dp
+    ) {
+        TinyDialogHeader(
+            title = stringResource(R.string.avatar_title),
+            subtitle = stringResource(R.string.avatar_subtitle),
+            icon = Icons.Rounded.Face,
+            modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
+        )
+
+        Column(
+            Modifier
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState())
+                .padding(start = TinySpace.xl, end = TinySpace.xl, bottom = TinySpace.lg),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.md)
         ) {
-            Column(
-                Modifier.verticalScroll(rememberScrollState()).padding(20.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-            ) {
-                Text(stringResource(R.string.avatar_title), color = InkBrown, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                Text(stringResource(R.string.avatar_subtitle), color = MutedBrown, fontSize = 13.sp)
+            CouplePreview(lookA, lookB, outfitIndexA, outfitIndexB, highlightB = editingB)
 
-                CouplePreview(lookA, lookB, outfitIndexA, outfitIndexB, highlightB = editingB)
+            Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                ToggleChip(nameA, selected = !editingB, modifier = Modifier.testTag("avatar_tab_a")) { tab = 0 }
+                ToggleChip(nameB, selected = editingB, modifier = Modifier.testTag("avatar_tab_b")) { tab = 1 }
+            }
 
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ToggleChip(nameA, selected = !editingB, modifier = Modifier.weight(1f).testTag("avatar_tab_a")) { tab = 0 }
-                    ToggleChip(nameB, selected = editingB, modifier = Modifier.weight(1f).testTag("avatar_tab_b")) { tab = 1 }
+            SectionLabel(stringResource(R.string.avatar_skin))
+            SwatchRow(AvatarPalette.skinTones, current.skinTone, "avatar_skin") {
+                update(editingB, current.copy(skinTone = it))
+            }
+
+            SectionLabel(stringResource(R.string.avatar_hair_color))
+            SwatchRow(AvatarPalette.hairColors, current.hairColor, "avatar_hair") {
+                update(editingB, current.copy(hairColor = it))
+            }
+
+            SectionLabel(stringResource(R.string.avatar_hair_length))
+            Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                ToggleChip(stringResource(R.string.avatar_hair_short), !current.longHair) {
+                    update(editingB, current.copy(longHair = false))
                 }
-
-                SectionLabel(stringResource(R.string.avatar_skin))
-                SwatchRow(AvatarPalette.skinTones, current.skinTone, "avatar_skin") {
-                    update(editingB, current.copy(skinTone = it))
-                }
-
-                SectionLabel(stringResource(R.string.avatar_hair_color))
-                SwatchRow(AvatarPalette.hairColors, current.hairColor, "avatar_hair") {
-                    update(editingB, current.copy(hairColor = it))
-                }
-
-                SectionLabel(stringResource(R.string.avatar_hair_length))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ToggleChip(stringResource(R.string.avatar_hair_short), !current.longHair, Modifier.weight(1f)) {
-                        update(editingB, current.copy(longHair = false))
-                    }
-                    ToggleChip(stringResource(R.string.avatar_hair_long), current.longHair, Modifier.weight(1f)) {
-                        update(editingB, current.copy(longHair = true))
-                    }
-                }
-
-                SectionLabel(stringResource(R.string.avatar_outfit_style))
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    ToggleChip(stringResource(R.string.avatar_outfit_trousers), !current.wearsDress, Modifier.weight(1f)) {
-                        update(editingB, current.copy(wearsDress = false))
-                    }
-                    ToggleChip(stringResource(R.string.avatar_outfit_dress), current.wearsDress, Modifier.weight(1f)) {
-                        update(editingB, current.copy(wearsDress = true))
-                    }
-                }
-                Text(stringResource(R.string.avatar_wardrobe_hint), color = MutedBrown, fontSize = 11.sp)
-
-                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                    Text(
-                        stringResource(R.string.avatar_reset),
-                        modifier = Modifier.clickable { update(editingB, AvatarAppearance.defaultFor(editingB)) }.padding(8.dp),
-                        color = MutedBrown, fontSize = 14.sp
-                    )
-                    Text(
-                        stringResource(R.string.action_done),
-                        modifier = Modifier.clickable(onClick = onDismiss).padding(8.dp).testTag("avatar_done"),
-                        color = Color(0xFFB74C65), fontSize = 15.sp, fontWeight = FontWeight.Bold
-                    )
+                ToggleChip(stringResource(R.string.avatar_hair_long), current.longHair) {
+                    update(editingB, current.copy(longHair = true))
                 }
             }
+
+            SectionLabel(stringResource(R.string.avatar_outfit_style))
+            Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                ToggleChip(stringResource(R.string.avatar_outfit_trousers), !current.wearsDress) {
+                    update(editingB, current.copy(wearsDress = false))
+                }
+                ToggleChip(stringResource(R.string.avatar_outfit_dress), current.wearsDress) {
+                    update(editingB, current.copy(wearsDress = true))
+                }
+            }
+            Text(stringResource(R.string.avatar_wardrobe_hint), style = TinyType.Caption)
+        }
+
+        TinyDivider()
+
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .padding(horizontal = TinySpace.md, vertical = TinySpace.sm),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TinyButton(
+                text = stringResource(R.string.avatar_reset),
+                onClick = { update(editingB, AvatarAppearance.defaultFor(editingB)) },
+                style = TinyButtonStyle.Ghost
+            )
+            TinyButton(
+                text = stringResource(R.string.action_done),
+                onClick = onDismiss,
+                style = TinyButtonStyle.Ghost,
+                testTag = "avatar_done"
+            )
         }
     }
 }
@@ -168,8 +178,9 @@ private fun CouplePreview(
     }
     Box(
         Modifier.fillMaxWidth().height(150.dp)
-            .background(Color(0xFFFDE8E4), RoundedCornerShape(16.dp))
-            .border(1.dp, ChipBorder, RoundedCornerShape(16.dp))
+            .clip(TinyRadius.Large)
+            .background(Color(0xFFFDE8E4), TinyRadius.Large)
+            .border(1.dp, TinyColors.Line, TinyRadius.Large)
             .semantics { contentDescription = "Preview of both characters" }
     ) {
         Canvas(Modifier.fillMaxWidth().height(150.dp)) {
@@ -189,41 +200,42 @@ private fun CouplePreview(
 
 @Composable
 private fun SectionLabel(text: String) {
-    Text(text, color = InkBrown, fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
+    Text(text, style = TinyType.Label, modifier = Modifier.padding(top = TinySpace.xs))
 }
 
 @Composable
 private fun SwatchRow(swatches: List<AvatarSwatch>, selected: Int, tagPrefix: String, onPick: (Int) -> Unit) {
     Row(
         Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
-        horizontalArrangement = Arrangement.spacedBy(8.dp)
+        horizontalArrangement = Arrangement.spacedBy(TinySpace.xs),
+        verticalAlignment = Alignment.CenterVertically
     ) {
         swatches.forEachIndexed { index, swatch ->
             val isSelected = index == selected
+            // 48dp touch target around a 36dp swatch; the swatch colour itself is data.
             Box(
                 Modifier
-                    .size(36.dp)
-                    .border(if (isSelected) 3.dp else 1.dp, if (isSelected) AccentRose else ChipBorder, CircleShape)
-                    .padding(4.dp)
-                    .background(Color(swatch.base), CircleShape)
+                    .minimumInteractiveComponentSize()
+                    .size(48.dp)
+                    .clip(CircleShape)
                     .clickable { onPick(index) }
                     .semantics { contentDescription = swatch.name + if (isSelected) ", selected" else "" }
-                    .testTag("${tagPrefix}_$index")
-            )
+                    .testTag("${tagPrefix}_$index"),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    Modifier
+                        .size(36.dp)
+                        .border(if (isSelected) 2.5.dp else 1.dp, if (isSelected) TinyColors.Rose else TinyColors.Line, CircleShape)
+                        .padding(4.dp)
+                        .background(Color(swatch.base), CircleShape)
+                )
+            }
         }
     }
 }
 
 @Composable
 private fun ToggleChip(label: String, selected: Boolean, modifier: Modifier = Modifier, onClick: () -> Unit) {
-    Box(
-        modifier
-            .border(if (selected) 2.dp else 1.dp, if (selected) AccentRose else ChipBorder, RoundedCornerShape(14.dp))
-            .background(if (selected) Color(0xFFFFEFF1) else Color(0xFFFFFCF8), RoundedCornerShape(14.dp))
-            .clickable(onClick = onClick)
-            .padding(vertical = 10.dp),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(label, color = if (selected) Color(0xFFB74C65) else InkBrown, fontSize = 13.sp, fontWeight = FontWeight.SemiBold, maxLines = 1)
-    }
+    TinyChip(text = label, selected = selected, onClick = onClick, modifier = modifier)
 }

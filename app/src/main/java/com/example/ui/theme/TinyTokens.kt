@@ -22,18 +22,18 @@ object TinyColors {
     val Muted = Color(0xFFF6EEE8)
     /** Titles and body text (9.5:1). */
     val Ink = Color(0xFF553D36)
-    /** Secondary text (4.6:1, AA). Use instead of Ink at reduced alpha. */
-    val InkMuted = Color(0xFF816E62)
+    /** Secondary text (5.1:1 on Paper, 4.7:1 on Muted). Use instead of Ink at reduced alpha. */
+    val InkMuted = Color(0xFF7A675C)
     /** Hairline borders and dividers. */
     val Line = Color(0xFFEBDDD2)
-    /** Primary actions and links (4.95:1 with white text). */
-    val Rose = Color(0xFFB74C65)
+    /** Primary actions and links (5.5:1 with white text, 4.8:1 on RoseSoft). */
+    val Rose = Color(0xFFAD4760)
     /** Selected fills and icon badge backgrounds. */
     val RoseSoft = Color(0xFFFCEDEF)
     /** Highlight borders, decorative accents. */
     val Blush = Color(0xFFFFB5C2)
-    /** Success / "saved" state (4.8:1 with white text). */
-    val Sage = Color(0xFF4F7A6F)
+    /** Success / "saved" state (5.6:1 with white text, 4.9:1 on SageSoft). */
+    val Sage = Color(0xFF47705F)
     val SageSoft = Color(0xFFE9F1EE)
     /** Warm badge accent; always pair with Ink text. */
     val Honey = Color(0xFFF6BD60)

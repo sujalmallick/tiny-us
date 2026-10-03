@@ -5080,7 +5080,7 @@ class SceneEngine(
             cafeBaristaBrewTimer = 1.2f
             audio.playHeartChime()
             particles.spawnSparkles(plate.x, plate.y, 4, Color(0xFFFFD166))
-            showMessage("Barista Leo brings a fresh warm croissant 🥐", duration = 2.2f)
+            showMessage("Barista Leo brings a fresh warm croissant", duration = 2.2f)
             return
         }
         cafePastryBites += 1
@@ -5116,12 +5116,12 @@ class SceneEngine(
         girl.emoteTimer = 2.5f
         boy.reactionTimer = 2.5f
         girl.reactionTimer = 2.5f
-        showMessage("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.' ☕✨", duration = 3.0f)
+        showMessage("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.'", duration = 3.0f)
     }
 
     fun onTouchCafeMenu() {
         audio.playPaperFlip()
-        showMessage("Today's Specials: 1. Caramel Cloud Latte 2. Warm Croissant 3. Strawberry Macaron 🥐☕", duration = 3.2f)
+        showMessage("Today's Specials: 1. Caramel Cloud Latte 2. Warm Croissant 3. Strawberry Macaron", duration = 3.2f)
     }
 
     fun onTouchCafePup(cw: Float, ch: Float) {
@@ -5130,14 +5130,14 @@ class SceneEngine(
         val pup = CafeLayout.pup(cw, ch, (cw / 115f).coerceIn(3f, 5f))
         particles.spawnHeart(pup.x, pup.y - 30f, Color(0xFFFFCAD4))
         particles.spawnSparkles(pup.x, pup.y - 10f, 4, Color(0xFFFFD166))
-        showMessage("Boba the cafe pup wags his tail and naps happily beside Mochi 🐶💤", duration = 2.8f)
+        showMessage("Boba the cafe pup wags his tail and naps happily beside Mochi", duration = 2.8f)
     }
 
     fun onTouchCafePasserby(touchX: Float, touchY: Float) {
         audio.playBubblePop()
         particles.spawnSparkles(touchX, touchY, 5, Color(0xFFFFE066))
         particles.spawnHeart(touchX, touchY - 14f, Color(0xFFFF9AA2))
-        showMessage("A friendly neighbor strolls by with an umbrella through the rain ☂️🌧️", duration = 2.5f)
+        showMessage("A friendly neighbor strolls by with an umbrella through the rain", duration = 2.5f)
     }
 
     fun onTouchSunroomSkylight(touchX: Float, touchY: Float) {
@@ -5180,7 +5180,7 @@ class SceneEngine(
         girl.emoteTimer = 3.0f
         boy.reactionTimer = 3.5f
         girl.reactionTimer = 3.5f
-        showMessage("Roasting sweet golden marshmallows over the crackling campfire embers 🪵🔥", duration = 3.2f)
+        showMessage("Roasting sweet golden marshmallows over the crackling campfire embers", duration = 3.2f)
     }
 
     fun onTouchCampGuitar(cw: Float, ch: Float) {
@@ -5196,7 +5196,7 @@ class SceneEngine(
         girl.emoteTimer = 2.6f
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("Strumming a quiet acoustic melody beneath the pine trees and starlight 🎸✨", duration = 3.0f)
+        showMessage("Strumming a quiet acoustic melody beneath the pine trees and starlight", duration = 3.0f)
     }
 
     fun onTouchCampLantern(cw: Float, ch: Float) {
@@ -5204,8 +5204,8 @@ class SceneEngine(
         audio.playWoodKnock()
         val lantern = CampfireLayout.lantern(cw, ch, (cw / 115f).coerceIn(3f, 5f))
         particles.spawnSparkles(lantern.x, lantern.y + 10f, 4, if (campLanternLit) Color(0xFFFFE066) else Color(0xFF888888))
-        val dimmedMessage = if (timeOfDayPhase.isNight) "Dimmed the lantern for better stargazing 🌌" else "Lantern off until the stars come out 🌲"
-        showMessage(if (campLanternLit) "The warm camp lantern glows bright beside our tent ⛺💡" else dimmedMessage, duration = 2.5f)
+        val dimmedMessage = if (timeOfDayPhase.isNight) "Dimmed the lantern for better stargazing" else "Lantern off until the stars come out"
+        showMessage(if (campLanternLit) "The warm camp lantern glows bright beside our tent" else dimmedMessage, duration = 2.5f)
     }
 
     /** Mochi at the campfire: the usual cat reaction, with a blanket line when she was napping on it. */
@@ -5213,7 +5213,7 @@ class SceneEngine(
         val wasNappingOnBlanket = catState == CatState.SLEEPING && CampfireLayout.isOnBlanket(catWorldX, catWorldY)
         onTouchCat(cw, ch)
         if (wasNappingOnBlanket) {
-            showMessage("Mochi stretches and purrs on the cozy plaid camp blanket 🐾", duration = 2.8f)
+            showMessage("Mochi stretches and purrs on the cozy plaid camp blanket", duration = 2.8f)
         }
     }
 
@@ -5221,7 +5221,7 @@ class SceneEngine(
 
     fun onTouchPierIceCream(cw: Float, ch: Float) {
         if (pierIceCreamTimer > 0f) {
-            showMessage("Still working on these cones! 🍦", duration = 1.8f)
+            showMessage("Still working on these cones!", duration = 1.8f)
             return
         }
         pierIceCreamTimer = PIER_ICE_CREAM_SECONDS
@@ -5236,7 +5236,7 @@ class SceneEngine(
         girl.emoteTimer = 2.5f
         // Pip has noticed.
         if (pierGullState == GullState.PERCHED) pierGullTimer = pierGullTimer.coerceAtMost(1.5f)
-        showMessage("Two strawberry cones from the cart, one for each of you 🍦🍦", duration = 3.0f)
+        showMessage("Two strawberry cones from the cart, one for each of you", duration = 3.0f)
     }
 
     fun onTouchGrandpaBao(cw: Float, ch: Float) {
@@ -5249,7 +5249,7 @@ class SceneEngine(
                 showMessage(baoLinePicker.pick(), duration = 3.2f)
             }
             PierFishingPhase.CASTING, PierFishingPhase.WAITING ->
-                showMessage("Grandpa Bao: 'Shh… something's nibbling.' 🎣", duration = 2.2f)
+                showMessage("Grandpa Bao: 'Shh… something's nibbling.'", duration = 2.2f)
             PierFishingPhase.REELING ->
                 showMessage("Grandpa Bao: 'Easy now, easy…'", duration = 1.8f)
         }
@@ -5262,8 +5262,8 @@ class SceneEngine(
         audio.playSeagullCall()
         particles.spawnSparkles(cw * pierGullX, ch * pierGullY, 6, Color(0xFFF5F5F5))
         showMessage(
-            if (caughtInTheAct) "Caught red-beaked! Pip flaps away empty-winged 🐦"
-            else "Shoo, Pip! The seagull flaps off with an offended squawk 🪶",
+            if (caughtInTheAct) "Caught red-beaked! Pip flaps away empty-winged"
+            else "Shoo, Pip! The seagull flaps off with an offended squawk",
             duration = 2.6f
         )
     }
@@ -5275,7 +5275,7 @@ class SceneEngine(
         audio.playPaperFlip()
         val bottle = PierLayout.bottle(cw, ch)
         particles.spawnSparkles(bottle.x, bottle.y, 5, Color(0xFFBDE0FE))
-        showMessage("💌 A message in a bottle: \"${dailyPromptProvider()}\"", duration = 5.0f)
+        showMessage("A message in a bottle: \"${dailyPromptProvider()}\"", duration = 5.0f)
     }
 
     fun onTouchLighthouse(cw: Float, ch: Float) {
@@ -5284,8 +5284,8 @@ class SceneEngine(
         val lamp = PierLayout.lighthouseLamp(cw, ch, (cw / 115f).coerceIn(3f, 5f))
         particles.spawnSparkles(lamp.x, lamp.y, 6, Color(0xFFFFF3B0))
         showMessage(
-            if (timeOfDayPhase.isNight) "The lighthouse sweeps its beam across the dark water 🌊✨"
-            else "A low foghorn hums across the bay. Ships, say hello! ⚓",
+            if (timeOfDayPhase.isNight) "The lighthouse sweeps its beam across the dark water"
+            else "A low foghorn hums across the bay. Ships, say hello!",
             duration = 2.8f
         )
     }
@@ -5392,7 +5392,7 @@ class SceneEngine(
             c.emoteTimer = 2.2f
             c.reactionTimer = 2.2f
         }
-        showMessage("Pip stole the ice cream!! 🐦🍦", duration = 3.0f)
+        showMessage("Pip stole the ice cream!!", duration = 3.0f)
     }
 
     private fun updatePierFishing(dt: Float, cw: Float, ch: Float) {
@@ -5967,7 +5967,7 @@ class SceneEngine(
             girl.emote = EmoteType.SPARKLE
             boy.reactionTimer = 3.0f
             girl.reactionTimer = 3.0f
-            showMessage("Lit the lavender soy candle... warm, calming scent fills the room 🕯️", duration = 3.0f)
+            showMessage("Lit the lavender soy candle... warm, calming scent fills the room", duration = 3.0f)
         } else {
             repeat(3) { particles.spawnSteam(touchX, touchY - 8f) }
             showMessage("Blew out the candle with a gentle breath. Time to rest.", duration = 2.5f)
@@ -5999,7 +5999,7 @@ class SceneEngine(
         boy.emoteTimer = 2.5f
         boy.reactionTimer = 3.5f
 
-        showMessage("Whistling teakettle! Fresh hot tea steeping for both of us ☕", duration = 3.0f)
+        showMessage("Whistling teakettle! Fresh hot tea steeping for both of us", duration = 3.0f)
     }
 
     fun onTouchCouchThrow(cw: Float, ch: Float) {
@@ -6026,7 +6026,7 @@ class SceneEngine(
         catState = CatState.SLEEPING
         catSleeping = true
 
-        showMessage("Snuggling warm under the chunky knit throw together 💕", duration = 3.2f)
+        showMessage("Snuggling warm under the chunky knit throw together", duration = 3.2f)
     }
 
     fun onTouchWindChimes(touchX: Float, touchY: Float) {
@@ -6041,7 +6041,7 @@ class SceneEngine(
         girl.emote = EmoteType.SPARKLE
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("The crystalline porch wind chime sings in the breeze 🎐", duration = 3.0f)
+        showMessage("The crystalline porch wind chime sings in the breeze", duration = 3.0f)
     }
 
     fun onTouchFeatherWand(touchX: Float, touchY: Float) {
@@ -6061,7 +6061,7 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("Mochi pounces on the feather wand with pure joy! 🐾", duration = 3.0f)
+        showMessage("Mochi pounces on the feather wand with pure joy!", duration = 3.0f)
     }
 
     fun onTouchPlantWatering(touchX: Float, touchY: Float) {
@@ -6075,7 +6075,7 @@ class SceneEngine(
         girl.emotion = CharacterEmotion.HAPPY
         girl.emote = EmoteType.SPARKLE
         girl.reactionTimer = 3.0f
-        showMessage("Watering the tender green leaves... dewdrops sparkle! 🌱", duration = 3.0f)
+        showMessage("Watering the tender green leaves... dewdrops sparkle!", duration = 3.0f)
     }
 
     fun onTouchTelescope(cw: Float, ch: Float, touchX: Float, touchY: Float) {
@@ -6092,6 +6092,6 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.reactionTimer = 3.5f
         girl.reactionTimer = 3.5f
-        showMessage("A shooting star crossed the night sky! Made a quiet wish for us 🌠", duration = 3.5f)
+        showMessage("A shooting star crossed the night sky! Made a quiet wish for us", duration = 3.5f)
     }
 }

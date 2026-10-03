@@ -160,10 +160,16 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Bedtime
+import androidx.compose.material.icons.rounded.Delete
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Shared Dream Journal — keyword engine + dialog
-// ─────────────────────────────────────────────────────────────────────────────
+// -----------------------------------------------------------------------------
+// Shared Dream Journal - keyword engine + dialog
+// -----------------------------------------------------------------------------
 
 /** Maps a typed dream phrase to a canonical theme name and matched keywords. */
 fun parseDreamTheme(text: String): Pair<String, List<String>> {
@@ -235,78 +241,56 @@ fun DreamJournalDialog(
     var dreamsList by remember { mutableStateOf(prefs.getDreamEntries()) }
     var errorText by remember { mutableStateOf("") }
 
-    Dialog(
+    TinyDialog(
         onDismissRequest = onDismiss,
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        modifier = Modifier.testTag("dream_journal_dialog"),
+        widthFraction = 0.94f
     ) {
-        Surface(
+        TinyDialogHeader(
+            title = "Shared Dream Journal",
+            subtitle = "Type a dream and watch it come alive",
+            icon = Icons.Rounded.Bedtime,
+            accent = TinyColors.Plum,
+            accentSoft = TinyColors.PlumSoft,
+            onClose = onDismiss
+        )
+
+        Column(
             modifier = Modifier
-                .fillMaxWidth(0.94f)
-                .testTag("dream_journal_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            shadowElevation = 16.dp
+                .fillMaxWidth()
+                .weight(1f, fill = false)
+                .verticalScroll(rememberScrollState()),
+            verticalArrangement = Arrangement.spacedBy(TinySpace.md)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .verticalScroll(rememberScrollState())
-                    .padding(24.dp),
-                verticalArrangement = Arrangement.spacedBy(14.dp)
-            ) {
-                // Header
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Shared Dream Journal",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold,
-                            fontFamily = FontFamily.Serif,
-                            color = Color(0xFF4A0070)
-                        )
-                        Text(
-                            text = "Type a dream and watch it come alive",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.6f)
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate.copy(alpha = 0.5f))
-                    }
-                }
+            // Dream input
+            OutlinedTextField(
+                value = dreamText,
+                onValueChange = {
+                    dreamText = it
+                    errorText = ""
+                },
+                label = { Text("Describe your dream...") },
+                placeholder = { Text("e.g. We walked under cherry blossoms in Japan", style = TinyType.Caption) },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = false,
+                minLines = 2,
+                maxLines = 4,
+                shape = TinyFieldShape,
+                colors = tinyTextFieldColors()
+            )
 
-                // Dream input
-                OutlinedTextField(
-                    value = dreamText,
-                    onValueChange = {
-                        dreamText = it
-                        errorText = ""
-                    },
-                    label = { Text("Describe your dream...") },
-                    placeholder = { Text("e.g. We walked under cherry blossoms in Japan", fontSize = 12.sp) },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = false,
-                    minLines = 2,
-                    maxLines = 4,
-                    shape = RoundedCornerShape(12.dp)
-                )
+            if (errorText.isNotEmpty()) {
+                Text(errorText, style = TinyType.Caption.copy(color = TinyColors.Rose))
+            }
 
-                if (errorText.isNotEmpty()) {
-                    Text(errorText, fontSize = 11.sp, color = Color(0xFFD32F2F))
-                }
-
-                // Visualize button
-                Button(
-                    onClick = {
-                        val trimmed = dreamText.trim()
-                        if (trimmed.isEmpty()) {
-                            errorText = "Please write a few words about your dream first."
-                            return@Button
-                        }
+            // Visualize button
+            TinyButton(
+                text = "Visualize Dream",
+                onClick = {
+                    val trimmed = dreamText.trim()
+                    if (trimmed.isEmpty()) {
+                        errorText = "Please write a few words about your dream first."
+                    } else {
                         val (theme, keywords) = parseDreamTheme(trimmed)
                         val entry = com.example.data.DreamEntry(
                             id = java.util.UUID.randomUUID().toString(),
@@ -319,121 +303,96 @@ fun DreamJournalDialog(
                         dreamsList = prefs.getDreamEntries()
                         onVisualizeDream(theme, trimmed)
                         onDismiss()
-                    },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF7B2D8B)),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Icon(Icons.Default.AutoAwesome, contentDescription = null, modifier = Modifier.size(16.dp))
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Visualize Dream", fontWeight = FontWeight.Bold, fontSize = 14.sp)
-                }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary,
+                icon = Icons.Rounded.AutoAwesome
+            )
 
-                // Dream history
-                if (dreamsList.isNotEmpty()) {
-                    Text(
-                        text = "Past Dreams",
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFF4A0070)
-                    )
+            // Dream history
+            if (dreamsList.isNotEmpty()) {
+                TinySectionHeader(title = "Past Dreams")
 
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        dreamsList.take(10).forEach { entry ->
-                            Surface(
-                                shape = RoundedCornerShape(10.dp),
-                                color = Color.White,
-                                modifier = Modifier.fillMaxWidth()
+                Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                    dreamsList.take(10).forEach { entry ->
+                        TinyCard(padding = TinySpace.md, spacing = 0.dp) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Row(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(10.dp),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
-                                    verticalAlignment = Alignment.Top
-                                ) {
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = entry.text,
-                                            fontSize = 12.sp,
-                                            color = DarkSlate,
-                                            maxLines = 2,
-                                            overflow = TextOverflow.Ellipsis
+                                Column(modifier = Modifier.weight(1f)) {
+                                    Text(
+                                        text = entry.text,
+                                        style = TinyType.Body,
+                                        maxLines = 2,
+                                        overflow = TextOverflow.Ellipsis
+                                    )
+                                    Spacer(modifier = Modifier.height(6.dp))
+                                    Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
+                                        val themeLabel = when (entry.dreamTheme) {
+                                            "JAPAN" -> "Japan"
+                                            "NORWAY" -> "Aurora"
+                                            "OCEAN" -> "Ocean"
+                                            "FLYING" -> "Flying"
+                                            "STARS" -> "Stars"
+                                            "FOREST" -> "Forest"
+                                            "HOME" -> "Cozy"
+                                            "RAIN" -> "Rain"
+                                            "CITY" -> "City"
+                                            "SWEET" -> "Sweet"
+                                            else -> "Dream"
+                                        }
+                                        TinyTag(
+                                            text = themeLabel,
+                                            color = TinyColors.Plum,
+                                            background = TinyColors.PlumSoft
                                         )
-                                        Spacer(modifier = Modifier.height(4.dp))
-                                        Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
-                                            val themeLabel = when (entry.dreamTheme) {
-                                                "JAPAN" -> "Japan"
-                                                "NORWAY" -> "Aurora"
-                                                "OCEAN" -> "Ocean"
-                                                "FLYING" -> "Flying"
-                                                "STARS" -> "Stars"
-                                                "FOREST" -> "Forest"
-                                                "HOME" -> "Cozy"
-                                                "RAIN" -> "Rain"
-                                                "CITY" -> "City"
-                                                "SWEET" -> "Sweet"
-                                                else -> "Dream"
-                                            }
-                                            Surface(
-                                                shape = RoundedCornerShape(6.dp),
-                                                color = Color(0xFFEDE7F6)
-                                            ) {
-                                                Text(
-                                                    text = themeLabel,
-                                                    fontSize = 10.sp,
-                                                    color = Color(0xFF4A0070),
-                                                    fontWeight = FontWeight.Medium,
-                                                    modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp)
-                                                )
-                                            }
-                                        }
                                     }
+                                }
 
-                                    Row {
-                                        IconButton(
-                                            onClick = {
-                                                onVisualizeDream(entry.dreamTheme, entry.text)
-                                                onDismiss()
-                                            },
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.AutoAwesome,
-                                                contentDescription = "Relive dream",
-                                                tint = Color(0xFF7B2D8B),
-                                                modifier = Modifier.size(18.dp)
-                                            )
+                                Row {
+                                    IconButton(
+                                        onClick = {
+                                            onVisualizeDream(entry.dreamTheme, entry.text)
+                                            onDismiss()
                                         }
-                                        IconButton(
-                                            onClick = {
-                                                prefs.deleteDreamEntry(entry.id)
-                                                dreamsList = prefs.getDreamEntries()
-                                            },
-                                            modifier = Modifier.size(32.dp)
-                                        ) {
-                                            Icon(
-                                                Icons.Default.Delete,
-                                                contentDescription = "Delete dream",
-                                                tint = DarkSlate.copy(alpha = 0.4f),
-                                                modifier = Modifier.size(16.dp)
-                                            )
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.AutoAwesome,
+                                            contentDescription = "Relive dream",
+                                            tint = TinyColors.Plum,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                    IconButton(
+                                        onClick = {
+                                            prefs.deleteDreamEntry(entry.id)
+                                            dreamsList = prefs.getDreamEntries()
                                         }
+                                    ) {
+                                        Icon(
+                                            Icons.Rounded.Delete,
+                                            contentDescription = "Delete dream",
+                                            tint = TinyColors.InkMuted,
+                                            modifier = Modifier.size(20.dp)
+                                        )
                                     }
                                 }
                             }
                         }
                     }
                 }
-
-                // Close button
-                TextButton(
-                    onClick = onDismiss,
-                    modifier = Modifier.align(Alignment.CenterHorizontally)
-                ) {
-                    Text("Close", color = DarkSlate.copy(alpha = 0.5f), fontSize = 12.sp)
-                }
             }
+
+            // Close button
+            TinyButton(
+                text = "Close",
+                onClick = onDismiss,
+                modifier = Modifier.align(Alignment.CenterHorizontally),
+                style = TinyButtonStyle.Ghost
+            )
         }
     }
 }

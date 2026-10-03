@@ -42,6 +42,14 @@ import androidx.compose.material.icons.filled.Headphones
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Shuffle
+import androidx.compose.material.icons.automirrored.rounded.VolumeOff
+import androidx.compose.material.icons.automirrored.rounded.VolumeUp
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Headphones
+import androidx.compose.material.icons.rounded.Palette
+import androidx.compose.material.icons.rounded.Settings
+import androidx.compose.material.icons.rounded.Shuffle
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -85,6 +93,8 @@ import com.example.scene.EnvironmentType
 import com.example.engine.RoomTheme
 import com.example.ui.theme.DarkSlate
 import com.example.ui.theme.DeepRose
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyType
 import kotlinx.coroutines.delay
 import android.graphics.Bitmap
 import android.graphics.Canvas as AndroidCanvas
@@ -459,6 +469,8 @@ fun MainScreen(
             val titleFontSize = if (isCompact) 10.sp else if (isMedium) 11.sp else 11.5.sp
             val dotFontSize = if (isCompact) 9.sp else if (isMedium) 10.sp else 10.5.sp
             val namesFontSize = if (isCompact) 9.5.sp else if (isMedium) 10.sp else 10.5.sp
+            // The room customizer adds a sixth button; drop the separator dot so the names keep their room.
+            val crowded = engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT
 
             Box(
                 modifier = pillModifier
@@ -482,7 +494,7 @@ fun MainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Default.Favorite,
+                            imageVector = Icons.Rounded.Favorite,
                             contentDescription = null,
                             tint = activeHeartTint,
                             modifier = Modifier.size(heartSize),
@@ -511,12 +523,17 @@ fun MainScreen(
                         )
                     }
 
-                    Text(
-                        text = " • ",
-                        fontSize = dotFontSize,
-                        color = dotColor,
-                        modifier = Modifier.padding(horizontal = 1.dp)
-                    )
+                    if (crowded) {
+                        Spacer(modifier = Modifier.width(4.dp))
+                    } else {
+                        // Small drawn separator dot (was a bullet glyph sized by dotFontSize)
+                        Box(
+                            modifier = Modifier
+                                .padding(horizontal = if (isCompact) 4.dp else 5.dp)
+                                .size(3.dp)
+                                .background(dotColor, CircleShape)
+                        )
+                    }
 
                     // Secretive interactive tap on couple names
                     Row(
@@ -568,7 +585,11 @@ fun MainScreen(
                 else -> 36.dp
             }
             val iconSize = 16.dp
+            // With six buttons (room customizer visible) the touch-target margins alone keep the
+            // glass circles apart, which frees width for the couple's names in the title pill.
+            val crowded = engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT
             val spacing = when {
+                crowded -> 0.dp
                 screenWidth < 360.dp -> 2.dp
                 screenWidth < 410.dp -> 2.5.dp
                 else -> 3.5.dp
@@ -609,7 +630,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Default.AutoAwesome,
+                            imageVector = Icons.Rounded.AutoAwesome,
                             contentDescription = "Weather: ${engine.weather.displayName}",
                             tint = weatherIconTint,
                             modifier = Modifier.size(iconSize),
@@ -653,7 +674,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = if (isSoundOn) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                            imageVector = if (isSoundOn) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
                             contentDescription = "Toggle Audio",
                             tint = if (isSoundOn) activeHeartTint else mutedIconTint,
                             modifier = Modifier.size(iconSize),
@@ -693,7 +714,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Default.Headphones,
+                            imageVector = Icons.Rounded.Headphones,
                             contentDescription = "Music Box & Earphones",
                             tint = if (engine.earphonesActive) activeHeartTint else neutralIconTint,
                             modifier = Modifier.size(iconSize),
@@ -716,7 +737,7 @@ fun MainScreen(
                                 .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContrastIcon(Icons.Default.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                            ContrastIcon(Icons.Rounded.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
                         }
                     }
                 }
@@ -754,7 +775,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Default.Shuffle,
+                            imageVector = Icons.Rounded.Shuffle,
                             contentDescription = "Random Scene",
                             tint = shuffleIconTint,
                             modifier = Modifier.size(iconSize),
@@ -794,7 +815,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Default.Settings,
+                            imageVector = Icons.Rounded.Settings,
                             contentDescription = "Settings",
                             tint = neutralIconTint,
                             modifier = Modifier.size(iconSize),
@@ -841,17 +862,15 @@ fun MainScreen(
                 .padding(bottom = 18.dp)
         ) {
             Surface(
-                shape = RoundedCornerShape(18.dp),
-                color = Color.Black.copy(alpha = 0.42f),
+                shape = RoundedCornerShape(16.dp),
+                color = TinyColors.Scrim.copy(alpha = 0.6f),
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(
                     text = "Tap characters, cottage, tree, sky, or mailbox to explore",
-                    color = Color.White.copy(alpha = 0.90f),
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Serif,
-                    modifier = Modifier.padding(horizontal = 14.dp, vertical = 6.dp)
+                    style = TinyType.Caption.copy(color = Color.White),
+                    textAlign = TextAlign.Center,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                 )
             }
         }

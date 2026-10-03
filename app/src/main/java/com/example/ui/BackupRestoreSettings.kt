@@ -4,16 +4,14 @@ import android.net.Uri
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.rounded.Download
+import androidx.compose.material.icons.rounded.Restore
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -24,22 +22,18 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import com.example.R
 import com.example.data.backup.BackupCryptoException
 import com.example.data.backup.TinyBackup
 import com.example.security.AppLock
-import com.example.ui.theme.DarkSlate
-import com.example.ui.theme.DeepRose
-import com.example.ui.theme.SageGreen
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -89,25 +83,29 @@ fun BackupRestoreSettings() {
         step = BackupStep.ENTER_RESTORE_PASSWORD
     }
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Text(stringResource(R.string.backup_explainer), fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.7f))
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            Button(
+    Column(verticalArrangement = Arrangement.spacedBy(TinySpace.md)) {
+        Text(stringResource(R.string.backup_explainer), style = TinyType.Caption)
+        Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+            TinyButton(
+                text = stringResource(R.string.backup_export),
                 onClick = { step = BackupStep.CHOOSE_EXPORT_PASSWORD },
+                modifier = Modifier.weight(1f),
+                style = TinyButtonStyle.Secondary,
+                icon = Icons.Rounded.Download,
                 enabled = step != BackupStep.WORKING,
-                modifier = Modifier.weight(1f).testTag("backup_export_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = SageGreen),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text(stringResource(R.string.backup_export), fontSize = 12.5.sp) }
-            Button(
+                testTag = "backup_export_button"
+            )
+            TinyButton(
+                text = stringResource(R.string.backup_restore),
                 onClick = { step = BackupStep.CONFIRM_RESTORE },
+                modifier = Modifier.weight(1f),
+                style = TinyButtonStyle.Outline,
+                icon = Icons.Rounded.Restore,
                 enabled = step != BackupStep.WORKING,
-                modifier = Modifier.weight(1f).testTag("backup_restore_button"),
-                colors = ButtonDefaults.buttonColors(containerColor = DarkSlate.copy(alpha = 0.75f)),
-                shape = RoundedCornerShape(12.dp)
-            ) { Text(stringResource(R.string.backup_restore), fontSize = 12.5.sp) }
+                testTag = "backup_restore_button"
+            )
         }
-        if (step == BackupStep.WORKING) Text(stringResource(R.string.backup_working), fontSize = 12.sp, color = DeepRose)
+        if (step == BackupStep.WORKING) Text(stringResource(R.string.backup_working), style = TinyType.Caption.copy(color = TinyColors.Rose))
     }
 
     when (step) {
@@ -124,16 +122,26 @@ fun BackupRestoreSettings() {
             step = BackupStep.NONE
         }
         BackupStep.CONFIRM_RESTORE -> LockDialogCard(onDismiss = { step = BackupStep.NONE }) {
-            Text(stringResource(R.string.backup_restore_confirm_title), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkSlate)
-            Text(stringResource(R.string.backup_restore_confirm_body), fontSize = 13.sp, color = DarkSlate.copy(alpha = 0.75f))
-            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End, verticalAlignment = Alignment.CenterVertically) {
-                Text(stringResource(R.string.action_cancel), color = DarkSlate.copy(alpha = 0.6f), modifier = Modifier.clickable { step = BackupStep.NONE }.padding(10.dp))
-                Text(
-                    stringResource(R.string.backup_choose_file), color = DeepRose, fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.clickable {
+            TinyDialogHeader(title = stringResource(R.string.backup_restore_confirm_title), icon = Icons.Rounded.Restore)
+            Text(stringResource(R.string.backup_restore_confirm_body), style = TinyType.Body.copy(color = TinyColors.InkMuted))
+            Row(
+                Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(TinySpace.sm, Alignment.End),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TinyButton(
+                    text = stringResource(R.string.action_cancel),
+                    onClick = { step = BackupStep.NONE },
+                    style = TinyButtonStyle.Ghost
+                )
+                TinyButton(
+                    text = stringResource(R.string.backup_choose_file),
+                    onClick = {
                         AppLock.expectExternalActivity()
                         openDoc.launch(arrayOf("*/*"))
-                    }.padding(10.dp).testTag("backup_choose_file")
+                    },
+                    style = TinyButtonStyle.Primary,
+                    testTag = "backup_choose_file"
                 )
             }
         }
@@ -181,13 +189,14 @@ private fun PasswordDialog(
     val longEnough = first.length >= TinyBackup.MIN_PASSWORD_LENGTH
     val matches = !confirm || first == second
     LockDialogCard(onDismiss) {
-        Text(title, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = DarkSlate)
-        if (hint != null) Text(hint, fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.7f))
+        TinyDialogHeader(title = title, subtitle = hint)
         OutlinedTextField(
             value = first, onValueChange = { first = it }, singleLine = true,
             label = { Text(stringResource(R.string.backup_password)) },
             visualTransformation = PasswordVisualTransformation(),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+            shape = TinyFieldShape,
+            colors = tinyTextFieldColors(),
             modifier = Modifier.fillMaxWidth().testTag("backup_password_field")
         )
         if (confirm) {
@@ -197,17 +206,28 @@ private fun PasswordDialog(
                 visualTransformation = PasswordVisualTransformation(),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
                 isError = second.isNotEmpty() && !matches,
+                shape = TinyFieldShape,
+                colors = tinyTextFieldColors(),
                 modifier = Modifier.fillMaxWidth().testTag("backup_password_confirm_field")
             )
         }
-        if (error != null) Text(error, fontSize = 12.sp, color = DeepRose)
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
-            Text(stringResource(R.string.action_cancel), color = DarkSlate.copy(alpha = 0.6f), modifier = Modifier.clickable(onClick = onDismiss).padding(10.dp))
-            Text(
-                stringResource(R.string.action_continue),
-                color = if (longEnough && matches) DeepRose else Color.Gray,
-                fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable(enabled = longEnough && matches) { onDone(first.toCharArray()) }.padding(10.dp).testTag("backup_password_continue")
+        if (error != null) Text(error, style = TinyType.Caption.copy(color = TinyColors.Rose))
+        Row(
+            Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.sm, Alignment.End),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TinyButton(
+                text = stringResource(R.string.action_cancel),
+                onClick = onDismiss,
+                style = TinyButtonStyle.Ghost
+            )
+            TinyButton(
+                text = stringResource(R.string.action_continue),
+                onClick = { onDone(first.toCharArray()) },
+                style = TinyButtonStyle.Primary,
+                enabled = longEnough && matches,
+                testTag = "backup_password_continue"
             )
         }
     }

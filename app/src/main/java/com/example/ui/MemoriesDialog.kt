@@ -160,6 +160,16 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.Add
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.LocalFlorist
+import androidx.compose.material.icons.rounded.Nightlight
+import androidx.compose.material.icons.rounded.Park
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.Weekend
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 @Composable
 fun MemoriesDialog(
@@ -173,160 +183,135 @@ fun MemoriesDialog(
     var newDate by remember { mutableStateOf("") }
     var selectedIcon by remember { mutableStateOf("heart") }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 16.dp)
-                .testTag("memories_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier
+            .padding(vertical = TinySpace.lg)
+            .testTag("memories_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Our Keepsakes",
+            subtitle = "Memories captured in our tiny world",
+            icon = TinyIcons.Heart,
+            onClose = onDismiss,
+            closeTestTag = "close_memories"
+        )
+
+        if (!showAddSheet) {
+            LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(20.dp)
+                    .weight(1f, fill = false),
+                verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
-                // Header
-                Row(
+                items(memories) { mem ->
+                    MemoryCard(mem)
+                }
+            }
+
+            TinyButton(
+                text = "Add Our Memory",
+                onClick = { showAddSheet = true },
+                modifier = Modifier.fillMaxWidth(),
+                style = TinyButtonStyle.Primary,
+                icon = Icons.Rounded.Add,
+                testTag = "add_memory_button"
+            )
+        } else {
+            // Add memory form
+            Column(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(TinySpace.md)
+            ) {
+                OutlinedTextField(
+                    value = newTitle,
+                    onValueChange = { newTitle = it },
+                    label = { Text("Memory Title") },
+                    placeholder = { Text("e.g. Rainy Day Cocoa") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = "Our Keepsakes",
-                            fontSize = 20.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = DarkSlate
-                        )
-                        Text(
-                            text = "Memories captured in our tiny world",
-                            fontSize = 12.sp,
-                            color = DarkSlate.copy(alpha = 0.6f)
-                        )
-                    }
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("close_memories")
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
+                    singleLine = true,
+                    shape = TinyFieldShape,
+                    colors = tinyTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = newDate,
+                    onValueChange = { newDate = it },
+                    label = { Text("Date / Season") },
+                    placeholder = { Text("e.g. Autumn Afternoon") },
+                    modifier = Modifier.fillMaxWidth(),
+                    singleLine = true,
+                    shape = TinyFieldShape,
+                    colors = tinyTextFieldColors()
+                )
+                OutlinedTextField(
+                    value = newNote,
+                    onValueChange = { newNote = it },
+                    label = { Text("Sweet Note") },
+                    placeholder = { Text("What made this moment special?") },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 2,
+                    maxLines = 4,
+                    shape = TinyFieldShape,
+                    colors = tinyTextFieldColors()
+                )
+
+                Text("Select Icon:", style = TinyType.Label)
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    val icons = listOf("heart", "flower", "tree", "cooking", "couch", "stars")
+                    icons.forEach { ic ->
+                        val isSelected = selectedIcon == ic
+                        // Each cell is a full 48dp-tall touch target; the visible circle stays 40dp.
+                        Box(
+                            modifier = Modifier
+                                .weight(1f)
+                                .heightIn(min = 48.dp)
+                                .clip(CircleShape)
+                                .clickable { selectedIcon = ic },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(40.dp)
+                                    .background(if (isSelected) TinyColors.Rose else TinyColors.Muted, CircleShape),
+                                contentAlignment = Alignment.Center
+                            ) {
+                                Icon(
+                                    imageVector = getIconForType(ic),
+                                    contentDescription = ic,
+                                    tint = if (isSelected) Color.White else TinyColors.Ink,
+                                    modifier = Modifier.size(20.dp)
+                                )
+                            }
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.height(14.dp))
-
-                if (!showAddSheet) {
-                    LazyColumn(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f, fill = false),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        items(memories) { mem ->
-                            MemoryCard(mem)
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(16.dp))
-
-                    Button(
-                        onClick = { showAddSheet = true },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .testTag("add_memory_button"),
-                        colors = ButtonDefaults.buttonColors(containerColor = DeepRose),
-                        shape = RoundedCornerShape(14.dp)
-                    ) {
-                        Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Add Our Memory", fontWeight = FontWeight.SemiBold)
-                    }
-                } else {
-                    // Add Memory Form
-                    Column(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(10.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = newTitle,
-                            onValueChange = { newTitle = it },
-                            label = { Text("Memory Title") },
-                            placeholder = { Text("e.g. Rainy Day Cocoa") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = newDate,
-                            onValueChange = { newDate = it },
-                            label = { Text("Date / Season") },
-                            placeholder = { Text("e.g. Autumn Afternoon") },
-                            modifier = Modifier.fillMaxWidth(),
-                            singleLine = true
-                        )
-                        OutlinedTextField(
-                            value = newNote,
-                            onValueChange = { newNote = it },
-                            label = { Text("Sweet Note") },
-                            placeholder = { Text("What made this moment special?") },
-                            modifier = Modifier.fillMaxWidth(),
-                            minLines = 2,
-                            maxLines = 4
-                        )
-
-                        Text("Select Icon:", fontSize = 13.sp, fontWeight = FontWeight.Medium, color = DarkSlate)
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceEvenly
-                        ) {
-                            val icons = listOf("heart", "flower", "tree", "cooking", "couch", "stars")
-                            icons.forEach { ic ->
-                                val isSelected = selectedIcon == ic
-                                Box(
-                                    modifier = Modifier
-                                        .size(38.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) DeepRose else BlushPink.copy(alpha = 0.5f))
-                                        .clickable { selectedIcon = ic },
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = getIconForType(ic),
-                                        contentDescription = ic,
-                                        tint = if (isSelected) Color.White else DarkSlate,
-                                        modifier = Modifier.size(20.dp)
-                                    )
-                                }
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = TinySpace.xs),
+                    horizontalArrangement = Arrangement.End,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TinyButton(
+                        text = "Cancel",
+                        onClick = { showAddSheet = false },
+                        style = TinyButtonStyle.Ghost
+                    )
+                    Spacer(modifier = Modifier.width(TinySpace.sm))
+                    TinyButton(
+                        text = "Save",
+                        onClick = {
+                            if (newTitle.isNotBlank()) {
+                                onAddMemory(newTitle, newNote, newDate, selectedIcon)
+                                showAddSheet = false
+                                newTitle = ""
+                                newNote = ""
+                                newDate = ""
                             }
-                        }
-
-                        Spacer(modifier = Modifier.height(10.dp))
-
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.End
-                        ) {
-                            TextButton(onClick = { showAddSheet = false }) {
-                                Text("Cancel", color = DarkSlate)
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            Button(
-                                onClick = {
-                                    if (newTitle.isNotBlank()) {
-                                        onAddMemory(newTitle, newNote, newDate, selectedIcon)
-                                        showAddSheet = false
-                                        newTitle = ""
-                                        newNote = ""
-                                        newDate = ""
-                                    }
-                                },
-                                colors = ButtonDefaults.buttonColors(containerColor = DeepRose)
-                            ) {
-                                Text("Save")
-                            }
-                        }
-                    }
+                        },
+                        style = TinyButtonStyle.Primary
+                    )
                 }
             }
         }
@@ -335,33 +320,13 @@ fun MemoriesDialog(
 
 @Composable
 internal fun MemoryCard(mem: MemoryItem) {
-    Card(
-        modifier = Modifier.fillMaxWidth(),
-        shape = RoundedCornerShape(16.dp),
-        colors = CardDefaults.cardColors(containerColor = Color.White),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
-    ) {
+    TinyCard(padding = 14.dp) {
         Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(14.dp),
+            modifier = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.Top
         ) {
-            Box(
-                modifier = Modifier
-                    .size(42.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(BlushPink.copy(alpha = 0.4f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = getIconForType(mem.iconType),
-                    contentDescription = null,
-                    tint = DeepRose,
-                    modifier = Modifier.size(22.dp)
-                )
-            }
-            Spacer(modifier = Modifier.width(14.dp))
+            TinyIconBadge(icon = getIconForType(mem.iconType))
+            Spacer(modifier = Modifier.width(TinySpace.md))
             Column(modifier = Modifier.weight(1f)) {
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -370,25 +335,20 @@ internal fun MemoryCard(mem: MemoryItem) {
                 ) {
                     Text(
                         text = mem.title,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 15.sp,
-                        color = DarkSlate,
+                        style = TinyType.BodyStrong,
                         modifier = Modifier.weight(1f, fill = false)
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
+                    Spacer(modifier = Modifier.width(TinySpace.sm))
                     Text(
                         text = mem.date,
-                        fontSize = 11.sp,
-                        color = DarkSlate.copy(alpha = 0.5f),
+                        style = TinyType.Micro,
                         maxLines = 1
                     )
                 }
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(TinySpace.xs))
                 Text(
                     text = mem.note,
-                    fontSize = 13.sp,
-                    color = DarkSlate.copy(alpha = 0.8f),
-                    lineHeight = 18.sp
+                    style = TinyType.Body.copy(color = TinyColors.InkMuted)
                 )
             }
         }
@@ -396,10 +356,10 @@ internal fun MemoryCard(mem: MemoryItem) {
 }
 
 internal fun getIconForType(type: String): ImageVector = when (type) {
-    "flower" -> Icons.Default.LocalFlorist
-    "tree" -> Icons.Default.Park
-    "cooking" -> Icons.Default.Restaurant
-    "couch" -> Icons.Default.Weekend
-    "stars" -> Icons.Default.Nightlight
-    else -> Icons.Default.Favorite
+    "flower" -> Icons.Rounded.LocalFlorist
+    "tree" -> Icons.Rounded.Park
+    "cooking" -> Icons.Rounded.Restaurant
+    "couch" -> Icons.Rounded.Weekend
+    "stars" -> Icons.Rounded.Nightlight
+    else -> Icons.Rounded.Favorite
 }

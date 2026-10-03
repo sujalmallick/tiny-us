@@ -161,6 +161,20 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import androidx.compose.material.icons.rounded.AutoAwesome
+import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.Landscape
+import androidx.compose.material.icons.rounded.LocalFlorist
+import androidx.compose.material.icons.rounded.Nightlight
+import androidx.compose.material.icons.rounded.Park
+import androidx.compose.material.icons.rounded.Restaurant
+import androidx.compose.material.icons.rounded.Sailing
+import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material.icons.rounded.TwoWheeler
+import androidx.compose.material.icons.rounded.Weekend
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 
 @Composable
 fun ScenePickerDialog(
@@ -169,115 +183,66 @@ fun ScenePickerDialog(
     onSelectScene: (SceneType) -> Unit,
     onRandomScene: () -> Unit
 ) {
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("scene_picker_dialog")
+    ) {
+        TinyDialogHeader(
+            title = "Choose a Scene",
+            icon = Icons.Rounded.Landscape,
+            onClose = onDismiss,
+            closeTestTag = "close_scenes"
+        )
+
+        TinyButton(
+            text = "Surprise Me (Random Scene)",
+            onClick = {
+                onRandomScene()
+                onDismiss()
+            },
+            modifier = Modifier.fillMaxWidth(),
+            style = TinyButtonStyle.Secondary,
+            icon = Icons.Rounded.Shuffle,
+            testTag = "random_scene_button"
+        )
+
+        LazyColumn(
+            verticalArrangement = Arrangement.spacedBy(TinySpace.sm),
             modifier = Modifier
                 .fillMaxWidth()
-                .testTag("scene_picker_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
+                .weight(1f, fill = false)
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(20.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(
-                        text = "Choose a Scene",
-                        fontSize = 20.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = DarkSlate
-                    )
-                    IconButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.testTag("close_scenes")
-                    ) {
-                        Icon(Icons.Default.Close, contentDescription = "Close", tint = DarkSlate)
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Button(
+            items(SceneType.values()) { sc ->
+                val isSelected = sc == currentScene
+                TinyCard(
                     onClick = {
-                        onRandomScene()
+                        onSelectScene(sc)
                         onDismiss()
                     },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .testTag("random_scene_button"),
-                    colors = ButtonDefaults.buttonColors(containerColor = PeachMuted),
-                    shape = RoundedCornerShape(14.dp)
+                    selected = isSelected,
+                    padding = TinySpace.md
                 ) {
-                    Icon(Icons.Default.Shuffle, contentDescription = null)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text("Surprise Me (Random Scene)", color = DarkSlate, fontWeight = FontWeight.Bold)
-                }
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f, fill = false)
-                ) {
-                    items(SceneType.values()) { sc ->
-                        val isSelected = sc == currentScene
-                        Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelectScene(sc)
-                                    onDismiss()
-                                },
-                            shape = RoundedCornerShape(14.dp),
-                            colors = CardDefaults.cardColors(
-                                containerColor = if (isSelected) BlushPink.copy(alpha = 0.5f) else Color.White
-                            ),
-                            border = if (isSelected) androidx.compose.foundation.BorderStroke(1.5.dp, DeepRose) else null
-                        ) {
-                            Row(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(12.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(36.dp)
-                                        .clip(CircleShape)
-                                        .background(if (isSelected) DeepRose else BlushPink.copy(alpha = 0.4f)),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Icon(
-                                        imageVector = getSceneIcon(sc),
-                                        contentDescription = null,
-                                        tint = if (isSelected) Color.White else DarkSlate,
-                                        modifier = Modifier.size(18.dp)
-                                    )
-                                }
-                                Spacer(modifier = Modifier.width(12.dp))
-                                Column {
-                                    Text(
-                                        text = sc.title,
-                                        fontWeight = FontWeight.Bold,
-                                        fontSize = 14.sp,
-                                        color = DarkSlate
-                                    )
-                                    Text(
-                                        text = sc.subtitle,
-                                        fontSize = 11.sp,
-                                        color = DarkSlate.copy(alpha = 0.6f)
-                                    )
-                                }
-                            }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        TinyIconBadge(
+                            icon = getSceneIcon(sc),
+                            tint = if (isSelected) Color.White else TinyColors.Rose,
+                            background = if (isSelected) TinyColors.Rose else TinyColors.RoseSoft,
+                            size = 36.dp,
+                            iconSize = 18.dp
+                        )
+                        Spacer(modifier = Modifier.width(TinySpace.md))
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = sc.title,
+                                style = TinyType.BodyStrong
+                            )
+                            Text(
+                                text = sc.subtitle,
+                                style = TinyType.Caption
+                            )
                         }
                     }
                 }
@@ -287,17 +252,17 @@ fun ScenePickerDialog(
 }
 
 internal fun getSceneIcon(sc: SceneType): ImageVector = when (sc) {
-    SceneType.FLOWER -> Icons.Default.LocalFlorist
-    SceneType.UNDER_TREE -> Icons.Default.Park
-    SceneType.COOKING -> Icons.Default.Restaurant
-    SceneType.SLEEP -> Icons.Default.Weekend
-    SceneType.WALK -> Icons.Default.Nightlight
-    SceneType.LOOKING -> Icons.Default.Favorite
-    SceneType.MOMO_STALL -> Icons.Default.Restaurant
-    SceneType.EVENING_RIDE -> Icons.Default.TwoWheeler
-    SceneType.COZY_LOFT -> Icons.Default.Weekend
-    SceneType.RAINY_CAFE -> Icons.Default.Restaurant
-    SceneType.SUNROOM -> Icons.Default.LocalFlorist
-    SceneType.CAMPFIRE -> Icons.Default.AutoAwesome
-    SceneType.SEASIDE_PIER -> Icons.Default.Sailing
+    SceneType.FLOWER -> Icons.Rounded.LocalFlorist
+    SceneType.UNDER_TREE -> Icons.Rounded.Park
+    SceneType.COOKING -> Icons.Rounded.Restaurant
+    SceneType.SLEEP -> Icons.Rounded.Weekend
+    SceneType.WALK -> Icons.Rounded.Nightlight
+    SceneType.LOOKING -> Icons.Rounded.Favorite
+    SceneType.MOMO_STALL -> Icons.Rounded.Restaurant
+    SceneType.EVENING_RIDE -> Icons.Rounded.TwoWheeler
+    SceneType.COZY_LOFT -> Icons.Rounded.Weekend
+    SceneType.RAINY_CAFE -> Icons.Rounded.Restaurant
+    SceneType.SUNROOM -> Icons.Rounded.LocalFlorist
+    SceneType.CAMPFIRE -> Icons.Rounded.AutoAwesome
+    SceneType.SEASIDE_PIER -> Icons.Rounded.Sailing
 }

@@ -18,9 +18,9 @@
     <string name="action_done">Done</string>
 
     <!-- Make Us (avatar customizer) -->
-    <string name="avatar_title">Make Us ♡</string>
+    <string name="avatar_title">Make Us</string>
     <string name="avatar_subtitle">Make your tiny selves look like you.</string>
-    <string name="avatar_entry">🎨 Make Us — looks &amp; hair</string>
+    <string name="avatar_entry">Make Us — looks &amp; hair</string>
     <string name="avatar_skin">Skin tone</string>
     <string name="avatar_hair_color">Hair colour</string>
     <string name="avatar_hair_length">Hair</string>
@@ -70,7 +70,7 @@
     <string name="privacy_section_subtitle">PIN, fingerprint &amp; a discreet icon</string>
 
     <!-- Our Story -->
-    <string name="story_entry">📖 Our Story</string>
+    <string name="story_entry">Our Story</string>
     <string name="story_title">Our Story</string>
     <string name="story_subtitle">Day %1$d together · %2$d little moments</string>
     <string name="story_loading">Gathering our pages…</string>

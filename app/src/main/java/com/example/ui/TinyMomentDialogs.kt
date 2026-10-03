@@ -161,6 +161,15 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
 
+import androidx.compose.material.icons.automirrored.rounded.ArrowBack
+import androidx.compose.material.icons.automirrored.rounded.ArrowForward
+import androidx.compose.material3.minimumInteractiveComponentSize
+import androidx.compose.ui.text.font.FontStyle
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinyRadius
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
+
 @Composable
 fun DailyTinyMomentDialog(
     moment: TinyMoment,
@@ -192,107 +201,85 @@ fun DailyTinyMomentDialog(
     var selectedIndex by remember { mutableIntStateOf(moment.dayIndex) }
     val currentMoment = momentsList.find { it.dayIndex == selectedIndex } ?: moment
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .testTag("tiny_moment_dialog"),
-            shape = RoundedCornerShape(26.dp),
-            color = CozyCream,
-            tonalElevation = 6.dp
-        ) {
-            Column(
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("tiny_moment_dialog"),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            TinyIconBadge(icon = TinyIcons.Heart, size = 48.dp, iconSize = 24.dp)
+
+            Spacer(modifier = Modifier.height(TinySpace.md))
+
+            Text(
+                text = "Today's Tiny Moment",
+                style = TinyType.Label.copy(color = TinyColors.Rose)
+            )
+
+            Text(
+                text = "$boyfriendName & $girlfriendName",
+                style = TinyType.Title,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            // Signature shining day pill: light sweep + glow pulse, in the rose palette
+            val infiniteTransition = rememberInfiniteTransition(label = "dayMilestoneShine")
+            val shineSweep by infiniteTransition.animateFloat(
+                initialValue = -100f,
+                targetValue = 280f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(2200, easing = LinearEasing),
+                    repeatMode = RepeatMode.Restart
+                ),
+                label = "shineSweep"
+            )
+            val shineGlow by infiniteTransition.animateFloat(
+                initialValue = 0.5f,
+                targetValue = 1.0f,
+                animationSpec = infiniteRepeatable(
+                    animation = tween(1100, easing = FastOutSlowInEasing),
+                    repeatMode = RepeatMode.Reverse
+                ),
+                label = "shineGlow"
+            )
+
+            var isPressed by remember { mutableStateOf(false) }
+            val scale by animateFloatAsState(
+                targetValue = if (isPressed) 0.93f else 1f,
+                animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
+                label = "day_scale"
+            )
+
+            Box(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
+                    .minimumInteractiveComponentSize()
+                    .clickable(
+                        interactionSource = remember { MutableInteractionSource() },
+                        indication = null
+                    ) {
+                        isPressed = !isPressed
+                        showRelationshipDetails = true
+                    }
+                    .testTag("clickable_day_counter"),
+                contentAlignment = Alignment.Center
             ) {
-                // Heart badge
-                Box(
-                    modifier = Modifier
-                        .size(56.dp)
-                        .clip(CircleShape)
-                        .background(BlushPink),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = null,
-                        tint = DeepRose,
-                        modifier = Modifier.size(30.dp)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                Text(
-                    text = "Today's Tiny Moment",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 1.sp,
-                    color = DeepRose
-                )
-
-                Text(
-                    text = "$boyfriendName & $girlfriendName",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DarkSlate
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                // Dynamic, shining clickable Day milestone capsule
-                val infiniteTransition = rememberInfiniteTransition(label = "dayMilestoneShine")
-                val shineSweep by infiniteTransition.animateFloat(
-                    initialValue = -100f,
-                    targetValue = 280f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(2200, easing = LinearEasing),
-                        repeatMode = RepeatMode.Restart
-                    ),
-                    label = "shineSweep"
-                )
-                val shineGlow by infiniteTransition.animateFloat(
-                    initialValue = 0.5f,
-                    targetValue = 1.0f,
-                    animationSpec = infiniteRepeatable(
-                        animation = tween(1100, easing = FastOutSlowInEasing),
-                        repeatMode = RepeatMode.Reverse
-                    ),
-                    label = "shineGlow"
-                )
-
-                var isPressed by remember { mutableStateOf(false) }
-                val scale by animateFloatAsState(
-                    targetValue = if (isPressed) 0.93f else 1f,
-                    animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-                    label = "day_scale"
-                )
-
                 Surface(
                     modifier = Modifier
                         .graphicsLayer(scaleX = scale, scaleY = scale)
                         .shadow(
-                            elevation = (4f * shineGlow).dp,
-                            shape = RoundedCornerShape(16.dp),
-                            ambientColor = Color(0xFFFF4D6D),
-                            spotColor = Color(0xFFFF758F)
+                            elevation = (3f * shineGlow).dp,
+                            shape = TinyRadius.Large,
+                            ambientColor = TinyColors.Rose,
+                            spotColor = TinyColors.Blush
                         )
-                        .clip(RoundedCornerShape(16.dp))
-                        .clickable(
-                            interactionSource = remember { MutableInteractionSource() },
-                            indication = null
-                        ) {
-                            isPressed = !isPressed
-                            showRelationshipDetails = true
-                        }
-                        .testTag("clickable_day_counter"),
-                    shape = RoundedCornerShape(16.dp),
-                    color = Color(0xFFFFF0F3),
+                        .clip(TinyRadius.Large),
+                    shape = TinyRadius.Large,
+                    color = TinyColors.RoseSoft,
                     border = BorderStroke(
-                        width = (1.2f + 0.8f * shineGlow).dp,
-                        color = Color(0xFFFF4D6D).copy(alpha = 0.45f + 0.5f * shineGlow)
+                        width = (1f + 0.6f * shineGlow).dp,
+                        color = TinyColors.Rose.copy(alpha = 0.35f + 0.45f * shineGlow)
                     )
                 ) {
                     Box(
@@ -304,8 +291,8 @@ fun DailyTinyMomentDialog(
                                     brush = Brush.linearGradient(
                                         colors = listOf(
                                             Color.Transparent,
-                                            Color.White.copy(alpha = 0.85f * shineGlow),
-                                            Color(0xFFFFD166).copy(alpha = 0.65f * shineGlow),
+                                            Color.White.copy(alpha = 0.75f * shineGlow),
+                                            TinyColors.Blush.copy(alpha = 0.45f * shineGlow),
                                             Color.Transparent
                                         ),
                                         start = Offset(shineSweep - shineWidth, 0f),
@@ -314,163 +301,134 @@ fun DailyTinyMomentDialog(
                                     size = size
                                 )
                             }
-                            .padding(horizontal = 14.dp, vertical = 6.dp),
+                            .padding(horizontal = TinySpace.lg, vertical = TinySpace.sm),
                         contentAlignment = Alignment.Center
                     ) {
                         Row(
                             verticalAlignment = Alignment.CenterVertically,
                             horizontalArrangement = Arrangement.Center
                         ) {
-                            Text(
-                                text = "\u2726",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFB703).copy(alpha = 0.7f + 0.3f * shineGlow)
+                            Icon(
+                                imageVector = TinyIcons.Sparkle,
+                                contentDescription = null,
+                                tint = TinyColors.Rose.copy(alpha = 0.6f + 0.4f * shineGlow),
+                                modifier = Modifier.size(12.dp)
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
                                 text = "Day $currentDay of Tiny Us",
-                                fontSize = 13.sp,
-                                fontWeight = FontWeight.Bold,
-                                fontFamily = FontFamily.Serif,
-                                color = Color(0xFFC9184A),
-                                letterSpacing = 0.5.sp
+                                style = TinyType.Label.copy(
+                                    fontFamily = FontFamily.Serif,
+                                    fontWeight = FontWeight.Bold,
+                                    color = TinyColors.Rose
+                                )
                             )
                             Spacer(modifier = Modifier.width(6.dp))
-                            Text(
-                                text = "\u2726",
-                                fontSize = 11.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = Color(0xFFFFB703).copy(alpha = 0.7f + 0.3f * shineGlow)
+                            Icon(
+                                imageVector = TinyIcons.Sparkle,
+                                contentDescription = null,
+                                tint = TinyColors.Rose.copy(alpha = 0.6f + 0.4f * shineGlow),
+                                modifier = Modifier.size(12.dp)
                             )
                         }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "Tap to view our live love clock",
-                    fontSize = 10.5.sp,
-                    fontWeight = FontWeight.Medium,
-                    fontFamily = FontFamily.Serif,
-                    color = DeepRose.copy(alpha = 0.8f)
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = Color.White)
-                ) {
-                    Column(modifier = Modifier.padding(16.dp)) {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(
-                                text = currentMoment.title,
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Bold,
-                                color = DarkSlate,
-                                modifier = Modifier.weight(1f)
-                            )
-                            if (momentsList.size > 1) {
-                                Row(
-                                    horizontalArrangement = Arrangement.spacedBy(2.dp),
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(
-                                        onClick = {
-                                            val currentIdx = momentsList.indexOfFirst { it.dayIndex == selectedIndex }
-                                            val prevIdx = if (currentIdx <= 0) momentsList.size - 1 else currentIdx - 1
-                                            selectedIndex = momentsList[prevIdx].dayIndex
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.ArrowBack,
-                                            contentDescription = "Previous scene",
-                                            tint = PeachMuted,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                    IconButton(
-                                        onClick = {
-                                            val currentIdx = momentsList.indexOfFirst { it.dayIndex == selectedIndex }
-                                            val nextIdx = (currentIdx + 1) % momentsList.size
-                                            selectedIndex = momentsList[nextIdx].dayIndex
-                                        },
-                                        modifier = Modifier.size(24.dp)
-                                    ) {
-                                        Icon(
-                                            Icons.AutoMirrored.Filled.ArrowForward,
-                                            contentDescription = "Next scene",
-                                            tint = PeachMuted,
-                                            modifier = Modifier.size(16.dp)
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Text(
-                            text = currentMoment.description,
-                            fontSize = 14.sp,
-                            color = DarkSlate.copy(alpha = 0.8f),
-                            lineHeight = 20.sp
-                        )
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Text(
-                            text = "“${currentMoment.quote}”",
-                            fontSize = 12.sp,
-                            fontStyle = androidx.compose.ui.text.font.FontStyle.Italic,
-                            color = PeachMuted
-                        )
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(20.dp))
-
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(10.dp)
-                ) {
-                    TextButton(
-                        onClick = onDismiss,
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text("Close", color = DarkSlate)
-                    }
-
-                    Button(
-                        onClick = {
-                            val matchedScene = when (currentMoment.dayIndex) {
-                                0 -> SceneType.FLOWER
-                                1 -> SceneType.UNDER_TREE
-                                2 -> SceneType.COOKING
-                                3 -> SceneType.SLEEP
-                                4 -> SceneType.WALK
-                                5 -> SceneType.LOOKING
-                                6 -> SceneType.EVENING_RIDE
-                                7 -> SceneType.MOMO_STALL
-                                8 -> SceneType.COZY_LOFT
-                                else -> SceneType.entries[currentMoment.dayIndex % SceneType.entries.size]
-                            }
-                            onJumpToScene(matchedScene)
-                            onDismiss()
-                        },
-                        modifier = Modifier
-                            .weight(1.4f)
-                            .testTag("jump_scene_button"),
-                        colors = ButtonDefaults.buttonColors(containerColor = DeepRose)
-                    ) {
-                        Text("Watch Scene", fontWeight = FontWeight.Bold)
                     }
                 }
             }
+
+            Text(
+                text = "Tap to view our live love clock",
+                style = TinyType.Micro
+            )
+        }
+
+        TinyCard(spacing = TinySpace.sm) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = currentMoment.title,
+                    style = TinyType.Section,
+                    modifier = Modifier.weight(1f)
+                )
+                if (momentsList.size > 1) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(
+                            onClick = {
+                                val currentIdx = momentsList.indexOfFirst { it.dayIndex == selectedIndex }
+                                val prevIdx = if (currentIdx <= 0) momentsList.size - 1 else currentIdx - 1
+                                selectedIndex = momentsList[prevIdx].dayIndex
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                contentDescription = "Previous scene",
+                                tint = TinyColors.InkMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                        IconButton(
+                            onClick = {
+                                val currentIdx = momentsList.indexOfFirst { it.dayIndex == selectedIndex }
+                                val nextIdx = (currentIdx + 1) % momentsList.size
+                                selectedIndex = momentsList[nextIdx].dayIndex
+                            }
+                        ) {
+                            Icon(
+                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                contentDescription = "Next scene",
+                                tint = TinyColors.InkMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        }
+                    }
+                }
+            }
+            Text(
+                text = currentMoment.description,
+                style = TinyType.Body
+            )
+            Text(
+                text = "“${currentMoment.quote}”",
+                style = TinyType.Caption.copy(fontStyle = FontStyle.Italic)
+            )
+        }
+
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(TinySpace.sm),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            TinyButton(
+                text = "Close",
+                onClick = onDismiss,
+                modifier = Modifier.weight(1f),
+                style = TinyButtonStyle.Ghost
+            )
+
+            TinyButton(
+                text = "Watch Scene",
+                onClick = {
+                    val matchedScene = when (currentMoment.dayIndex) {
+                        0 -> SceneType.FLOWER
+                        1 -> SceneType.UNDER_TREE
+                        2 -> SceneType.COOKING
+                        3 -> SceneType.SLEEP
+                        4 -> SceneType.WALK
+                        5 -> SceneType.LOOKING
+                        6 -> SceneType.EVENING_RIDE
+                        7 -> SceneType.MOMO_STALL
+                        8 -> SceneType.COZY_LOFT
+                        else -> SceneType.entries[currentMoment.dayIndex % SceneType.entries.size]
+                    }
+                    onJumpToScene(matchedScene)
+                    onDismiss()
+                },
+                modifier = Modifier.weight(1.4f),
+                style = TinyButtonStyle.Primary,
+                testTag = "jump_scene_button"
+            )
         }
     }
 
@@ -506,163 +464,103 @@ fun RelationshipDurationDialog(
         }
     }
 
-    Dialog(onDismissRequest = onDismiss) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth(0.92f)
-                .testTag("relationship_duration_dialog"),
-            shape = RoundedCornerShape(24.dp),
-            color = CozyCream,
-            tonalElevation = 8.dp,
-            border = BorderStroke(1.dp, BlushPink)
-        ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(24.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Heart icon
-                Text(
-                    text = "♡",
-                    fontSize = 26.sp,
-                    color = DeepRose,
-                    fontWeight = FontWeight.Bold
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        modifier = Modifier.testTag("relationship_duration_dialog"),
+        widthFraction = 0.92f,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = TinyIcons.HeartOutline,
+                contentDescription = null,
+                tint = TinyColors.Rose,
+                modifier = Modifier.size(28.dp)
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            Text(
+                text = "OUR TIME",
+                style = TinyType.Label.copy(color = TinyColors.Rose, letterSpacing = 1.5.sp)
+            )
+
+            Text(
+                text = "$boyfriendName & $girlfriendName",
+                style = TinyType.Title,
+                textAlign = TextAlign.Center
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            Text(
+                text = "Together since",
+                style = TinyType.Caption
+            )
+
+            val formattedStartDate = remember {
+                com.example.data.RelationshipTimeManager.relationshipStartDate.format(
+                    java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.ENGLISH)
                 )
-
-                Spacer(modifier = Modifier.height(4.dp))
-
-                Text(
-                    text = "OUR TIME",
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Bold,
-                    letterSpacing = 2.sp,
-                    color = DeepRose
-                )
-
-                Spacer(modifier = Modifier.height(2.dp))
-
-                Text(
-                    text = "$boyfriendName & $girlfriendName",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    color = DarkSlate
-                )
-
-                Spacer(modifier = Modifier.height(6.dp))
-
-                Text(
-                    text = "Together since",
-                    fontSize = 11.sp,
-                    color = DarkSlate.copy(alpha = 0.65f)
-                )
-
-                val formattedStartDate = remember {
-                    com.example.data.RelationshipTimeManager.relationshipStartDate.format(
-                        java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.ENGLISH)
-                    )
-                }
-
-                Text(
-                    text = formattedStartDate,
-                    fontSize = 14.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = DarkSlate
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Divider line
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(1.dp)
-                        .background(Color(0x288B5E3C))
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Years, Months, Days
-                Text(
-                    text = "${duration.years} years",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
-                )
-                Text(
-                    text = "${duration.months} months",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
-                )
-                Text(
-                    text = "${duration.days} days",
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    color = DarkSlate
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // Live ticking time: hours, minutes, seconds
-                val timeStr = String.format(
-                    java.util.Locale.US,
-                    "%02d hours  %02d mins  %02d secs",
-                    duration.hours,
-                    duration.minutes,
-                    duration.seconds
-                )
-                Text(
-                    text = timeStr,
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = PeachMuted,
-                    letterSpacing = 0.5.sp
-                )
-
-                Spacer(modifier = Modifier.height(14.dp))
-
-                // Divider line
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth(0.85f)
-                        .height(1.dp)
-                        .background(Color(0x288B5E3C))
-                )
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                // Total days count
-                val formattedTotalDays = java.text.NumberFormat.getNumberInstance(java.util.Locale.US)
-                    .format(duration.totalDays)
-                Text(
-                    text = "\u2726 $formattedTotalDays days \u2726",
-                    fontSize = 20.sp,
-                    fontWeight = FontWeight.ExtraBold,
-                    fontFamily = FontFamily.Serif,
-                    color = DeepRose
-                )
-
-                Spacer(modifier = Modifier.height(16.dp))
-
-                Button(
-                    onClick = onDismiss,
-                    modifier = Modifier
-                        .fillMaxWidth(0.6f)
-                        .height(42.dp)
-                        .testTag("close_duration_button"),
-                    shape = RoundedCornerShape(21.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = DeepRose)
-                ) {
-                    Text(
-                        text = "Close",
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = Color.White
-                    )
-                }
             }
+
+            Text(
+                text = formattedStartDate,
+                style = TinyType.BodyStrong
+            )
         }
+
+        TinyDivider()
+
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            // Years, Months, Days
+            Text(
+                text = "${duration.years} years",
+                style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
+            )
+            Text(
+                text = "${duration.months} months",
+                style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
+            )
+            Text(
+                text = "${duration.days} days",
+                style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
+            )
+
+            Spacer(modifier = Modifier.height(TinySpace.sm))
+
+            // Live ticking time: hours, minutes, seconds
+            val timeStr = String.format(
+                java.util.Locale.US,
+                "%02d hours  %02d mins  %02d secs",
+                duration.hours,
+                duration.minutes,
+                duration.seconds
+            )
+            Text(
+                text = timeStr,
+                style = TinyType.Caption.copy(letterSpacing = 0.5.sp)
+            )
+        }
+
+        TinyDivider()
+
+        // Total days count
+        val formattedTotalDays = java.text.NumberFormat.getNumberInstance(java.util.Locale.US)
+            .format(duration.totalDays)
+        Text(
+            text = "$formattedTotalDays days",
+            style = TinyType.Display.copy(color = TinyColors.Rose),
+            textAlign = TextAlign.Center
+        )
+
+        TinyButton(
+            text = "Close",
+            onClick = onDismiss,
+            modifier = Modifier.fillMaxWidth(0.6f),
+            style = TinyButtonStyle.Secondary,
+            testTag = "close_duration_button"
+        )
     }
 }
 
@@ -678,32 +576,34 @@ fun ShiningDayBadge(
 ) {
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(TinyRadius.Small)
             .clickable(onClick = onClick)
             .testTag("shining_day_badge"),
-        shape = RoundedCornerShape(10.dp),
-        color = Color(0xFFFFF0F3),
+        shape = TinyRadius.Small,
+        color = TinyColors.RoseSoft,
         border = BorderStroke(
             width = 1.dp,
-            color = Color(0xFFFF4D6D).copy(alpha = 0.55f)
+            color = TinyColors.Rose.copy(alpha = 0.5f)
         )
     ) {
         Row(
             modifier = Modifier.padding(horizontal = 7.dp, vertical = 3.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(
-                text = "\u2726",
-                fontSize = 9.sp,
-                color = Color(0xFFFFB703).copy(alpha = 0.80f)
+            Icon(
+                imageVector = TinyIcons.Sparkle,
+                contentDescription = null,
+                tint = TinyColors.Rose.copy(alpha = 0.8f),
+                modifier = Modifier.size(10.dp)
             )
             Spacer(modifier = Modifier.width(3.dp))
             Text(
                 text = "Day $dayCount",
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold,
-                color = Color(0xFFC9184A),
-                fontFamily = FontFamily.Serif
+                style = TinyType.Micro.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFamily = FontFamily.Serif,
+                    color = TinyColors.Rose
+                )
             )
         }
     }

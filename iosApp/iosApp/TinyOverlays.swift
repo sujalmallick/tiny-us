@@ -10,6 +10,7 @@ struct TinySpecialDate: Codable, Identifiable, Hashable {
     var id = UUID()
     var title: String
     var date: Date
+    /// SF Symbol name for the date's kind (the key keeps its original name for saved-data compatibility).
     var emoji: String
 }
 
@@ -73,8 +74,8 @@ struct DailyMomentSheet: View {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(spacing: 8) {
                         Image(systemName: "heart.circle.fill").font(.system(size: 38)).foregroundStyle(roseTint)
-                        Text("\(world.save.nameOne) ♥ \(world.save.nameTwo)").font(.system(.headline, design: .rounded))
-                        Text("✦ Day \(world.relationshipDay) of Tiny Us ✦")
+                        Text("\(world.save.nameOne) & \(world.save.nameTwo)").font(.system(.headline, design: .rounded))
+                        Text("\(Image(systemName: "sparkle")) Day \(world.relationshipDay) of Tiny Us \(Image(systemName: "sparkle"))")
                             .font(.system(.subheadline, design: .monospaced, weight: .bold)).foregroundStyle(creamTint)
                             .padding(.horizontal, 14).padding(.vertical, 7).background(.black.opacity(0.25), in: Capsule())
                         loveClock
@@ -87,7 +88,7 @@ struct DailyMomentSheet: View {
                         Text("One gentle reflection for both of you today").font(.footnote).foregroundStyle(.secondary)
                         TextField("\(world.save.nameOne)'s reflection", text: $answerOne, axis: .vertical).lineLimit(2...5).textFieldStyle(.roundedBorder)
                         TextField("\(world.save.nameTwo)'s reflection", text: $answerTwo, axis: .vertical).lineLimit(2...5).textFieldStyle(.roundedBorder)
-                        Button("Save Our Daily Moment ✨") { saveAnswers() }
+                        Button("Save Our Daily Moment") { saveAnswers() }
                             .buttonStyle(.borderedProminent).tint(roseTint)
                         revealCard
                     }.padding(14).background(.quaternary, in: RoundedRectangle(cornerRadius: 16))
@@ -136,7 +137,7 @@ struct DailyMomentSheet: View {
         var next = cal.date(from: parts) ?? today
         if next < today { next = cal.date(byAdding: .year, value: 1, to: next) ?? next }
         let untilAnniversary = cal.dateComponents([.day], from: today, to: next).day ?? 0
-        let anniversaryText = untilAnniversary == 0 ? "Happy anniversary today! 🎉" : "\(untilAnniversary) days until your anniversary."
+        let anniversaryText = untilAnniversary == 0 ? "Happy anniversary today!" : "\(untilAnniversary) days until your anniversary."
         return "\(nextHundred - day) days until Day \(nextHundred). \(anniversaryText)"
     }
 
@@ -144,12 +145,12 @@ struct DailyMomentSheet: View {
         let both = saved.count > 1 && !saved[0].isEmpty && !saved[1].isEmpty
         if both {
             VStack(alignment: .leading, spacing: 6) {
-                Label("Both reflections shared & unlocked 📝", systemImage: "lock.open.fill").font(.system(.footnote, design: .rounded, weight: .semibold)).foregroundStyle(.green)
+                Label("Both reflections shared & unlocked", systemImage: "lock.open.fill").font(.system(.footnote, design: .rounded, weight: .semibold)).foregroundStyle(.green)
                 Text("\(world.save.nameOne): \(saved[0])").font(.system(.subheadline, design: .rounded))
                 Text("\(world.save.nameTwo): \(saved[1])").font(.system(.subheadline, design: .rounded))
             }
         } else if saved.contains(where: { !$0.isEmpty }) {
-            Label("Reflections preserved privately until both share 🔒", systemImage: "lock.fill").font(.footnote).foregroundStyle(.secondary)
+            Label("Reflections preserved privately until both share", systemImage: "lock.fill").font(.footnote).foregroundStyle(.secondary)
         }
     }
 
@@ -160,7 +161,7 @@ struct DailyMomentSheet: View {
         world.save.momentAnswers[todayKey] = [one, two]
         world.save.homeKeepsakes.insert("A bedside notepad of reflections")
         TinySoundBoard.shared.play(.heartChime)
-        world.showToast("Today’s tiny moment is saved 💛")
+        world.showToast("Today’s tiny moment is saved")
     }
 }
 
@@ -203,17 +204,18 @@ private struct TicTacToeBoard: View {
     var body: some View {
         VStack(spacing: 14) {
             HStack {
-                score("💖 \(world.save.nameOne)", world.save.ticTacToeScore[0])
+                score(world.save.nameOne, world.save.ticTacToeScore[0], symbol: "heart.fill")
                 Spacer()
                 score("Draws", world.save.ticTacToeScore[2])
                 Spacer()
-                score("⭐️ \(world.save.nameTwo)", world.save.ticTacToeScore[1])
+                score(world.save.nameTwo, world.save.ticTacToeScore[1], symbol: "star.fill")
             }
             Text(status).font(.system(.headline, design: .rounded)).frame(maxWidth: .infinity)
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 3), spacing: 8) {
                 ForEach(0..<9, id: \.self) { index in
                     Button { play(index) } label: {
-                        Text(cells[index] == 1 ? "💖" : cells[index] == 2 ? "⭐️" : " ")
+                        Image(systemName: cells[index] == 2 ? "star.fill" : "heart.fill")
+                            .foregroundStyle(cells[index] == 0 ? Color.clear : cells[index] == 2 ? Color.yellow : roseTint)
                             .font(.system(size: 40)).frame(maxWidth: .infinity).aspectRatio(1, contentMode: .fit)
                             .background(winningLine.contains(index) ? roseTint.opacity(0.35) : Color.white.opacity(0.08), in: RoundedRectangle(cornerRadius: 14))
                     }
@@ -225,14 +227,20 @@ private struct TicTacToeBoard: View {
         }
     }
 
-    private func score(_ title: String, _ value: Int) -> some View {
-        VStack(spacing: 2) { Text("\(value)").font(.system(.title3, design: .rounded, weight: .bold)); Text(title).font(.caption2).lineLimit(1) }
+    private func score(_ title: String, _ value: Int, symbol: String? = nil) -> some View {
+        VStack(spacing: 2) {
+            Text("\(value)").font(.system(.title3, design: .rounded, weight: .bold))
+            HStack(spacing: 3) {
+                if let symbol { Image(systemName: symbol).foregroundStyle(symbol == "star.fill" ? Color.yellow : roseTint) }
+                Text(title).lineLimit(1)
+            }.font(.caption2)
+        }
     }
 
     private var status: String {
-        if let first = winningLine.first { return "\(cells[first] == 1 ? world.save.nameOne : world.save.nameTwo) wins this round! 🎉" }
-        if !cells.contains(0) { return "A cozy draw — everyone wins 🤝" }
-        return "\(turn == 1 ? "💖 " + world.save.nameOne : "⭐️ " + world.save.nameTwo)’s turn"
+        if let first = winningLine.first { return "\(cells[first] == 1 ? world.save.nameOne : world.save.nameTwo) wins this round!" }
+        if !cells.contains(0) { return "A cozy draw — everyone wins" }
+        return turn == 1 ? "\(world.save.nameOne)’s turn · hearts" : "\(world.save.nameTwo)’s turn · stars"
     }
 
     private func play(_ index: Int) {
@@ -264,7 +272,8 @@ private struct MemoryMatchBoard: View {
     @State private var matched: Set<Int> = []
     @State private var moves = 0
     @State private var busy = false
-    private static let symbols = ["💖", "⭐️", "🌙", "🌸", "☕️", "🐾"]
+    /// SF Symbol names; pairs are matched by comparing these strings.
+    private static let symbols = ["heart.fill", "star.fill", "moon.fill", "leaf.fill", "cup.and.saucer.fill", "pawprint.fill"]
     private static func shuffled() -> [String] { (symbols + symbols).shuffled() }
 
     var body: some View {
@@ -274,18 +283,21 @@ private struct MemoryMatchBoard: View {
                 Spacer()
                 if let best = world.save.memoryBestMoves { Text("Best: \(best)").font(.system(.subheadline, design: .rounded)).foregroundStyle(.secondary) }
             }
-            if matched.count == deck.count { Text("All pairs found together! 🎉").font(.system(.headline, design: .rounded)).frame(maxWidth: .infinity) }
+            if matched.count == deck.count { Text("All pairs found together!").font(.system(.headline, design: .rounded)).frame(maxWidth: .infinity) }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 8), count: 4), spacing: 8) {
                 ForEach(deck.indices, id: \.self) { index in
                     let shown = faceUp.contains(index) || matched.contains(index)
                     Button { flip(index) } label: {
-                        Text(shown ? deck[index] : "?").font(.system(size: shown ? 30 : 22, weight: .bold, design: .rounded))
+                        Group {
+                            if shown { Image(systemName: deck[index]).font(.system(size: 30, weight: .bold)) }
+                            else { Text("?").font(.system(size: 22, weight: .bold, design: .rounded)) }
+                        }
                             .foregroundStyle(shown ? Color.primary : creamTint)
                             .frame(maxWidth: .infinity).aspectRatio(0.8, contentMode: .fit)
                             .background(matched.contains(index) ? roseTint.opacity(0.3) : shown ? Color.white.opacity(0.18) : roseTint.opacity(0.65), in: RoundedRectangle(cornerRadius: 12))
                     }
                     .buttonStyle(.plain).disabled(shown || busy)
-                    .accessibilityLabel(shown ? deck[index] : "Face-down card \(index + 1)")
+                    .accessibilityLabel(shown ? deck[index].replacingOccurrences(of: ".fill", with: "").replacingOccurrences(of: ".", with: " ") : "Face-down card \(index + 1)")
                 }
             }
             Button("Shuffle a new game") { deck = Self.shuffled(); faceUp = []; matched = []; moves = 0 }.buttonStyle(.borderedProminent).tint(roseTint)
@@ -339,7 +351,7 @@ private struct LittleQuestionsGame: View {
                     let second = world.save.miniGameSecondChoice ?? 0
                     Text("\(world.save.nameOne): \(question.options.indices.contains(first) ? question.options[first] : "—")").font(.system(.subheadline, design: .rounded))
                     Text("\(world.save.nameTwo): \(question.options.indices.contains(second) ? question.options[second] : "—")").font(.system(.subheadline, design: .rounded))
-                    Text(first == second ? "Match Made in Heaven! 💕" : "Playful Perspectives! 🌟").font(.system(.headline, design: .rounded)).foregroundStyle(roseTint)
+                    Text(first == second ? "Match Made in Heaven!" : "Playful Perspectives!").font(.system(.headline, design: .rounded)).foregroundStyle(roseTint)
                     Button("Next Question") {
                         world.save.miniGameIndex = (world.save.miniGameIndex + 1) % max(1, questions.count)
                         world.save.miniGameTurn = 0; world.save.miniGameFirstChoice = nil; world.save.miniGameSecondChoice = nil
@@ -359,7 +371,10 @@ private struct LittleQuestionsGame: View {
 // MARK: - Special Calendar
 
 struct SpecialCalendarSheet: View {
-    struct DayEvent: Hashable { let emoji: String; let title: String }
+    /// `symbol` is an SF Symbol name.
+    struct DayEvent: Hashable { let symbol: String; let title: String }
+    /// SF Symbol names offered for user-added dates; anything else (e.g. older saves) falls back to "star.fill".
+    private static let kindSymbols = ["heart.fill", "gift.fill", "sparkles", "star.fill"]
 
     @ObservedObject var world: TinyWorld
     @Environment(\.dismiss) private var dismiss
@@ -367,7 +382,7 @@ struct SpecialCalendarSheet: View {
     @State private var selected = Calendar.current.startOfDay(for: Date())
     @State private var newTitle = ""
     @State private var newDate = Date()
-    @State private var newEmoji = "🌸"
+    @State private var newSymbol = "star.fill"
     private var cal: Calendar { var c = Calendar.current; c.firstWeekday = 2; return c } // weeks start on Monday, like Android
 
     var body: some View {
@@ -379,12 +394,12 @@ struct SpecialCalendarSheet: View {
                         Text("\(world.save.nameOne) & \(world.save.nameTwo) • Precious Moments").font(.system(.subheadline, design: .rounded)).foregroundStyle(.secondary)
                     }
                     if let today = events(on: Date()).first {
-                        Text("TODAY • \(today.title.uppercased()) \(today.emoji)").font(.system(.footnote, design: .rounded, weight: .bold))
+                        Text("TODAY • \(today.title.uppercased()) \(Image(systemName: today.symbol))").font(.system(.footnote, design: .rounded, weight: .bold))
                             .frame(maxWidth: .infinity).padding(10).background(roseTint.opacity(0.3), in: RoundedRectangle(cornerRadius: 12))
                     }
                     monthHeader
                     grid
-                    Text("❤️ Moments  🎂 Birthdays  ✨ Next Meet  🌸 Special  📸 Memories").font(.caption2).foregroundStyle(.secondary)
+                    Text("\(Image(systemName: "heart.fill")) Moments  \(Image(systemName: "gift.fill")) Birthdays  \(Image(systemName: "sparkles")) Next Meet  \(Image(systemName: "star.fill")) Special  \(Image(systemName: "camera.fill")) Memories").font(.caption2).foregroundStyle(.secondary)
                     detailCard
                     addForm
                 }.padding(20)
@@ -423,7 +438,8 @@ struct SpecialCalendarSheet: View {
                     Button { selected = day } label: {
                         VStack(spacing: 1) {
                             Text("\(cal.component(.day, from: day))").font(.system(.footnote, design: .rounded, weight: isToday ? .bold : .regular))
-                            Text(marks.first?.emoji ?? " ").font(.system(size: 9))
+                            if let mark = marks.first { Image(systemName: mark.symbol).font(.system(size: 9)).foregroundStyle(roseTint) }
+                            else { Text(" ").font(.system(size: 9)) }
                         }
                         .frame(maxWidth: .infinity, minHeight: 40)
                         .background((marks.isEmpty ? (isToday ? roseTint.opacity(0.14) : Color.clear) : roseTint.opacity(0.22)), in: RoundedRectangle(cornerRadius: 8))
@@ -445,9 +461,9 @@ struct SpecialCalendarSheet: View {
             if list.isEmpty {
                 Text("A quiet, ordinary day — the best kind to spend together.").font(.footnote).foregroundStyle(.secondary)
             } else {
-                ForEach(list, id: \.self) { event in Text("\(event.emoji)  \(event.title)").font(.system(.subheadline, design: .rounded)) }
+                ForEach(list, id: \.self) { event in Text("\(Image(systemName: event.symbol))  \(event.title)").font(.system(.subheadline, design: .rounded)) }
                 let until = cal.dateComponents([.day], from: cal.startOfDay(for: Date()), to: selected).day ?? 0
-                if until == 0 { Text("TODAY ❤️").font(.system(.footnote, design: .rounded, weight: .bold)).foregroundStyle(roseTint) }
+                if until == 0 { Text("TODAY \(Image(systemName: "heart.fill"))").font(.system(.footnote, design: .rounded, weight: .bold)).foregroundStyle(roseTint) }
                 else if until > 0 { Text("Coming in \(until) DAYS").font(.system(.footnote, design: .monospaced, weight: .bold)).foregroundStyle(creamTint) }
             }
             ForEach(world.save.specialDates.filter { sameMonthDay($0.date, selected) }) { special in
@@ -463,13 +479,13 @@ struct SpecialCalendarSheet: View {
             Text("ADD A SPECIAL DATE").font(.system(.caption, design: .monospaced, weight: .bold)).tracking(1.2).foregroundStyle(.secondary)
             TextField("Birthday, first trip, next meet…", text: $newTitle).textFieldStyle(.roundedBorder)
             DatePicker("Date", selection: $newDate, displayedComponents: .date)
-            Picker("Kind", selection: $newEmoji) {
-                Text("❤️ Moment").tag("❤️"); Text("🎂 Birthday").tag("🎂"); Text("✨ Next meet").tag("✨"); Text("🌸 Special").tag("🌸")
+            Picker("Kind", selection: $newSymbol) {
+                Text("Moment").tag("heart.fill"); Text("Birthday").tag("gift.fill"); Text("Next meet").tag("sparkles"); Text("Special").tag("star.fill")
             }.pickerStyle(.segmented)
             Button("Add to our calendar") {
                 let title = newTitle.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !title.isEmpty else { return }
-                world.save.specialDates.append(TinySpecialDate(title: title, date: newDate, emoji: newEmoji))
+                world.save.specialDates.append(TinySpecialDate(title: title, date: newDate, emoji: newSymbol))
                 newTitle = ""; selected = cal.startOfDay(for: newDate)
                 month = cal.date(from: cal.dateComponents([.year, .month], from: newDate)) ?? month
                 TinySoundBoard.shared.play(.heartChime)
@@ -485,11 +501,13 @@ struct SpecialCalendarSheet: View {
     private func events(on day: Date) -> [DayEvent] {
         var list: [DayEvent] = []
         let anniversary = world.save.anniversary
-        if sameMonthDay(anniversary, day) && day >= cal.startOfDay(for: anniversary) { list.append(DayEvent(emoji: "❤️", title: "Our Beginning")) }
-        else if cal.component(.day, from: anniversary) == cal.component(.day, from: day) && day > anniversary { list.append(DayEvent(emoji: "💕", title: "Monthiversary")) }
-        for special in world.save.specialDates where sameMonthDay(special.date, day) { list.append(DayEvent(emoji: special.emoji, title: special.title)) }
+        if sameMonthDay(anniversary, day) && day >= cal.startOfDay(for: anniversary) { list.append(DayEvent(symbol: "heart.fill", title: "Our Beginning")) }
+        else if cal.component(.day, from: anniversary) == cal.component(.day, from: day) && day > anniversary { list.append(DayEvent(symbol: "heart.circle.fill", title: "Monthiversary")) }
+        for special in world.save.specialDates where sameMonthDay(special.date, day) {
+            list.append(DayEvent(symbol: Self.kindSymbols.contains(special.emoji) ? special.emoji : "star.fill", title: special.title))
+        }
         let memories = world.save.entries[TinyFeature.memories.rawValue, default: []].filter { cal.isDate($0.date, inSameDayAs: day) }
-        if !memories.isEmpty { list.append(DayEvent(emoji: "📸", title: memories.count == 1 ? "A saved memory" : "\(memories.count) saved memories")) }
+        if !memories.isEmpty { list.append(DayEvent(symbol: "camera.fill", title: memories.count == 1 ? "A saved memory" : "\(memories.count) saved memories")) }
         return list
     }
 

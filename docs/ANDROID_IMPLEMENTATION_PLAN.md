@@ -81,7 +81,7 @@ changing at day 14. Changes:
   a new **keepsake plant** blooms (sunflower, lavender, tulip, moonflower, …) and joins the
   meadow. Growth is monotonic — a test guarantees nothing is ever removed.
 - Coming back after a break shows a gentle line ("Mochi kept the garden watered while you
-  were away 🌱") — never a loss message.
+  were away") — never a loss message.
 - Each new bloom appears in Our Story as a garden milestone.
 
 ---
@@ -90,19 +90,19 @@ changing at day 14. Changes:
 
 | Phase | State | Notes |
 |---|---|---|
-| 0.1 Split giant files | ✅ Done | `OverlayDialogs.kt` → 12 dialog files; `PixelWorldView.kt` → composable + 9 `World*.kt` drawing files |
-| 0.2 Backup honesty | ✅ Done | Real `backup_rules.xml` / `data_extraction_rules.xml`; README, privacy policy, Data-safety notes and in-app footer reworded |
-| 0.3 Export / import | ✅ Done | `data/backup/ChunkedCipher.kt` + `TinyBackup.kt`, Settings → Backup & Restore |
-| 0.4 Hide partner-sync features | ✅ Done | `FeatureFlags.PARTNER_SYNC = false` |
-| 0.5 R8 + release signing | ✅ Done | Release APK builds minified; signing via uncommitted `keystore.properties` |
-| 0.6 Strings | 🟡 Partial | All new UI uses `strings.xml`; legacy screens still hard-coded |
-| 0.7 README | ✅ Done | |
-| 0.8 Personal-data guard | ✅ Done | `./gradlew verifyNoPersonalData` (runs on every app build when the file exists) |
-| 1 Partner-neutral copy | ✅ Done | Neutral labels and defaults (`Bean` / `Sprout`); internal `boy`/`girl` slot names kept for save compatibility |
-| 2 Make Us | ✅ Done | Skin (8), hair colour (8), short/long, trousers/dresses; standing, sitting, sleeping, hug, kiss, sofa, scooter and umbrella sprites |
-| 3 App lock & discreet mode | ✅ Done | PIN + biometrics + grace period + FLAG_SECURE + "Journal" launcher alias + generic notifications |
-| 4 Our Story | ✅ Done | `StoryTimeline` (commonMain) + `OurStoryDialog` |
-| 5 Never-punishing garden | ✅ Done | `GardenGrowth` (commonMain): 12 keepsake plants then golden blooms; welcome-back messages |
+| 0.1 Split giant files | Done | `OverlayDialogs.kt` → 12 dialog files; `PixelWorldView.kt` → composable + 9 `World*.kt` drawing files |
+| 0.2 Backup honesty | Done | Real `backup_rules.xml` / `data_extraction_rules.xml`; README, privacy policy, Data-safety notes and in-app footer reworded |
+| 0.3 Export / import | Done | `data/backup/ChunkedCipher.kt` + `TinyBackup.kt`, Settings → Backup & Restore |
+| 0.4 Hide partner-sync features | Done | `FeatureFlags.PARTNER_SYNC = false` |
+| 0.5 R8 + release signing | Done | Release APK builds minified; signing via uncommitted `keystore.properties` |
+| 0.6 Strings | Partial | All new UI uses `strings.xml`; legacy screens still hard-coded |
+| 0.7 README | Done | |
+| 0.8 Personal-data guard | Done | `./gradlew verifyNoPersonalData` (runs on every app build when the file exists) |
+| 1 Partner-neutral copy | Done | Neutral labels and defaults (`Bean` / `Sprout`); internal `boy`/`girl` slot names kept for save compatibility |
+| 2 Make Us | Done | Skin (8), hair colour (8), short/long, trousers/dresses; standing, sitting, sleeping, hug, kiss, sofa, scooter and umbrella sprites |
+| 3 App lock & discreet mode | Done | PIN + biometrics + grace period + FLAG_SECURE + "Journal" launcher alias + generic notifications |
+| 4 Our Story | Done | `StoryTimeline` (commonMain) + `OurStoryDialog` |
+| 5 Never-punishing garden | Done | `GardenGrowth` (commonMain): 12 keepsake plants then golden blooms; welcome-back messages |
 
 Follow-ups noticed along the way:
 - Users who skipped onboarding on older builds have "Him"/"Her" saved as names; they are treated as placeholders in onboarding but still shown until edited.

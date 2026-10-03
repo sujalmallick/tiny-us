@@ -9,26 +9,24 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.Backspace
-import androidx.compose.material.icons.filled.Fingerprint
-import androidx.compose.material.icons.filled.Lock
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
+import androidx.compose.material.icons.automirrored.rounded.Backspace
+import androidx.compose.material.icons.rounded.Fingerprint
+import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
-import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -45,27 +43,20 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.fragment.app.FragmentActivity
 import com.example.R
 import com.example.data.AppLockPolicy
 import com.example.security.AppLock
 import com.example.security.AppLockStore
 import com.example.security.DiscreetMode
-import com.example.ui.theme.DarkSlate
-import com.example.ui.theme.DeepRose
+import com.example.ui.theme.TinyColors
+import com.example.ui.theme.TinySpace
+import com.example.ui.theme.TinyType
 import kotlinx.coroutines.delay
-
-private val LockCream = Color(0xFFFFF6EE)
-private val LockInk = Color(0xFF553D36)
-private val LockMuted = Color(0xFF816E62)
-private val KeyFill = Color(0xFFFFFCF8)
-private val KeyBorder = Color(0xFFE8D8C9)
 
 internal tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (this) {
     is FragmentActivity -> this
@@ -121,46 +112,48 @@ fun AppLockScreen(store: AppLockStore) {
         pin = ""
     }
 
-    Box(Modifier.fillMaxSize().background(LockCream).testTag("app_lock_screen"), contentAlignment = Alignment.Center) {
+    Box(Modifier.fillMaxSize().background(TinyColors.Paper).testTag("app_lock_screen"), contentAlignment = Alignment.Center) {
         Column(
-            Modifier.widthIn(max = 360.dp).padding(24.dp),
+            Modifier.widthIn(max = 360.dp).padding(TinySpace.xxl),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Box(Modifier.size(64.dp).background(DeepRose.copy(alpha = 0.12f), CircleShape), contentAlignment = Alignment.Center) {
-                Icon(Icons.Default.Lock, contentDescription = null, tint = DeepRose, modifier = Modifier.size(30.dp))
-            }
-            Spacer(Modifier.height(16.dp))
-            Text(stringResource(R.string.lock_title), fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 22.sp, color = LockInk)
-            Spacer(Modifier.height(4.dp))
-            Text(stringResource(R.string.lock_subtitle), fontSize = 13.sp, color = LockMuted)
-            Spacer(Modifier.height(20.dp))
+            TinyIconBadge(icon = Icons.Rounded.Lock, size = 64.dp, iconSize = 28.dp)
+            Spacer(Modifier.height(TinySpace.lg))
+            Text(stringResource(R.string.lock_title), style = TinyType.Display, textAlign = TextAlign.Center)
+            Spacer(Modifier.height(TinySpace.xs))
+            Text(stringResource(R.string.lock_subtitle), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
+            Spacer(Modifier.height(TinySpace.xl))
             PinDots(pin.length)
             Spacer(Modifier.height(10.dp))
             val status = when {
                 cooldownLeft > 0 -> stringResource(R.string.lock_cooldown, cooldownLeft)
                 else -> message
             }
-            Text(status ?: " ", fontSize = 12.sp, color = DeepRose, textAlign = TextAlign.Center, modifier = Modifier.height(18.dp))
-            Spacer(Modifier.height(12.dp))
+            Text(
+                status ?: " ",
+                style = TinyType.Caption.copy(color = TinyColors.Rose),
+                textAlign = TextAlign.Center,
+                modifier = Modifier.heightIn(min = 18.dp)
+            )
+            Spacer(Modifier.height(TinySpace.md))
             PinPad(
                 enabled = cooldownLeft == 0,
                 onDigit = { if (pin.length < AppLockPolicy.MAX_PIN_LENGTH) { pin += it; message = null } },
                 onBackspace = { pin = pin.dropLast(1) },
                 leftKey = if (biometricsReady) ({ promptBiometric() }) else null
             )
-            Spacer(Modifier.height(16.dp))
+            Spacer(Modifier.height(TinySpace.xl))
             PrimaryPill(
                 text = stringResource(R.string.lock_unlock),
                 enabled = cooldownLeft == 0 && pin.length >= AppLockPolicy.MIN_PIN_LENGTH,
                 tag = "lock_unlock_button",
                 onClick = ::submit
             )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                stringResource(R.string.lock_forgot),
-                fontSize = 13.sp,
-                color = LockMuted,
-                modifier = Modifier.clickable { showForgotHelp = true }.padding(8.dp)
+            Spacer(Modifier.height(TinySpace.sm))
+            TinyButton(
+                text = stringResource(R.string.lock_forgot),
+                onClick = { showForgotHelp = true },
+                style = TinyButtonStyle.Ghost
             )
         }
     }
@@ -178,10 +171,10 @@ private fun ForgotPinDialog(activity: FragmentActivity?, store: AppLockStore, on
     val subtitle = stringResource(R.string.lock_reset_prompt_subtitle)
     val resetDone = stringResource(R.string.lock_reset_done)
     LockDialogCard(onDismiss) {
-        Text(stringResource(R.string.lock_forgot), fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LockInk)
+        TinyDialogHeader(title = stringResource(R.string.lock_forgot), icon = Icons.Rounded.Lock)
         Text(
             stringResource(if (canReset) R.string.lock_forgot_body else R.string.lock_forgot_no_screen_lock),
-            fontSize = 13.sp, color = LockMuted
+            style = TinyType.Body.copy(color = TinyColors.InkMuted)
         )
         if (canReset) {
             PrimaryPill(stringResource(R.string.lock_reset_with_phone), enabled = true, tag = "lock_reset_button") {
@@ -194,7 +187,12 @@ private fun ForgotPinDialog(activity: FragmentActivity?, store: AppLockStore, on
                 onDismiss()
             }
         }
-        Text(stringResource(R.string.action_close), color = LockMuted, modifier = Modifier.align(Alignment.End).clickable(onClick = onDismiss).padding(8.dp))
+        TinyButton(
+            text = stringResource(R.string.action_close),
+            onClick = onDismiss,
+            style = TinyButtonStyle.Ghost,
+            modifier = Modifier.align(Alignment.End)
+        )
     }
 }
 
@@ -207,13 +205,17 @@ fun PinSetupDialog(onPinChosen: (String) -> Unit, onDismiss: () -> Unit) {
     val mismatch = stringResource(R.string.lock_setup_mismatch)
 
     LockDialogCard(onDismiss) {
-        Text(
-            stringResource(if (first == null) R.string.lock_setup_choose else R.string.lock_setup_confirm),
-            fontWeight = FontWeight.Bold, fontSize = 18.sp, color = LockInk
+        TinyDialogHeader(
+            title = stringResource(if (first == null) R.string.lock_setup_choose else R.string.lock_setup_confirm),
+            subtitle = stringResource(R.string.lock_setup_hint),
+            icon = Icons.Rounded.Lock
         )
-        Text(stringResource(R.string.lock_setup_hint), fontSize = 12.sp, color = LockMuted)
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { PinDots(pin.length) }
-        Text(error ?: " ", fontSize = 12.sp, color = DeepRose, modifier = Modifier.height(18.dp))
+        Text(
+            error ?: " ",
+            style = TinyType.Caption.copy(color = TinyColors.Rose),
+            modifier = Modifier.heightIn(min = 18.dp)
+        )
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
             PinPad(
                 enabled = true,
@@ -253,7 +255,7 @@ fun PrivacyLockSettings() {
 
     fun refreshWindow() { activity?.let { AppLock.applyWindowPrivacy(it, store) } }
 
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(TinySpace.md)) {
         SettingSwitchRow(
             title = stringResource(R.string.lock_setting_title),
             subtitle = stringResource(R.string.lock_setting_subtitle),
@@ -270,30 +272,28 @@ fun PrivacyLockSettings() {
                     store.biometricsEnabled = it; biometrics = it
                 }
             }
-            Text(stringResource(R.string.lock_setting_grace), fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.7f))
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(stringResource(R.string.lock_setting_grace), style = TinyType.Caption)
+            Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                 AppLockPolicy.GRACE_PERIOD_OPTIONS_SECONDS.forEach { seconds ->
                     val label = when (seconds) {
                         0 -> stringResource(R.string.lock_grace_immediately)
                         else -> stringResource(R.string.lock_grace_minutes, seconds / 60)
                     }
-                    val selected = grace == seconds
-                    Box(
-                        Modifier
-                            .border(if (selected) 2.dp else 1.dp, if (selected) DeepRose else KeyBorder, RoundedCornerShape(12.dp))
-                            .background(if (selected) DeepRose.copy(alpha = 0.08f) else KeyFill, RoundedCornerShape(12.dp))
-                            .clickable { store.graceSeconds = seconds; grace = seconds }
-                            .padding(horizontal = 12.dp, vertical = 8.dp)
-                    ) { Text(label, fontSize = 12.sp, color = if (selected) DeepRose else DarkSlate) }
+                    TinyChip(
+                        text = label,
+                        selected = grace == seconds,
+                        onClick = { store.graceSeconds = seconds; grace = seconds }
+                    )
                 }
             }
             SettingSwitchRow(stringResource(R.string.lock_setting_hide_preview), stringResource(R.string.lock_setting_hide_preview_sub), hidePreview, "settings_hide_preview_switch") {
                 store.hidePreview = it; hidePreview = it; refreshWindow()
             }
-            Text(
-                stringResource(R.string.lock_setting_change_pin),
-                color = DeepRose, fontSize = 13.sp, fontWeight = FontWeight.SemiBold,
-                modifier = Modifier.clickable { showSetup = true }.padding(vertical = 4.dp)
+            TinyButton(
+                text = stringResource(R.string.lock_setting_change_pin),
+                onClick = { showSetup = true },
+                style = TinyButtonStyle.Ghost,
+                compact = true
             )
         }
         SettingSwitchRow(
@@ -320,28 +320,28 @@ fun PrivacyLockSettings() {
 private fun SettingSwitchRow(title: String, subtitle: String?, checked: Boolean, tag: String, onChange: (Boolean) -> Unit) {
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Column(Modifier.weight(1f)) {
-            Text(title, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = DarkSlate)
-            if (subtitle != null) Text(subtitle, fontSize = 12.sp, color = DarkSlate.copy(alpha = 0.6f))
+            Text(title, style = TinyType.BodyStrong)
+            if (subtitle != null) Text(subtitle, style = TinyType.Caption, modifier = Modifier.padding(top = 2.dp))
         }
-        Spacer(Modifier.width(8.dp))
+        Spacer(Modifier.width(TinySpace.md))
         Switch(
             checked = checked,
             onCheckedChange = onChange,
             modifier = Modifier.testTag(tag),
-            colors = SwitchDefaults.colors(checkedThumbColor = Color.White, checkedTrackColor = DeepRose)
+            colors = tinySwitchColors()
         )
     }
 }
 
 @Composable
 private fun PinDots(filled: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.semantics { contentDescription = "$filled digits entered" }) {
+    Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.md), modifier = Modifier.semantics { contentDescription = "$filled digits entered" }) {
         repeat(AppLockPolicy.MAX_PIN_LENGTH) { i ->
             val on = i < filled
             Box(
                 Modifier.size(14.dp)
-                    .background(if (on) DeepRose else Color.Transparent, CircleShape)
-                    .border(2.dp, if (on) DeepRose else KeyBorder, CircleShape)
+                    .background(if (on) TinyColors.Rose else Color.Transparent, CircleShape)
+                    .border(2.dp, if (on) TinyColors.Rose else TinyColors.Line, CircleShape)
             )
         }
     }
@@ -353,31 +353,36 @@ private fun PinPad(enabled: Boolean, onDigit: (String) -> Unit, onBackspace: () 
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         rows.forEach { row ->
             Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                row.forEach { d -> PadKey(enabled, "pin_key_$d", onClick = { onDigit(d) }) { Text(d, fontSize = 22.sp, color = LockInk) } }
+                row.forEach { d -> PadKey(enabled, "pin_key_$d", onClick = { onDigit(d) }) { PadDigit(d) } }
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (leftKey != null) {
                 PadKey(true, "pin_key_biometric", onClick = leftKey) {
-                    Icon(Icons.Default.Fingerprint, contentDescription = stringResource(R.string.lock_biometric_title), tint = DeepRose)
+                    Icon(Icons.Rounded.Fingerprint, contentDescription = stringResource(R.string.lock_biometric_title), tint = TinyColors.Rose)
                 }
             } else {
                 Spacer(Modifier.size(64.dp))
             }
-            PadKey(enabled, "pin_key_0", onClick = { onDigit("0") }) { Text("0", fontSize = 22.sp, color = LockInk) }
+            PadKey(enabled, "pin_key_0", onClick = { onDigit("0") }) { PadDigit("0") }
             PadKey(enabled, "pin_key_back", onClick = onBackspace) {
-                Icon(Icons.AutoMirrored.Filled.Backspace, contentDescription = stringResource(R.string.lock_backspace), tint = LockMuted)
+                Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = stringResource(R.string.lock_backspace), tint = TinyColors.InkMuted)
             }
         }
     }
 }
 
 @Composable
+private fun PadDigit(d: String) {
+    Text(d, style = TinyType.Title.copy(fontSize = 22.sp, fontWeight = FontWeight.Medium))
+}
+
+@Composable
 private fun PadKey(enabled: Boolean, tag: String, onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
         Modifier.size(64.dp)
-            .background(if (enabled) KeyFill else KeyFill.copy(alpha = 0.5f), CircleShape)
-            .border(1.dp, KeyBorder, CircleShape)
+            .background(if (enabled) TinyColors.Card else TinyColors.Card.copy(alpha = 0.5f), CircleShape)
+            .border(1.dp, TinyColors.Line, CircleShape)
             .clickable(enabled = enabled, onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center
@@ -386,25 +391,21 @@ private fun PadKey(enabled: Boolean, tag: String, onClick: () -> Unit, content: 
 
 @Composable
 private fun PrimaryPill(text: String, enabled: Boolean, tag: String, onClick: () -> Unit) {
-    Box(
-        Modifier.fillMaxWidth()
-            .background(if (enabled) DeepRose else DeepRose.copy(alpha = 0.35f), RoundedCornerShape(16.dp))
-            .clickable(enabled = enabled, onClick = onClick)
-            .padding(vertical = 14.dp)
-            .testTag(tag),
-        contentAlignment = Alignment.Center
-    ) { Text(text, color = Color.White, fontWeight = FontWeight.SemiBold, fontSize = 15.sp) }
+    TinyButton(
+        text = text,
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        style = TinyButtonStyle.Primary,
+        enabled = enabled,
+        testTag = tag
+    )
 }
 
 @Composable
-internal fun LockDialogCard(onDismiss: () -> Unit, content: @Composable androidx.compose.foundation.layout.ColumnScope.() -> Unit) {
-    Dialog(onDismissRequest = onDismiss) {
-        Card(
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(24.dp),
-            colors = CardDefaults.cardColors(containerColor = LockCream)
-        ) {
-            Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(12.dp), content = content)
-        }
-    }
+internal fun LockDialogCard(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+    TinyDialog(
+        onDismissRequest = onDismiss,
+        verticalSpacing = TinySpace.md,
+        content = content
+    )
 }
