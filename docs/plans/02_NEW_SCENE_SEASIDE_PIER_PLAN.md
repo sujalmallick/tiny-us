@@ -22,12 +22,30 @@
 - Files: `PierModels.kt`, `PierSprites.kt` and `WorldPierScene.kt`.
 - Tests: `SeasidePierSceneTest` (10) and `PierLayoutHitTest` (3).
 
+**Follow-up pass (2026-10-04)**
+- Grandpa Bao has an idle life:
+  - breathing, blinking and leg swing, with the rod swaying and the bobber riding the swell
+  - sips of tea from his thermos
+  - a wave hello (on arrival and when ice cream is bought)
+  - casting on his own by day
+  - dozing on quiet nights (sleep Zs, drooping rod); a tap wakes him
+- He is drawn at 1.3x scale, with a long rod so the line hangs down to the water.
+- New props:
+  - coin telescope (dolphins)
+  - sailboat on the horizon (horn and flag)
+  - Pinchy the crab (flees, hides, returns; Mochi chases him)
+  - bait bucket (a fish flops out; Mochi and Bao react)
+  - string lights (3 palettes)
+  - daytime lighthouse gull flock
+- Pier watch-scene cinematic: a shared cone, Pip's raid, laughter, then a hug.
+- 3 pier autonomous moments.
+- Pier text is emoji-free, per the UI session's no-emoji policy.
+- Tests: `SeasidePierSceneTest` (18) and `PierLayoutHitTest` (4). The full suite is 199 tests, all green.
+
 **Not built yet**
-- A pier-specific watch-scene cinematic (it uses the generic kiss, then settles home).
-- Pier autonomous moments.
-- Caching static layers in an ImageBitmap.
-- The lighthouse daytime gull flock (it shows sparkles instead).
+- Caching static layers in an ImageBitmap. Not worth it: the pier draws about 200 cheap rects per frame, and a cached deck bitmap would cost about 4 MB.
 - The iOS port (iOS parity is deferred).
+- A visual check of the follow-up pass on a device. The emulator was unavailable because the machine was overloaded.
 
 ## 1. Concept
 

@@ -2,6 +2,7 @@ package com.example
 
 import com.example.engine.AmbientAudio
 import com.example.engine.CharacterPose
+import com.example.engine.EmoteType
 import com.example.scene.CatState
 import com.example.scene.GullState
 import com.example.scene.PierCatch
@@ -41,6 +42,8 @@ class SeasidePierSceneTest {
         engine.weather = WeatherType.SUNNY
         engine.pierRng = Random(7)
         engine.dailyPromptProvider = { "What tiny thing made you smile today?" }
+        // Pin the time of day so Bao's day/night routine is deterministic.
+        engine.updateAtmosphereMode("DAY")
         engine.loadScene(SceneType.SEASIDE_PIER)
     }
 
@@ -194,6 +197,90 @@ class SeasidePierSceneTest {
         engine.onTouchLighthouse(cw, ch)
         assertTrue(engine.pierLighthouseTimer > 0f)
         assertTrue(engine.sceneMessage != null)
+    }
+
+    @Test
+    fun `Grandpa Bao waves hello, sips his tea and fishes on his own`() {
+        run(2.2f)
+        assertTrue("Bao should wave when the couple arrives", engine.pierBaoWaveTimer > 0f)
+
+        runUntil(10f, "a sip of tea") { engine.pierBaoSipTimer > 0f }
+        runUntil(20f, "Bao to cast by himself") { engine.pierFishingPhase != PierFishingPhase.IDLE }
+        assertEquals(PierFishingPhase.CASTING, engine.pierFishingPhase)
+    }
+
+    @Test
+    fun `Bao dozes on quiet nights and wakes when tapped`() {
+        engine.updateAtmosphereMode("NIGHT")
+        runUntil(SceneEngine.PIER_BAO_DOZE_SECONDS + 2f, "Bao to doze") { engine.isBaoDozing }
+        assertEquals("No fishing by himself at night", PierFishingPhase.IDLE, engine.pierFishingPhase)
+
+        engine.onTouchGrandpaBao(cw, ch)
+        assertFalse(engine.isBaoDozing)
+        assertTrue(engine.sceneMessage?.contains("resting my eyes") == true)
+        assertEquals("Waking him doesn't start a cast", PierFishingPhase.IDLE, engine.pierFishingPhase)
+    }
+
+    @Test
+    fun `telescope spots dolphins`() {
+        engine.onTouchPierTelescope(cw, ch)
+        assertTrue(engine.pierDolphinTimer > 0f)
+        assertEquals(EmoteType.EXCLAMATION, engine.girl.emote)
+        assertTrue(engine.girl.emoteTimer > 0f)
+
+        run(SceneEngine.PIER_DOLPHIN_SECONDS + 0.2f)
+        assertEquals(0f, engine.pierDolphinTimer, 0f)
+    }
+
+    @Test
+    fun `sailboat toots back`() {
+        engine.onTouchPierBoat(cw, ch, cw * 0.4f, ch * 0.4f)
+        assertTrue(engine.pierBoatHornTimer > 0f)
+        assertTrue(engine.sceneMessage?.contains("Toot") == true)
+    }
+
+    @Test
+    fun `Pinchy the crab flees, hides and comes back while Mochi gives chase`() {
+        assertTrue(engine.isPierCrabVisible)
+        engine.onTouchPierCrab(cw, ch)
+        assertTrue(engine.pierCrabStartledTimer > 0f)
+        assertEquals(CatState.WALK_FOLLOW, engine.catState)
+
+        runUntil(3f, "Pinchy to hide") { !engine.isPierCrabVisible }
+        run(19f)
+        assertTrue("Pinchy peeks back out", engine.isPierCrabVisible)
+        assertTrue(engine.pierCrabX in PierLayout.CRAB_MIN_X..PierLayout.CRAB_MAX_X)
+    }
+
+    @Test
+    fun `bait bucket fish gets Mochi's attention`() {
+        engine.onTouchPierBucket(cw, ch)
+        assertTrue(engine.pierBucketFlopTimer > 0f)
+        assertEquals(CatState.WALK_FOLLOW, engine.catState)
+        assertTrue(engine.sceneMessage?.contains("bait") == true)
+    }
+
+    @Test
+    fun `string lights cycle through their colours`() {
+        val start = engine.pierLightsPalette
+        repeat(SceneEngine.PIER_LIGHT_PALETTES) { engine.onTouchPierLights(cw, ch, cw * 0.5f) }
+        assertEquals(start, engine.pierLightsPalette)
+        engine.onTouchPierLights(cw, ch, cw * 0.5f)
+        assertEquals((start + 1) % SceneEngine.PIER_LIGHT_PALETTES, engine.pierLightsPalette)
+        assertTrue(engine.pierLightsSparkleTimer > 0f)
+    }
+
+    @Test
+    fun `pier watch scene shares a cone, loses it to Pip, and settles back`() {
+        engine.triggerWatchScene()
+        run(2.5f)
+        assertTrue("A cone is shared", engine.pierIceCreamTimer > 0f)
+
+        runUntil(5f, "Pip's raid") { engine.pierIceCreamTimer <= 0f }
+        runUntil(8f, "the cinematic to end") { !engine.isWatchSceneActive }
+        run(1f)
+        assertEquals(CharacterPose.SIT, engine.boy.pose)
+        assertEquals(CharacterPose.SIT_SNUGGLE, engine.girl.pose)
     }
 }
 

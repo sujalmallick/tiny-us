@@ -179,7 +179,17 @@ object CampfireLayout {
     }
 }
 
-enum class PierProp { MOCHI, PIP, BAO, CART, BOTTLE, LIGHTHOUSE, SEA }
+enum class PierProp { MOCHI, PIP, BAO, CART, BOTTLE, LIGHTHOUSE, TELESCOPE, BOAT, CRAB, BUCKET, LIGHTS, SEA }
+
+/** The moving or disappearing parts of the pier a tap needs to know about. */
+data class PierTapState(
+    val gullX: Float,
+    val gullY: Float,
+    val gullVisible: Boolean,
+    val bottleVisible: Boolean,
+    val crabX: Float,
+    val crabVisible: Boolean
+)
 
 object PierLayout {
     const val HORIZON_Y = 0.42f
@@ -195,6 +205,11 @@ object PierLayout {
     const val WALK_MIN_Y = 0.68f
     const val WALK_MAX_Y = 0.84f
 
+    /** Pinchy the crab patrols this strip of boardwalk, in front of the couple. */
+    const val CRAB_Y = 0.83f
+    const val CRAB_MIN_X = 0.28f
+    const val CRAB_MAX_X = 0.72f
+
     fun lighthouseBase(cw: Float, ch: Float) = Offset(cw * 0.88f, ch * HORIZON_Y)
     /** Lamp room at the top of the tower; the night beam sweeps from here. */
     fun lighthouseLamp(cw: Float, ch: Float, p: Float) = lighthouseBase(cw, ch) - Offset(0f, 38f * p)
@@ -207,6 +222,8 @@ object PierLayout {
 
     /** Grandpa Bao's crate on the deck at the far right. */
     fun bao(cw: Float, ch: Float) = Offset(cw * 0.85f, ch * 0.71f)
+    /** Bao's sprite scale relative to the scene's pixel size, close to the couple's. */
+    const val BAO_SCALE = 1.3f
 
     /** Where Mochi trots to collect a fish from Bao. */
     const val MOCHI_FISH_X = 0.74f
@@ -214,21 +231,38 @@ object PierLayout {
 
     fun bucket(cw: Float, ch: Float) = Offset(cw * 0.71f, ch * 0.76f)
 
-    fun hitTest(
-        tap: Offset, cw: Float, ch: Float, p: Float, time: Float,
-        catWorldX: Float, catWorldY: Float,
-        gullX: Float, gullY: Float, gullVisible: Boolean, bottleVisible: Boolean
-    ): PierProp? {
+    /** Coin-operated viewer bolted to the deck by the railing. */
+    fun telescope(cw: Float, ch: Float) = Offset(cw * 0.29f, ch * 0.665f)
+
+    /** Where the dolphins leap when spotted through the telescope. */
+    fun dolphinWaterline(cw: Float, ch: Float) = Offset(cw * 0.44f, ch * 0.53f)
+
+    /** The little sailboat drifting along the horizon, or null while it is out of view. */
+    fun boat(cw: Float, ch: Float, time: Float): Offset? {
+        val norm = ((time * 0.010f) % 1.4f) - 0.2f
+        if (norm !in 0.02f..0.80f) return null
+        return Offset(cw * norm, ch * HORIZON_Y + 1f)
+    }
+
+    fun crab(cw: Float, ch: Float, crabX: Float) = Offset(cw * crabX, ch * CRAB_Y)
+
+    fun hitTest(tap: Offset, cw: Float, ch: Float, p: Float, time: Float, catWorldX: Float, catWorldY: Float, state: PierTapState): PierProp? {
         val bottleBob = kotlin.math.sin(time * 1.8f) * 1.5f * p
         val targets = buildList {
-            if (gullVisible) add(PropTarget(PierProp.PIP, Offset(cw * gullX, ch * gullY - 4f * p), 12f * p))
-            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 12f * p), 13f * p))
+            if (state.gullVisible) add(PropTarget(PierProp.PIP, Offset(cw * state.gullX, ch * state.gullY - 4f * p), 12f * p))
+            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 16f * p), 16f * p))
             add(PropTarget(PierProp.CART, cart(cw, ch) - Offset(0f, 15f * p), 17f * p))
-            if (bottleVisible) add(PropTarget(PierProp.BOTTLE, bottle(cw, ch) + Offset(0f, bottleBob), 10f * p))
+            if (state.bottleVisible) add(PropTarget(PierProp.BOTTLE, bottle(cw, ch) + Offset(0f, bottleBob), 10f * p))
             add(PropTarget(PierProp.LIGHTHOUSE, lighthouseBase(cw, ch) - Offset(0f, 22f * p), 20f * p))
+            add(PropTarget(PierProp.TELESCOPE, telescope(cw, ch) - Offset(0f, 9f * p), 10f * p))
+            boat(cw, ch, time)?.let { add(PropTarget(PierProp.BOAT, it - Offset(0f, 6f * p), 12f * p)) }
+            if (state.crabVisible) add(PropTarget(PierProp.CRAB, crab(cw, ch, state.crabX) - Offset(0f, 2f * p), 9f * p))
+            add(PropTarget(PierProp.BUCKET, bucket(cw, ch) - Offset(0f, 4f * p), 7f * p))
         }
         val hit = nearestHit(tap, targets, mochiTapCenter(catWorldX, catWorldY, cw, ch, p), PierProp.MOCHI, p)
         if (hit != null) return hit
+        // The string lights run along the top of the railing.
+        if (tap.y in (ch * RAIL_Y - 5f * p)..(ch * RAIL_Y + 2f * p)) return PierProp.LIGHTS
         return if (tap.y in (ch * HORIZON_Y)..(ch * RAIL_Y)) PierProp.SEA else null
     }
 }

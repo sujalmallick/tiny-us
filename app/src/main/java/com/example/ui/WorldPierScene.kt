@@ -75,6 +75,32 @@ internal fun drawSeasidePierScene(
         scope.drawRect(glitter, Offset(cw * 0.62f - gw / 2f, gy), Size(gw, 0.8f * p))
     }
 
+    // Sailboat drifting along the horizon.
+    PierLayout.boat(cw, ch, time)?.let { boat ->
+        PierSprites.drawSailboat(scope, boat.x, boat.y, p, time, tooting = engine.pierBoatHornTimer > 0f, isNight = isNight)
+    }
+
+    // Dolphins leaping, staggered one after another, when spotted.
+    if (engine.pierDolphinTimer > 0f) {
+        val progress = 1f - engine.pierDolphinTimer / SceneEngine.PIER_DOLPHIN_SECONDS
+        val water = PierLayout.dolphinWaterline(cw, ch)
+        for (i in 0..2) {
+            val arc = (progress * 1.6f - i * 0.3f)
+            PierSprites.drawDolphin(scope, water.x + i * 16f * p, water.y + i * 2f * p, p, arc)
+        }
+    }
+
+    // A little flock lifting off the lighthouse rocks after the foghorn.
+    if (engine.pierFlockTimer > 0f) {
+        val progress = 1f - engine.pierFlockTimer / SceneEngine.PIER_FLOCK_SECONDS
+        val rocks = PierLayout.lighthouseBase(cw, ch)
+        for (i in 0..2) {
+            val gx = rocks.x - progress * cw * (0.45f + i * 0.08f)
+            val gy = rocks.y - 6f * p - progress * ch * (0.14f + i * 0.03f) + i * 4f * p
+            PierSprites.drawDistantGull(scope, gx, gy, p, time + i, isNight)
+        }
+    }
+
     // 2. Lighthouse on its rocks, with a sweeping beam at night (or after a tap).
     val base = PierLayout.lighthouseBase(cw, ch)
     scope.drawOval(Color(0xFF4A4E57), Offset(base.x - 16f * p, base.y - 4f * p), Size(32f * p, 9f * p))
@@ -126,13 +152,14 @@ internal fun drawSeasidePierScene(
     if (engine.weather == WeatherType.SNOW) {
         scope.drawRect(Color(0xFFF7FBFF), Offset(0f, railY - 1f * p), Size(cw, 1.2f * p))
     }
-    val lightsGlow = isNight || isSunset
+    val sparkle = engine.pierLightsSparkleTimer > 0f
+    val lightsGlow = isNight || isSunset || sparkle
     for (i in 0..16) {
         val lx = cw * (0.03f + i * 0.06f)
         val sag = sin(i * 1.9f) * 0.8f * p
-        val bulb = when (i % 3) { 0 -> Color(0xFFFFD166); 1 -> Color(0xFFFF9AA2); else -> Color(0xFFBDE0FE) }
+        val bulb = pierBulbColor(engine.pierLightsPalette, i)
         if (lightsGlow) {
-            val twinkle = 0.25f + 0.15f * sin(time * 2.2f + i)
+            val twinkle = (if (sparkle) 0.45f else 0.25f) + 0.15f * sin(time * 2.2f + i)
             scope.drawCircle(bulb.copy(alpha = twinkle), 3.5f * p, Offset(lx, railY - 2f * p + sag))
         }
         scope.drawCircle(if (lightsGlow) bulb else bulb.copy(alpha = 0.55f), 1f * p, Offset(lx, railY - 2f * p + sag))
@@ -165,6 +192,10 @@ internal fun drawSeasidePierScene(
         row++
     }
 
+    // Coin telescope by the railing; it glints while the dolphins are out.
+    val scopeBase = PierLayout.telescope(cw, ch)
+    PierSprites.drawTelescope(scope, scopeBase.x, scopeBase.y, p, glinting = engine.pierDolphinTimer > 0f)
+
     // 6. Bench the couple sits on (drawn behind them).
     val benchY = ch * 0.74f - 9f * p
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY), Size(cw * 0.30f, 2.5f * p))
@@ -195,12 +226,30 @@ internal fun drawSeasidePierScene(
     scope.drawRect(Color(0xFF8E9AA6), Offset(bucket.x - 3.5f * p, bucket.y - 6f * p), Size(7f * p, 6f * p))
     scope.drawRect(Color(0xFF6B7783), Offset(bucket.x - 4f * p, bucket.y - 6.5f * p), Size(8f * p, 1.2f * p))
     scope.drawRect(Color(0xFFB0C4DE), Offset(bucket.x + 1f * p, bucket.y - 9f * p), Size(1.5f * p, 3f * p))
+    if (engine.pierBucketFlopTimer > 0f) {
+        // A fish flips up out of the bucket and back in.
+        val u = 1f - engine.pierBucketFlopTimer / 1.6f
+        val hop = sin(u * Math.PI.toFloat()) * 12f * p
+        val fx = bucket.x - u * 4f * p
+        scope.drawOval(Color(0xFFB0C4DE), Offset(fx - 3f * p, bucket.y - 9f * p - hop), Size(6f * p, 3f * p))
+        scope.drawRect(Color(0xFF8DA2BD), Offset(fx + 2.5f * p, bucket.y - 9.5f * p - hop + sin(time * 30f) * 0.5f * p), Size(1.8f * p, 3.5f * p))
+    }
+
+    // Pinchy the crab on the boardwalk.
+    if (engine.isPierCrabVisible) {
+        val crab = PierLayout.crab(cw, ch, engine.pierCrabX)
+        PierSprites.drawCrab(scope, crab.x, crab.y, p, time, startled = engine.pierCrabStartledTimer > 0f)
+    }
 
     // 9. Grandpa Bao at the end of the pier.
     val bao = PierLayout.bao(cw, ch)
+    // Bao is drawn at the couple's scale so he reads as a person, not a prop.
     PierSprites.drawGrandpaBao(
-        scope, bao.x, bao.y, p, time, engine.pierFishingPhase, engine.pierLastCatch,
-        waterY = horizonY + (railY - horizonY) * 0.62f
+        scope, bao.x, bao.y, p * PierLayout.BAO_SCALE, time, engine.pierFishingPhase, engine.pierLastCatch,
+        waterY = horizonY + (railY - horizonY) * 0.62f,
+        sipping = engine.pierBaoSipTimer > 0f,
+        waving = engine.pierBaoWaveTimer > 0f,
+        dozing = engine.isBaoDozing
     )
 
     // 10. Pip, when standing on the railing (behind the couple).
@@ -217,16 +266,10 @@ internal fun drawSeasidePierScene(
 internal fun drawPierForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     if (engine.pierIceCreamTimer > 0f) {
         val cps = p * 1.38f
-        for (c in listOf(engine.boy, engine.girl)) {
-            val handX = cw * c.worldX + (if (c.isGirl) -6f else 6f) * cps
-            val handY = ch * c.worldY - 11f * cps
-            scope.drawRect(Color(0xFFE0B07A), Offset(handX - 1.6f * p, handY), Size(3.2f * p, 2f * p))
-            scope.drawRect(Color(0xFFE0B07A), Offset(handX - 1f * p, handY + 2f * p), Size(2f * p, 2f * p))
-            scope.drawRect(Color(0xFFC98F55), Offset(handX - 0.4f * p, handY + 4f * p), Size(0.8f * p, 1.5f * p))
-            // Melting a little as the timer runs down.
-            val scoop = 2.4f * p * (0.6f + 0.4f * (engine.pierIceCreamTimer / SceneEngine.PIER_ICE_CREAM_SECONDS))
-            scope.drawCircle(Color(0xFFFFC8DD), scoop, Offset(handX, handY - scoop * 0.5f))
-        }
+        // Melting a little as the timer runs down.
+        val scoop = 2.4f * p * (0.6f + 0.4f * (engine.pierIceCreamTimer / SceneEngine.PIER_ICE_CREAM_SECONDS))
+        drawCone(scope, cw * engine.boy.worldX + 6f * cps, ch * engine.boy.worldY - 11f * cps, p, scoop)
+        drawCone(scope, cw * engine.girl.worldX - 6f * cps, ch * engine.girl.worldY - 11f * cps, p, scoop)
     }
     if (engine.pierGullState.isAirborne) {
         PierSprites.drawSeagull(
@@ -234,4 +277,18 @@ internal fun drawPierForeground(scope: DrawScope, cw: Float, ch: Float, p: Float
             engine.pierGullState, engine.pierGullFacingLeft
         )
     }
+}
+
+private fun drawCone(scope: DrawScope, handX: Float, handY: Float, p: Float, scoop: Float) {
+    scope.drawRect(Color(0xFFE0B07A), Offset(handX - 1.6f * p, handY), Size(3.2f * p, 2f * p))
+    scope.drawRect(Color(0xFFE0B07A), Offset(handX - 1f * p, handY + 2f * p), Size(2f * p, 2f * p))
+    scope.drawRect(Color(0xFFC98F55), Offset(handX - 0.4f * p, handY + 4f * p), Size(0.8f * p, 1.5f * p))
+    scope.drawCircle(Color(0xFFFFC8DD), scoop, Offset(handX, handY - scoop * 0.5f))
+}
+
+/** Three string-light colour schemes, cycled by tapping the railing. */
+private fun pierBulbColor(palette: Int, index: Int): Color = when (palette) {
+    1 -> if (index % 2 == 0) Color(0xFFFFF3B0) else Color(0xFFFFE0A3) // warm white
+    2 -> when (index % 4) { 0 -> Color(0xFFFF6B6B); 1 -> Color(0xFFFFD93D); 2 -> Color(0xFF6BCB77); else -> Color(0xFF4D96FF) } // party
+    else -> when (index % 3) { 0 -> Color(0xFFFFD166); 1 -> Color(0xFFFF9AA2); else -> Color(0xFFBDE0FE) } // pastel
 }

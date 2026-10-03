@@ -1767,6 +1767,20 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
+    // Seaside Pier: the little sailboat's cheerful "toot toot"
+    fun playBoatHorn() {
+        if (!isEnabled) return
+        scope.launch(Dispatchers.IO) {
+            try {
+                repeat(2) {
+                    if (!isEnabled) return@launch
+                    playSfxNoteStatic(261.63, 160, 0.24f, isMusicBox = false)
+                    delay(110)
+                }
+            } catch (_: Exception) {}
+        }
+    }
+
     // Seaside Pier: Grandpa Bao's fishing reel ticking
     fun playReelClick() {
         if (!isEnabled) return

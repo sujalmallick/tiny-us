@@ -84,6 +84,7 @@ import com.example.scene.CampfireLayout
 import com.example.scene.CampfireProp
 import com.example.scene.PierLayout
 import com.example.scene.PierProp
+import com.example.scene.PierTapState
 import com.example.scene.CatState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -351,8 +352,14 @@ fun PixelWorldView(
                                 val pierProp = PierLayout.hitTest(
                                     tapOffset, w, h, pixelScale, engine.sceneTime,
                                     engine.catWorldX, engine.catWorldY,
-                                    engine.pierGullX, engine.pierGullY,
-                                    engine.pierGullState.isVisible, engine.pierBottleVisible
+                                    PierTapState(
+                                        gullX = engine.pierGullX,
+                                        gullY = engine.pierGullY,
+                                        gullVisible = engine.pierGullState.isVisible,
+                                        bottleVisible = engine.pierBottleVisible,
+                                        crabX = engine.pierCrabX,
+                                        crabVisible = engine.isPierCrabVisible
+                                    )
                                 )
                                 when (pierProp) {
                                     PierProp.MOCHI -> engine.onTouchCat(w, h)
@@ -361,6 +368,11 @@ fun PixelWorldView(
                                     PierProp.CART -> engine.onTouchPierIceCream(w, h)
                                     PierProp.BOTTLE -> engine.onTouchPierBottle(w, h)
                                     PierProp.LIGHTHOUSE -> engine.onTouchLighthouse(w, h)
+                                    PierProp.TELESCOPE -> engine.onTouchPierTelescope(w, h)
+                                    PierProp.BOAT -> engine.onTouchPierBoat(w, h, tapOffset.x, tapOffset.y)
+                                    PierProp.CRAB -> engine.onTouchPierCrab(w, h)
+                                    PierProp.BUCKET -> engine.onTouchPierBucket(w, h)
+                                    PierProp.LIGHTS -> engine.onTouchPierLights(w, h, tapOffset.x)
                                     PierProp.SEA -> engine.onTouchPierSea(tapOffset.x, tapOffset.y)
                                     null -> Unit
                                 }
