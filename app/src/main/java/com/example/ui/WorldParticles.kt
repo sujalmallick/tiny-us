@@ -94,15 +94,18 @@ internal fun drawGroundFallenParticles(
     ch: Float
 ) {
     if (fallen.isEmpty()) return
+    val wu = com.example.scene.WeatherLayout.weatherUnit(cw, p)
     for (i in fallen.indices) {
         val fp = fallen[i]
         val px = fp.normX * cw
         val py = fp.normY * ch
         val color = fp.color.copy(alpha = fp.alpha)
+        // Tossed leaves and petals tumble in the air; resting ones lie flat.
+        val tumble = if (fp.isSwept) kotlin.math.abs(kotlin.math.cos(fp.sweptLife * 9f + fp.styleVariant)).coerceIn(0.35f, 1f) else 1f
         when (fp.type) {
             ParticleType.AUTUMN_LEAF -> {
                 // Retro 16-bit pixel art fallen autumn leaf on grass
-                val s = fp.size * p * 0.65f
+                val s = fp.size * wu * 0.45f * tumble
                 when (fp.styleVariant % 3) {
                     0 -> {
                         // Tilted leaf with curl & darker shadow pixel
@@ -127,7 +130,7 @@ internal fun drawGroundFallenParticles(
             }
             ParticleType.SAKURA_PETAL -> {
                 // Soft pink fallen sakura petals resting on meadow grass
-                val s = fp.size * p * 0.60f
+                val s = fp.size * wu * 0.42f * tumble
                 when (fp.styleVariant % 3) {
                     0 -> {
                         // Single delicate petal
@@ -148,7 +151,7 @@ internal fun drawGroundFallenParticles(
             }
             ParticleType.SNOWFLAKE -> {
                 // Small fallen snow tufts/patches resting on the grass (not swipeable)
-                val s = fp.size * p * 0.55f
+                val s = fp.size * wu * 0.40f
                 when (fp.styleVariant % 3) {
                     0 -> {
                         // Horizontal snow cap on grass blade
@@ -201,6 +204,9 @@ internal fun drawParticles(scope: DrawScope, particles: List<PixelParticle>, p: 
 
 internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
     val color = pt.color.copy(alpha = pt.alpha)
+    // Weather sizes follow the canvas width (not the capped pixel scale), so rain, snow,
+    // petals and leaves stay easy to see on wide, high-density phones.
+    val wu = weatherUnit(scope, p)
     when (pt.type) {
         ParticleType.HEART -> {
             val s = pt.size
@@ -256,8 +262,8 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.RAIN_DROP -> {
             // Proper authentic retro rain streak: crisp vertical slant falling towards ground
-            val rw = (1.4f * p).coerceAtLeast(4f)
-            val rh = (pt.size * 0.95f) * (p / 3.0f).coerceAtLeast(1f) // ~18-24 screen pixels tall
+            val rw = (0.75f * wu).coerceAtLeast(4f)
+            val rh = (pt.size * 0.95f) * (wu / 3.0f).coerceAtLeast(1f)
             // Main streak core (bright crisp rain blue/white)
             scope.drawRect(color, Offset(pt.x, pt.y), Size(rw, rh * 0.65f))
             // Softer trail trailing up
@@ -271,7 +277,7 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.SAKURA_PETAL -> {
             // Romantic pink drifting sakura petal with tumbling width and highlight
-            val s = (p * (0.95f + pt.depth * 0.30f)).coerceIn(4.5f, 8.5f)
+            val s = (wu * (0.75f + pt.depth * 0.35f)).coerceIn(4.5f, 18f)
             val flip = kotlin.math.cos(pt.phase * 1.4f)
             val wFrac = kotlin.math.abs(flip).coerceIn(0.35f, 1.0f)
             val pw = s * 2.2f * wFrac
@@ -285,7 +291,7 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.AUTUMN_LEAF -> {
             // Romantic warm autumn leaf with tumbling flutter and silhouette
-            val s = (p * (1.0f + pt.depth * 0.32f)).coerceIn(4.8f, 9.0f)
+            val s = (wu * (0.80f + pt.depth * 0.35f)).coerceIn(4.8f, 19f)
             val flip = kotlin.math.cos(pt.phase * 1.2f)
             val wFrac = kotlin.math.abs(flip).coerceIn(0.40f, 1.0f)
             val pw = s * 2.3f * wFrac
@@ -299,7 +305,7 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
         }
         ParticleType.SNOWFLAKE -> {
             // Delicate crystal pixel snowflake (clearly visible 16-bit retro cross)
-            val s = (p * 1.35f * pt.depth).coerceIn(3.2f, 8.5f)
+            val s = (wu * (0.55f + pt.depth * 0.45f)).coerceIn(3.2f, 14f)
             if (pt.size > 2.6f) {
                 // Classic 5-pixel cross snowflake with white/ice-blue core
                 scope.drawRect(color, Offset(pt.x - s * 1.2f, pt.y - s * 0.35f), Size(s * 2.4f, s * 0.7f))
@@ -311,16 +317,21 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
             }
         }
         ParticleType.DANDELION_FLUFF -> {
-            // Soft white floating tuft
-            scope.drawRect(color, Offset(pt.x, pt.y), Size(pt.size * 0.7f, pt.size * 0.7f))
-            scope.drawRect(color.copy(alpha = pt.alpha * 0.6f), Offset(pt.x - pt.size * 0.3f, pt.y - pt.size * 0.2f), Size(pt.size * 1.3f, pt.size * 0.3f))
+            // Soft white floating tuft with a few seed hairs
+            val f = wu * 0.9f
+            scope.drawRect(color, Offset(pt.x, pt.y), Size(f, f))
+            scope.drawRect(color.copy(alpha = pt.alpha * 0.6f), Offset(pt.x - f * 0.6f, pt.y - f * 0.4f), Size(f * 2.2f, f * 0.4f))
+            scope.drawRect(color.copy(alpha = pt.alpha * 0.45f), Offset(pt.x + f * 0.3f, pt.y - f * 1.1f), Size(f * 0.4f, f * 0.9f))
         }
         ParticleType.WIND_BREEZE -> {
             // Wind gust line
-            val len = pt.size * 4f
+            val len = wu * 7f
             scope.drawRect(color, Offset(pt.x, pt.y), Size(len, 1.6f * p))
             scope.drawRect(color.copy(alpha = pt.alpha * 0.5f), Offset(pt.x - len * 0.25f, pt.y), Size(len * 0.25f, 1f * p))
             scope.drawRect(color.copy(alpha = pt.alpha * 0.4f), Offset(pt.x + len, pt.y), Size(len * 0.25f, 1f * p))
         }
     }
 }
+
+/** Visual unit for weather particles: about 1/150 of the canvas width, never below the pixel scale. */
+private fun weatherUnit(scope: DrawScope, p: Float): Float = com.example.scene.WeatherLayout.weatherUnit(scope.size.width, p)

@@ -18,6 +18,9 @@ import com.example.engine.CharacterState
 import com.example.engine.Direction
 import com.example.engine.EmoteType
 import com.example.engine.ParticleSystem
+import com.example.engine.ParticleType
+import com.example.engine.SnowPrintKind
+import com.example.engine.Puddle
 import com.example.engine.PixelCharacter
 import com.example.engine.CharacterMotionTween
 import com.example.engine.RoomTheme
@@ -231,6 +234,46 @@ class SceneEngine(
     private var pierCrabPauseTimer = 1.5f
     val isPierCrabVisible: Boolean get() = pierCrabHiddenTimer <= 0f
     private val pierAutonomousPicker = AntiRepeatRandomPicker(listOf(0, 1, 2))
+
+    // Cozy weather keepsakes: catching what falls, the rainbow after rain, the snowday snowman.
+    var weatherCatchCount: Int by mutableIntStateOf(0)
+        private set
+    var rainbowTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var snowmanStage: Int by mutableIntStateOf(0)
+        private set
+    var snowmanWobbleTimer: Float by mutableFloatStateOf(0f)
+        private set
+    private var lastSeenWeather: WeatherType? = null
+
+    // Ground weather play: footprints in the snow, kicked-up leaves, puddle splashes.
+    private val lastPrintX = floatArrayOf(-1f, -1f, -1f)
+    private val lastPrintY = floatArrayOf(-1f, -1f, -1f)
+    private val puddleSplashCooldown = floatArrayOf(0f, 0f, 0f)
+    private var lastRustleTime = -10f
+    private var lastSnowTraceX = -1f
+    private var lastSnowTraceY = -1f
+    private var groundHintShown = false
+    private val snowCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a snowflake. No two are alike, just like you two.",
+        "A snowflake melts on your fingertip. Warm hands, warm hearts.",
+        "Caught one! It sparkles like the first winter you shared."
+    ))
+    private val petalCatchLines = AntiRepeatRandomPicker(listOf(
+        "A cherry petal landed in your hand. They say that means luck in love.",
+        "Caught a petal before it touched the ground. Make a wish together.",
+        "A soft pink petal, just for you two."
+    ))
+    private val leafCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a falling leaf! Make a wish before the next one lands.",
+        "A crunchy golden leaf for your keepsake box.",
+        "Caught a little autumn leaf, warm as a hand to hold."
+    ))
+    private val fluffCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a dandelion wish. Make it a sweet one.",
+        "A dandelion puff! Whisper a wish and let it go.",
+        "Caught a floating wish on the breeze."
+    ))
 
     private var catTreatInProgress = false
     private var catTreatWalking = false
@@ -1928,6 +1971,8 @@ class SceneEngine(
             hourCheckTimer = 0f
             timeOfDayPhase = TimeOfDayPhase.resolve(atmosphereMode)
         }
+        updateWeatherKeepsakes(deltaSeconds)
+        updateGroundWeatherPlay(deltaSeconds, canvasWidth, canvasHeight)
         val isOutdoor = isCurrentSceneOutdoor
         if (audio.isIndoor != (!isOutdoor)) {
             audio.setIndoor(!isOutdoor, smooth = true)
@@ -6020,6 +6065,242 @@ class SceneEngine(
                 showMessage("Entering our cozy cottage.", duration = 2.5f)
             }
         }
+    }
+
+    /**
+     * Rain clearing by day leaves a rainbow; the snowman only lasts while it snows,
+     * and catches are counted per weather spell.
+     */
+    private fun updateWeatherKeepsakes(dt: Float) {
+        val previous = lastSeenWeather
+        if (previous != weather) {
+            if (previous == WeatherType.RAIN && weather != WeatherType.RAIN && !timeOfDayPhase.isNight) {
+                rainbowTimer = WeatherLayout.RAINBOW_SECONDS
+            }
+            if (weather != WeatherType.SNOW) snowmanStage = 0
+            weatherCatchCount = 0
+            groundHintShown = false
+            lastSeenWeather = weather
+        }
+        if (rainbowTimer > 0f) rainbowTimer = (rainbowTimer - dt).coerceAtLeast(0f)
+        if (snowmanWobbleTimer > 0f) snowmanWobbleTimer = (snowmanWobbleTimer - dt).coerceAtLeast(0f)
+    }
+
+    /**
+     * Walking through the weather: footprints and pawprints in snow, leaves and petals
+     * kicked up underfoot, and splashes when someone steps through a puddle.
+     */
+    private fun updateGroundWeatherPlay(dt: Float, cw: Float, ch: Float) {
+        for (i in puddleSplashCooldown.indices) {
+            if (puddleSplashCooldown[i] > 0f) puddleSplashCooldown[i] -= dt
+        }
+        if (!isCurrentSceneOutdoor || currentScene == SceneType.EVENING_RIDE || cw <= 0f || ch <= 0f) return
+        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val catMoving = catState == CatState.WALK_FOLLOW &&
+            (abs(catTargetX - catWorldX) > 0.01f || abs(catTargetY - catWorldY) > 0.01f)
+        for (i in 0..2) {
+            val x: Float
+            val y: Float
+            val moving: Boolean
+            val facingLeft: Boolean
+            when (i) {
+                0 -> { x = boy.worldX; y = boy.worldY; moving = boy.isTransitioningPosition; facingLeft = boy.direction == Direction.LEFT }
+                1 -> { x = girl.worldX; y = girl.worldY; moving = girl.isTransitioningPosition; facingLeft = girl.direction == Direction.LEFT }
+                else -> { x = catWorldX; y = catWorldY; moving = catMoving; facingLeft = catFacingLeft }
+            }
+            if (!moving) {
+                lastPrintX[i] = -1f
+                continue
+            }
+            when (weather) {
+                WeatherType.SNOW -> {
+                    val step = if (i == 2) 0.028f else 0.045f
+                    if (lastPrintX[i] < 0f || kotlin.math.hypot(x - lastPrintX[i], y - lastPrintY[i]) >= step) {
+                        particles.addSnowPrint(x, y, if (i == 2) SnowPrintKind.PAW else SnowPrintKind.FOOT, facingLeft)
+                        lastPrintX[i] = x
+                        lastPrintY[i] = y
+                    }
+                }
+                WeatherType.AUTUMN, WeatherType.SAKURA -> {
+                    val kicked = particles.kickGroundParticles(cw * x, ch * y, cw, ch, unit * 7f, facingLeft)
+                    if (kicked > 0) playRustleThrottled()
+                }
+                WeatherType.RAIN -> {
+                    if (puddleSplashCooldown[i] <= 0f && particles.puddleAt(x, y, cw, ch, unit) != null) {
+                        puddleSplashCooldown[i] = 0.6f
+                        splashAt(cw * x, ch * y)
+                    }
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun playRustleThrottled() {
+        if (sceneTime - lastRustleTime < 0.25f) return
+        lastRustleTime = sceneTime
+        audio.playLeafRustle()
+    }
+
+    private fun splashAt(x: Float, y: Float) {
+        audio.playWaterDrip()
+        particles.spawnRainSplash(x, y)
+        particles.spawnRainSplash(x - 14f, y + 3f)
+        particles.spawnRainSplash(x + 14f, y + 3f)
+        particles.spawnSparkles(x, y - 12f, 3, Color(0xFFBFE6FF))
+    }
+
+    /** A swipe tossed some leaves or petals into the air. */
+    fun onGroundSwept(count: Int) {
+        if (count <= 0) return
+        playRustleThrottled()
+        if (!groundHintShown) {
+            groundHintShown = true
+            showMessage(
+                if (weather == WeatherType.AUTUMN) "Leaves crunch and tumble under your fingers."
+                else "Petals swirl up and drift back down like pink snow.",
+                duration = 2.6f
+            )
+        }
+    }
+
+    /** A finger drawing in fresh snow leaves a trail of little hollows. */
+    fun onDrawInSnow(x: Float, y: Float, cw: Float, ch: Float) {
+        if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
+        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        if (lastSnowTraceX >= 0f && kotlin.math.hypot(x - lastSnowTraceX, y - lastSnowTraceY) < unit * 1.1f) return
+        lastSnowTraceX = x
+        lastSnowTraceY = y
+        particles.addSnowPrint(x / cw, y / ch, SnowPrintKind.TRACE, facingLeft = false)
+        if (!groundHintShown) {
+            groundHintShown = true
+            audio.playStarTwinkle()
+            showMessage("You draw in the fresh snow. Maybe a little heart?", duration = 2.6f)
+        }
+    }
+
+    /** Lift the finger: the next stroke starts fresh instead of joining the last one. */
+    fun endSnowStroke() {
+        lastSnowTraceX = -1f
+        lastSnowTraceY = -1f
+    }
+
+    /** Tap a puddle: a big splash, and whoever is nearest does a happy little puddle jump. */
+    fun onTouchPuddle(puddle: Puddle, cw: Float, ch: Float) {
+        val x = cw * puddle.normX
+        val y = ch * puddle.normY
+        splashAt(x, y)
+        particles.spawnRainSplash(x, y - 6f)
+        val jumper = if (abs(boy.worldX - puddle.normX) <= abs(girl.worldX - puddle.normX)) boy else girl
+        if (jumper.reactionTimer <= 0f && !jumper.isMovingOrTransitioning && !isWatchSceneActive) {
+            jumper.transitionPoseTo(CharacterPose.JOY_JUMP)
+            jumper.bounceOffset = 5f
+            jumper.emotion = CharacterEmotion.HAPPY
+            jumper.emote = EmoteType.SPARKLE
+            jumper.emoteTimer = 1.6f
+            jumper.reactionTimer = 1.4f
+        }
+        if (!groundHintShown) {
+            groundHintShown = true
+            showMessage("Splash! Perfect puddle-jumping weather.", duration = 2.4f)
+        }
+    }
+
+    /** A tap caught a falling snowflake, petal, leaf or dandelion puff. */
+    fun onCatchWeather(caught: ParticleSystem.CaughtWeather) {
+        weatherCatchCount++
+        val firstCatch = weatherCatchCount == 1
+        when (caught.type) {
+            ParticleType.SNOWFLAKE -> {
+                audio.playStarTwinkle()
+                particles.spawnSparkles(caught.x, caught.y, 5, Color(0xFFF2FAFF))
+                if (firstCatch) showMessage(snowCatchLines.pick(), duration = 3.0f)
+                growSnowman()
+            }
+            ParticleType.SAKURA_PETAL -> {
+                audio.playHeartChime()
+                particles.spawnHeart(caught.x, caught.y, Color(0xFFFFB7C5))
+                if (firstCatch) showMessage(petalCatchLines.pick(), duration = 3.0f)
+            }
+            ParticleType.AUTUMN_LEAF -> {
+                audio.playLeafRustle()
+                particles.spawnSparkles(caught.x, caught.y, 4, Color(0xFFF4A261))
+                if (firstCatch) showMessage(leafCatchLines.pick(), duration = 3.0f)
+            }
+            else -> {
+                audio.playStarTwinkle()
+                particles.spawnHeart(caught.x, caught.y, Color(0xFFFFF3B0))
+                if (firstCatch) showMessage(fluffCatchLines.pick(), duration = 3.0f)
+            }
+        }
+        if (weatherCatchCount % 5 == 0) {
+            val noun = when (caught.type) {
+                ParticleType.SNOWFLAKE -> "snowflakes"
+                ParticleType.SAKURA_PETAL -> "petals"
+                ParticleType.AUTUMN_LEAF -> "leaves"
+                else -> "wishes"
+            }
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.2f
+            girl.emoteTimer = 2.2f
+            audio.playStarArpeggio()
+            showMessage("$weatherCatchCount $noun caught together", duration = 2.6f)
+        }
+    }
+
+    /** Every few snowflakes caught, the snowman in the corner grows a little more. */
+    private fun growSnowman() {
+        if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
+        val target = (weatherCatchCount / WeatherLayout.SNOWFLAKES_PER_STAGE).coerceAtMost(WeatherLayout.SNOWMAN_MAX_STAGE)
+        if (target <= snowmanStage) return
+        snowmanStage = target
+        snowmanWobbleTimer = 0.8f
+        audio.playBubblePop()
+        showMessage(
+            when (snowmanStage) {
+                1 -> "A little snowball starts rolling in the corner..."
+                2 -> "The snowman has a body now!"
+                3 -> "Head on! The snowman is smiling at you two."
+                else -> "Scarf and carrot nose: your snowman is complete!"
+            },
+            duration = 3.0f
+        )
+    }
+
+    fun onTouchSnowman(cw: Float, ch: Float) {
+        if (snowmanStage <= 0) return
+        snowmanWobbleTimer = 0.8f
+        audio.playBubblePop()
+        val base = WeatherLayout.snowmanBase(cw, ch)
+        particles.spawnSparkles(base.x, base.y - 60f, 4, Color(0xFFF2FAFF))
+        if (snowmanStage >= WeatherLayout.SNOWMAN_MAX_STAGE) {
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.0f
+            girl.emoteTimer = 2.0f
+            showMessage("The snowman wobbles happily. It looks a bit like both of you.", duration = 2.8f)
+        } else {
+            showMessage("The snowman wobbles. Catch a few more snowflakes to finish it!", duration = 2.6f)
+        }
+    }
+
+    fun onTouchRainbow(cw: Float, ch: Float) {
+        if (rainbowTimer <= 0f) return
+        audio.playStarArpeggio()
+        val c = WeatherLayout.rainbowCenter(cw, ch)
+        val r = WeatherLayout.rainbowOuterRadius(cw) - WeatherLayout.rainbowBandWidth(cw) / 2f
+        for (i in 0..4) {
+            val a = Math.PI.toFloat() * (0.15f + i * 0.175f)
+            particles.spawnSparkles(c.x - kotlin.math.cos(a) * r, c.y - kotlin.math.sin(a) * r, 2, Color(0xFFFFF3B0))
+        }
+        boy.emotion = CharacterEmotion.LOVING
+        girl.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.4f
+        girl.emoteTimer = 2.4f
+        showMessage("A rainbow after the rain. Make a wish on it together.", duration = 3.2f)
     }
 
     fun driftWeather() {

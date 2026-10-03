@@ -455,7 +455,7 @@ internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float
     }
     for (k in 0..6) {
         val dx = glass.left + glass.width * (k + 0.5f) / 7f
-        val fall = (time * 1.25f + k * 0.37f) % 1f
+        val fall = (time * 0.6f + k * 0.37f) % 1f
         val dy = glass.top + awningH + 3f * p + fall * (streetY - glass.top - awningH)
         scope.px(Color(0xFFCFE8EF).copy(alpha = 0.8f), dx, dy, 0.8f * p, 2.6f * p)
     }
@@ -463,7 +463,7 @@ internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float
     // Rain streaking down the glass
     for (i in 0..22) {
         val rx = glass.left + 2f * p + ((i * 47) % 89) / 90f * (glass.width - 4f * p)
-        val rSpeed = 0.18f + (i % 5) * 0.04f
+        val rSpeed = 0.12f + (i % 5) * 0.03f
         val rFall = (time * rSpeed + i * 0.09f) % 1f
         val ry = glass.top + rFall * (glass.height - 8f * p)
         scope.pLine(Color(0xFFCFE8EF).copy(alpha = 0.65f), Offset(rx + 2f * p, ry), Offset(rx, ry + (4f + i % 3) * p), strokeWidth = 1.2f * p)
@@ -951,13 +951,13 @@ internal fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float
     if (raining) {
         for (i in 0..34) {
             val rx = nz(i, 71) * cw
-            val fall = (time * (0.12f + nz(i, 72) * 0.1f) + nz(i, 73)) % 1f
+            val fall = (time * (0.09f + nz(i, 72) * 0.07f) + nz(i, 73)) % 1f
             val ry = roofEave + fall * (kneeTop - roofEave)
             scope.px(Color(0xFFDDEFF5).copy(alpha = 0.6f), rx, ry, 0.8f * p, (2.5f + (i % 3)) * p)
         }
         for (i in 0..12) {
             val sx = nz(i, 74) * cw
-            val sp = (time * 1.6f + nz(i, 75)) % 1f
+            val sp = (time * 0.9f + nz(i, 75)) % 1f
             scope.pCircle(Color(0xFFDDEFF5).copy(alpha = 0.5f * (1f - sp)), (0.6f + sp * 2f) * p, Offset(sx, roofEave * nz(i, 76)))
         }
     }

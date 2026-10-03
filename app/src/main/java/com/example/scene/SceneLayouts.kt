@@ -266,3 +266,45 @@ object PierLayout {
         return if (tap.y in (ch * HORIZON_Y)..(ch * RAIL_Y)) PierProp.SEA else null
     }
 }
+
+/** Where the outdoor weather keepsakes sit: the rainbow after rain and the snowday snowman. */
+object WeatherLayout {
+    const val RAINBOW_SECONDS = 40f
+    const val SNOWMAN_MAX_STAGE = 4
+    /** Snowflakes to catch for each new snowman stage. */
+    const val SNOWFLAKES_PER_STAGE = 3
+
+    fun rainbowCenter(cw: Float, ch: Float) = Offset(cw * 0.5f, ch * 0.47f)
+    fun rainbowOuterRadius(cw: Float) = cw * 0.46f
+    fun rainbowBandWidth(cw: Float) = cw * 0.10f
+
+    fun isOnRainbow(tap: Offset, cw: Float, ch: Float): Boolean {
+        val c = rainbowCenter(cw, ch)
+        if (tap.y > c.y) return false
+        val d = hypot(tap.x - c.x, tap.y - c.y)
+        val outer = rainbowOuterRadius(cw)
+        return d in (outer - rainbowBandWidth(cw))..outer
+    }
+
+    /** The snowman stands in the bottom-left foreground, clear of the couple and the scene props. */
+    fun snowmanBase(cw: Float, ch: Float) = Offset(cw * 0.10f, ch * 0.90f)
+
+    fun snowmanHeight(p: Float, stage: Int): Float = when (stage) {
+        0 -> 0f
+        1 -> 14f * p
+        2 -> 22f * p
+        else -> 29f * p
+    }
+
+    fun isOnSnowman(tap: Offset, cw: Float, ch: Float, p: Float, stage: Int): Boolean {
+        if (stage <= 0) return false
+        val base = snowmanBase(cw, ch)
+        return abs(tap.x - base.x) < 12f * p && tap.y in (base.y - snowmanHeight(p, stage) - 4f * p)..(base.y + 2f * p)
+    }
+
+    /** Visual unit for weather on the ground and in the air: about 1/150 of the canvas width. */
+    fun weatherUnit(cw: Float, p: Float) = maxOf(p, cw / 150f)
+
+    /** How close a tap must land to a falling snowflake, petal, leaf or dandelion puff to catch it. */
+    fun catchRadius(cw: Float, p: Float) = maxOf(8f * p, cw * 0.032f)
+}
