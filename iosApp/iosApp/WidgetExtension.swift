@@ -7,20 +7,33 @@ private struct TinyUsEntry: TimelineEntry {
 }
 
 private struct TinyUsProvider: TimelineProvider {
-    private let suiteName = "group.com.example.tinyus.shared"
     func placeholder(in context: Context) -> TinyUsEntry { TinyUsEntry(date: .now, payload: .empty) }
     func getSnapshot(in context: Context, completion: @escaping (TinyUsEntry) -> Void) {
         completion(TinyUsEntry(date: .now, payload: load()))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<TinyUsEntry>) -> Void) {
         let now = Date()
-        let entry = TinyUsEntry(date: now, payload: load())
-        completion(Timeline(entries: [entry], policy: .after(Calendar.current.date(byAdding: .minute, value: 30, to: now) ?? now.addingTimeInterval(1800))))
+        let current = refreshed(load(), at: now)
+        let today = Calendar.current.startOfDay(for: now)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? now.addingTimeInterval(86_400)
+        var tomorrowPayload = current
+        tomorrowPayload.daysTogether = refreshed(current, at: tomorrow).daysTogether
+        let entries = [TinyUsEntry(date: now, payload: current), TinyUsEntry(date: tomorrow, payload: tomorrowPayload)]
+        completion(Timeline(entries: entries, policy: .after(tomorrow.addingTimeInterval(300))))
     }
     private func load() -> TinyWidgetPayload {
-        guard let data = UserDefaults(suiteName: suiteName)?.data(forKey: "tiny-us.widget.payload"),
+        guard let data = TinyAppGroup.defaults.data(forKey: TinyAppGroup.payloadKey),
               let payload = try? JSONDecoder().decode(TinyWidgetPayload.self, from: data) else { return .empty }
         return payload
+    }
+    private func refreshed(_ payload: TinyWidgetPayload, at date: Date) -> TinyWidgetPayload {
+        var result = payload
+        let anniversary = Calendar.current.startOfDay(for: result.anniversaryDate)
+        let currentDay = Calendar.current.startOfDay(for: date)
+        // Inclusive count, matching RelationshipTimeCalculator: the anniversary itself is Day 1.
+        let elapsed = Calendar.current.dateComponents([.day], from: anniversary, to: currentDay).day ?? 0
+        result.daysTogether = Int64(max(1, elapsed + 1))
+        return result
     }
 }
 
@@ -48,8 +61,9 @@ private struct TinyUsWidgetView: View {
                 }
                 Text(entry.payload.coupleNames).font(.system(size: 11, weight: .bold, design: .rounded)).lineLimit(1).foregroundStyle(.white)
                 if family == .systemMedium {
-                    Text(entry.payload.dailyMomentPrompt).font(.system(size: 10, weight: .medium, design: .rounded)).lineLimit(2).foregroundStyle(.white.opacity(0.8))
-                    HStack { Text(entry.payload.sceneName); Spacer(); Text(entry.payload.weatherName) }
+                    Text(entry.payload.dailyMomentPrompt).font(.system(size: 10, weight: .medium, design: .rounded)).lineLimit(1).foregroundStyle(.white.opacity(0.8))
+                    Text(entry.payload.latestSignalText).font(.system(size:9,weight:.medium,design:.rounded)).lineLimit(1).foregroundStyle(.white.opacity(0.67))
+                    HStack { Text(entry.payload.sceneName); Spacer(); Text(entry.payload.timePhase); Spacer(); Text(entry.payload.weatherName) }
                         .font(.system(size: 8, weight: .medium, design: .rounded)).foregroundStyle(cream.opacity(0.9)).lineLimit(1)
                 } else {
                     Text("\(entry.payload.sceneName) · \(entry.payload.weatherName)").font(.system(size: 8, weight: .medium, design: .rounded)).foregroundStyle(cream.opacity(0.9)).lineLimit(1)
@@ -73,27 +87,29 @@ private struct PixelCouple: View {
     var body: some View {
         Canvas(opaque: false, colorMode: .linear) { context, size in
             let unit = min(size.width / 22, size.height / 18)
-            func pixel(_ x: Int, _ y: Int, _ width: Int, _ height: Int, _ color: Color) {
-                context.fill(Path(CGRect(x: CGFloat(x) * unit, y: CGFloat(y) * unit, width: CGFloat(width) * unit, height: CGFloat(height) * unit)), with: .color(color))
-            }
             for index in 0..<2 {
                 let x = index == 0 ? 3 : 12
-                pixel(x, 1, 7, 1, Color(red: 0.34, green: 0.25, blue: 0.29))
-                pixel(x - 1, 2, 9, 5, Color(red: 0.96, green: 0.81, blue: 0.7))
-                pixel(x + 1, 4, 1, 1, Color(red: 0.22, green: 0.2, blue: 0.25))
-                pixel(x + 6, 4, 1, 1, Color(red: 0.22, green: 0.2, blue: 0.25))
-                pixel(x, 7, 7, 6, index == 0 ? Color(red: 0.48, green: 0.67, blue: 0.82) : Color(red: 0.88, green: 0.53, blue: 0.63))
-                pixel(x + 1, 13, 2, 3, Color(red: 0.9, green: 0.76, blue: 0.64))
-                pixel(x + 4, 13, 2, 3, Color(red: 0.9, green: 0.76, blue: 0.64))
+                drawWidgetPixel(&context, unit:unit, x:x, y:1, width:7, height:1, color:Color(red:0.34,green:0.25,blue:0.29))
+                drawWidgetPixel(&context, unit:unit, x:x-1, y:2, width:9, height:5, color:Color(red:0.96,green:0.81,blue:0.7))
+                drawWidgetPixel(&context, unit:unit, x:x+1, y:4, width:1, height:1, color:Color(red:0.22,green:0.2,blue:0.25))
+                drawWidgetPixel(&context, unit:unit, x:x+6, y:4, width:1, height:1, color:Color(red:0.22,green:0.2,blue:0.25))
+                drawWidgetPixel(&context, unit:unit, x:x, y:7, width:7, height:6, color:index == 0 ? Color(red:0.48,green:0.67,blue:0.82) : Color(red:0.88,green:0.53,blue:0.63))
+                drawWidgetPixel(&context, unit:unit, x:x+1, y:13, width:2, height:3, color:Color(red:0.9,green:0.76,blue:0.64))
+                drawWidgetPixel(&context, unit:unit, x:x+4, y:13, width:2, height:3, color:Color(red:0.9,green:0.76,blue:0.64))
             }
-            pixel(9, 8, 4, 2, Color(red: 1, green: 0.77, blue: 0.72))
+            drawWidgetPixel(&context, unit:unit, x:9, y:8, width:4, height:2, color:Color(red:1,green:0.77,blue:0.72))
         }
         .accessibilityHidden(true)
     }
 }
 
+private func drawWidgetPixel(_ context: inout GraphicsContext, unit: CGFloat, x: Int, y: Int, width: Int, height: Int, color: Color) {
+    let rect = CGRect(x:CGFloat(x)*unit, y:CGFloat(y)*unit, width:CGFloat(width)*unit, height:CGFloat(height)*unit)
+    context.fill(Path(rect), with:.color(color))
+}
+
 struct TinyUsWidget: Widget {
-    let kind = "TinyUsWidget"
+    let kind = TinyAppGroup.widgetKind
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: TinyUsProvider()) { entry in TinyUsWidgetView(entry: entry) }
             .configurationDisplayName("Tiny Us")

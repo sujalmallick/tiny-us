@@ -46,7 +46,7 @@ object DailyPromptCatalog {
     )
 
     fun getPromptForDay(dayIndex: Int): DailyPrompt {
-        val safeIndex = kotlin.math.abs(dayIndex) % defaultPrompts.size
+        val safeIndex = ((dayIndex % defaultPrompts.size) + defaultPrompts.size) % defaultPrompts.size
         return defaultPrompts[safeIndex]
     }
 }

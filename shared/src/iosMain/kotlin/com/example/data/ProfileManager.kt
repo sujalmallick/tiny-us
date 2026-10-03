@@ -9,7 +9,15 @@ actual object ProfileManager : ProfileRepository {
     private val storage = IosUserDefaultsStorage.defaultStorage()
     private var activeProfile: PersonalProfile = loadProfile()
 
-    actual override fun getProfile(): PersonalProfile = activeProfile
+    actual override fun getProfile(): PersonalProfile {
+        val persisted = loadProfile()
+        activeProfile = activeProfile.copy(
+            boyName = persisted.boyName,
+            girlName = persisted.girlName,
+            anniversaryDate = persisted.anniversaryDate
+        )
+        return activeProfile
+    }
 
     actual override fun setProfile(profile: PersonalProfile) {
         activeProfile = profile

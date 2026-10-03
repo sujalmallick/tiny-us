@@ -2,6 +2,7 @@
   "images" : [
     {
       "idiom" : "universal",
+      "filename" : "TinyUsAppIcon.png",
       "platform" : "ios",
       "size" : "1024x1024"
     }
