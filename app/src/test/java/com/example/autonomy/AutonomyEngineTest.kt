@@ -154,7 +154,11 @@ class AutonomyEngineTest {
             if (wasAway && !away && engine.boyAgent.phase != AgentPhase.WALKING) cameBack = true
         }
         assertTrue("The boy went somewhere", wasAway)
-        assertTrue("...and came home again", cameBack)
+        assertTrue(
+            "...and came home again (home ${homeX}, now ${engine.boy.worldX}, phase ${engine.boyAgent.phase}, " +
+                "since home ${engine.boyAgent.activitiesSinceHome}, did ${engine.autonomyLog})",
+            cameBack
+        )
     }
 
     @Test

@@ -165,5 +165,7 @@ class BehaviorBrainTest {
         assertTrue(weight(brain, away, Behavior.GO_HOME) >= 45f)
         assertTrue(weight(brain, justLeft, Behavior.GO_HOME) < 10f)
         assertEquals(0f, weight(brain, atHome, Behavior.GO_HOME), 0f)
+        val longOuting = dayContext().apply { distanceFromHome = 0.3f; activitiesSinceHome = 4 }
+        assertTrue("The pull home grows", weight(brain, longOuting, Behavior.GO_HOME) > weight(brain, away, Behavior.GO_HOME) + 40f)
     }
 }

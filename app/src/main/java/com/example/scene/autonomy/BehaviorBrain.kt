@@ -248,8 +248,10 @@ class BehaviorBrain(var random: Random = Random.Default) {
         if (!c.isOutdoor || c.weather == WeatherType.SNOW) set(Behavior.RARE_FLOWER_GIFT, 0f)
 
         // Coming home: after an outing or two, home gets very attractive.
-        if (c.distanceFromHome > 0.03f) {
-            if (c.activitiesSinceHome >= 2) add(Behavior.GO_HOME, 45f) else add(Behavior.GO_HOME, 6f)
+        if (c.distanceFromHome > HOME_TOLERANCE) {
+            // The pull home grows with every extra outing, so excursions never drag on.
+            if (c.activitiesSinceHome >= 2) add(Behavior.GO_HOME, 45f + (c.activitiesSinceHome - 2) * 30f)
+            else add(Behavior.GO_HOME, 6f)
         } else {
             set(Behavior.GO_HOME, 0f)
         }
@@ -286,6 +288,8 @@ class BehaviorBrain(var random: Random = Random.Default) {
     }
 
     companion object {
+        /** How close to their home spot counts as home (world units). */
+        const val HOME_TOLERANCE = 0.005f
         const val TALK_DISTANCE = 0.24f
         const val CUDDLE_DISTANCE = 0.18f
 

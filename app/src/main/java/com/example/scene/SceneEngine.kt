@@ -6403,7 +6403,9 @@ class SceneEngine(
         val agent = agentFor(c)
         if (agent.phase != AgentPhase.IDLE) return true
         val home = homeFor(c)
-        return abs(c.worldX - home.x) > 0.03f || abs(c.worldY - home.y) > 0.03f
+        // Anything short of exactly home is "out": the walk home finishes the trip, so scene
+        // idle loops never snap a character the last little bit (the loft's bed snap did).
+        return kotlin.math.hypot(c.worldX - home.x, c.worldY - home.y) > BehaviorBrain.HOME_TOLERANCE
     }
 
     /** Scene idle loops may set this character's pose only when nobody else owns them. */
