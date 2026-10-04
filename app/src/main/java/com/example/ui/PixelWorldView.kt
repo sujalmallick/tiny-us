@@ -1,6 +1,8 @@
 package com.example.ui
 
 import androidx.compose.foundation.Canvas
+import com.example.FeatureFlags
+import com.example.engine.WorldViewport
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.detectDragGestures
@@ -115,6 +117,7 @@ fun PixelWorldView(
     var viewportWidth by remember { mutableFloatStateOf(1080f) }
     var viewportHeight by remember { mutableFloatStateOf(2400f) }
     val haptic = LocalHapticFeedback.current
+    val lowResBuffer = remember { LowResWorldBuffer() }
     val coroutineScope = rememberCoroutineScope()
 
     // High refresh rate adaptive frame ticker loop
@@ -185,8 +188,8 @@ fun PixelWorldView(
 
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
-                        val pixelScale = (w / 115f).coerceIn(3.0f, 5.0f)
-                        val charPixelScale = pixelScale * 1.38f
+                        val pixelScale = WorldViewport.pixelScale(w)
+                        val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
 
                         if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
                             engine.onTouchScooter(w, h)
@@ -223,8 +226,8 @@ fun PixelWorldView(
 
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
-                        val pixelScale = (w / 115f).coerceIn(3.0f, 5.0f)
-                        val charPixelScale = pixelScale * 1.38f
+                        val pixelScale = WorldViewport.pixelScale(w)
+                        val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
                         val ny = tapOffset.y / h
 
                         // Dedicated touch targets for Evening Scooter Ride
@@ -1042,7 +1045,7 @@ fun PixelWorldView(
                     onDragStart = { offset ->
                         val w = size.width.toFloat()
                         val h = size.height.toFloat()
-                        val pixelScale = (w / 115f).coerceIn(3.0f, 5.0f)
+                        val pixelScale = WorldViewport.pixelScale(w)
                         val catX = w * engine.catWorldX
                         val catY = h * engine.catWorldY - 7f * pixelScale
                         isMochiBeingDragged = abs(offset.x - catX) < 22f * pixelScale &&
@@ -1091,7 +1094,7 @@ fun PixelWorldView(
                                 (engine.weather == WeatherType.SAKURA || engine.weather == WeatherType.AUTUMN)
                             ) {
                                 change.consume()
-                                val pixelScale = (w / 115f).coerceIn(3.0f, 5.0f)
+                                val pixelScale = WorldViewport.pixelScale(w)
                                 val sweepRadius = 42f * pixelScale
                                 val swept = engine.particles.sweepGroundParticles(
                                     touchX = change.position.x,
@@ -1127,472 +1130,12 @@ fun PixelWorldView(
             }
     ) {
         Canvas(modifier = Modifier.fillMaxSize()) {
+            @Suppress("UNUSED_VARIABLE")
             val currentFrame = frameNanos // Explicitly read frameNanos to trigger continuous 60 FPS redraws!
-            val cw = size.width
-            val ch = size.height
-            val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
-            val charPixelScale = pixelScale * 1.38f
-            val sceneDepthBaseY = when (engine.currentScene) {
-                com.example.scene.SceneType.COZY_LOFT -> 0.55f
-                com.example.scene.SceneType.EVENING_RIDE -> 0.70f
-                else -> 0.68f
-            }
-            val boyDepthScale = (1f + (engine.boy.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
-            val girlDepthScale = (1f + (engine.girl.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
-
-            // Dynamic Weather outdoor check
-            val isOutdoor = engine.isCurrentSceneOutdoor
-
-            // 1. Environmental Background
-            drawEnvironment(
-                scope = this,
-                cw = cw,
-                ch = ch,
-                env = engine.currentScene.environment,
-                isNight = isNight,
-                isSunset = isSunset,
-                isMorning = isMorning,
-                timeSeconds = engine.sceneTime,
-                pixelScale = pixelScale,
-                engine = engine
-            )
-
-            // 1b. Ground fallen particles (leaves, sakura petals, snow on grass)
-            if (isOutdoor) {
-                // Puddles and snow prints lie under the fallen leaves and petals
-                drawPuddles(this, cw, ch, pixelScale, engine, isNight)
-                drawSnowPrints(this, cw, ch, pixelScale, engine.particles.snowPrints)
-                drawGroundFallenParticles(this, engine.particles.fallenParticles, pixelScale, cw, ch)
-                // Rainbow after the rain, and the snowday snowman
-                drawWeatherKeepsakes(this, cw, ch, pixelScale, engine)
-            }
-
-            // 1c. Background seasonal particles (drawn behind characters so they never obscure characters or objects)
-            drawBackgroundSeasonalParticles(this, engine.particles.particles, pixelScale)
-
-            // 2. Characters
-            val boyX = cw * engine.boy.worldX
-            val boyY = ch * engine.boy.worldY
-            val girlX = cw * engine.girl.worldX
-            val girlY = ch * engine.girl.worldY
-
-            val isKissing = (engine.boy.pose == com.example.engine.CharacterPose.KISS ||
-                             engine.girl.pose == com.example.engine.CharacterPose.KISS)
-            val isHugging = (engine.boy.pose == com.example.engine.CharacterPose.HUG ||
-                             engine.girl.pose == com.example.engine.CharacterPose.HUG ||
-                             engine.boy.pose == com.example.engine.CharacterPose.SIT_SNUGGLE ||
-                             engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE)
-
-            // When kissing or hugging, smoothly and intimately bring the couple close together!
-            val midCharX = (boyX + girlX) / 2f
-            val cuddleEased = CharacterMotionTween.easeInOutCubic(engine.cuddleProgress)
-            val targetHugOffset = when {
-                isKissing -> 6.2f * charPixelScale
-                else -> 4.8f * charPixelScale
-            }
-            val effectiveBoyX = boyX + ((midCharX - targetHugOffset) - boyX) * cuddleEased
-            val effectiveGirlX = girlX + ((midCharX + targetHugOffset) - girlX) * cuddleEased
-            val effectiveBoyY = boyY + (maxOf(boyY, girlY) - boyY) * cuddleEased
-            val effectiveGirlY = girlY + (maxOf(boyY, girlY) - girlY) * cuddleEased
-            val catY = ch * engine.catWorldY
-            val isCatInScene = engine.currentScene.environment != EnvironmentType.COZY_LOFT &&
-                engine.currentScene != com.example.scene.SceneType.EVENING_RIDE
-
-            if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
-                val hopBounce = if (engine.scooterHonkTimer > 0f) {
-                    val t = ((0.8f - engine.scooterHonkTimer) / 0.8f).coerceIn(0f, 1f)
-                    -sin(t * Math.PI.toFloat()) * 5f * pixelScale
-                } else 0f
-                WorldSprites.drawScooterWithCouple(
-                    scope = this,
-                    cx = cw * 0.50f,
-                    groundY = ch * 0.70f + hopBounce,
-                    p = pixelScale,
-                    timeSeconds = engine.sceneTime,
-                    boyEmotion = engine.boy.emotion,
-                    girlEmotion = engine.girl.emotion,
-                    boyOutfitIndex = engine.boy.outfitIndex,
-                    girlOutfitIndex = engine.girl.outfitIndex,
-                    boyAccessoryIndex = engine.boy.accessoryIndex,
-                    girlAccessoryIndex = engine.girl.accessoryIndex,
-                    boyWearsGlasses = engine.boy.wearsGlasses,
-                    boyLook = engine.boy.look,
-                    girlLook = engine.girl.look
-                )
-
-                if (engine.scooterHonkTimer > 0f) {
-                    val dur = 0.8f
-                    val t = ((dur - engine.scooterHonkTimer) / dur).coerceIn(0f, 1f)
-                    val p = pixelScale
-                    val cx = cw * 0.50f
-                    val groundY = ch * 0.70f + hopBounce
-                    val scootY = groundY + 5.5f * p + sin(engine.sceneTime * 18f) * 0.8f * p
-                    val wheelCenterY = scootY - 8 * p
-                    val frontApronX = cx + 14 * p
-                    val apronTopY = wheelCenterY - 28 * p
-                    val beamY = apronTopY + 2 * p
-                    val flashAlpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
-
-                    // Brilliant LED headlight beam flash
-                    drawRect(Color(0x99FFF9DB).copy(alpha = flashAlpha * 0.65f), androidx.compose.ui.geometry.Offset(frontApronX + 16 * p, beamY - 4 * p), Size(75 * p, 34 * p))
-                    drawRect(Color(0xFFFFD166).copy(alpha = flashAlpha), androidx.compose.ui.geometry.Offset(frontApronX + 13 * p, apronTopY + 1 * p), Size(4 * p, 8 * p))
-
-                    // Honk sonic waves expanding forward
-                    for (waveIdx in 0..2) {
-                        val wT = ((t * 1.8f - waveIdx * 0.25f)).coerceIn(0f, 1f)
-                        if (wT > 0f) {
-                            val wRadius = (8f + wT * 26f) * p
-                            val wAlpha = (1f - wT) * 0.8f
-                            drawCircle(
-                                color = Color(0xFFFFD166).copy(alpha = wAlpha),
-                                radius = wRadius,
-                                center = androidx.compose.ui.geometry.Offset(frontApronX + 16 * p, beamY + 4 * p),
-                                style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f * p)
-                            )
-                        }
-                    }
-                }
-            } else if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
-                LoftSprites.drawCuddledCouple(
-                    scope = this,
-                    boyX = boyX,
-                    girlX = girlX,
-                    floorY = ch * 0.55f,
-                    p = pixelScale * 1.10f,
-                    timeSeconds = engine.sceneTime,
-                    boyEmotion = engine.boy.emotion,
-                    girlEmotion = engine.girl.emotion,
-                    isKissing = isKissing,
-                    isReadingBook = engine.loftBookReading,
-                    boyOutfitIndex = engine.boy.outfitIndex,
-                    girlOutfitIndex = engine.girl.outfitIndex,
-                    boyAccessoryIndex = engine.boy.accessoryIndex,
-                    girlAccessoryIndex = engine.girl.accessoryIndex,
-                    boyWearsGlasses = engine.boy.wearsGlasses,
-                    boyLook = engine.boy.look,
-                    girlLook = engine.girl.look
-                )
-            } else {
-                val isHoldingUmbrella = engine.weather == com.example.scene.WeatherType.RAIN && isOutdoor
-                val isSnow = engine.weather == com.example.scene.WeatherType.SNOW && isOutdoor
-                val isSitting = engine.boy.pose == com.example.engine.CharacterPose.SIT
-
-                // Ensure proper facing direction when kissing or hugging
-                val origBoyDir = engine.boy.direction
-                val origGirlDir = engine.girl.direction
-                if (isKissing || isHugging) {
-                    engine.boy.direction = com.example.engine.Direction.RIGHT
-                    engine.girl.direction = com.example.engine.Direction.LEFT
-                }
-
-                fun drawBoy() {
-                    PixelArtRenderer.drawCharacter(
-                        drawScope = this,
-                        char = engine.boy,
-                        centerX = effectiveBoyX,
-                        bottomY = effectiveBoyY,
-                        pixelSize = charPixelScale * boyDepthScale,
-                        isHoldingUmbrella = isHoldingUmbrella,
-                        isSnow = isSnow,
-                        isSpeaking = !engine.boySpeechText.isNullOrEmpty()
-                    )
-                }
-
-                fun drawGirl() {
-                    PixelArtRenderer.drawCharacter(
-                        drawScope = this,
-                        char = engine.girl,
-                        centerX = effectiveGirlX,
-                        bottomY = effectiveGirlY,
-                        pixelSize = charPixelScale * girlDepthScale,
-                        isHoldingUmbrella = isHoldingUmbrella,
-                        isSnow = isSnow,
-                        isSpeaking = !engine.girlSpeechText.isNullOrEmpty()
-                    )
-                }
-
-                fun drawMochi() {
-                    if (isCatInScene) {
-                        WorldSprites.drawCat(
-                            scope = this,
-                            cx = cw * engine.catWorldX,
-                            groundY = catY,
-                            p = pixelScale,
-                            timeSeconds = engine.sceneTime,
-                            catState = engine.catState,
-                            isSnow = isSnow,
-                            facingLeft = engine.catFacingLeft,
-                            collarStyle = engine.mochiCollarStyle
-                        )
-                    }
-                }
-
-                // 2D depth sorting by vertical Y plane
-                val drawBoyFirst = effectiveBoyY <= effectiveGirlY
-
-                // Helper to draw characters in sorted order
-                fun drawCharacters() {
-                    if (drawBoyFirst) {
-                        drawBoy()
-                        drawGirl()
-                    } else {
-                        drawGirl()
-                        drawBoy()
-                    }
-                }
-
-                val minY = minOf(effectiveBoyY, effectiveGirlY)
-                val maxY = maxOf(effectiveBoyY, effectiveGirlY)
-
-                if (isCatInScene && catY < minY) {
-                    drawMochi()
-                    drawCharacters()
-                } else if (isCatInScene && catY in minY..maxY) {
-                    if (drawBoyFirst) {
-                        drawBoy()
-                        drawMochi()
-                        drawGirl()
-                    } else {
-                        drawGirl()
-                        drawMochi()
-                        drawBoy()
-                    }
-                } else {
-                    drawCharacters()
-                    if (isCatInScene) {
-                        drawMochi()
-                    }
-                }
-
-                // Cozy couple umbrella in rain weather (boy holds umbrella over girl)
-                if (isHoldingUmbrella) {
-                    WorldSprites.drawBoyHoldingUmbrella(
-                        scope = this,
-                        boyX = effectiveBoyX,
-                        boyY = effectiveBoyY,
-                        girlX = effectiveGirlX,
-                        girlY = effectiveGirlY,
-                        boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
-                        p = charPixelScale,
-                        timeSeconds = engine.sceneTime,
-                        isSitting = isSitting,
-                        boyLook = engine.boy.look
-                    )
-                }
-
-                if (isKissing || isHugging) {
-                    engine.boy.direction = origBoyDir
-                    engine.girl.direction = origGirlDir
-                }
-            }
-
-            // 2a. Cozy Rainy Cafe: the little table stands in front of the seated couple
-            if (engine.currentScene.environment == EnvironmentType.RAINY_CAFE) {
-                drawCafeTableForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
-            }
-
-            // 2a. Seaside Pier: ice-cream cones in hand and Pip flying in front of the couple
-            if (engine.currentScene.environment == EnvironmentType.SEASIDE_PIER) {
-                drawPierForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
-            }
-
-            // 2b. Foreground elements for Cozy Loft (patchwork quilt blanket over laps, coffee table, mugs, lantern, footstool, balcony railing, and Mochi curled on blanket)
-            if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
-                LoftSprites.drawLoftForeground(
-                    scope = this,
-                    cw = cw,
-                    ch = ch,
-                    p = pixelScale,
-                    timeSeconds = engine.sceneTime,
-                    lampLit = engine.lampLit,
-                    isSnow = engine.weather == com.example.scene.WeatherType.SNOW,
-                    roomTheme = engine.roomTheme
-                )
-
-                val p = pixelScale
-                val floorY = ch * 0.55f
-                val loftFloorH = ch * 0.72f - floorY
-
-                // 1. Loft Table: tea mug steam puffs & crumb drop
-                if (engine.loftTableTimer > 0f) {
-                    val dur = 1.4f
-                    val t = ((dur - engine.loftTableTimer) / dur).coerceIn(0f, 1f)
-                    val tableW = 34 * p
-                    val tableX = cw * 0.54f - tableW / 2f
-                    val tableY = floorY + 13 * p
-                    val mugX = tableX + tableW - 5.5f * p
-                    val mugY = tableY - 4.5f * p
-                    val plateX = tableX + tableW * 0.63f
-                    val plateY = tableY - 3 * p
-
-                    val steamRise = t * 20 * p
-                    val sFade = (1f - t).coerceIn(0f, 1f)
-                    drawCircle(Color.White.copy(alpha = sFade * 0.65f), 2.5f * p, androidx.compose.ui.geometry.Offset(mugX + 2 * p, mugY - steamRise))
-                    drawCircle(Color.White.copy(alpha = sFade * 0.45f), 3.5f * p, androidx.compose.ui.geometry.Offset(mugX + p, mugY - steamRise * 1.4f))
-
-                    val crumbDrop = t * 6 * p
-                    drawRect(Color(0xFFD4A373).copy(alpha = sFade), androidx.compose.ui.geometry.Offset(plateX + 2 * p, plateY + 2 * p + crumbDrop), Size(1.2f * p, 1.2f * p))
-                    drawRect(Color(0xFF58311B).copy(alpha = sFade), androidx.compose.ui.geometry.Offset(plateX + 5 * p, plateY + 2 * p + crumbDrop * 0.8f), Size(p, p))
-                }
-
-                // 2. Reading Nook: book flutter & golden dust motes
-                if (engine.loftBookNookTimer > 0f) {
-                    val dur = 1.8f
-                    val t = ((dur - engine.loftBookNookTimer) / dur).coerceIn(0f, 1f)
-                    val nookBaseY = floorY + loftFloorH * 0.48f
-                    val stackX = cw * 0.30f
-                    val stackY = nookBaseY - p
-                    val lantX = cw * 0.38f
-                    val lantY = nookBaseY + 2 * p
-                    val pageWiggle = sin(t * Math.PI.toFloat() * 6f) * (1f - t) * 2f * p
-
-                    val openBookX = stackX - 5 * p
-                    val openBookY = stackY - 4 * p - sin(t * Math.PI.toFloat()) * 3 * p
-                    drawRect(Color(0xFFFFFDF0), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY), Size(8 * p, 3.5f * p))
-                    drawRect(Color(0xFFE9ECEF), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY + 1 * p), Size(8 * p, 0.8f * p))
-                    drawRect(Color(0xFF495057), androidx.compose.ui.geometry.Offset(openBookX - 0.5f * p, openBookY), Size(p, 3.5f * p))
-
-                    val moteRise = t * 18 * p
-                    val moteFade = (1f - t).coerceIn(0f, 1f)
-                    drawCircle(Color(0xFFFFD166).copy(alpha = moteFade * 0.85f), 1.8f * p, androidx.compose.ui.geometry.Offset(lantX - 4 * p + pageWiggle, lantY - moteRise))
-                    drawCircle(Color(0xFFFFF3B0).copy(alpha = moteFade * 0.75f), 1.4f * p, androidx.compose.ui.geometry.Offset(lantX + 3 * p - pageWiggle, lantY - moteRise * 1.2f))
-                    drawCircle(Color(0xFFFFEAA7).copy(alpha = moteFade * 0.65f), 2.0f * p, androidx.compose.ui.geometry.Offset(lantX + pageWiggle * 0.5f, lantY - 6 * p - moteRise * 0.8f))
-                }
-
-                // 3. Balcony Fairy Lights: twinkle cascade wave
-                if (engine.loftFairyLightsTimer > 0f) {
-                    val dur = 1.6f
-                    val t = ((dur - engine.loftFairyLightsTimer) / dur).coerceIn(0f, 1f)
-                    val railTopY = ch * 0.72f
-                    val bulbPositions = floatArrayOf(0.05f, 0.16f, 0.28f, 0.42f, 0.56f, 0.70f, 0.85f, 0.95f)
-                    val bulbColors = listOf(Color(0xFFFFD166), Color(0xFFFF5D8F), Color(0xFF70E000), Color(0xFF48CAE4), Color(0xFFFFD166), Color(0xFFFF85A1), Color(0xFF48CAE4), Color(0xFFFFD166))
-
-                    for ((i, bxRel) in bulbPositions.withIndex()) {
-                        val bx = cw * bxRel
-                        val by = railTopY + 8 * p + sin(bxRel * 10f) * 2 * p
-                        val bT = ((t * 2.2f - i * 0.14f)).coerceIn(0f, 1f)
-                        val bGlow = sin(bT * Math.PI.toFloat()).coerceIn(0f, 1f)
-                        if (bGlow > 0f) {
-                            val col = bulbColors[i % bulbColors.size]
-                            drawCircle(col.copy(alpha = bGlow * 0.55f), (5f + bGlow * 7f) * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
-                            drawCircle(Color.White.copy(alpha = bGlow * 0.85f), 2.2f * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
-                        }
-                    }
-                }
-            }
-
-            // Draw cute earphone wire connecting both characters!
-            if (engine.earphonesActive) {
-                val boyAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.boy, effectiveBoyX, effectiveBoyY, pixelScale)
-                val girlAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.girl, effectiveGirlX, effectiveGirlY, pixelScale)
-                PixelArtRenderer.drawEarphoneCord(
-                    scope = this,
-                    startOffset = boyAttachment,
-                    endOffset = girlAttachment,
-                    p = pixelScale,
-                    timeSeconds = engine.sceneTime
-                )
-            }
-
-            // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
-            drawForegroundParticles(this, engine.particles.particles, pixelScale)
-
-            // Atmospheric Lighting & Time-of-Day Layering
-            val isMorning = timePhase.isMorning
-            val isTwilight = timePhase.isTwilight
-            val isMidnight = timePhase.isMidnight
-
-            if (isOutdoor) {
-                // Time-of-day atmospheric layer (delicate, natural light transitions)
-                when {
-                    isMidnight -> {
-                        // Midnight celestial coziness: deep starlight indigo vignette
-                        drawRect(Color(0xFF060B1E).copy(alpha = 0.16f), Offset.Zero, size)
-                    }
-                    isNight -> {
-                        // Night: calm, intimate moonlit atmosphere
-                        drawRect(Color(0xFF0A122C).copy(alpha = 0.12f), Offset.Zero, size)
-                    }
-                    isTwilight -> {
-                        // Twilight: deep rich lavender-indigo dusk glow
-                        drawRect(Color(0xFF4A2545).copy(alpha = 0.12f), Offset.Zero, size)
-                    }
-                    isSunset -> {
-                        // Sunset: warm coral-amber golden hour wash
-                        drawRect(Color(0xFFE85D04).copy(alpha = 0.08f), Offset.Zero, size)
-                    }
-                    isMorning -> {
-                        // Morning: soft rose-ivory dewy dawn glow
-                        drawRect(Color(0xFFFFD6A5).copy(alpha = 0.06f), Offset.Zero, size)
-                    }
-                }
-
-                // Weather ambient atmospheric tinting
-                when (engine.weather) {
-                    com.example.scene.WeatherType.RAIN -> {
-                        drawRect(Color(0x221B263B), Offset.Zero, size)
-                    }
-                    com.example.scene.WeatherType.SNOW -> {
-                        drawRect(Color(0x18CAE9FF), Offset.Zero, size)
-                    }
-                    com.example.scene.WeatherType.AUTUMN -> {
-                        drawRect(Color(0x18D9480F), Offset.Zero, size)
-                    }
-                    com.example.scene.WeatherType.SAKURA -> {
-                        drawRect(Color(0x14FF758F), Offset.Zero, size)
-                    }
-                    com.example.scene.WeatherType.SUNNY -> {
-                        if (!isNight && !isSunset) {
-                            drawRect(Color(0x08FFB703), Offset.Zero, size)
-                        }
-                    }
-                }
-            } else {
-                // Indoor atmosphere (Kitchen, Living Room, Cozy Loft)
-                // Distinctly warmer and cozier than chilly outdoors
-                val indoorWarmthAlpha = when {
-                    isMidnight -> 0.14f
-                    isNight -> 0.10f
-                    isSunset -> 0.08f
-                    else -> 0.04f
-                }
-                drawRect(Color(0xFFFFB703).copy(alpha = indoorWarmthAlpha), Offset.Zero, size)
-                if (isNight || isMidnight) {
-                    // Soft cozy interior evening shading
-                    drawRect(Color(0xFF1B1124).copy(alpha = if (isMidnight) 0.12f else 0.07f), Offset.Zero, size)
-                }
-            }
-
-            // 4. Ambient Dimming layer
-            if (engine.ambientDimming > 0f) {
-                drawRect(
-                    color = Color(0xFF0D1117).copy(alpha = engine.ambientDimming),
-                    topLeft = Offset.Zero,
-                    size = size
-                )
-            }
-
-            // 5. Dynamic Lightning Flash overlay
-            if (engine.lightningFlashAlpha > 0f) {
-                drawRect(
-                    color = Color(0xFFEEF2FF).copy(alpha = engine.lightningFlashAlpha.coerceIn(0f, 0.95f)),
-                    topLeft = Offset.Zero,
-                    size = size
-                )
-            }
-
-            // 6. Smooth scene transition fade overlay (no line artifacts or jarring bars)
-            if (engine.wipeAlpha > 0f) {
-                val fadeAlpha = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f)
-                drawRect(
-                    color = Color(0xFF0F1423).copy(alpha = fadeAlpha),
-                    topLeft = Offset.Zero,
-                    size = size
-                )
-            }
+            drawWorld(engine, lowResBuffer)
         }
 
-        val pixelScale = (viewportWidth / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(viewportWidth)
         val isRideScene = engine.currentScene == com.example.scene.SceneType.EVENING_RIDE
         val isLoftScene = engine.currentScene.environment == EnvironmentType.COZY_LOFT
 
@@ -1607,7 +1150,7 @@ fun PixelWorldView(
                          engine.boy.pose == com.example.engine.CharacterPose.SIT_SNUGGLE ||
                          engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE)
         val cuddleEased = CharacterMotionTween.easeInOutCubic(engine.cuddleProgress)
-        val charPixelScale = pixelScale * 1.38f
+        val charPixelScale = WorldViewport.characterPixelScale(viewportWidth, engine.usesLowResRenderer)
         val targetHugOffset = when {
             isKissing -> 6.2f * charPixelScale
             else -> 4.8f * charPixelScale
@@ -1679,9 +1222,500 @@ fun PixelWorldView(
                 alpha = engine.dreamOverlayAlpha,
                 viewportWidth = viewportWidth,
                 viewportHeight = viewportHeight,
-                pixelScale = (viewportWidth / 115f).coerceIn(3.0f, 5.0f),
+                pixelScale = WorldViewport.pixelScale(viewportWidth),
                 frameNanos = frameNanos
             )
         }
+    }
+}
+
+/**
+ * Draws one frame of the world (scenery, characters, particles, light) in screen coordinates.
+ * With [lowRes] the caller has set up a downscaled canvas (see [LowResWorldBuffer]), so characters
+ * use one game pixel and snap to whole game pixels.
+ */
+internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
+        val timePhase = engine.timeOfDayPhase
+        val isNight = timePhase.isNight
+        val isSunset = timePhase.isSunset
+        val isMorning = timePhase.isMorning
+        val cw = size.width
+        val ch = size.height
+        val pixelScale = WorldViewport.pixelScale(cw)
+        // Low-res renderer: characters use whole game pixels and snap to the grid.
+        val charPixelScale = WorldViewport.characterPixelScale(cw, lowRes)
+        fun snap(v: Float) = if (lowRes) kotlin.math.round(v / pixelScale) * pixelScale else v
+        val sceneDepthBaseY = when (engine.currentScene) {
+            com.example.scene.SceneType.COZY_LOFT -> 0.55f
+            com.example.scene.SceneType.EVENING_RIDE -> 0.70f
+            else -> 0.68f
+        }
+        // Depth scaling would give characters fractional pixels, so the low-res renderer skips it.
+        val boyDepthScale = if (lowRes) 1f else (1f + (engine.boy.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
+        val girlDepthScale = if (lowRes) 1f else (1f + (engine.girl.worldY - sceneDepthBaseY) * 0.85f).coerceIn(0.94f, 1.08f)
+
+        // Dynamic Weather outdoor check
+        val isOutdoor = engine.isCurrentSceneOutdoor
+
+        // 1. Environmental Background
+        drawEnvironment(
+            scope = this,
+            cw = cw,
+            ch = ch,
+            env = engine.currentScene.environment,
+            isNight = isNight,
+            isSunset = isSunset,
+            isMorning = isMorning,
+            timeSeconds = engine.sceneTime,
+            pixelScale = pixelScale,
+            engine = engine
+        )
+
+        // 1b. Ground fallen particles (leaves, sakura petals, snow on grass)
+        if (isOutdoor) {
+            // Puddles and snow prints lie under the fallen leaves and petals
+            drawPuddles(this, cw, ch, pixelScale, engine, isNight)
+            drawSnowPrints(this, cw, ch, pixelScale, engine.particles.snowPrints)
+            drawGroundFallenParticles(this, engine.particles.fallenParticles, pixelScale, cw, ch)
+            // Rainbow after the rain, and the snowday snowman
+            drawWeatherKeepsakes(this, cw, ch, pixelScale, engine)
+        }
+
+        // 1c. Background seasonal particles (drawn behind characters so they never obscure characters or objects)
+        drawBackgroundSeasonalParticles(this, engine.particles.particles, pixelScale)
+
+        // 2. Characters
+        val boyX = cw * engine.boy.worldX
+        val boyY = ch * engine.boy.worldY
+        val girlX = cw * engine.girl.worldX
+        val girlY = ch * engine.girl.worldY
+
+        val isKissing = (engine.boy.pose == com.example.engine.CharacterPose.KISS ||
+                         engine.girl.pose == com.example.engine.CharacterPose.KISS)
+        val isHugging = (engine.boy.pose == com.example.engine.CharacterPose.HUG ||
+                         engine.girl.pose == com.example.engine.CharacterPose.HUG ||
+                         engine.boy.pose == com.example.engine.CharacterPose.SIT_SNUGGLE ||
+                         engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE)
+
+        // When kissing or hugging, smoothly and intimately bring the couple close together!
+        val midCharX = (boyX + girlX) / 2f
+        val cuddleEased = CharacterMotionTween.easeInOutCubic(engine.cuddleProgress)
+        val targetHugOffset = when {
+            isKissing -> 6.2f * charPixelScale
+            else -> 4.8f * charPixelScale
+        }
+        val effectiveBoyX = boyX + ((midCharX - targetHugOffset) - boyX) * cuddleEased
+        val effectiveGirlX = girlX + ((midCharX + targetHugOffset) - girlX) * cuddleEased
+        val effectiveBoyY = boyY + (maxOf(boyY, girlY) - boyY) * cuddleEased
+        val effectiveGirlY = girlY + (maxOf(boyY, girlY) - girlY) * cuddleEased
+        val catY = ch * engine.catWorldY
+        val isCatInScene = engine.currentScene.environment != EnvironmentType.COZY_LOFT &&
+            engine.currentScene != com.example.scene.SceneType.EVENING_RIDE
+
+        if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
+            val hopBounce = if (engine.scooterHonkTimer > 0f) {
+                val t = ((0.8f - engine.scooterHonkTimer) / 0.8f).coerceIn(0f, 1f)
+                -sin(t * Math.PI.toFloat()) * 5f * pixelScale
+            } else 0f
+            WorldSprites.drawScooterWithCouple(
+                scope = this,
+                cx = cw * 0.50f,
+                groundY = ch * 0.70f + hopBounce,
+                p = pixelScale,
+                timeSeconds = engine.sceneTime,
+                boyEmotion = engine.boy.emotion,
+                girlEmotion = engine.girl.emotion,
+                boyOutfitIndex = engine.boy.outfitIndex,
+                girlOutfitIndex = engine.girl.outfitIndex,
+                boyAccessoryIndex = engine.boy.accessoryIndex,
+                girlAccessoryIndex = engine.girl.accessoryIndex,
+                boyWearsGlasses = engine.boy.wearsGlasses,
+                boyLook = engine.boy.look,
+                girlLook = engine.girl.look
+            )
+
+            if (engine.scooterHonkTimer > 0f) {
+                val dur = 0.8f
+                val t = ((dur - engine.scooterHonkTimer) / dur).coerceIn(0f, 1f)
+                val p = pixelScale
+                val cx = cw * 0.50f
+                val groundY = ch * 0.70f + hopBounce
+                val scootY = groundY + 5.5f * p + sin(engine.sceneTime * 18f) * 0.8f * p
+                val wheelCenterY = scootY - 8 * p
+                val frontApronX = cx + 14 * p
+                val apronTopY = wheelCenterY - 28 * p
+                val beamY = apronTopY + 2 * p
+                val flashAlpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
+
+                // Brilliant LED headlight beam flash
+                drawRect(Color(0x99FFF9DB).copy(alpha = flashAlpha * 0.65f), androidx.compose.ui.geometry.Offset(frontApronX + 16 * p, beamY - 4 * p), Size(75 * p, 34 * p))
+                drawRect(Color(0xFFFFD166).copy(alpha = flashAlpha), androidx.compose.ui.geometry.Offset(frontApronX + 13 * p, apronTopY + 1 * p), Size(4 * p, 8 * p))
+
+                // Honk sonic waves expanding forward
+                for (waveIdx in 0..2) {
+                    val wT = ((t * 1.8f - waveIdx * 0.25f)).coerceIn(0f, 1f)
+                    if (wT > 0f) {
+                        val wRadius = (8f + wT * 26f) * p
+                        val wAlpha = (1f - wT) * 0.8f
+                        drawCircle(
+                            color = Color(0xFFFFD166).copy(alpha = wAlpha),
+                            radius = wRadius,
+                            center = androidx.compose.ui.geometry.Offset(frontApronX + 16 * p, beamY + 4 * p),
+                            style = androidx.compose.ui.graphics.drawscope.Stroke(width = 2.5f * p)
+                        )
+                    }
+                }
+            }
+        } else if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
+            LoftSprites.drawCuddledCouple(
+                scope = this,
+                boyX = boyX,
+                girlX = girlX,
+                floorY = ch * 0.55f,
+                p = pixelScale * 1.10f,
+                timeSeconds = engine.sceneTime,
+                boyEmotion = engine.boy.emotion,
+                girlEmotion = engine.girl.emotion,
+                isKissing = isKissing,
+                isReadingBook = engine.loftBookReading,
+                boyOutfitIndex = engine.boy.outfitIndex,
+                girlOutfitIndex = engine.girl.outfitIndex,
+                boyAccessoryIndex = engine.boy.accessoryIndex,
+                girlAccessoryIndex = engine.girl.accessoryIndex,
+                boyWearsGlasses = engine.boy.wearsGlasses,
+                boyLook = engine.boy.look,
+                girlLook = engine.girl.look
+            )
+        } else {
+            val isHoldingUmbrella = engine.weather == com.example.scene.WeatherType.RAIN && isOutdoor
+            val isSnow = engine.weather == com.example.scene.WeatherType.SNOW && isOutdoor
+            val isSitting = engine.boy.pose == com.example.engine.CharacterPose.SIT
+
+            // Ensure proper facing direction when kissing or hugging
+            val origBoyDir = engine.boy.direction
+            val origGirlDir = engine.girl.direction
+            if (isKissing || isHugging) {
+                engine.boy.direction = com.example.engine.Direction.RIGHT
+                engine.girl.direction = com.example.engine.Direction.LEFT
+            }
+
+            fun drawBoy() {
+                PixelArtRenderer.drawCharacter(
+                    drawScope = this,
+                    char = engine.boy,
+                    centerX = snap(effectiveBoyX),
+                    bottomY = snap(effectiveBoyY),
+                    pixelSize = charPixelScale * boyDepthScale,
+                    isHoldingUmbrella = isHoldingUmbrella,
+                    isSnow = isSnow,
+                    isSpeaking = !engine.boySpeechText.isNullOrEmpty(),
+                    snapToPixel = lowRes
+                )
+            }
+
+            fun drawGirl() {
+                PixelArtRenderer.drawCharacter(
+                    drawScope = this,
+                    char = engine.girl,
+                    centerX = snap(effectiveGirlX),
+                    bottomY = snap(effectiveGirlY),
+                    pixelSize = charPixelScale * girlDepthScale,
+                    isHoldingUmbrella = isHoldingUmbrella,
+                    isSnow = isSnow,
+                    isSpeaking = !engine.girlSpeechText.isNullOrEmpty(),
+                    snapToPixel = lowRes
+                )
+            }
+
+            fun drawMochi() {
+                if (isCatInScene) {
+                    WorldSprites.drawCat(
+                        scope = this,
+                        cx = cw * engine.catWorldX,
+                        groundY = catY,
+                        p = pixelScale,
+                        timeSeconds = engine.sceneTime,
+                        catState = engine.catState,
+                        isSnow = isSnow,
+                        facingLeft = engine.catFacingLeft,
+                        collarStyle = engine.mochiCollarStyle
+                    )
+                }
+            }
+
+            // 2D depth sorting by vertical Y plane
+            val drawBoyFirst = effectiveBoyY <= effectiveGirlY
+
+            // Helper to draw characters in sorted order
+            fun drawCharacters() {
+                if (drawBoyFirst) {
+                    drawBoy()
+                    drawGirl()
+                } else {
+                    drawGirl()
+                    drawBoy()
+                }
+            }
+
+            val minY = minOf(effectiveBoyY, effectiveGirlY)
+            val maxY = maxOf(effectiveBoyY, effectiveGirlY)
+
+            if (isCatInScene && catY < minY) {
+                drawMochi()
+                drawCharacters()
+            } else if (isCatInScene && catY in minY..maxY) {
+                if (drawBoyFirst) {
+                    drawBoy()
+                    drawMochi()
+                    drawGirl()
+                } else {
+                    drawGirl()
+                    drawMochi()
+                    drawBoy()
+                }
+            } else {
+                drawCharacters()
+                if (isCatInScene) {
+                    drawMochi()
+                }
+            }
+
+            // Cozy couple umbrella in rain weather (boy holds umbrella over girl)
+            if (isHoldingUmbrella) {
+                WorldSprites.drawBoyHoldingUmbrella(
+                    scope = this,
+                    boyX = effectiveBoyX,
+                    boyY = effectiveBoyY,
+                    girlX = effectiveGirlX,
+                    girlY = effectiveGirlY,
+                    boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
+                    p = charPixelScale,
+                    timeSeconds = engine.sceneTime,
+                    isSitting = isSitting,
+                    boyLook = engine.boy.look
+                )
+            }
+
+            if (isKissing || isHugging) {
+                engine.boy.direction = origBoyDir
+                engine.girl.direction = origGirlDir
+            }
+        }
+
+        // 2a. Cozy Rainy Cafe: the little table stands in front of the seated couple
+        if (engine.currentScene.environment == EnvironmentType.RAINY_CAFE) {
+            drawCafeTableForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
+        }
+
+        // 2a. Seaside Pier: ice-cream cones in hand and Pip flying in front of the couple
+        if (engine.currentScene.environment == EnvironmentType.SEASIDE_PIER) {
+            drawPierForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
+        }
+
+        // 2b. Foreground elements for Cozy Loft (patchwork quilt blanket over laps, coffee table, mugs, lantern, footstool, balcony railing, and Mochi curled on blanket)
+        if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
+            LoftSprites.drawLoftForeground(
+                scope = this,
+                cw = cw,
+                ch = ch,
+                p = pixelScale,
+                timeSeconds = engine.sceneTime,
+                lampLit = engine.lampLit,
+                isSnow = engine.weather == com.example.scene.WeatherType.SNOW,
+                roomTheme = engine.roomTheme
+            )
+
+            val p = pixelScale
+            val floorY = ch * 0.55f
+            val loftFloorH = ch * 0.72f - floorY
+
+            // 1. Loft Table: tea mug steam puffs & crumb drop
+            if (engine.loftTableTimer > 0f) {
+                val dur = 1.4f
+                val t = ((dur - engine.loftTableTimer) / dur).coerceIn(0f, 1f)
+                val tableW = 34 * p
+                val tableX = cw * 0.54f - tableW / 2f
+                val tableY = floorY + 13 * p
+                val mugX = tableX + tableW - 5.5f * p
+                val mugY = tableY - 4.5f * p
+                val plateX = tableX + tableW * 0.63f
+                val plateY = tableY - 3 * p
+
+                val steamRise = t * 20 * p
+                val sFade = (1f - t).coerceIn(0f, 1f)
+                drawCircle(Color.White.copy(alpha = sFade * 0.65f), 2.5f * p, androidx.compose.ui.geometry.Offset(mugX + 2 * p, mugY - steamRise))
+                drawCircle(Color.White.copy(alpha = sFade * 0.45f), 3.5f * p, androidx.compose.ui.geometry.Offset(mugX + p, mugY - steamRise * 1.4f))
+
+                val crumbDrop = t * 6 * p
+                drawRect(Color(0xFFD4A373).copy(alpha = sFade), androidx.compose.ui.geometry.Offset(plateX + 2 * p, plateY + 2 * p + crumbDrop), Size(1.2f * p, 1.2f * p))
+                drawRect(Color(0xFF58311B).copy(alpha = sFade), androidx.compose.ui.geometry.Offset(plateX + 5 * p, plateY + 2 * p + crumbDrop * 0.8f), Size(p, p))
+            }
+
+            // 2. Reading Nook: book flutter & golden dust motes
+            if (engine.loftBookNookTimer > 0f) {
+                val dur = 1.8f
+                val t = ((dur - engine.loftBookNookTimer) / dur).coerceIn(0f, 1f)
+                val nookBaseY = floorY + loftFloorH * 0.48f
+                val stackX = cw * 0.30f
+                val stackY = nookBaseY - p
+                val lantX = cw * 0.38f
+                val lantY = nookBaseY + 2 * p
+                val pageWiggle = sin(t * Math.PI.toFloat() * 6f) * (1f - t) * 2f * p
+
+                val openBookX = stackX - 5 * p
+                val openBookY = stackY - 4 * p - sin(t * Math.PI.toFloat()) * 3 * p
+                drawRect(Color(0xFFFFFDF0), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY), Size(8 * p, 3.5f * p))
+                drawRect(Color(0xFFE9ECEF), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY + 1 * p), Size(8 * p, 0.8f * p))
+                drawRect(Color(0xFF495057), androidx.compose.ui.geometry.Offset(openBookX - 0.5f * p, openBookY), Size(p, 3.5f * p))
+
+                val moteRise = t * 18 * p
+                val moteFade = (1f - t).coerceIn(0f, 1f)
+                drawCircle(Color(0xFFFFD166).copy(alpha = moteFade * 0.85f), 1.8f * p, androidx.compose.ui.geometry.Offset(lantX - 4 * p + pageWiggle, lantY - moteRise))
+                drawCircle(Color(0xFFFFF3B0).copy(alpha = moteFade * 0.75f), 1.4f * p, androidx.compose.ui.geometry.Offset(lantX + 3 * p - pageWiggle, lantY - moteRise * 1.2f))
+                drawCircle(Color(0xFFFFEAA7).copy(alpha = moteFade * 0.65f), 2.0f * p, androidx.compose.ui.geometry.Offset(lantX + pageWiggle * 0.5f, lantY - 6 * p - moteRise * 0.8f))
+            }
+
+            // 3. Balcony Fairy Lights: twinkle cascade wave
+            if (engine.loftFairyLightsTimer > 0f) {
+                val dur = 1.6f
+                val t = ((dur - engine.loftFairyLightsTimer) / dur).coerceIn(0f, 1f)
+                val railTopY = ch * 0.72f
+                val bulbPositions = floatArrayOf(0.05f, 0.16f, 0.28f, 0.42f, 0.56f, 0.70f, 0.85f, 0.95f)
+                val bulbColors = listOf(Color(0xFFFFD166), Color(0xFFFF5D8F), Color(0xFF70E000), Color(0xFF48CAE4), Color(0xFFFFD166), Color(0xFFFF85A1), Color(0xFF48CAE4), Color(0xFFFFD166))
+
+                for ((i, bxRel) in bulbPositions.withIndex()) {
+                    val bx = cw * bxRel
+                    val by = railTopY + 8 * p + sin(bxRel * 10f) * 2 * p
+                    val bT = ((t * 2.2f - i * 0.14f)).coerceIn(0f, 1f)
+                    val bGlow = sin(bT * Math.PI.toFloat()).coerceIn(0f, 1f)
+                    if (bGlow > 0f) {
+                        val col = bulbColors[i % bulbColors.size]
+                        drawCircle(col.copy(alpha = bGlow * 0.55f), (5f + bGlow * 7f) * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
+                        drawCircle(Color.White.copy(alpha = bGlow * 0.85f), 2.2f * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
+                    }
+                }
+            }
+        }
+
+        // Draw cute earphone wire connecting both characters!
+        if (engine.earphonesActive) {
+            val boyAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.boy, effectiveBoyX, effectiveBoyY, pixelScale)
+            val girlAttachment = PixelArtRenderer.getEarphoneAttachmentOffset(engine.girl, effectiveGirlX, effectiveGirlY, pixelScale)
+            PixelArtRenderer.drawEarphoneCord(
+                scope = this,
+                startOffset = boyAttachment,
+                endOffset = girlAttachment,
+                p = pixelScale,
+                timeSeconds = engine.sceneTime
+            )
+        }
+
+        // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
+        drawForegroundParticles(this, engine.particles.particles, pixelScale)
+
+        // Atmospheric Lighting & Time-of-Day Layering
+        val isTwilight = timePhase.isTwilight
+        val isMidnight = timePhase.isMidnight
+
+        if (isOutdoor) {
+            // Time-of-day atmospheric layer (delicate, natural light transitions)
+            when {
+                isMidnight -> {
+                    // Midnight celestial coziness: deep starlight indigo vignette
+                    drawRect(Color(0xFF060B1E).copy(alpha = 0.16f), Offset.Zero, size)
+                }
+                isNight -> {
+                    // Night: calm, intimate moonlit atmosphere
+                    drawRect(Color(0xFF0A122C).copy(alpha = 0.12f), Offset.Zero, size)
+                }
+                isTwilight -> {
+                    // Twilight: deep rich lavender-indigo dusk glow
+                    drawRect(Color(0xFF4A2545).copy(alpha = 0.12f), Offset.Zero, size)
+                }
+                isSunset -> {
+                    // Sunset: warm coral-amber golden hour wash
+                    drawRect(Color(0xFFE85D04).copy(alpha = 0.08f), Offset.Zero, size)
+                }
+                isMorning -> {
+                    // Morning: soft rose-ivory dewy dawn glow
+                    drawRect(Color(0xFFFFD6A5).copy(alpha = 0.06f), Offset.Zero, size)
+                }
+            }
+
+            // Weather ambient atmospheric tinting
+            when (engine.weather) {
+                com.example.scene.WeatherType.RAIN -> {
+                    drawRect(Color(0x221B263B), Offset.Zero, size)
+                }
+                com.example.scene.WeatherType.SNOW -> {
+                    drawRect(Color(0x18CAE9FF), Offset.Zero, size)
+                }
+                com.example.scene.WeatherType.AUTUMN -> {
+                    drawRect(Color(0x18D9480F), Offset.Zero, size)
+                }
+                com.example.scene.WeatherType.SAKURA -> {
+                    drawRect(Color(0x14FF758F), Offset.Zero, size)
+                }
+                com.example.scene.WeatherType.SUNNY -> {
+                    if (!isNight && !isSunset) {
+                        drawRect(Color(0x08FFB703), Offset.Zero, size)
+                    }
+                }
+            }
+        } else {
+            // Indoor atmosphere (Kitchen, Living Room, Cozy Loft)
+            // Distinctly warmer and cozier than chilly outdoors
+            val indoorWarmthAlpha = when {
+                isMidnight -> 0.14f
+                isNight -> 0.10f
+                isSunset -> 0.08f
+                else -> 0.04f
+            }
+            drawRect(Color(0xFFFFB703).copy(alpha = indoorWarmthAlpha), Offset.Zero, size)
+            if (isNight || isMidnight) {
+                // Soft cozy interior evening shading
+                drawRect(Color(0xFF1B1124).copy(alpha = if (isMidnight) 0.12f else 0.07f), Offset.Zero, size)
+            }
+        }
+
+        // 4. Ambient Dimming layer
+        if (engine.ambientDimming > 0f) {
+            drawRect(
+                color = Color(0xFF0D1117).copy(alpha = engine.ambientDimming),
+                topLeft = Offset.Zero,
+                size = size
+            )
+        }
+
+        // 5. Dynamic Lightning Flash overlay
+        if (engine.lightningFlashAlpha > 0f) {
+            drawRect(
+                color = Color(0xFFEEF2FF).copy(alpha = engine.lightningFlashAlpha.coerceIn(0f, 0.95f)),
+                topLeft = Offset.Zero,
+                size = size
+            )
+        }
+
+        // 6. Smooth scene transition fade overlay (no line artifacts or jarring bars)
+        if (engine.wipeAlpha > 0f) {
+            val fadeAlpha = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f)
+            drawRect(
+                color = Color(0xFF0F1423).copy(alpha = fadeAlpha),
+                topLeft = Offset.Zero,
+                size = size
+            )
+        }
+}
+
+/** True when the current scene is drawn by the low-res pixel renderer (Plan 03, Phase 1). */
+internal val SceneEngine.usesLowResRenderer: Boolean
+    get() = FeatureFlags.PIXEL_RENDERER && currentScene in FeatureFlags.PIXEL_RENDERER_SCENES
+
+/** Draws the world, through the low-res pixel renderer for the scenes that use it (Plan 03, Phase 1). */
+internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer) {
+    if (engine.usesLowResRenderer) {
+        lowResBuffer.draw(this, WorldViewport.gameScale(size.width)) { drawWorldFrame(engine, lowRes = true) }
+    } else {
+        drawWorldFrame(engine)
     }
 }

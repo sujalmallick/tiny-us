@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.engine.WorldViewport
+
 import com.example.engine.AvatarLook
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -354,7 +356,7 @@ fun MainScreen(
         if (!targetBirdSurface.isNullOrBlank()) {
             val surf = try { com.example.engine.PerchSurface.valueOf(targetBirdSurface) } catch (e: Exception) { null }
             if (surf != null) {
-                val p = (screenWidthPx / 115f).coerceIn(3.0f, 5.0f)
+                val p = WorldViewport.pixelScale(screenWidthPx)
                 val (destX, destY) = engine.birdSystem.getSurfaceCoordinates(surf, screenWidthPx, screenHeightPx, p)
                 val bird = engine.forceSpawnBirdForTest(surface = surf, cw = screenWidthPx, ch = screenHeightPx, p = p)
                 if (bird != null) {

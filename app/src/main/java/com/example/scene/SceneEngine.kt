@@ -1,5 +1,7 @@
 package com.example.scene
 
+import com.example.engine.WorldViewport
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -1111,7 +1113,7 @@ class SceneEngine(
 
     fun update(deltaSeconds: Float, canvasWidth: Float, canvasHeight: Float) {
         sceneTime += deltaSeconds
-        val pixelScale = (canvasWidth / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
         if (isWatchSceneActive) {
@@ -1119,7 +1121,7 @@ class SceneEngine(
             val t = watchSceneTimer
             val cw = canvasWidth
             val ch = canvasHeight
-            val pxScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+            val pxScale = WorldViewport.pixelScale(cw)
 
             when (watchSceneScene) {
 
@@ -2759,7 +2761,7 @@ class SceneEngine(
 
     private fun updateMomoScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
 
         // Continuous steam wisps rising softly from the momo steamer
         if (eventChance(1.8f, dt)) {
@@ -2866,7 +2868,7 @@ class SceneEngine(
 
     private fun updateCozyLoftScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
 
         // 1. Gentle steam wisps rising from hot mugs on coffee table
@@ -4254,7 +4256,7 @@ class SceneEngine(
             groundInteractionCharacter != null
         ) return false
 
-        val px = (cw / 115f).coerceIn(3f, 5f)
+        val px = WorldViewport.pixelScale(cw)
         val minY: Float
         val maxY: Float
         val minX: Float
@@ -5165,7 +5167,7 @@ class SceneEngine(
             catState = CatState.SITTING_PURR
             catTreatMunchTimer = 2.6f
             audio.playCatPurr()
-            particles.spawnHeart(cw * catWorldX, ch * catWorldY - 14f * (cw / 115f).coerceIn(3f, 5f), Color(0xFFFF6B8A))
+            particles.spawnHeart(cw * catWorldX, ch * catWorldY - 14f * WorldViewport.pixelScale(cw), Color(0xFFFF6B8A))
             showMessage("Mochi munches happily with a swishy tail!", duration = 2.5f)
         }
     }
@@ -5179,13 +5181,13 @@ class SceneEngine(
     fun onTouchCafeLatte(cw: Float, ch: Float) {
         cafeLatteTimer = 2.2f
         audio.playHeartChime()
-        val latte = CafeLayout.latte(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val latte = CafeLayout.latte(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnHeart(latte.x, latte.y - 8f, Color(0xFFFF729F))
         showMessage("A tiny heart in the latte foam, made just for you.", duration = 2.4f)
     }
 
     fun onTouchCafePastry(cw: Float, ch: Float) {
-        val plate = CafeLayout.plate(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val plate = CafeLayout.plate(cw, ch, WorldViewport.pixelScale(cw))
         if (cafePastryBites >= CafeLayout.MAX_PASTRY_BITES) {
             cafePastryBites = 0
             cafeBaristaBrewTimer = 1.2f
@@ -5202,7 +5204,7 @@ class SceneEngine(
 
     fun onTouchCafeWindow(touchX: Float, touchY: Float, cw: Float, ch: Float) {
         // Keep the whole fog heart on the glass (it spans -3..+4 heart pixels around the tap).
-        val p = (cw / 115f).coerceIn(3f, 5f)
+        val p = WorldViewport.pixelScale(cw)
         val glass = CafeLayout.glass(cw, ch, p)
         cafeWindowHeartTimer = 2.8f
         cafeWindowHeartX = touchX.coerceIn(glass.left + 5f * p, glass.right - 7f * p) / cw
@@ -5216,7 +5218,7 @@ class SceneEngine(
         cafeBaristaBrewTimer = 2.5f
         audio.playSteamHiss()
         audio.playHeartChime()
-        val leo = CafeLayout.barista(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val leo = CafeLayout.barista(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(leo.x, leo.y - 30f, 6, Color(0xFFFFD166))
         particles.spawnHeart(leo.x, leo.y - 50f, Color(0xFFFF729F))
         boy.emotion = CharacterEmotion.HAPPY
@@ -5238,7 +5240,7 @@ class SceneEngine(
     fun onTouchCafePup(cw: Float, ch: Float) {
         cafePupPetTimer = 2.0f
         audio.playBubblePop()
-        val pup = CafeLayout.pup(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val pup = CafeLayout.pup(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnHeart(pup.x, pup.y - 30f, Color(0xFFFFCAD4))
         particles.spawnSparkles(pup.x, pup.y - 10f, 4, Color(0xFFFFD166))
         showMessage("Boba the cafe pup wags his tail and naps happily beside Mochi", duration = 2.8f)
@@ -5297,7 +5299,7 @@ class SceneEngine(
     fun onTouchCampGuitar(cw: Float, ch: Float) {
         campGuitarStrumTimer = 2.6f
         audio.playStarArpeggio()
-        val guitar = CampfireLayout.guitar(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val guitar = CampfireLayout.guitar(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(guitar.x, guitar.y, 5, Color(0xFFFFD166))
         boy.emotion = CharacterEmotion.LOVING
         boy.emote = EmoteType.MUSIC_NOTE
@@ -5313,7 +5315,7 @@ class SceneEngine(
     fun onTouchCampLantern(cw: Float, ch: Float) {
         campLanternLit = !campLanternLit
         audio.playWoodKnock()
-        val lantern = CampfireLayout.lantern(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val lantern = CampfireLayout.lantern(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(lantern.x, lantern.y + 10f, 4, if (campLanternLit) Color(0xFFFFE066) else Color(0xFF888888))
         val dimmedMessage = if (timeOfDayPhase.isNight) "Dimmed the lantern for better stargazing" else "Lantern off until the stars come out"
         showMessage(if (campLanternLit) "The warm camp lantern glows bright beside our tent" else dimmedMessage, duration = 2.5f)
@@ -5404,7 +5406,7 @@ class SceneEngine(
     fun onTouchLighthouse(cw: Float, ch: Float) {
         pierLighthouseTimer = 4f
         audio.playFoghorn()
-        val lamp = PierLayout.lighthouseLamp(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val lamp = PierLayout.lighthouseLamp(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(lamp.x, lamp.y, 6, Color(0xFFFFF3B0))
         if (timeOfDayPhase.isNight) {
             showMessage("The lighthouse sweeps its beam across the dark water", duration = 2.8f)
@@ -5522,7 +5524,7 @@ class SceneEngine(
         if (isBaoDozing) {
             if (eventChance(0.35f, dt)) {
                 val bao = PierLayout.bao(cw, ch)
-                particles.spawnSleepZ(bao.x + 10f, bao.y - 26f * (cw / 115f).coerceIn(3f, 5f))
+                particles.spawnSleepZ(bao.x + 10f, bao.y - 26f * WorldViewport.pixelScale(cw))
             }
             return
         }
@@ -5901,7 +5903,7 @@ class SceneEngine(
     fun onTouchMomoSteamer(cw: Float, ch: Float) {
         if (momoSteamerTimer > 0f) return
         momoSteamerTimer = 1.5f
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         audio.playSteamHiss()
         audio.playCookingBubbles()
         repeat(8) {
@@ -6095,7 +6097,7 @@ class SceneEngine(
             if (puddleSplashCooldown[i] > 0f) puddleSplashCooldown[i] -= dt
         }
         if (!isCurrentSceneOutdoor || currentScene == SceneType.EVENING_RIDE || cw <= 0f || ch <= 0f) return
-        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val unit = WeatherLayout.weatherUnit(cw, WorldViewport.pixelScale(cw))
         val catMoving = catState == CatState.WALK_FOLLOW &&
             (abs(catTargetX - catWorldX) > 0.01f || abs(catTargetY - catWorldY) > 0.01f)
         for (i in 0..2) {
@@ -6167,7 +6169,7 @@ class SceneEngine(
     /** A finger drawing in fresh snow leaves a trail of little hollows. */
     fun onDrawInSnow(x: Float, y: Float, cw: Float, ch: Float) {
         if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
-        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val unit = WeatherLayout.weatherUnit(cw, WorldViewport.pixelScale(cw))
         if (lastSnowTraceX >= 0f && kotlin.math.hypot(x - lastSnowTraceX, y - lastSnowTraceY) < unit * 1.1f) return
         lastSnowTraceX = x
         lastSnowTraceY = y
@@ -6445,7 +6447,7 @@ class SceneEngine(
     }
 
     fun onTouchLoftRecordPlayer(cw: Float, ch: Float) {
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         audio.playBubblePop()
         if (audio.musicBoxState == MusicBoxState.PLAYING) {
@@ -6465,7 +6467,7 @@ class SceneEngine(
     fun onTouchLoftTable(cw: Float, ch: Float) {
         if (loftTableTimer > 0f) return
         loftTableTimer = 1.4f
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         audio.playCookingBubbles()
         repeat(5) {
@@ -6490,7 +6492,7 @@ class SceneEngine(
     }
 
     fun onTouchLoftLamp(cw: Float, ch: Float) {
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         lampLit = !lampLit
         audio.playBubblePop()
