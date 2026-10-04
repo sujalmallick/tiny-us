@@ -24,8 +24,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +49,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCornerShape
+import com.example.ui.theme.PixelCircleShape
 
 @Composable
 fun GiftBoxEasterEgg(
@@ -193,7 +193,7 @@ fun GiftBoxEasterEgg(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .background(
                                     if (tapCount >= i) TinyColors.Rose else TinyColors.Blush.copy(alpha = 0.5f)
                                 )
@@ -273,7 +273,7 @@ internal fun RomanticSurpriseDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.lg)
         ) {
             // Glowing interactive secret name capsule
-            val capsuleShape = RoundedCornerShape(18.dp)
+            val capsuleShape = PixelCornerShape(18.dp)
             Surface(
                 modifier = Modifier
                     .padding(top = TinySpace.xs)

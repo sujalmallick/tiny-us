@@ -66,6 +66,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 import java.util.UUID
+import com.example.ui.theme.PixelIcons
 
 // -----------------------------------------------------------------------------
 // 1. TINY DATE ADVENTURES DIALOG
@@ -216,7 +217,7 @@ private fun DateAdventureCard(
         if (!artifact.isNullOrEmpty()) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(
-                    Icons.Rounded.CardGiftcard,
+                    PixelIcons.CardGiftcard,
                     contentDescription = null,
                     tint = TinyColors.Rose,
                     modifier = Modifier.size(14.dp)
@@ -236,7 +237,7 @@ private fun DateAdventureCard(
                 modifier = Modifier.fillMaxWidth()
             ) {
                 Icon(
-                    Icons.Rounded.Check,
+                    PixelIcons.Check,
                     contentDescription = null,
                     tint = TinyColors.Sage,
                     modifier = Modifier.size(16.dp)
@@ -311,7 +312,7 @@ private fun DateAdventureCard(
                         },
                         modifier = Modifier.weight(1f),
                         style = TinyButtonStyle.Primary,
-                        icon = Icons.Rounded.Check
+                        icon = PixelIcons.Check
                     )
                     TinyButton(
                         text = "Skip",
@@ -356,7 +357,7 @@ private fun PartnerProgressToggle(
             verticalAlignment = Alignment.CenterVertically
         ) {
             if (done) {
-                Icon(Icons.Rounded.Check, contentDescription = null, tint = TinyColors.Sage, modifier = Modifier.size(14.dp))
+                Icon(PixelIcons.Check, contentDescription = null, tint = TinyColors.Sage, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(TinySpace.xs))
             }
             Text(
@@ -678,7 +679,7 @@ fun TwoPersonMiniGameDialog(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.Refresh
+                icon = PixelIcons.Refresh
             )
         }
     }
@@ -962,7 +963,7 @@ fun LongDistanceSheet(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.AutoMirrored.Rounded.Send
+                icon = PixelIcons.Send
             )
         }
 

@@ -46,8 +46,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -165,6 +163,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 data class WardrobeItem(
     val id: Int,
@@ -413,7 +413,7 @@ fun WardrobeDialog(
         TinyDialogHeader(
             title = "Cottage Wardrobe",
             subtitle = "Outfits & accessories for both of you",
-            icon = Icons.Rounded.Checkroom
+            icon = PixelIcons.Checkroom
         )
 
         // His / Hers segmented switcher
@@ -505,7 +505,7 @@ fun WardrobeDialog(
                             Box(
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .background(TinyColors.Card, CircleShape),
+                                    .background(TinyColors.Card, PixelCircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Canvas(modifier = Modifier.size(18.dp)) {

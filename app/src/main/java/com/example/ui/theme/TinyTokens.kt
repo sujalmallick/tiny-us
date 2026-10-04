@@ -1,12 +1,14 @@
 package com.example.ui.theme
 
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.R
 
 /**
  * "Cozy Frame" design tokens for all UI chrome (dialogs, sheets, buttons, cards).
@@ -59,21 +61,31 @@ object TinyRadius {
     val md = 12.dp
     val lg = 16.dp
     val xl = 24.dp
-    val Small = RoundedCornerShape(sm)
-    val Medium = RoundedCornerShape(md)
-    val Large = RoundedCornerShape(lg)
-    val Dialog = RoundedCornerShape(xl)
-    val Pill = RoundedCornerShape(50)
+    val Small = PixelCornerShape(sm)
+    val Medium = PixelCornerShape(md)
+    val Large = PixelCornerShape(lg)
+    val Dialog = PixelCornerShape(xl)
+    val Pill = PixelCornerShape(50)
 }
 
-/** Serif titles keep the storybook warmth; body text stays in the clean default sans. */
+/**
+ * The Tiny Us pixel font (built by tools/pixelfont/build_tiny_pixel_font.py): one weight, and
+ * Compose must not fake a bold, which would smear the pixels.
+ */
+val PixelFamily = FontFamily(Font(R.font.tiny_pixel))
+
+/**
+ * Titles, headings, labels and buttons use the pixel font, so the chrome matches the pixel world.
+ * Body text and captions stay in the clean default sans: long text and small sizes remain easy to
+ * read (the accessibility fallback), and they scale with the system font size as before.
+ */
 object TinyType {
-    val Display = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 24.sp, lineHeight = 30.sp, color = TinyColors.Ink)
-    val Title = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.Bold, fontSize = 20.sp, lineHeight = 26.sp, color = TinyColors.Ink)
-    val Section = TextStyle(fontFamily = FontFamily.Serif, fontWeight = FontWeight.SemiBold, fontSize = 15.sp, lineHeight = 20.sp, color = TinyColors.Ink)
+    val Display = TextStyle(fontFamily = PixelFamily, fontWeight = FontWeight.Normal, fontSynthesis = FontSynthesis.None, fontSize = 24.sp, lineHeight = 30.sp, color = TinyColors.Ink)
+    val Title = TextStyle(fontFamily = PixelFamily, fontWeight = FontWeight.Normal, fontSynthesis = FontSynthesis.None, fontSize = 20.sp, lineHeight = 26.sp, color = TinyColors.Ink)
+    val Section = TextStyle(fontFamily = PixelFamily, fontWeight = FontWeight.Normal, fontSynthesis = FontSynthesis.None, fontSize = 15.sp, lineHeight = 20.sp, color = TinyColors.Ink)
     val Body = TextStyle(fontWeight = FontWeight.Normal, fontSize = 14.sp, lineHeight = 20.sp, color = TinyColors.Ink)
     val BodyStrong = Body.copy(fontWeight = FontWeight.SemiBold)
-    val Label = TextStyle(fontWeight = FontWeight.SemiBold, fontSize = 13.sp, lineHeight = 18.sp, color = TinyColors.Ink)
+    val Label = TextStyle(fontFamily = PixelFamily, fontWeight = FontWeight.Normal, fontSynthesis = FontSynthesis.None, fontSize = 13.sp, lineHeight = 18.sp, color = TinyColors.Ink)
     val Caption = TextStyle(fontWeight = FontWeight.Normal, fontSize = 12.sp, lineHeight = 16.sp, color = TinyColors.InkMuted)
     /** The floor: nothing in chrome is set smaller than this. */
     val Micro = TextStyle(fontWeight = FontWeight.Medium, fontSize = 11.sp, lineHeight = 14.sp, color = TinyColors.InkMuted)

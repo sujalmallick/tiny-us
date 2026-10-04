@@ -15,7 +15,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.Face
@@ -49,6 +48,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 /**
  * "Make Us": each partner picks skin tone, hair colour, hair length and outfit style.
@@ -86,7 +87,7 @@ fun AvatarCustomizerDialog(
         TinyDialogHeader(
             title = stringResource(R.string.avatar_title),
             subtitle = stringResource(R.string.avatar_subtitle),
-            icon = Icons.Rounded.Face,
+            icon = PixelIcons.Face,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
         )
 
@@ -217,7 +218,7 @@ private fun SwatchRow(swatches: List<AvatarSwatch>, selected: Int, tagPrefix: St
                 Modifier
                     .minimumInteractiveComponentSize()
                     .size(48.dp)
-                    .clip(CircleShape)
+                    .clip(PixelCircleShape)
                     .clickable { onPick(index) }
                     .semantics { contentDescription = swatch.name + if (isSelected) ", selected" else "" }
                     .testTag("${tagPrefix}_$index"),
@@ -226,9 +227,9 @@ private fun SwatchRow(swatches: List<AvatarSwatch>, selected: Int, tagPrefix: St
                 Box(
                     Modifier
                         .size(36.dp)
-                        .border(if (isSelected) 2.5.dp else 1.dp, if (isSelected) TinyColors.Rose else TinyColors.Line, CircleShape)
+                        .border(if (isSelected) 2.5.dp else 1.dp, if (isSelected) TinyColors.Rose else TinyColors.Line, PixelCircleShape)
                         .padding(4.dp)
-                        .background(Color(swatch.base), CircleShape)
+                        .background(Color(swatch.base), PixelCircleShape)
                 )
             }
         }

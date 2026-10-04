@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
@@ -83,6 +82,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 @Composable
 internal fun SettingsCategoryHeader(
@@ -130,7 +131,7 @@ private fun SettingsNavRow(
         }
         Spacer(modifier = Modifier.width(TinySpace.sm))
         Icon(
-            imageVector = Icons.Rounded.ChevronRight,
+            imageVector = PixelIcons.ChevronRight,
             contentDescription = null,
             tint = TinyColors.InkMuted
         )
@@ -240,7 +241,7 @@ fun SettingsBottomSheet(
                         modifier = Modifier.testTag("settings_back_button")
                     ) {
                         Icon(
-                            imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
+                            imageVector = PixelIcons.ArrowBack,
                             contentDescription = "Back",
                             tint = TinyColors.Ink
                         )
@@ -264,7 +265,7 @@ fun SettingsBottomSheet(
 
             // -- 1. Our World --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Favorite,
+                icon = PixelIcons.Favorite,
                 title = "Our World",
                 subtitle = "Names and special dates for your story together"
             )
@@ -358,14 +359,14 @@ fun SettingsBottomSheet(
 
             // -- 2. Characters & Wardrobe --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Checkroom,
+                icon = PixelIcons.Checkroom,
                 title = "Characters & Wardrobe",
                 subtitle = "Sweaters, hoodies & cute ribbons for both characters"
             )
             SettingsSectionCard {
                 Column {
                     SettingsNavRow(
-                        icon = Icons.Rounded.Checkroom,
+                        icon = PixelIcons.Checkroom,
                         title = "Cottage Wardrobe",
                         subtitle = "Hoodies & Outfits",
                         onClick = {
@@ -376,7 +377,7 @@ fun SettingsBottomSheet(
                     )
                     TinyDivider()
                     SettingsNavRow(
-                        icon = Icons.Rounded.Face,
+                        icon = PixelIcons.Face,
                         title = stringResource(R.string.avatar_entry),
                         onClick = {
                             onDismiss()
@@ -389,7 +390,7 @@ fun SettingsBottomSheet(
 
             // -- 3. Atmosphere & Sky --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.WbSunny,
+                icon = PixelIcons.WbSunny,
                 title = "Atmosphere & Sky",
                 subtitle = "Sync with the real sky or set an intimate mood"
             )
@@ -418,7 +419,7 @@ fun SettingsBottomSheet(
 
             // -- 4. Sounds & Music --
             SettingsCategoryHeader(
-                icon = Icons.AutoMirrored.Rounded.VolumeUp,
+                icon = PixelIcons.VolumeUp,
                 title = "Sounds & Music",
                 subtitle = "Gentle music box lullabies & peaceful nature ambience"
             )
@@ -437,7 +438,7 @@ fun SettingsBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TinyIconBadge(
-                        icon = if (soundEnabled) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
+                        icon = if (soundEnabled) PixelIcons.VolumeUp else PixelIcons.VolumeOff,
                         tint = if (soundEnabled) TinyColors.Rose else TinyColors.InkMuted,
                         background = if (soundEnabled) TinyColors.RoseSoft else TinyColors.Muted
                     )
@@ -491,7 +492,7 @@ fun SettingsBottomSheet(
                     )
                     TinyDivider()
                     SettingsNavRow(
-                        icon = Icons.Rounded.Drafts,
+                        icon = PixelIcons.Drafts,
                         title = "Love Notes",
                         onClick = {
                             onDismiss()
@@ -500,7 +501,7 @@ fun SettingsBottomSheet(
                     )
                     TinyDivider()
                     SettingsNavRow(
-                        icon = Icons.Rounded.PhotoLibrary,
+                        icon = PixelIcons.PhotoLibrary,
                         title = "Tiny Moments Gallery",
                         onClick = {
                             onDismiss()
@@ -509,7 +510,7 @@ fun SettingsBottomSheet(
                     )
                     TinyDivider()
                     SettingsNavRow(
-                        icon = Icons.Rounded.Bedtime,
+                        icon = PixelIcons.Bedtime,
                         title = "Shared Dream Journal",
                         onClick = onOpenDreamJournal,
                         testTag = "settings_open_dream_journal_button"
@@ -519,7 +520,7 @@ fun SettingsBottomSheet(
 
             // -- Couple Activities & Connection --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Favorite,
+                icon = PixelIcons.Favorite,
                 title = "Couple Activities & Connection",
                 subtitle = "Adventures, reflections, mini-games & long-distance signals"
             )
@@ -582,7 +583,7 @@ fun SettingsBottomSheet(
 
             // -- 6. Tiny Care Notifications --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.VolunteerActivism,
+                icon = PixelIcons.VolunteerActivism,
                 title = "Tiny Care",
                 subtitle = "Gentle, wholesome offline check-ins for each other"
             )
@@ -654,7 +655,7 @@ fun SettingsBottomSheet(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Rounded.Nightlight,
+                            imageVector = PixelIcons.Nightlight,
                             contentDescription = null,
                             tint = TinyColors.InkMuted,
                             modifier = Modifier.size(16.dp)
@@ -722,7 +723,7 @@ fun SettingsBottomSheet(
 
             // -- 7. Appearance --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Palette,
+                icon = PixelIcons.Palette,
                 title = "Appearance & Controls",
                 subtitle = "Frosted glassmorphism intensity for buttons"
             )
@@ -793,41 +794,41 @@ fun SettingsBottomSheet(
                         Box(
                             modifier = Modifier
                                 .size(34.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .background(previewFill)
-                                .border(previewBorder, CircleShape),
+                                .border(previewBorder, PixelCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             if (previewClear > 0.15f) {
-                                Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
+                                Icon(PixelIcons.AutoAwesome, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
                             }
-                            Icon(Icons.Default.AutoAwesome, contentDescription = null, tint = previewSparkleTint, modifier = Modifier.size(16.dp))
+                            Icon(PixelIcons.AutoAwesome, contentDescription = null, tint = previewSparkleTint, modifier = Modifier.size(16.dp))
                         }
                         Box(
                             modifier = Modifier
                                 .size(34.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .background(previewFill)
-                                .border(previewBorder, CircleShape),
+                                .border(previewBorder, PixelCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             if (previewClear > 0.15f) {
-                                Icon(Icons.Default.Favorite, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
+                                Icon(PixelIcons.Favorite, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
                             }
-                            Icon(Icons.Default.Favorite, contentDescription = null, tint = previewHeartTint, modifier = Modifier.size(16.dp))
+                            Icon(PixelIcons.Favorite, contentDescription = null, tint = previewHeartTint, modifier = Modifier.size(16.dp))
                         }
                         Box(
                             modifier = Modifier
                                 .size(34.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .background(previewFill)
-                                .border(previewBorder, CircleShape),
+                                .border(previewBorder, PixelCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
                             if (previewClear > 0.15f) {
-                                Icon(Icons.Default.Settings, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
+                                Icon(PixelIcons.Settings, contentDescription = null, tint = Color.Black.copy(alpha = (0.75f * previewClear).coerceIn(0f, 0.85f)), modifier = Modifier.size(16.dp).offset(0.6.dp, 0.6.dp))
                             }
-                            Icon(Icons.Default.Settings, contentDescription = null, tint = previewSettingsTint, modifier = Modifier.size(16.dp))
+                            Icon(PixelIcons.Settings, contentDescription = null, tint = previewSettingsTint, modifier = Modifier.size(16.dp))
                         }
                     }
                 }
@@ -861,7 +862,7 @@ fun SettingsBottomSheet(
 
             // -- Privacy Lock & Discreet Mode --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Lock,
+                icon = PixelIcons.Lock,
                 title = stringResource(R.string.privacy_section_title),
                 subtitle = stringResource(R.string.privacy_section_subtitle)
             )
@@ -870,7 +871,7 @@ fun SettingsBottomSheet(
             }
 
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Backup,
+                icon = PixelIcons.Backup,
                 title = stringResource(R.string.backup_section_title),
                 subtitle = stringResource(R.string.backup_section_subtitle)
             )
@@ -880,7 +881,7 @@ fun SettingsBottomSheet(
 
             // -- 8. World Exploration & Privacy --
             SettingsCategoryHeader(
-                icon = Icons.Rounded.Landscape,
+                icon = PixelIcons.Landscape,
                 title = "World & Privacy",
                 subtitle = "Scenes exploration and offline privacy guarantee"
             )
@@ -893,7 +894,7 @@ fun SettingsBottomSheet(
                         },
                         modifier = Modifier.weight(1f),
                         style = TinyButtonStyle.Secondary,
-                        icon = Icons.Rounded.Shuffle,
+                        icon = PixelIcons.Shuffle,
                         testTag = "choose_scene_button"
                     )
                     TinyButton(
@@ -904,7 +905,7 @@ fun SettingsBottomSheet(
                         },
                         modifier = Modifier.weight(1f),
                         style = TinyButtonStyle.Outline,
-                        icon = Icons.Rounded.Replay,
+                        icon = PixelIcons.Replay,
                         testTag = "replay_button"
                     )
                 }
@@ -918,7 +919,7 @@ fun SettingsBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Icon(
-                        imageVector = Icons.Rounded.Lock,
+                        imageVector = PixelIcons.Lock,
                         contentDescription = null,
                         tint = TinyColors.Sage,
                         modifier = Modifier.size(16.dp)

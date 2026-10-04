@@ -46,8 +46,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -160,6 +158,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.example.ui.theme.PixelIcons
 
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -362,7 +361,7 @@ fun DailyTinyMomentDialog(
                             }
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowBack,
+                                PixelIcons.ArrowBack,
                                 contentDescription = "Previous scene",
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
@@ -376,7 +375,7 @@ fun DailyTinyMomentDialog(
                             }
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowForward,
+                                PixelIcons.ArrowForward,
                                 contentDescription = "Next scene",
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)

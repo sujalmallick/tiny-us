@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -85,6 +84,8 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import com.example.ui.theme.PixelCornerShape
+import com.example.ui.theme.PixelIcons
 
 @Composable
 internal fun BoxScope.DreamOverlay(
@@ -175,11 +176,11 @@ internal fun BoxScope.DreamOverlay(
             }
             .shadow(
                 elevation = (10f + 6f * breathe).dp,
-                shape = RoundedCornerShape(16.dp),
+                shape = PixelCornerShape(16.dp),
                 ambientColor = tintColor.copy(alpha = 0.5f),
                 spotColor = tintColor.copy(alpha = 0.6f)
             ),
-        shape = RoundedCornerShape(16.dp),
+        shape = PixelCornerShape(16.dp),
         color = Color(0xD90D1117),
         border = BorderStroke((1.2f + 0.6f * breathe).dp, tintColor.copy(alpha = (0.45f + 0.45f * breathe).coerceIn(0.2f, 0.95f)))
     ) {
@@ -200,7 +201,7 @@ internal fun BoxScope.DreamOverlay(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Icon(
-                            imageVector = Icons.Default.AutoAwesome,
+                            imageVector = PixelIcons.AutoAwesome,
                             contentDescription = null,
                             tint = Color(0xFFFFB5C2).copy(alpha = (0.75f + 0.25f * breathe).coerceIn(0f, 1f)),
                             modifier = Modifier
@@ -238,10 +239,10 @@ internal fun BoxScope.DreamOverlay(
                 // Dreamy "Wake Up" Pill Button
                 Surface(
                     onClick = { engine.clearDream() },
-                    shape = RoundedCornerShape(20.dp),
+                    shape = PixelCornerShape(20.dp),
                     color = Color.White.copy(alpha = 0.12f + 0.08f * breathe),
                     border = BorderStroke(1.dp, Color.White.copy(alpha = 0.40f + 0.30f * breathe)),
-                    modifier = Modifier.clip(RoundedCornerShape(20.dp))
+                    modifier = Modifier.clip(PixelCornerShape(20.dp))
                 ) {
                     Row(
                         modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),

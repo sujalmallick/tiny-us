@@ -38,6 +38,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.LocalDate
+import com.example.ui.theme.PixelIcons
 
 private enum class BackupStep { NONE, CHOOSE_EXPORT_PASSWORD, CONFIRM_RESTORE, ENTER_RESTORE_PASSWORD, WORKING }
 
@@ -91,7 +92,7 @@ fun BackupRestoreSettings() {
                 onClick = { step = BackupStep.CHOOSE_EXPORT_PASSWORD },
                 modifier = Modifier.weight(1f),
                 style = TinyButtonStyle.Secondary,
-                icon = Icons.Rounded.Download,
+                icon = PixelIcons.Download,
                 enabled = step != BackupStep.WORKING,
                 testTag = "backup_export_button"
             )
@@ -100,7 +101,7 @@ fun BackupRestoreSettings() {
                 onClick = { step = BackupStep.CONFIRM_RESTORE },
                 modifier = Modifier.weight(1f),
                 style = TinyButtonStyle.Outline,
-                icon = Icons.Rounded.Restore,
+                icon = PixelIcons.Restore,
                 enabled = step != BackupStep.WORKING,
                 testTag = "backup_restore_button"
             )
@@ -122,7 +123,7 @@ fun BackupRestoreSettings() {
             step = BackupStep.NONE
         }
         BackupStep.CONFIRM_RESTORE -> LockDialogCard(onDismiss = { step = BackupStep.NONE }) {
-            TinyDialogHeader(title = stringResource(R.string.backup_restore_confirm_title), icon = Icons.Rounded.Restore)
+            TinyDialogHeader(title = stringResource(R.string.backup_restore_confirm_title), icon = PixelIcons.Restore)
             Text(stringResource(R.string.backup_restore_confirm_body), style = TinyType.Body.copy(color = TinyColors.InkMuted))
             Row(
                 Modifier.fillMaxWidth(),

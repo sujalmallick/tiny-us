@@ -60,6 +60,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import com.example.ui.theme.PixelIcons
 
 private const val MAX_NAME_LENGTH = 10
 
@@ -157,7 +158,7 @@ fun OnboardingDialog(
                                 label = { Text(stringResource(R.string.label_your_name)) },
                                 placeholder = { Text(PersonalProfile.DEFAULT_NAME_A) },
                                 leadingIcon = {
-                                    Icon(Icons.Rounded.Person, contentDescription = null, tint = TinyColors.Rose)
+                                    Icon(PixelIcons.Person, contentDescription = null, tint = TinyColors.Rose)
                                 },
                                 singleLine = true,
                                 modifier = Modifier
@@ -173,7 +174,7 @@ fun OnboardingDialog(
                                 label = { Text(stringResource(R.string.label_partner_name)) },
                                 placeholder = { Text(PersonalProfile.DEFAULT_NAME_B) },
                                 leadingIcon = {
-                                    Icon(Icons.Rounded.Person, contentDescription = null, tint = TinyColors.Rose)
+                                    Icon(PixelIcons.Person, contentDescription = null, tint = TinyColors.Rose)
                                 },
                                 singleLine = true,
                                 modifier = Modifier
@@ -206,7 +207,7 @@ fun OnboardingDialog(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Icon(
-                                    imageVector = Icons.Rounded.CalendarMonth,
+                                    imageVector = PixelIcons.CalendarMonth,
                                     contentDescription = null,
                                     tint = TinyColors.Rose
                                 )
@@ -231,7 +232,7 @@ fun OnboardingDialog(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Rounded.Lock,
+                                imageVector = PixelIcons.Lock,
                                 contentDescription = null,
                                 tint = if (showSecretFields) TinyColors.Rose else TinyColors.InkMuted,
                                 modifier = Modifier.size(16.dp)

@@ -27,8 +27,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
@@ -80,6 +78,7 @@ import kotlinx.coroutines.withContext
 import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
+import com.example.ui.theme.PixelCircleShape
 
 private enum class StoryFilter(val labelRes: Int, val kinds: Set<StoryKind>?) {
     ALL(R.string.story_filter_all, null),
@@ -214,8 +213,8 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
             Box(Modifier.width(1.dp).fillMaxHeight().background(TinyColors.Line))
             Box(
                 Modifier.padding(top = 10.dp).size(30.dp)
-                    .background(if (entry.kind == StoryKind.MILESTONE) TinyColors.RoseSoft else TinyColors.Card, CircleShape)
-                    .border(1.dp, TinyColors.Line, CircleShape),
+                    .background(if (entry.kind == StoryKind.MILESTONE) TinyColors.RoseSoft else TinyColors.Card, PixelCircleShape)
+                    .border(1.dp, TinyColors.Line, PixelCircleShape),
                 contentAlignment = Alignment.Center
             ) { Icon(TinyIcons.story(entry.iconKey), contentDescription = null, tint = TinyColors.Rose, modifier = Modifier.size(16.dp)) }
         }

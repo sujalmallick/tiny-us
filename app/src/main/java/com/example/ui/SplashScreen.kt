@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
@@ -59,6 +58,8 @@ import com.example.ui.theme.SoftRose
 import com.example.ui.theme.TinyColors
 import kotlinx.coroutines.delay
 import kotlin.random.Random
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 @Composable
 fun SplashScreen(
@@ -222,12 +223,12 @@ fun SplashScreen(
                 modifier = Modifier
                     .scale(heartScale)
                     .size(72.dp)
-                    .clip(CircleShape)
+                    .clip(PixelCircleShape)
                     .background(Color.White.copy(alpha = 0.92f)),
                 contentAlignment = Alignment.Center
             ) {
                 Icon(
-                    imageVector = Icons.Default.Favorite,
+                    imageVector = PixelIcons.Favorite,
                     contentDescription = null,
                     tint = DeepRose,
                     modifier = Modifier.size(42.dp)

@@ -46,8 +46,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -170,6 +168,8 @@ import androidx.compose.material.icons.rounded.Weekend
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 @Composable
 fun MemoriesDialog(
@@ -214,7 +214,7 @@ fun MemoriesDialog(
                 onClick = { showAddSheet = true },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.Add,
+                icon = PixelIcons.Add,
                 testTag = "add_memory_button"
             )
         } else {
@@ -265,14 +265,14 @@ fun MemoriesDialog(
                             modifier = Modifier
                                 .weight(1f)
                                 .heightIn(min = 48.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .clickable { selectedIcon = ic },
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
                                     .size(40.dp)
-                                    .background(if (isSelected) TinyColors.Rose else TinyColors.Muted, CircleShape),
+                                    .background(if (isSelected) TinyColors.Rose else TinyColors.Muted, PixelCircleShape),
                                 contentAlignment = Alignment.Center
                             ) {
                                 Icon(
@@ -356,10 +356,10 @@ internal fun MemoryCard(mem: MemoryItem) {
 }
 
 internal fun getIconForType(type: String): ImageVector = when (type) {
-    "flower" -> Icons.Rounded.LocalFlorist
-    "tree" -> Icons.Rounded.Park
-    "cooking" -> Icons.Rounded.Restaurant
-    "couch" -> Icons.Rounded.Weekend
-    "stars" -> Icons.Rounded.Nightlight
-    else -> Icons.Rounded.Favorite
+    "flower" -> PixelIcons.LocalFlorist
+    "tree" -> PixelIcons.Park
+    "cooking" -> PixelIcons.Restaurant
+    "couch" -> PixelIcons.Weekend
+    "stars" -> PixelIcons.Nightlight
+    else -> PixelIcons.Favorite
 }

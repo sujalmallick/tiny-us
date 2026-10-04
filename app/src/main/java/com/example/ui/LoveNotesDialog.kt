@@ -46,8 +46,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -164,6 +162,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelIcons
 
 @Composable
 fun LoveNotesDialog(
@@ -208,7 +207,7 @@ fun LoveNotesDialog(
                 onClick = { showWriteMode = true },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.Favorite,
+                icon = PixelIcons.Favorite,
                 testTag = "write_note_button"
             )
         } else {

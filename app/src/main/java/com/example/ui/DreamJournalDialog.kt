@@ -46,8 +46,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -166,6 +164,7 @@ import androidx.compose.material.icons.rounded.Delete
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelIcons
 
 // -----------------------------------------------------------------------------
 // Shared Dream Journal - keyword engine + dialog
@@ -249,7 +248,7 @@ fun DreamJournalDialog(
         TinyDialogHeader(
             title = "Shared Dream Journal",
             subtitle = "Type a dream and watch it come alive",
-            icon = Icons.Rounded.Bedtime,
+            icon = PixelIcons.Bedtime,
             accent = TinyColors.Plum,
             accentSoft = TinyColors.PlumSoft,
             onClose = onDismiss
@@ -307,7 +306,7 @@ fun DreamJournalDialog(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.AutoAwesome
+                icon = PixelIcons.AutoAwesome
             )
 
             // Dream history
@@ -360,7 +359,7 @@ fun DreamJournalDialog(
                                         }
                                     ) {
                                         Icon(
-                                            Icons.Rounded.AutoAwesome,
+                                            PixelIcons.AutoAwesome,
                                             contentDescription = "Relive dream",
                                             tint = TinyColors.Plum,
                                             modifier = Modifier.size(20.dp)
@@ -373,7 +372,7 @@ fun DreamJournalDialog(
                                         }
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Delete,
+                                            PixelIcons.Delete,
                                             contentDescription = "Delete dream",
                                             tint = TinyColors.InkMuted,
                                             modifier = Modifier.size(20.dp)

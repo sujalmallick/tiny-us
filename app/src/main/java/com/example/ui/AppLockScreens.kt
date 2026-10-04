@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Backspace
 import androidx.compose.material.icons.rounded.Fingerprint
@@ -57,6 +56,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import kotlinx.coroutines.delay
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 internal tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (this) {
     is FragmentActivity -> this
@@ -117,7 +118,7 @@ fun AppLockScreen(store: AppLockStore) {
             Modifier.widthIn(max = 360.dp).padding(TinySpace.xxl),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            TinyIconBadge(icon = Icons.Rounded.Lock, size = 64.dp, iconSize = 28.dp)
+            TinyIconBadge(icon = PixelIcons.Lock, size = 64.dp, iconSize = 28.dp)
             Spacer(Modifier.height(TinySpace.lg))
             Text(stringResource(R.string.lock_title), style = TinyType.Display, textAlign = TextAlign.Center)
             Spacer(Modifier.height(TinySpace.xs))
@@ -171,7 +172,7 @@ private fun ForgotPinDialog(activity: FragmentActivity?, store: AppLockStore, on
     val subtitle = stringResource(R.string.lock_reset_prompt_subtitle)
     val resetDone = stringResource(R.string.lock_reset_done)
     LockDialogCard(onDismiss) {
-        TinyDialogHeader(title = stringResource(R.string.lock_forgot), icon = Icons.Rounded.Lock)
+        TinyDialogHeader(title = stringResource(R.string.lock_forgot), icon = PixelIcons.Lock)
         Text(
             stringResource(if (canReset) R.string.lock_forgot_body else R.string.lock_forgot_no_screen_lock),
             style = TinyType.Body.copy(color = TinyColors.InkMuted)
@@ -208,7 +209,7 @@ fun PinSetupDialog(onPinChosen: (String) -> Unit, onDismiss: () -> Unit) {
         TinyDialogHeader(
             title = stringResource(if (first == null) R.string.lock_setup_choose else R.string.lock_setup_confirm),
             subtitle = stringResource(R.string.lock_setup_hint),
-            icon = Icons.Rounded.Lock
+            icon = PixelIcons.Lock
         )
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { PinDots(pin.length) }
         Text(
@@ -340,8 +341,8 @@ private fun PinDots(filled: Int) {
             val on = i < filled
             Box(
                 Modifier.size(14.dp)
-                    .background(if (on) TinyColors.Rose else Color.Transparent, CircleShape)
-                    .border(2.dp, if (on) TinyColors.Rose else TinyColors.Line, CircleShape)
+                    .background(if (on) TinyColors.Rose else Color.Transparent, PixelCircleShape)
+                    .border(2.dp, if (on) TinyColors.Rose else TinyColors.Line, PixelCircleShape)
             )
         }
     }
@@ -359,14 +360,14 @@ private fun PinPad(enabled: Boolean, onDigit: (String) -> Unit, onBackspace: () 
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (leftKey != null) {
                 PadKey(true, "pin_key_biometric", onClick = leftKey) {
-                    Icon(Icons.Rounded.Fingerprint, contentDescription = stringResource(R.string.lock_biometric_title), tint = TinyColors.Rose)
+                    Icon(PixelIcons.Fingerprint, contentDescription = stringResource(R.string.lock_biometric_title), tint = TinyColors.Rose)
                 }
             } else {
                 Spacer(Modifier.size(64.dp))
             }
             PadKey(enabled, "pin_key_0", onClick = { onDigit("0") }) { PadDigit("0") }
             PadKey(enabled, "pin_key_back", onClick = onBackspace) {
-                Icon(Icons.AutoMirrored.Rounded.Backspace, contentDescription = stringResource(R.string.lock_backspace), tint = TinyColors.InkMuted)
+                Icon(PixelIcons.Backspace, contentDescription = stringResource(R.string.lock_backspace), tint = TinyColors.InkMuted)
             }
         }
     }
@@ -381,8 +382,8 @@ private fun PadDigit(d: String) {
 private fun PadKey(enabled: Boolean, tag: String, onClick: () -> Unit, content: @Composable () -> Unit) {
     Box(
         Modifier.size(64.dp)
-            .background(if (enabled) TinyColors.Card else TinyColors.Card.copy(alpha = 0.5f), CircleShape)
-            .border(1.dp, TinyColors.Line, CircleShape)
+            .background(if (enabled) TinyColors.Card else TinyColors.Card.copy(alpha = 0.5f), PixelCircleShape)
+            .border(1.dp, TinyColors.Line, PixelCircleShape)
             .clickable(enabled = enabled, onClick = onClick)
             .testTag(tag),
         contentAlignment = Alignment.Center
