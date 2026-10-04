@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.engine.GameText
+import com.example.R
 import androidx.compose.foundation.Canvas
 import com.example.engine.SpriteClock
 import com.example.engine.WorldCamera
@@ -1147,7 +1149,7 @@ fun PixelWorldView(
                             val w = camera.worldW
                             val h = camera.worldH
                             engine.particles.spawnHeart(w * engine.catWorldX, h * engine.catWorldY - 20f, Color(0xFFFF8FA3))
-                            engine.showMessage("Mochi settled cozily right here.", duration = 2.0f)
+                            engine.showMessage(GameText.get(R.string.scene_mochi_settled_cozily_right_here), duration = 2.0f)
                             isMochiBeingDragged = false
                         }
                     },
