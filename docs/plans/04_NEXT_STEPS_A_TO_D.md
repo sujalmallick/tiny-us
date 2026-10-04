@@ -127,7 +127,7 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
   - [x] Pick the largest whole-number zoom at which the whole stage fits the screen's width **and** height. On phones this makes everything bigger than now. *(7× on a 1080 × 2400 phone.)*
   - [x] Fill leftover screen space by extending the background (more sky or ceiling above, more ground or floor below, more scenery at the sides), never by spreading props apart. *(`StageExtension`; each scene sets where the spare height goes.)*
   - [ ] Nicer extensions where they're plain: the kitchen's tall wall and the sunroom's floor are flat. Consider per-scene extra props there (shelves, more pots).
-  - [ ] Weather in the extension: rain, snow, petals and leaves fall only over the stage. Draw the falling layer over the whole screen.
+  - [x] Weather in the extension: rain, snow, petals and leaves fall only over the stage. Draw the falling layer over the whole screen. *(The falling layer is drawn again above and below the stage, shifted by one stage height.)*
   - [ ] Keep the HUD (top buttons, heart button, message box) clear of the stage, or reserve room for it.
   - [x] `ScenePreviewTest` renders every scene at phone 20:9, 19.5:9 and 16:9, at tablet 4:3, and nearly square. Check that nothing is cut off and the composition matches. *(`SCENE_PREVIEW_SIZE`; phone and square checked, and `WorldCameraTest` covers seven screen sizes.)*
   - [ ] Layered backgrounds with slight parallax (the original Phase 3 idea), once the stage works.

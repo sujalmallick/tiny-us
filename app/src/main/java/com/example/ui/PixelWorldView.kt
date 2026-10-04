@@ -1731,7 +1731,10 @@ internal val SceneEngine.usesLowResRenderer: Boolean
 internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, camera: WorldCamera) {
     if (engine.usesLowResRenderer && camera.staged) {
         val starrySky = engine.isCurrentSceneOutdoor && engine.timeOfDayPhase.isNight
-        lowResBuffer.drawStaged(this, camera, starrySky) { drawWorldFrame(engine, lowRes = true) }
+        val weather: (DrawScope.() -> Unit)? = if (engine.isCurrentSceneOutdoor) {
+            { drawFallingWeather(this, engine.particles.particles, WorldViewport.pixelScale(camera.worldW)) }
+        } else null
+        lowResBuffer.drawStaged(this, camera, starrySky, weather) { drawWorldFrame(engine, lowRes = true) }
     } else {
         drawWorldFrame(engine)
     }

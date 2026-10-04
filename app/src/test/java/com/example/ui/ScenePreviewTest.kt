@@ -45,6 +45,11 @@ class ScenePreviewTest {
         SceneEngine(audio = AmbientAudio().apply { isEnabled = false }, onOpenLoveNotes = {}, onOpenMemories = {}).apply {
             loadScene(scene)
             updateAtmosphereMode(if (phase == TimeOfDayPhase.NIGHT || phase == TimeOfDayPhase.SUNSET) phase.name else "DAY")
+            // SCENE_PREVIEW_WEATHER=RAIN (or SNOW, SAKURA, AUTUMN) previews weather.
+            System.getenv("SCENE_PREVIEW_WEATHER")?.let { name ->
+                weatherDriftEnabled = false
+                weather = com.example.scene.WeatherType.valueOf(name)
+            }
             // Let the scene-change fade finish and the characters settle (two seconds of frames).
             repeat(120) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
@@ -152,8 +157,8 @@ class ScenePreviewTest {
                 classic.recycle()
                 val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true)
                 val staged = engineFor(scene, phase, camera.worldW, camera.worldH)
-                val starry = staged.isCurrentSceneOutdoor && phase == TimeOfDayPhase.NIGHT
-                val pixel = render(cw, ch) { LowResWorldBuffer().drawStaged(this, camera, starry) { drawWorldFrame(staged, lowRes = true) } }
+                // Exactly what the app draws (stage, continued background, weather beyond the stage).
+                val pixel = render(cw, ch) { drawWorld(staged, LowResWorldBuffer(), camera) }
                 save(pixel, File(out, "${scene.name.lowercase()}_${label}_pixel.png"))
                 pixel.recycle()
             }

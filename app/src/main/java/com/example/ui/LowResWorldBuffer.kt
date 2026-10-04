@@ -54,9 +54,17 @@ internal class LowResWorldBuffer {
 
     /**
      * Draws [block] (which works in world units, see [WorldCamera]) onto the camera's stage, continues
-     * the background above and below it, and enlarges the frame to the screen.
+     * the background above and below it, and enlarges the frame to the screen. [beyondStage], if
+     * given, is drawn again over the continued areas, shifted by one stage height, so falling
+     * weather covers the whole screen.
      */
-    fun drawStaged(target: DrawScope, camera: WorldCamera, starrySky: Boolean = false, block: DrawScope.() -> Unit) {
+    fun drawStaged(
+        target: DrawScope,
+        camera: WorldCamera,
+        starrySky: Boolean = false,
+        beyondStage: (DrawScope.() -> Unit)? = null,
+        block: DrawScope.() -> Unit
+    ) {
         val cnv = ensure(camera.gameW, camera.gameH)
         val worldPerGame = WorldCamera.WORLD_PIXEL.toFloat()
         drawScope.draw(target, target.layoutDirection, cnv, androidx.compose.ui.geometry.Size(camera.worldW, camera.worldH)) {
@@ -67,7 +75,10 @@ internal class LowResWorldBuffer {
                 }
             }
         }
-        if (camera.stageH < camera.gameH) extendBackground(camera, starrySky)
+        if (camera.stageH < camera.gameH) {
+            extendBackground(camera, starrySky)
+            if (beyondStage != null) drawBeyondStage(target, cnv, camera, beyondStage)
+        }
         val bmp = bitmap!!
         target.drawImage(
             image = bmp,
@@ -77,6 +88,26 @@ internal class LowResWorldBuffer {
             dstSize = IntSize(camera.gameW * camera.zoom, camera.gameH * camera.zoom),
             filterQuality = FilterQuality.None
         )
+    }
+
+    private fun drawBeyondStage(target: DrawScope, cnv: Canvas, camera: WorldCamera, layer: DrawScope.() -> Unit) {
+        val worldPerGame = WorldCamera.WORLD_PIXEL.toFloat()
+        val top = camera.stageY.toFloat()
+        val bottom = (camera.stageY + camera.stageH).toFloat()
+        drawScope.draw(target, target.layoutDirection, cnv, androidx.compose.ui.geometry.Size(camera.worldW, camera.worldH)) {
+            // Above the stage: the stage's lower part, moved up one stage height.
+            clipRect(0f, 0f, camera.gameW.toFloat(), top) {
+                translate(camera.stageX.toFloat(), top - camera.stageH) {
+                    scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) { layer() }
+                }
+            }
+            // Below the stage: its upper part, moved down one stage height.
+            clipRect(0f, bottom, camera.gameW.toFloat(), camera.gameH.toFloat()) {
+                translate(camera.stageX.toFloat(), bottom) {
+                    scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) { layer() }
+                }
+            }
+        }
     }
 
     /** Fills the rows above and below the stage by continuing the stage's own top and bottom edges. */

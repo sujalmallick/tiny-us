@@ -185,6 +185,19 @@ internal fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<P
     }
 }
 
+/** Only the falling weather (rain, snow, petals, leaves, fluff), for the sky and ground beyond the stage. */
+internal fun drawFallingWeather(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+    for (i in particles.indices) {
+        val pt = particles[i]
+        if (pt.type == ParticleType.RAIN_DROP || pt.type == ParticleType.SNOWFLAKE ||
+            pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
+            pt.type == ParticleType.DANDELION_FLUFF
+        ) {
+            drawSingleParticle(scope, pt, p)
+        }
+    }
+}
+
 internal fun drawForegroundParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
