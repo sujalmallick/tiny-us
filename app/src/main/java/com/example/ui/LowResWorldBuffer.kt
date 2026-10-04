@@ -73,6 +73,7 @@ internal class LowResWorldBuffer {
         aboveStage: (DrawScope.(Float) -> Unit)? = null,
         belowStage: (DrawScope.(Float) -> Unit)? = null,
         dissolve: Float = 0f,
+        frameKey: Long = -1L,
         block: DrawScope.() -> Unit
     ) {
         val cnv = ensure(camera.gameW, camera.gameH)
@@ -86,7 +87,7 @@ internal class LowResWorldBuffer {
             }
         }
         if (camera.stageH < camera.gameH) {
-            extendBackground(camera, starrySky)
+            extendBackground(camera, starrySky, frameKey)
             if (aboveStage != null && camera.stageY > 0) drawAboveStage(target, cnv, camera, aboveStage)
             if (belowStage != null && camera.stageY + camera.stageH < camera.gameH) drawBelowStage(target, cnv, camera, belowStage)
             if (beyondStage != null) drawBeyondStage(target, cnv, camera, beyondStage)
@@ -162,15 +163,37 @@ internal class LowResWorldBuffer {
     }
 
     /** Fills the rows above and below the stage by continuing the stage's own top and bottom edges. */
-    private fun extendBackground(camera: WorldCamera, starrySky: Boolean) {
+    private fun extendBackground(camera: WorldCamera, starrySky: Boolean, frameKey: Long) {
         val raw = pixelsBitmap ?: return
         val w = camera.gameW
         val h = camera.gameH
+        val top = camera.stageY
+        val bottom = camera.stageY + camera.stageH
+        // The continued background only changes when the stage's sprite frame does (or the layout
+        // does): between those, put back the rows worked out last time instead of redoing them.
+        val sameLayout = w == extW && h == extH && top == extTop && bottom == extBottom && starrySky == extStarry
+        if (frameKey >= 0 && frameKey == extFrame && sameLayout && extensionRows.size == w * (h - camera.stageH)) {
+            if (top > 0) raw.setPixels(extensionRows, 0, w, 0, 0, w, top)
+            if (bottom < h) raw.setPixels(extensionRows, top * w, w, 0, bottom, w, h - bottom)
+            return
+        }
         if (pixels.size != w * h) pixels = IntArray(w * h)
         raw.getPixels(pixels, 0, w, 0, 0, w, h)
-        StageExtension.fill(pixels, w, h, camera.stageY, camera.stageY + camera.stageH, starrySky)
+        StageExtension.fill(pixels, w, h, top, bottom, starrySky)
         raw.setPixels(pixels, 0, w, 0, 0, w, h)
+        if (extensionRows.size != w * (h - camera.stageH)) extensionRows = IntArray(w * (h - camera.stageH))
+        System.arraycopy(pixels, 0, extensionRows, 0, top * w)
+        System.arraycopy(pixels, bottom * w, extensionRows, top * w, (h - bottom) * w)
+        extW = w; extH = h; extTop = top; extBottom = bottom; extStarry = starrySky; extFrame = frameKey
     }
+
+    private var extensionRows = IntArray(0)
+    private var extW = -1
+    private var extH = -1
+    private var extTop = -1
+    private var extBottom = -1
+    private var extStarry = false
+    private var extFrame = Long.MIN_VALUE
 
     fun draw(target: DrawScope, scale: Int, block: DrawScope.() -> Unit) {
         val screen = target.size

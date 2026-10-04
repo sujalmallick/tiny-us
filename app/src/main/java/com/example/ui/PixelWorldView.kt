@@ -128,10 +128,9 @@ fun PixelWorldView(
     val topReserve = WindowInsets.statusBars.getTop(density) + with(density) { 58.dp.toPx() }
     val bottomReserve = WindowInsets.navigationBars.getBottom(density) + with(density) { 70.dp.toPx() }
     val reserves by rememberUpdatedState(topReserve to bottomReserve)
-    fun cameraNow() = WorldCamera.forScreen(
-        viewportWidth, viewportHeight, engine.currentScene,
-        topReservePx = reserves.first, bottomReservePx = reserves.second
-    )
+    val cameraCache = remember { CameraCache() }
+    fun cameraNow(): WorldCamera =
+        cameraCache.get(viewportWidth, viewportHeight, engine.currentScene, reserves.first, reserves.second)
     val haptic = LocalHapticFeedback.current
     val lowResBuffer = remember { LowResWorldBuffer() }
     val coroutineScope = rememberCoroutineScope()
@@ -1792,7 +1791,8 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         try {
             lowResBuffer.drawStaged(
                 this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove, belowStage = floorBelow,
-                dissolve = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f)
+                dissolve = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f),
+                frameKey = (engine.sceneTime * SpriteClock.FPS).toLong() + engine.currentScene.ordinal * 1_000_000L
             ) {
                 drawWorldFrame(engine, lowRes = true)
             }
@@ -1801,5 +1801,22 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         }
     } else {
         drawWorldFrame(engine)
+    }
+}
+
+/** Keeps the last camera until the screen, the scene or the button strips change (no per-frame allocation). */
+internal class CameraCache {
+    private var w = -1f
+    private var h = -1f
+    private var scene: com.example.scene.SceneType? = null
+    private var top = -1f
+    private var bottom = -1f
+    private var camera: WorldCamera? = null
+
+    fun get(width: Float, height: Float, scene: com.example.scene.SceneType, topReserve: Float, bottomReserve: Float): WorldCamera {
+        val cached = camera
+        if (cached != null && width == w && height == h && scene == this.scene && topReserve == top && bottomReserve == bottom) return cached
+        w = width; h = height; this.scene = scene; top = topReserve; bottom = bottomReserve
+        return WorldCamera.forScreen(width, height, scene, topReservePx = topReserve, bottomReservePx = bottomReserve).also { camera = it }
     }
 }
