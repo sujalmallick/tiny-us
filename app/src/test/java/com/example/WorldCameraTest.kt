@@ -56,6 +56,23 @@ class WorldCameraTest {
     }
 
     @Test
+    fun theStageStaysClearOfTheButtonsWhenThereIsRoom() {
+        // 1080 x 2400 phone, buttons in the top 200 px and bottom 240 px, an outdoor scene.
+        val c = WorldCamera.forScreen(1080f, 2400f, pixelRenderer = true, aboveShare = 1f, topReservePx = 200f, bottomReservePx = 240f)
+        assertTrue("clear of the top buttons", c.toScreenY(0f) >= 200f)
+        assertTrue("clear of the heart button", c.toScreenY(c.worldH) <= 2400f - 240f)
+        // Nearly all the spare height is sky, as asked.
+        assertTrue(c.stageY * c.zoom > 2400 - c.stageH * c.zoom - 300)
+    }
+
+    @Test
+    fun shortScreensShareTheSpareRowsBetweenTheButtonStrips() {
+        assertEquals(0, WorldCamera.placeStage(0, 30, 30, 0.5f))
+        assertEquals(10, WorldCamera.placeStage(20, 30, 30, 0.5f))
+        assertEquals(30 + 20, WorldCamera.placeStage(100, 30, 30, 0.5f))
+    }
+
+    @Test
     fun theClassicRendererUsesTheScreenAsTheWorld() {
         val c = WorldCamera.forScreen(1080f, 2400f, pixelRenderer = false)
         assertFalse(c.staged)

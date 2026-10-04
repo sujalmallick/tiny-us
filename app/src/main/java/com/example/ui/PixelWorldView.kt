@@ -48,6 +48,10 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableLongStateOf
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.statusBars
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
@@ -118,7 +122,16 @@ fun PixelWorldView(
     var viewportHeight by remember { mutableFloatStateOf(2400f) }
     // Where the world sits on the screen for the current scene; taps, the engine and overlays work
     // in its world units.
-    fun cameraNow() = WorldCamera.forScreen(viewportWidth, viewportHeight, engine.currentScene)
+    // The buttons along the top (below the status bar) and the heart button and message box along
+    // the bottom (above the navigation bar).
+    val density = LocalDensity.current
+    val topReserve = WindowInsets.statusBars.getTop(density) + with(density) { 58.dp.toPx() }
+    val bottomReserve = WindowInsets.navigationBars.getBottom(density) + with(density) { 70.dp.toPx() }
+    val reserves by rememberUpdatedState(topReserve to bottomReserve)
+    fun cameraNow() = WorldCamera.forScreen(
+        viewportWidth, viewportHeight, engine.currentScene,
+        topReservePx = reserves.first, bottomReservePx = reserves.second
+    )
     val haptic = LocalHapticFeedback.current
     val lowResBuffer = remember { LowResWorldBuffer() }
     val coroutineScope = rememberCoroutineScope()
@@ -1754,9 +1767,11 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         // The sky continued above an outdoor stage gets clouds by day and the scene's own kind of
         // stars by night.
         val phase = engine.timeOfDayPhase
-        val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.isCurrentSceneOutdoor) {
+        val p = WorldViewport.pixelScale(camera.worldW)
+        val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.COOKING) {
+            { wallH -> drawKitchenWallAbove(this, camera.worldW, wallH, p) }
+        } else if (engine.isCurrentSceneOutdoor) {
             { skyH ->
-                val p = WorldViewport.pixelScale(camera.worldW)
                 if (phase.isNight) {
                     drawNightStarsAbove(this, camera.worldW, skyH, engine.sceneTime, p)
                 } else if (skyH > 30f * p) {
@@ -1765,7 +1780,10 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
                 }
             }
         } else null
-        lowResBuffer.drawStaged(this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove) {
+        val floorBelow: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.SUNROOM) {
+            { floorH -> drawSunroomFloorBelow(this, camera.worldW, camera.worldH, floorH, p) }
+        } else null
+        lowResBuffer.drawStaged(this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove, belowStage = floorBelow) {
             drawWorldFrame(engine, lowRes = true)
         }
     } else {

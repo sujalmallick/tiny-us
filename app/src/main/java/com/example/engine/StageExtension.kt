@@ -25,7 +25,10 @@ object StageExtension {
         if (stageTop > 0 && !tilePattern(px, w, stageTop, band, up = true, from = stageTop - 1, to = 0)) {
             fillAbove(px, w, stageTop, band, starry)
         }
-        if (stageBottom < h && !tilePattern(px, w, stageBottom - band, band, up = false, from = stageBottom, to = h - 1)) {
+        if (stageBottom < h &&
+            !tilePattern(px, w, stageBottom - band, band, up = false, from = stageBottom, to = h - 1) &&
+            !tileFloor(px, w, stageBottom, minOf(FLOOR_BAND, stageH / 3), h)
+        ) {
             fillBelow(px, w, h, stageBottom, band)
         }
     }
@@ -62,6 +65,58 @@ object StageExtension {
                 System.arraycopy(px, src * w, px, y * w, w)
             }
         }
+        return true
+    }
+
+    /** Rows sampled when looking for a floor pattern that has props standing on it. */
+    private const val FLOOR_BAND = 48
+
+    /**
+     * A floor pattern (checkerboard tiles, planks) that repeats with some period even though a
+     * few props stand on it: rows match their period-mates for most pixels. The pattern is rebuilt
+     * from the band with the floor's own colours winning over the props', then tiled downward.
+     */
+    private fun tileFloor(px: IntArray, w: Int, bottom: Int, band: Int, h: Int): Boolean {
+        if (band < 8) return false
+        val first = bottom - band
+        var period = 0
+        for (p in 2..band / 2) {
+            var same = 0
+            var total = 0
+            for (i in 0 until band - p) {
+                val a = (first + i) * w
+                val b = (first + i + p) * w
+                for (x in 0 until w) {
+                    total++
+                    if (px[a + x] == px[b + x]) same++
+                }
+            }
+            if (same >= total * 0.88f) { period = p; break }
+        }
+        if (period == 0) return false
+        // The band's colour counts decide between period-mates that disagree (floor beats prop).
+        val counts = HashMap<Int, Int>()
+        for (i in first until bottom) for (x in 0 until w) {
+            val c = px[i * w + x]
+            counts[c] = (counts[c] ?: 0) + 1
+        }
+        // Template row k continues the pattern k rows after the band's end.
+        val template = IntArray(period * w)
+        for (k in 0 until period) {
+            for (x in 0 until w) {
+                var best = 0
+                var bestN = -1
+                var i = bottom - period + k
+                while (i >= first) {
+                    val c = px[i * w + x]
+                    val n = counts[c] ?: 0
+                    if (n > bestN) { bestN = n; best = c }
+                    i -= period
+                }
+                template[k * w + x] = best
+            }
+        }
+        for (y in bottom until h) System.arraycopy(template, ((y - bottom) % period) * w, px, y * w, w)
         return true
     }
 

@@ -77,16 +77,33 @@ class WorldCamera private constructor(
             else -> 0.5f
         }
 
-        /** The camera for a [screenW] x [screenH] pixel screen showing [scene]. */
-        fun forScreen(screenW: Float, screenH: Float, scene: SceneType, pixelRenderer: Boolean = WorldViewport.pixelRenderer): WorldCamera =
-            forScreen(screenW, screenH, pixelRenderer, aboveShareFor(scene))
+        /**
+         * The camera for a [screenW] x [screenH] pixel screen showing [scene]. [topReservePx] and
+         * [bottomReservePx] are the screen strips the buttons sit on; when the screen is tall enough
+         * the stage stays clear of them and only continued sky or ground shows underneath.
+         */
+        fun forScreen(
+            screenW: Float,
+            screenH: Float,
+            scene: SceneType,
+            pixelRenderer: Boolean = WorldViewport.pixelRenderer,
+            topReservePx: Float = 0f,
+            bottomReservePx: Float = 0f
+        ): WorldCamera = forScreen(
+            screenW, screenH, pixelRenderer, aboveShareFor(scene), topReservePx,
+            // The kitchen's checkerboard floor can't be continued, so its floor runs to the bottom
+            // edge as it always did (the stage still clears the top buttons).
+            if (scene == SceneType.COOKING) 0f else bottomReservePx
+        )
 
         /** The camera for a [screenW] x [screenH] pixel screen; [aboveShare] of the spare height goes above the stage. */
         fun forScreen(
             screenW: Float,
             screenH: Float,
             pixelRenderer: Boolean = WorldViewport.pixelRenderer,
-            aboveShare: Float = 0.5f
+            aboveShare: Float = 0.5f,
+            topReservePx: Float = 0f,
+            bottomReservePx: Float = 0f
         ): WorldCamera {
             if (!pixelRenderer || screenW <= 0f || screenH <= 0f) return classic(screenW, screenH)
             val minStageH = ceil(STAGE_MIN_W * STAGE_MIN_ASPECT).toInt()
@@ -95,13 +112,25 @@ class WorldCamera private constructor(
             val gameH = ceil(screenH / zoom).toInt()
             val stageW = gameW
             val stageH = if (gameH < stageW * STAGE_MIN_ASPECT) gameH else minOf(gameH, floor(stageW * STAGE_MAX_ASPECT).toInt())
-            val stageY = ((gameH - stageH) * aboveShare.coerceIn(0f, 1f)).roundToInt()
+            val stageY = placeStage(gameH - stageH, ceil(topReservePx / zoom).toInt(), ceil(bottomReservePx / zoom).toInt(), aboveShare)
             return WorldCamera(
                 zoom = zoom, gameW = gameW, gameH = gameH,
                 stageW = stageW, stageH = stageH, stageX = 0, stageY = stageY,
                 worldW = (stageW * WORLD_PIXEL).toFloat(), worldH = (stageH * WORLD_PIXEL).toFloat(),
                 screenPerWorld = zoom.toFloat() / WORLD_PIXEL, staged = true
             )
+        }
+
+        /**
+         * Where the stage's top goes, given [spare] rows of screen beyond it: first clear of the
+         * button strips ([top] and [bottom] rows), then the rest split by [aboveShare]. When the
+         * screen is too short to clear both, the spare rows are shared in proportion.
+         */
+        internal fun placeStage(spare: Int, top: Int, bottom: Int, aboveShare: Float): Int {
+            if (spare <= 0) return 0
+            val reserved = top + bottom
+            if (reserved >= spare) return if (reserved == 0) 0 else (spare * top.toFloat() / reserved).roundToInt()
+            return top + ((spare - reserved) * aboveShare.coerceIn(0f, 1f)).roundToInt()
         }
 
         /** The classic renderer: the world is the screen. */

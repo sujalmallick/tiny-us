@@ -65,6 +65,7 @@ internal class LowResWorldBuffer {
         starrySky: Boolean = false,
         beyondStage: (DrawScope.() -> Unit)? = null,
         aboveStage: (DrawScope.(Float) -> Unit)? = null,
+        belowStage: (DrawScope.(Float) -> Unit)? = null,
         block: DrawScope.() -> Unit
     ) {
         val cnv = ensure(camera.gameW, camera.gameH)
@@ -80,6 +81,7 @@ internal class LowResWorldBuffer {
         if (camera.stageH < camera.gameH) {
             extendBackground(camera, starrySky)
             if (aboveStage != null && camera.stageY > 0) drawAboveStage(target, cnv, camera, aboveStage)
+            if (belowStage != null && camera.stageY + camera.stageH < camera.gameH) drawBelowStage(target, cnv, camera, belowStage)
             if (beyondStage != null) drawBeyondStage(target, cnv, camera, beyondStage)
         }
         val bmp = bitmap!!
@@ -99,6 +101,21 @@ internal class LowResWorldBuffer {
             clipRect(0f, 0f, camera.gameW.toFloat(), camera.stageY.toFloat()) {
                 translate(camera.stageX.toFloat(), camera.stageY.toFloat()) {
                     scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) { layer(camera.stageY * worldPerGame) }
+                }
+            }
+        }
+    }
+
+    /** Like [drawAboveStage], below the stage: y continues past the stage's height; given the area's height. */
+    private fun drawBelowStage(target: DrawScope, cnv: Canvas, camera: WorldCamera, layer: DrawScope.(Float) -> Unit) {
+        val worldPerGame = WorldCamera.WORLD_PIXEL.toFloat()
+        val bottom = (camera.stageY + camera.stageH).toFloat()
+        drawScope.draw(target, target.layoutDirection, cnv, androidx.compose.ui.geometry.Size(camera.worldW, camera.worldH)) {
+            clipRect(0f, bottom, camera.gameW.toFloat(), camera.gameH.toFloat()) {
+                translate(camera.stageX.toFloat(), camera.stageY.toFloat()) {
+                    scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) {
+                        layer((camera.gameH - camera.stageY - camera.stageH) * worldPerGame)
+                    }
                 }
             }
         }

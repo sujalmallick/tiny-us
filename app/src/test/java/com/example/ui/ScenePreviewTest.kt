@@ -156,7 +156,8 @@ class ScenePreviewTest {
                 val classic = render(cw, ch) { drawWorldFrame(engine) }
                 save(classic, File(out, "${scene.name.lowercase()}_${label}_classic.png"))
                 classic.recycle()
-                val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true)
+                // Button strips as on a typical phone: status bar + top row, heart button + nav bar.
+                val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
                 val staged = engineFor(scene, phase, camera.worldW, camera.worldH)
                 // Exactly what the app draws (stage, continued background, weather beyond the stage).
                 val pixel = render(cw, ch) { drawWorld(staged, LowResWorldBuffer(), camera) }
