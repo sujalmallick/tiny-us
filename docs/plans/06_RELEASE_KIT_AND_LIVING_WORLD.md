@@ -66,9 +66,9 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 ## G. A world that follows the real calendar
 
 ### G1. Real moon phases
-- [ ] Work out tonight's phase from the date (29.53-day cycle, no internet needed).
-- [ ] Draw it as pixel art (new, crescent, half, gibbous, full) in the outdoor night sky (`drawMilkyWayNightSky`) and the loft window (`drawWindowSkyline`). Leave the dream overlays as they are.
-- [ ] Unit test: known dates give the right phase.
+- [x] Work out tonight's phase from the date (29.53-day cycle, no internet needed).
+- [x] Draw it as pixel art (new, crescent, half, gibbous, full) in the outdoor night sky (`drawMilkyWayNightSky`) and the loft window (`drawWindowSkyline`). Leave the dream overlays as they are.
+- [x] Unit test: known dates give the right phase. *(`MoonPhaseTest`: solar eclipses fall on new moons, lunar eclipses on full moons. `SCENE_PREVIEW_MOON=0.25` previews any phase.)*
 
 ### G2. Special days
 - [ ] Anniversary and both birthdays (from `SpecialCalendarManager` and the profile): small decorations in the scene, plus a line from the couple through the autonomy system (agree with FEATURES).
@@ -77,7 +77,7 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 - [ ] Debug override to preview any special day; renders of each.
 
 ### G3. Small polish
-- [ ] The loft's night skyline: give the towers a slightly lighter outline so they keep their shape after dark.
+- [x] The loft's night skyline: give the towers a slightly lighter outline so they keep their shape after dark.
 - [ ] *(Optional)* A setting or debug toggle to speed up the sun and moon, so they can be watched moving.
 
 ## H. Home-screen widget upgrade

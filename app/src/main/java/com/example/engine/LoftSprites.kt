@@ -764,6 +764,19 @@ object LoftSprites {
             scope.drawCircle(MoonShadow, 4.5f * p, Offset(celestialX + 3 * p, celestialY + 2 * p))
             scope.drawCircle(MoonShadow, 2.8f * p, Offset(celestialX - 2 * p, celestialY + 5 * p))
 
+            // Tonight's phase: the unlit part in faint earthshine, one pixel row at a time.
+            val fraction = com.example.ui.currentMoonFraction()
+            for (k in 0 until 28) {
+                val dy = k + 0.5f - 14f
+                val half = kotlin.math.sqrt(196f - dy * dy)
+                val span = MoonPhase.shadowSpan(fraction, half) ?: continue
+                scope.drawRect(
+                    Color(0xFF141A38),
+                    Offset(celestialX + span.first * p, celestialY - 14f * p + k * p),
+                    Size((span.second - span.first) * p, p)
+                )
+            }
+
             // 3. Twinkling stars
             for ((sxRel, syRel, freq) in LOFT_STARS) {
                 val sx = startX + windowW * sxRel
@@ -794,12 +807,13 @@ object LoftSprites {
         val riverH = windowH * 0.15f
 
         val backBldgColor = when {
-            isNight -> SkyscraperDark
+            // A shade lighter than the night sky, so the towers keep their shape after dark.
+            isNight -> Color(0xFF161D3A)
             isSunset -> Color(0xFF353B48)
             else -> Color(0xFF57606F)
         }
         val spireColor = when {
-            isNight -> SkyscraperMid
+            isNight -> Color(0xFF26345E)
             isSunset -> Color(0xFF57606F)
             else -> Color(0xFF747D8C)
         }
@@ -812,8 +826,10 @@ object LoftSprites {
             val bodyY = if (tower.crown) by + 7 * p else by
             if (tower.crown) scope.drawRect(backBldgColor, Offset(bx + 2 * p, by), Size(bw - 4 * p, 7 * p))
             scope.drawRect(backBldgColor, Offset(bx, bodyY), Size(bw, riverTopY - bodyY))
-            // A lit edge down one side gives the slim towers some depth.
+            // A lit edge down one side and along the tops gives the slim towers some depth.
             scope.drawRect(spireColor, Offset(bx + bw - p, bodyY), Size(p, riverTopY - bodyY))
+            if (tower.crown) scope.drawRect(spireColor, Offset(bx + 2 * p, by), Size(bw - 4 * p, p))
+            scope.drawRect(spireColor, Offset(bx, bodyY), Size(bw, p))
 
             // Radio antenna spire
             if (tower.spire) {
