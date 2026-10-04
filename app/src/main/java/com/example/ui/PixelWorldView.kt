@@ -84,6 +84,8 @@ import com.example.scene.CampfireLayout
 import com.example.scene.CampfireProp
 import com.example.scene.PierLayout
 import com.example.scene.PierProp
+import com.example.scene.PierTapState
+import com.example.scene.WeatherLayout
 import com.example.scene.CatState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -322,7 +324,8 @@ fun PixelWorldView(
                                     engine.onTouchSunroomWateringCan(w, h)
                                     return@detectTapGestures
                                 }
-                                if (tapOffset.x > w * 0.48f && tapOffset.y in (h * 0.32f)..(h * 0.68f)) {
+                                // The potting bench and the plant shelf above it (clear of the couple standing in the middle)
+                                if (tapOffset.x > w * 0.64f && tapOffset.y in (h * 0.40f)..(h * 0.665f)) {
                                     engine.onTouchSunroomPlants(w, h)
                                     return@detectTapGestures
                                 }
@@ -350,8 +353,14 @@ fun PixelWorldView(
                                 val pierProp = PierLayout.hitTest(
                                     tapOffset, w, h, pixelScale, engine.sceneTime,
                                     engine.catWorldX, engine.catWorldY,
-                                    engine.pierGullX, engine.pierGullY,
-                                    engine.pierGullState.isVisible, engine.pierBottleVisible
+                                    PierTapState(
+                                        gullX = engine.pierGullX,
+                                        gullY = engine.pierGullY,
+                                        gullVisible = engine.pierGullState.isVisible,
+                                        bottleVisible = engine.pierBottleVisible,
+                                        crabX = engine.pierCrabX,
+                                        crabVisible = engine.isPierCrabVisible
+                                    )
                                 )
                                 when (pierProp) {
                                     PierProp.MOCHI -> engine.onTouchCat(w, h)
@@ -360,6 +369,11 @@ fun PixelWorldView(
                                     PierProp.CART -> engine.onTouchPierIceCream(w, h)
                                     PierProp.BOTTLE -> engine.onTouchPierBottle(w, h)
                                     PierProp.LIGHTHOUSE -> engine.onTouchLighthouse(w, h)
+                                    PierProp.TELESCOPE -> engine.onTouchPierTelescope(w, h)
+                                    PierProp.BOAT -> engine.onTouchPierBoat(w, h, tapOffset.x, tapOffset.y)
+                                    PierProp.CRAB -> engine.onTouchPierCrab(w, h)
+                                    PierProp.BUCKET -> engine.onTouchPierBucket(w, h)
+                                    PierProp.LIGHTS -> engine.onTouchPierLights(w, h, tapOffset.x)
                                     PierProp.SEA -> engine.onTouchPierSea(tapOffset.x, tapOffset.y)
                                     null -> Unit
                                 }
@@ -909,10 +923,42 @@ fun PixelWorldView(
                             }
                         }
 
+                        // The snowday snowman in the corner
+                        val outdoorTap = engine.isCurrentSceneOutdoor
+                        if (outdoorTap && WeatherLayout.isOnSnowman(tapOffset, w, h, pixelScale, engine.snowmanStage)) {
+                            engine.onTouchSnowman(w, h)
+                            return@detectTapGestures
+                        }
+                        // Rain puddles: tap for a splash and a little puddle jump
+                        if (outdoorTap) {
+                            val puddle = engine.particles.puddleAt(
+                                tapOffset.x / w, tapOffset.y / h, w, h, WeatherLayout.weatherUnit(w, pixelScale)
+                            )
+                            if (puddle != null) {
+                                engine.onTouchPuddle(puddle, w, h)
+                                return@detectTapGestures
+                            }
+                        }
+
                         // Tap open floor/ground to invite the nearest character into a
                         // short depth-aware stroll and a tiny scene/weather response.
                         if (engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)) {
                             return@detectTapGestures
+                        }
+
+                        // Catch a falling snowflake, petal, leaf or dandelion wish; or wish on the rainbow
+                        if (outdoorTap) {
+                            val caught = engine.particles.catchWeatherParticleAt(
+                                tapOffset.x, tapOffset.y, WeatherLayout.catchRadius(w, pixelScale)
+                            )
+                            if (caught != null) {
+                                engine.onCatchWeather(caught)
+                                return@detectTapGestures
+                            }
+                            if (engine.rainbowTimer > 0f && WeatherLayout.isOnRainbow(tapOffset, w, h)) {
+                                engine.onTouchRainbow(w, h)
+                                return@detectTapGestures
+                            }
                         }
 
                         // 5. Turn characters gaze towards tap position if idling
@@ -1015,9 +1061,14 @@ fun PixelWorldView(
                                 dragDeltaX = 0f,
                                 dragDeltaY = -2f
                             )
-                            if (swept > 0) {
-                                engine.audio.playLeafRustle()
-                            }
+                            engine.onGroundSwept(swept)
+                        }
+                        // Finger drawing in fresh snow
+                        if (!isMochiBeingDragged && offset.y >= h * 0.65f && engine.isCurrentSceneOutdoor &&
+                            engine.weather == WeatherType.SNOW
+                        ) {
+                            engine.endSnowStroke()
+                            engine.onDrawInSnow(offset.x, offset.y, w, h)
                         }
                     },
                     onDrag = { change, dragAmount ->
@@ -1051,9 +1102,10 @@ fun PixelWorldView(
                                     dragDeltaX = dragAmount.x,
                                     dragDeltaY = dragAmount.y
                                 )
-                                if (swept > 0) {
-                                    engine.audio.playLeafRustle()
-                                }
+                                engine.onGroundSwept(swept)
+                            } else if (engine.isCurrentSceneOutdoor && isGrassArea && engine.weather == WeatherType.SNOW) {
+                                change.consume()
+                                engine.onDrawInSnow(change.position.x, change.position.y, w, h)
                             }
                         }
                     },
@@ -1107,7 +1159,12 @@ fun PixelWorldView(
 
             // 1b. Ground fallen particles (leaves, sakura petals, snow on grass)
             if (isOutdoor) {
+                // Puddles and snow prints lie under the fallen leaves and petals
+                drawPuddles(this, cw, ch, pixelScale, engine, isNight)
+                drawSnowPrints(this, cw, ch, pixelScale, engine.particles.snowPrints)
                 drawGroundFallenParticles(this, engine.particles.fallenParticles, pixelScale, cw, ch)
+                // Rainbow after the rain, and the snowday snowman
+                drawWeatherKeepsakes(this, cw, ch, pixelScale, engine)
             }
 
             // 1c. Background seasonal particles (drawn behind characters so they never obscure characters or objects)
@@ -1327,6 +1384,11 @@ fun PixelWorldView(
                     engine.boy.direction = origBoyDir
                     engine.girl.direction = origGirlDir
                 }
+            }
+
+            // 2a. Cozy Rainy Cafe: the little table stands in front of the seated couple
+            if (engine.currentScene.environment == EnvironmentType.RAINY_CAFE) {
+                drawCafeTableForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
             }
 
             // 2a. Seaside Pier: ice-cream cones in hand and Pip flying in front of the couple

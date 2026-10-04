@@ -37,8 +37,24 @@ data class FallenParticle(
     var sweptVx: Float = 0f,
     var sweptVy: Float = 0f,
     var sweptLife: Float = 0f,
-    var fadeRemaining: Float = -1f
+    var fadeRemaining: Float = -1f,
+    /** Where the particle lies on the ground; a tossed particle lands back on this line. */
+    var restNormY: Float = normY
 )
+
+/** A footprint, pawprint or finger trace left in fresh snow. */
+data class SnowPrint(
+    val normX: Float,
+    val normY: Float,
+    val kind: SnowPrintKind,
+    val facingLeft: Boolean,
+    var age: Float = 0f
+)
+
+enum class SnowPrintKind { FOOT, PAW, TRACE }
+
+/** A rain puddle on the ground; [size] grows 0..1 while it rains and shrinks as it dries. */
+data class Puddle(val normX: Float, val normY: Float, var size: Float = 0f)
 
 enum class ParticleType {
     LEAF,
@@ -126,13 +142,36 @@ private fun eventChance(ratePerSecond: Float, deltaSeconds: Float): Boolean =
     Random.nextFloat() < (1f - exp(-ratePerSecond * deltaSeconds.coerceAtLeast(0f)))
 
 class ParticleSystem {
-    private companion object {
-        const val WEATHER_FADE_SECONDS = 0.42f
+    companion object {
+        private const val WEATHER_FADE_SECONDS = 0.42f
+
+        /** Seconds a full-depth particle takes to fall the height of the screen. */
+        const val RAIN_TRAVERSAL_SECONDS = 3.2f
+        const val SAKURA_TRAVERSAL_SECONDS = 22f
+        const val AUTUMN_TRAVERSAL_SECONDS = 19f
+        const val SNOW_TRAVERSAL_SECONDS = 25f
+
+        /** How long prints stay in the snow before the fresh fall covers them. */
+        const val SNOW_PRINT_SECONDS = 35f
+        private const val MAX_SNOW_PRINTS = 220
+        /** Seconds of rain for a puddle to fill, and of dry weather for it to vanish. */
+        const val PUDDLE_FILL_SECONDS = 20f
+        const val PUDDLE_DRY_SECONDS = 40f
+        /** Puddle spots on the ground band, shared by every outdoor scene. */
+        val PUDDLE_SPOTS = listOf(0.24f to 0.84f, 0.60f to 0.80f, 0.82f to 0.86f)
+
+        /** Falling weather the couple can catch with a tap. Rain is too dense to single out. */
+        val CATCHABLE_WEATHER = setOf(
+            ParticleType.SNOWFLAKE, ParticleType.SAKURA_PETAL,
+            ParticleType.AUTUMN_LEAF, ParticleType.DANDELION_FLUFF
+        )
     }
 
     val particles = mutableListOf<PixelParticle>()
     private val pendingParticles = mutableListOf<PixelParticle>()
     val fallenParticles = mutableListOf<FallenParticle>()
+    val snowPrints = ArrayList<SnowPrint>(MAX_SNOW_PRINTS)
+    val puddles: List<Puddle> = PUDDLE_SPOTS.map { (x, y) -> Puddle(x, y) }
     var groundSeededWeather: com.example.scene.WeatherType? = null
 
     private val particlePool = ArrayList<PixelParticle>(256)
@@ -232,6 +271,7 @@ class ParticleSystem {
         for (fp in fallenParticles) {
             if (fp.fadeRemaining < 0f) fp.fadeRemaining = WEATHER_FADE_SECONDS
         }
+        snowPrints.clear()
         groundSeededWeather = null
     }
 
@@ -369,15 +409,77 @@ class ParticleSystem {
             val dx = px - touchX
             val dy = py - touchY
             if (dx * dx + dy * dy <= radiusSq) {
-                fp.isSwept = true
-                val angle = Random.nextFloat() * 6.28f
-                val speed = 2.0f + Random.nextFloat() * 2.5f
-                fp.sweptVx = dragDeltaX * 0.35f + kotlin.math.cos(angle) * speed
-                fp.sweptVy = -3.5f - Random.nextFloat() * 3.0f + dragDeltaY * 0.2f
+                // Velocities are px/sec. A drag event is roughly one frame, so its delta x60 is
+                // the finger's speed; a hard flick throws leaves clean off the screen.
+                val fingerVx = (dragDeltaX * 60f * 0.35f).coerceIn(-cw * 1.4f, cw * 1.4f)
+                tossFallenParticle(
+                    fp, cw, ch,
+                    vx = fingerVx + (Random.nextFloat() - 0.5f) * cw * 0.16f,
+                    vy = -ch * (0.18f + Random.nextFloat() * 0.12f) + (dragDeltaY * 60f * 0.1f).coerceIn(-ch * 0.1f, ch * 0.1f)
+                )
                 sweptCount++
             }
         }
         return sweptCount
+    }
+
+    /** A gentle hop for leaves and petals near walking feet. Returns how many were kicked. */
+    fun kickGroundParticles(footX: Float, footY: Float, cw: Float, ch: Float, radiusPx: Float, towardLeft: Boolean): Int {
+        var kicked = 0
+        for (i in fallenParticles.indices) {
+            val fp = fallenParticles[i]
+            if (fp.isSwept || fp.fadeRemaining >= 0f) continue
+            if (fp.type != ParticleType.SAKURA_PETAL && fp.type != ParticleType.AUTUMN_LEAF) continue
+            val dx = fp.normX * cw - footX
+            val dy = (fp.normY * ch - footY) * 2.5f // a flat oval around the foot
+            if (dx * dx + dy * dy > radiusPx * radiusPx) continue
+            tossFallenParticle(
+                fp, cw, ch,
+                vx = (if (towardLeft) -1f else 1f) * cw * (0.03f + Random.nextFloat() * 0.05f),
+                vy = -ch * (0.06f + Random.nextFloat() * 0.06f)
+            )
+            kicked++
+        }
+        return kicked
+    }
+
+    private fun tossFallenParticle(fp: FallenParticle, cw: Float, ch: Float, vx: Float, vy: Float) {
+        fp.isSwept = true
+        fp.sweptLife = 0f
+        fp.sweptVx = vx
+        fp.sweptVy = vy
+        // It settles a little nearer or further on the ground band than where it rested.
+        fp.restNormY = (fp.restNormY + (Random.nextFloat() - 0.5f) * 0.03f).coerceIn(0.68f, 0.96f)
+    }
+
+    /** Leaves a footprint, pawprint or finger trace in the snow, dropping the oldest when full. */
+    fun addSnowPrint(normX: Float, normY: Float, kind: SnowPrintKind, facingLeft: Boolean) {
+        if (snowPrints.size >= MAX_SNOW_PRINTS) snowPrints.removeAt(0)
+        snowPrints.add(SnowPrint(normX, normY, kind, facingLeft))
+    }
+
+    /** The puddle under (x, y), if it holds any water. */
+    fun puddleAt(normX: Float, normY: Float, cw: Float, ch: Float, unit: Float): Puddle? {
+        for (puddle in puddles) {
+            if (puddle.size < 0.2f) continue
+            val halfW = puddleHalfWidth(unit, puddle.size)
+            val dx = (normX - puddle.normX) * cw / halfW
+            val dy = (normY - puddle.normY) * ch / (halfW * 0.38f)
+            if (dx * dx + dy * dy <= 1f) return puddle
+        }
+        return null
+    }
+
+    fun puddleHalfWidth(unit: Float, size: Float): Float = unit * (5f + 9f * size)
+
+    private fun updatePuddles(raining: Boolean, dt: Float) {
+        for (puddle in puddles) {
+            puddle.size = if (raining) {
+                (puddle.size + dt / PUDDLE_FILL_SECONDS).coerceAtMost(1f)
+            } else {
+                (puddle.size - dt / PUDDLE_DRY_SECONDS).coerceAtLeast(0f)
+            }
+        }
     }
 
     fun update(deltaSeconds: Float, cw: Float = 1000f, ch: Float = 2000f) {
@@ -407,9 +509,9 @@ class ParticleSystem {
             }
 
             val phaseRate = when (p.type) {
-                ParticleType.SAKURA_PETAL -> 1.05f
-                ParticleType.AUTUMN_LEAF -> 0.82f
-                ParticleType.SNOWFLAKE -> 0.52f
+                ParticleType.SAKURA_PETAL -> 0.80f
+                ParticleType.AUTUMN_LEAF -> 0.65f
+                ParticleType.SNOWFLAKE -> 0.42f
                 else -> 4f
             }
             p.phase += dt * phaseRate
@@ -491,7 +593,7 @@ class ParticleSystem {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
                     p.y += p.vy * dt
                     // Romantic fluttering side-to-side sway strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.55f) * 10f + kotlin.math.cos(p.phase * 0.25f) * 4f) * p.depth
+                    val swayX = (sin(p.phase * 0.55f) * 0.012f + kotlin.math.cos(p.phase * 0.25f) * 0.005f) * cw * p.depth
                     p.x += (swayX + p.vx) * dt
                     p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
@@ -505,7 +607,7 @@ class ParticleSystem {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
                     p.y += p.vy * dt
                     // Romantic tumbling autumn drift strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.45f) * 12f + kotlin.math.cos(p.phase * 0.20f) * 5f) * p.depth
+                    val swayX = (sin(p.phase * 0.45f) * 0.014f + kotlin.math.cos(p.phase * 0.20f) * 0.006f) * cw * p.depth
                     p.x += (swayX + p.vx) * dt
                     p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
@@ -519,7 +621,7 @@ class ParticleSystem {
                     // Steady vertical descent at explicit px/sec (no sinusoidal modulation on p.y)
                     p.y += p.vy * dt
                     // Peaceful lazy winter snow drift strictly decoupled to p.x
-                    val swayX = (sin(p.phase * 0.35f) * 5f + kotlin.math.cos(p.phase * 0.18f) * 2.5f) * p.depth
+                    val swayX = (sin(p.phase * 0.35f) * 0.006f + kotlin.math.cos(p.phase * 0.18f) * 0.003f) * cw * p.depth
                     p.x += (swayX + p.vx) * dt
                     p.alpha = (0.48f + p.depth * 0.34f).coerceIn(0f, 1f)
                     if (p.x < -30f) p.x = cw + 20f else if (p.x > cw + 30f) p.x = -20f
@@ -557,13 +659,21 @@ class ParticleSystem {
                 if (fp.fadeRemaining <= 0f) continue
             }
             if (fp.isSwept) {
-                fp.sweptLife += dt * 2.8f
-                fp.normX += (fp.sweptVx / cw) * dtFactor
-                fp.normY += (fp.sweptVy / ch) * dtFactor
-                fp.sweptVy += 5.5f * (ch / 1000f) * dt
-                fp.alpha = (1f - fp.sweptLife).coerceIn(0f, 1f)
-                if (fp.sweptLife >= 1f || fp.alpha <= 0.02f) {
-                    continue // permanently removed — swipe gesture cleared it
+                fp.sweptLife += dt
+                fp.sweptVy += ch * 0.55f * dt
+                // Leaves and petals float down rather than drop.
+                if (fp.sweptVy > ch * 0.10f) fp.sweptVy = ch * 0.10f
+                fp.sweptVx *= (1f - 1.1f * dt).coerceAtLeast(0f)
+                val flutter = sin(fp.sweptLife * 7f + fp.styleVariant * 2f) * cw * 0.05f
+                fp.normX += (fp.sweptVx + flutter) * dt / cw
+                fp.normY += fp.sweptVy * dt / ch
+                if (fp.normX < -0.05f || fp.normX > 1.05f) {
+                    continue // flicked clean off the screen
+                }
+                if (fp.sweptVy > 0f && fp.normY >= fp.restNormY) {
+                    fp.normY = fp.restNormY
+                    fp.isSwept = false
+                    fp.sweptLife = 0f
                 }
             }
             fallenParticles[fpWrite++] = fp
@@ -572,10 +682,42 @@ class ParticleSystem {
             fallenParticles.removeAt(fallenParticles.size - 1)
         }
 
+        var printWrite = 0
+        for (i in snowPrints.indices) {
+            val print = snowPrints[i]
+            print.age += dt
+            if (print.age < SNOW_PRINT_SECONDS) snowPrints[printWrite++] = print
+        }
+        while (snowPrints.size > printWrite) snowPrints.removeAt(snowPrints.size - 1)
+
         if (pendingParticles.isNotEmpty()) {
             particles.addAll(pendingParticles)
             pendingParticles.clear()
         }
+    }
+
+    /** A falling weather particle caught by a tap. */
+    data class CaughtWeather(val type: ParticleType, val x: Float, val y: Float, val color: Color)
+
+    /**
+     * Catches the nearest falling snowflake, petal, leaf or dandelion puff within [radius]
+     * of the tap; it is removed on the next update. Returns null if nothing was close enough.
+     */
+    fun catchWeatherParticleAt(x: Float, y: Float, radius: Float): CaughtWeather? {
+        var best: PixelParticle? = null
+        var bestDist = radius
+        for (i in particles.indices) {
+            val pt = particles[i]
+            if (pt.type !in CATCHABLE_WEATHER || pt.currentLife >= pt.maxLife || pt.weatherFadeRemaining >= 0f) continue
+            val d = kotlin.math.hypot(pt.x - x, pt.y - y)
+            if (d < bestDist) {
+                best = pt
+                bestDist = d
+            }
+        }
+        val caught = best ?: return null
+        caught.currentLife = caught.maxLife
+        return CaughtWeather(caught.type, caught.x, caught.y, caught.color)
     }
 
     fun spawnHeart(x: Float, y: Float, color: Color = Color(0xFFFF3366)) {
@@ -769,11 +911,11 @@ class ParticleSystem {
             obtainParticle(
                 x = x,
                 y = y,
-                vx = 1.4f + Random.nextFloat() * 1.8f,
-                vy = (Random.nextFloat() - 0.45f) * 0.4f,
+                vx = 0.8f + Random.nextFloat() * 0.6f,
+                vy = (Random.nextFloat() - 0.45f) * 0.25f,
                 size = 3.5f + Random.nextFloat() * 1.5f,
                 color = Color(0xFFF8F9FA),
-                maxLife = 120f + Random.nextFloat() * 60f,
+                maxLife = 300f + Random.nextFloat() * 120f,
                 type = ParticleType.DANDELION_FLUFF,
                 phase = Random.nextFloat() * 6.28f
             )
@@ -785,11 +927,11 @@ class ParticleSystem {
             obtainParticle(
                 x = x,
                 y = y,
-                vx = 6f + Random.nextFloat() * 3f,
+                vx = 3f + Random.nextFloat() * 1.5f,
                 vy = 0f,
                 size = 1.8f,
                 color = Color(0x66FFFFFF),
-                maxLife = 50f + Random.nextFloat() * 20f,
+                maxLife = 110f + Random.nextFloat() * 50f,
                 type = ParticleType.WIND_BREEZE,
                 phase = Random.nextFloat() * 6.28f
             )
@@ -800,7 +942,7 @@ class ParticleSystem {
         val rx = Random.nextFloat() * (cw + 120f) - 40f
         val depth = 0.62f + Random.nextFloat() * 0.76f
         val isBackgroundDrizzle = depth < 0.88f
-        val baseSpeedPxPerSec = ch / 1.85f
+        val baseSpeedPxPerSec = ch / RAIN_TRAVERSAL_SECONDS
         val rainSpeed = baseSpeedPxPerSec * depth * (0.94f + Random.nextFloat() * 0.12f)
         val rainSize = (if (isBackgroundDrizzle) 7f else 12f) + depth * 5f + Random.nextFloat() * 3f
         val rainColor = if (isBackgroundDrizzle) Color(0x65BAE6FD) else Color(0xC8E0F2FE)
@@ -833,7 +975,7 @@ class ParticleSystem {
                 vy = 0f,
                 size = 3.5f,
                 color = Color(0xCCE0F2FE),
-                maxLife = 14f,
+                maxLife = 22f,
                 type = ParticleType.RAIN_SPLASH,
                 phase = 0f
             )
@@ -847,7 +989,7 @@ class ParticleSystem {
                     vy = 0f,
                     size = 4.5f,
                     color = Color(0x80BAE6FD),
-                    maxLife = 16f,
+                    maxLife = 26f,
                     type = ParticleType.WATER_RIPPLE,
                     phase = 0f
                 )
@@ -859,7 +1001,7 @@ class ParticleSystem {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.20f)
         val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.50f)
         val depth = 0.62f + Random.nextFloat() * 0.72f
-        val fallSpeed = (ch / 15.5f) * depth * (0.91f + Random.nextFloat() * 0.18f)
+        val fallSpeed = (ch / SAKURA_TRAVERSAL_SECONDS) * depth * (0.91f + Random.nextFloat() * 0.18f)
         val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
@@ -883,7 +1025,7 @@ class ParticleSystem {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.20f)
         val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.50f)
         val depth = 0.64f + Random.nextFloat() * 0.70f
-        val fallSpeed = (ch / 13.5f) * depth * (0.90f + Random.nextFloat() * 0.20f)
+        val fallSpeed = (ch / AUTUMN_TRAVERSAL_SECONDS) * depth * (0.90f + Random.nextFloat() * 0.20f)
         val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
@@ -907,7 +1049,7 @@ class ParticleSystem {
         val targetGroundY = ch * (0.70f + Random.nextFloat() * 0.18f)
         val yPos = startY ?: (-ch * 0.06f + Random.nextFloat() * ch * 0.48f)
         val depth = 0.52f + Random.nextFloat() * 0.78f
-        val fallSpeed = (ch / 17.5f) * depth * (0.88f + Random.nextFloat() * 0.24f)
+        val fallSpeed = (ch / SNOW_TRAVERSAL_SECONDS) * depth * (0.88f + Random.nextFloat() * 0.24f)
         val lifeFrames = (((targetGroundY - yPos).coerceAtLeast(ch * 0.08f) / fallSpeed) + 2f) * 60f
         particles.add(
             obtainParticle(
@@ -936,7 +1078,7 @@ class ParticleSystem {
                 vy = (Random.nextFloat() - 0.6f) * 0.5f,
                 size = 3.0f + Random.nextFloat() * 2.5f,
                 color = SUN_SPARKLE_COLORS.random(),
-                maxLife = 90f + Random.nextFloat() * 40f,
+                maxLife = 150f + Random.nextFloat() * 60f,
                 type = ParticleType.SPARKLE,
                 phase = Random.nextFloat() * 6.28f
             )
@@ -963,6 +1105,7 @@ class ParticleSystem {
         }
         // Weather-specific particles belong to the weather that created them. Clear them
         // together at a transition so old rain/petals cannot drift into a new climate.
+        updatePuddles(raining = isOutdoor && weather == com.example.scene.WeatherType.RAIN, dt = dt)
         if (!isOutdoor) {
             if (activeWeather != null) clearSeasonalParticles()
             activeWeather = null
@@ -984,7 +1127,7 @@ class ParticleSystem {
         when (weather) {
             com.example.scene.WeatherType.RAIN -> {
                 // Steady rain rate with a bounded catch-up so a delayed frame never bursts.
-                rainSpawnAccumulator += dt * 115f
+                rainSpawnAccumulator += dt * 70f
                 val count = rainSpawnAccumulator.toInt().coerceAtMost(6)
                 if (count > 0) {
                     rainSpawnAccumulator -= count
@@ -995,21 +1138,21 @@ class ParticleSystem {
                 // Cherry Blossom: slow, gentle, romantic drift
                 val count = countWeatherParticles(ParticleType.SAKURA_PETAL)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 55, 4.0f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 55, 2.8f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.AUTUMN -> {
                 // Autumn: slow, gentle, romantic falling leaves
                 val count = countWeatherParticles(ParticleType.AUTUMN_LEAF)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 45, 3.2f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 45, 2.2f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.SNOW -> {
                 // Winter: slow, quiet, peaceful snowfall
                 val count = countWeatherParticles(ParticleType.SNOWFLAKE)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 75, 5.0f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 75, 3.4f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.SUNNY -> {

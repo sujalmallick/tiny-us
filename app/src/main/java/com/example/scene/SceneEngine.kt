@@ -18,6 +18,9 @@ import com.example.engine.CharacterState
 import com.example.engine.Direction
 import com.example.engine.EmoteType
 import com.example.engine.ParticleSystem
+import com.example.engine.ParticleType
+import com.example.engine.SnowPrintKind
+import com.example.engine.Puddle
 import com.example.engine.PixelCharacter
 import com.example.engine.CharacterMotionTween
 import com.example.engine.RoomTheme
@@ -58,6 +61,10 @@ class SceneEngine(
         const val MIN_CAT_WALK_THRESHOLD_PIXELS = 48f
         const val PIER_ICE_CREAM_SECONDS = 8f
         const val PIER_BOTTLE_RESPAWN_SECONDS = 30f
+        const val PIER_BAO_DOZE_SECONDS = 25f
+        const val PIER_DOLPHIN_SECONDS = 3.5f
+        const val PIER_FLOCK_SECONDS = 4f
+        const val PIER_LIGHT_PALETTES = 3
     }
 
     val isCurrentSceneOutdoor: Boolean
@@ -189,6 +196,84 @@ class SceneEngine(
     internal var dailyPromptProvider: () -> String = {
         DailyPromptCatalog.getPromptForDay(RelationshipTimeManager.calculateTinyUsDay().toInt()).question
     }
+
+    // Grandpa Bao's own little routine between taps: tea, waves, casting on his own, dozing at night.
+    var pierBaoSipTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierBaoWaveTimer: Float by mutableFloatStateOf(0f)
+        private set
+    private var pierBaoSipCooldown = 6f
+    private var pierBaoSelfCastTimer = 14f
+    private var pierBaoGreetPending = false
+    /** Seconds since anyone (or anything) last bothered Bao; long quiet nights make him doze. */
+    private var pierBaoQuietTime = 0f
+    val isBaoDozing: Boolean
+        get() = currentScene == SceneType.SEASIDE_PIER && timeOfDayPhase.isNight &&
+            pierFishingPhase == PierFishingPhase.IDLE && pierBaoQuietTime > PIER_BAO_DOZE_SECONDS
+
+    // More pier things to poke at.
+    var pierDolphinTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierBoatHornTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierFlockTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierBucketFlopTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierLightsPalette: Int by mutableIntStateOf(0)
+        private set
+    var pierLightsSparkleTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var pierCrabX: Float by mutableFloatStateOf(0.40f)
+        private set
+    var pierCrabFacingLeft: Boolean by mutableStateOf(false)
+        private set
+    var pierCrabStartledTimer: Float by mutableFloatStateOf(0f)
+        private set
+    private var pierCrabHiddenTimer = 0f
+    private var pierCrabPauseTimer = 1.5f
+    val isPierCrabVisible: Boolean get() = pierCrabHiddenTimer <= 0f
+    private val pierAutonomousPicker = AntiRepeatRandomPicker(listOf(0, 1, 2))
+
+    // Cozy weather keepsakes: catching what falls, the rainbow after rain, the snowday snowman.
+    var weatherCatchCount: Int by mutableIntStateOf(0)
+        private set
+    var rainbowTimer: Float by mutableFloatStateOf(0f)
+        private set
+    var snowmanStage: Int by mutableIntStateOf(0)
+        private set
+    var snowmanWobbleTimer: Float by mutableFloatStateOf(0f)
+        private set
+    private var lastSeenWeather: WeatherType? = null
+
+    // Ground weather play: footprints in the snow, kicked-up leaves, puddle splashes.
+    private val lastPrintX = floatArrayOf(-1f, -1f, -1f)
+    private val lastPrintY = floatArrayOf(-1f, -1f, -1f)
+    private val puddleSplashCooldown = floatArrayOf(0f, 0f, 0f)
+    private var lastRustleTime = -10f
+    private var lastSnowTraceX = -1f
+    private var lastSnowTraceY = -1f
+    private var groundHintShown = false
+    private val snowCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a snowflake. No two are alike, just like you two.",
+        "A snowflake melts on your fingertip. Warm hands, warm hearts.",
+        "Caught one! It sparkles like the first winter you shared."
+    ))
+    private val petalCatchLines = AntiRepeatRandomPicker(listOf(
+        "A cherry petal landed in your hand. They say that means luck in love.",
+        "Caught a petal before it touched the ground. Make a wish together.",
+        "A soft pink petal, just for you two."
+    ))
+    private val leafCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a falling leaf! Make a wish before the next one lands.",
+        "A crunchy golden leaf for your keepsake box.",
+        "Caught a little autumn leaf, warm as a hand to hold."
+    ))
+    private val fluffCatchLines = AntiRepeatRandomPicker(listOf(
+        "You caught a dandelion wish. Make it a sweet one.",
+        "A dandelion puff! Whisper a wish and let it go.",
+        "Caught a floating wish on the breeze."
+    ))
 
     private var catTreatInProgress = false
     private var catTreatWalking = false
@@ -669,6 +754,22 @@ class SceneEngine(
         pierGullX = 1.1f
         pierGullY = 0.20f
         pierGullTimer = 2.5f
+        pierBaoSipTimer = 0f
+        pierBaoWaveTimer = 0f
+        pierBaoSipCooldown = 6f
+        pierBaoSelfCastTimer = 14f
+        pierBaoGreetPending = type == SceneType.SEASIDE_PIER
+        pierBaoQuietTime = 0f
+        pierDolphinTimer = 0f
+        pierBoatHornTimer = 0f
+        pierFlockTimer = 0f
+        pierBucketFlopTimer = 0f
+        pierLightsSparkleTimer = 0f
+        pierCrabX = 0.36f
+        pierCrabFacingLeft = false
+        pierCrabStartledTimer = 0f
+        pierCrabHiddenTimer = 0f
+        pierCrabPauseTimer = 1.5f
         catTreatInProgress = false
         catTreatWalking = false
 
@@ -1602,6 +1703,10 @@ class SceneEngine(
                     }
                 }
 
+                SceneType.SEASIDE_PIER -> {
+                    if (!updatePierWatchScene(t, deltaSeconds, cw, ch)) isWatchSceneActive = false
+                }
+
                 // Fallback: original kiss sequence
                 else -> {
                     when {
@@ -1866,6 +1971,8 @@ class SceneEngine(
             hourCheckTimer = 0f
             timeOfDayPhase = TimeOfDayPhase.resolve(atmosphereMode)
         }
+        updateWeatherKeepsakes(deltaSeconds)
+        updateGroundWeatherPlay(deltaSeconds, canvasWidth, canvasHeight)
         val isOutdoor = isCurrentSceneOutdoor
         if (audio.isIndoor != (!isOutdoor)) {
             audio.setIndoor(!isOutdoor, smooth = true)
@@ -3970,6 +4077,10 @@ class SceneEngine(
                 }
                 return
             }
+            SceneType.SEASIDE_PIER -> {
+                triggerPierAutonomousMoment(cw, ch)
+                return
+            }
             else -> { /* fall through to generic */ }
         }
 
@@ -5234,25 +5345,37 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.emoteTimer = 2.5f
         girl.emoteTimer = 2.5f
-        // Pip has noticed.
+        // Bao approves; Pip has noticed.
+        pierBaoWaveTimer = 1.6f
         if (pierGullState == GullState.PERCHED) pierGullTimer = pierGullTimer.coerceAtMost(1.5f)
         showMessage("Two strawberry cones from the cart, one for each of you", duration = 3.0f)
     }
 
     fun onTouchGrandpaBao(cw: Float, ch: Float) {
+        if (isBaoDozing) {
+            pierBaoQuietTime = 0f
+            pierBaoWaveTimer = 1.4f
+            audio.playBubblePop()
+            showMessage("Grandpa Bao: 'Hm? Oh! I was only resting my eyes.'", duration = 2.6f)
+            return
+        }
+        pierBaoQuietTime = 0f
         when (pierFishingPhase) {
-            PierFishingPhase.IDLE, PierFishingPhase.SHOWING -> {
-                pierFishingPhase = PierFishingPhase.CASTING
-                pierFishingTimer = 0.8f
-                pierLastCatch = null
-                audio.playReelClick()
-                showMessage(baoLinePicker.pick(), duration = 3.2f)
-            }
+            PierFishingPhase.IDLE, PierFishingPhase.SHOWING -> startBaoCast(announce = true)
             PierFishingPhase.CASTING, PierFishingPhase.WAITING ->
                 showMessage("Grandpa Bao: 'Shh… something's nibbling.'", duration = 2.2f)
             PierFishingPhase.REELING ->
                 showMessage("Grandpa Bao: 'Easy now, easy…'", duration = 1.8f)
         }
+    }
+
+    private fun startBaoCast(announce: Boolean) {
+        pierFishingPhase = PierFishingPhase.CASTING
+        pierFishingTimer = 0.8f
+        pierLastCatch = null
+        pierBaoSipTimer = 0f
+        audio.playReelClick()
+        if (announce) showMessage(baoLinePicker.pick(), duration = 3.2f)
     }
 
     fun onTouchPip(cw: Float, ch: Float) {
@@ -5283,11 +5406,13 @@ class SceneEngine(
         audio.playFoghorn()
         val lamp = PierLayout.lighthouseLamp(cw, ch, (cw / 115f).coerceIn(3f, 5f))
         particles.spawnSparkles(lamp.x, lamp.y, 6, Color(0xFFFFF3B0))
-        showMessage(
-            if (timeOfDayPhase.isNight) "The lighthouse sweeps its beam across the dark water"
-            else "A low foghorn hums across the bay. Ships, say hello!",
-            duration = 2.8f
-        )
+        if (timeOfDayPhase.isNight) {
+            showMessage("The lighthouse sweeps its beam across the dark water", duration = 2.8f)
+        } else {
+            // The foghorn startles a little flock off the rocks.
+            pierFlockTimer = PIER_FLOCK_SECONDS
+            showMessage("A low foghorn hums across the bay, and the gulls take off", duration = 2.8f)
+        }
     }
 
     fun onTouchPierSea(touchX: Float, touchY: Float) {
@@ -5296,13 +5421,161 @@ class SceneEngine(
         particles.spawnSparkles(touchX, touchY - 6f, 3, Color(0xFFCFEFFF))
     }
 
+    /** The coin telescope: a pod of dolphins leaps past. */
+    fun onTouchPierTelescope(cw: Float, ch: Float) {
+        if (pierDolphinTimer > 0f) return
+        pierDolphinTimer = PIER_DOLPHIN_SECONDS
+        audio.playBubblePop()
+        audio.playHeartChime()
+        val scope = PierLayout.telescope(cw, ch)
+        particles.spawnSparkles(scope.x, scope.y - 50f, 4, Color(0xFFFFD166))
+        girl.emotion = CharacterEmotion.SURPRISED
+        girl.emote = EmoteType.EXCLAMATION
+        girl.emoteTimer = 2.2f
+        boy.emotion = CharacterEmotion.HAPPY
+        boy.emote = EmoteType.SPARKLE
+        boy.emoteTimer = 2.2f
+        showMessage("Clink! Through the telescope: dolphins, leaping in the waves!", duration = 3.0f)
+    }
+
+    /** The little sailboat on the horizon toots back and waves its flag. */
+    fun onTouchPierBoat(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        if (pierBoatHornTimer > 0f) return
+        pierBoatHornTimer = 2.4f
+        audio.playBoatHorn()
+        particles.spawnSparkles(touchX, touchY - 10f, 3, Color(0xFFFFFFFF))
+        boy.emote = EmoteType.MUSIC_NOTE
+        boy.emoteTimer = 1.8f
+        showMessage("Toot toot! The little sailboat waves its flag back at you", duration = 2.6f)
+    }
+
+    /** Pinchy the crab scuttles for cover, and Mochi gives chase. */
+    fun onTouchPierCrab(cw: Float, ch: Float) {
+        if (!isPierCrabVisible || pierCrabStartledTimer > 0f) return
+        pierCrabStartledTimer = 1.2f
+        pierCrabFacingLeft = pierCrabX < 0.5f
+        audio.playWoodKnock()
+        val crab = PierLayout.crab(cw, ch, pierCrabX)
+        particles.spawnSparkles(crab.x, crab.y - 20f, 3, Color(0xFFFF8C69))
+        if (catState != CatState.WALK_FOLLOW) {
+            catTargetX = (pierCrabX + if (pierCrabFacingLeft) -0.08f else 0.08f).coerceIn(0.26f, 0.74f)
+            catTargetY = 0.74f
+            catFacingLeft = catTargetX < catWorldX
+            catState = CatState.WALK_FOLLOW
+            catSleeping = false
+        }
+        showMessage("Pinchy the crab scuttles off sideways, and Mochi gives chase!", duration = 2.6f)
+    }
+
+    /** A fish flops out of Bao's bait bucket, which Mochi finds very interesting. */
+    fun onTouchPierBucket(cw: Float, ch: Float) {
+        if (pierBucketFlopTimer > 0f) return
+        pierBucketFlopTimer = 1.6f
+        pierBaoQuietTime = 0f
+        pierBaoWaveTimer = 1.4f
+        audio.playWaterDrip()
+        val bucket = PierLayout.bucket(cw, ch)
+        particles.spawnRainSplash(bucket.x, bucket.y - 30f)
+        catTargetX = PierLayout.bucket(1f, 1f).x - 0.04f
+        catTargetY = 0.74f
+        catFacingLeft = catTargetX < catWorldX
+        catState = CatState.WALK_FOLLOW
+        catSleeping = false
+        showMessage("Grandpa Bao: 'Hey! That's my bait, Mochi!'", duration = 2.6f)
+    }
+
+    /** The railing string lights cycle through their colours. */
+    fun onTouchPierLights(cw: Float, ch: Float, touchX: Float) {
+        pierLightsPalette = (pierLightsPalette + 1) % PIER_LIGHT_PALETTES
+        pierLightsSparkleTimer = 1.2f
+        audio.playStarTwinkle()
+        particles.spawnSparkles(touchX, ch * PierLayout.RAIL_Y - 10f, 5, Color(0xFFFFF3B0))
+    }
+
     private fun updatePierScene(dt: Float, cw: Float, ch: Float) {
         updatePierGull(dt, cw, ch)
         updatePierFishing(dt, cw, ch)
+        updateGrandpaBao(dt, cw, ch)
+        updatePierCrab(dt)
         if (!pierBottleVisible) {
             pierBottleRespawnTimer -= dt
             if (pierBottleRespawnTimer <= 0f) pierBottleVisible = true
         }
+        if (pierDolphinTimer > 0f) pierDolphinTimer = (pierDolphinTimer - dt).coerceAtLeast(0f)
+        if (pierBoatHornTimer > 0f) pierBoatHornTimer = (pierBoatHornTimer - dt).coerceAtLeast(0f)
+        if (pierFlockTimer > 0f) pierFlockTimer = (pierFlockTimer - dt).coerceAtLeast(0f)
+        if (pierBucketFlopTimer > 0f) pierBucketFlopTimer = (pierBucketFlopTimer - dt).coerceAtLeast(0f)
+        if (pierLightsSparkleTimer > 0f) pierLightsSparkleTimer = (pierLightsSparkleTimer - dt).coerceAtLeast(0f)
+    }
+
+    /** Bao keeps busy between taps: a wave hello, sips of tea, casting on his own, dozing late at night. */
+    private fun updateGrandpaBao(dt: Float, cw: Float, ch: Float) {
+        if (pierBaoWaveTimer > 0f) pierBaoWaveTimer = (pierBaoWaveTimer - dt).coerceAtLeast(0f)
+        if (pierBaoSipTimer > 0f) pierBaoSipTimer = (pierBaoSipTimer - dt).coerceAtLeast(0f)
+
+        if (pierBaoGreetPending && sceneTime > 1.8f) {
+            pierBaoGreetPending = false
+            pierBaoWaveTimer = 2.0f
+        }
+
+        if (pierFishingPhase == PierFishingPhase.IDLE) pierBaoQuietTime += dt else pierBaoQuietTime = 0f
+        if (isBaoDozing) {
+            if (eventChance(0.35f, dt)) {
+                val bao = PierLayout.bao(cw, ch)
+                particles.spawnSleepZ(bao.x + 10f, bao.y - 26f * (cw / 115f).coerceIn(3f, 5f))
+            }
+            return
+        }
+
+        val canSip = pierFishingPhase == PierFishingPhase.IDLE || pierFishingPhase == PierFishingPhase.WAITING
+        pierBaoSipCooldown -= dt
+        if (canSip && pierBaoSipCooldown <= 0f && pierBaoWaveTimer <= 0f) {
+            pierBaoSipTimer = 2.4f
+            pierBaoSipCooldown = 9f + pierRng.nextFloat() * 7f
+        }
+
+        // By day he fishes on his own; at night he'd rather nod off.
+        if (pierFishingPhase == PierFishingPhase.IDLE && !timeOfDayPhase.isNight) {
+            pierBaoSelfCastTimer -= dt
+            if (pierBaoSelfCastTimer <= 0f && pierBaoSipTimer <= 0f) {
+                pierBaoSelfCastTimer = 20f + pierRng.nextFloat() * 12f
+                startBaoCast(announce = false)
+            }
+        }
+    }
+
+    /** Pinchy pootles along the boardwalk in little bursts; when startled he dashes off and hides. */
+    private fun updatePierCrab(dt: Float) {
+        if (pierCrabHiddenTimer > 0f) {
+            pierCrabHiddenTimer -= dt
+            if (pierCrabHiddenTimer <= 0f) {
+                // Peeks back out from whichever end he fled to.
+                pierCrabFacingLeft = pierCrabX > 0.5f
+                pierCrabPauseTimer = 1f
+            }
+            return
+        }
+        if (pierCrabStartledTimer > 0f) {
+            pierCrabStartledTimer -= dt
+            val edge = if (pierCrabFacingLeft) PierLayout.CRAB_MIN_X else PierLayout.CRAB_MAX_X
+            pierCrabX += (if (pierCrabFacingLeft) -1f else 1f) * 0.32f * dt
+            if (pierCrabFacingLeft && pierCrabX <= edge || !pierCrabFacingLeft && pierCrabX >= edge) {
+                pierCrabX = edge
+                pierCrabStartledTimer = 0f
+                pierCrabHiddenTimer = 12f + pierRng.nextFloat() * 6f
+            }
+            return
+        }
+        if (pierCrabPauseTimer > 0f) {
+            pierCrabPauseTimer -= dt
+            return
+        }
+        pierCrabX += (if (pierCrabFacingLeft) -1f else 1f) * 0.05f * dt
+        if (pierCrabX <= PierLayout.CRAB_MIN_X || pierCrabX >= PierLayout.CRAB_MAX_X) {
+            pierCrabX = pierCrabX.coerceIn(PierLayout.CRAB_MIN_X, PierLayout.CRAB_MAX_X)
+            pierCrabFacingLeft = !pierCrabFacingLeft
+        }
+        if (eventChance(0.5f, dt)) pierCrabPauseTimer = 0.6f + pierRng.nextFloat() * 1.4f
     }
 
     private fun updatePierGull(dt: Float, cw: Float, ch: Float) {
@@ -5435,6 +5708,107 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Pier watch scene: one cone shared on the bench, Pip dives in to steal it,
+     * the couple dissolve into laughter and end in a hug as Bao shakes his head.
+     */
+    private fun updatePierWatchScene(t: Float, dt: Float, cw: Float, ch: Float): Boolean {
+        val mid = (boy.worldX + girl.worldX) / 2f
+        when {
+            t < 1.4f -> {
+                boy.pose = CharacterPose.SIT
+                girl.pose = CharacterPose.SIT_SNUGGLE
+                boy.direction = Direction.RIGHT
+                girl.direction = Direction.LEFT
+                if (pierBaoWaveTimer <= 0f && t < 0.2f) {
+                    pierBaoWaveTimer = 1.6f
+                    showMessage("Grandpa Bao: 'Go on, share a cone with your sweetheart!'", duration = 3.0f)
+                }
+            }
+            t < 4.2f -> {
+                // Serve the cone once, on the first frame of this beat.
+                if (t - dt < 1.4f) {
+                    pierIceCreamTimer = PIER_ICE_CREAM_SECONDS
+                    audio.playHeartChime()
+                    girlSpeechText = "One cone, two of us?"
+                    girlSpeechTimer = 2.4f
+                    girl.emote = EmoteType.HEART
+                    girl.emoteTimer = 2.0f
+                }
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.LOVING
+            }
+            t < 5.6f -> {
+                // Pip has been waiting for exactly this.
+                if (pierGullState != GullState.STEALING && pierGullState != GullState.ESCAPING && pierIceCreamTimer > 0f) {
+                    pierGullX = (mid + 0.30f).coerceAtMost(1.05f)
+                    pierGullY = 0.36f
+                    pierGullTargetX = mid
+                    pierGullState = GullState.STEALING
+                    pierGullTimer = 1.0f
+                }
+            }
+            t < 7.6f -> {
+                val laugh = ((t * 4).toInt() % 2) == 0
+                boy.pose = if (laugh) CharacterPose.JOY_JUMP else CharacterPose.SIT
+                girl.pose = if (laugh) CharacterPose.SIT_SNUGGLE else CharacterPose.JOY_JUMP
+                boy.emotion = CharacterEmotion.HAPPY
+                girl.emotion = CharacterEmotion.HAPPY
+                if (boySpeechText == null && t > 5.8f) {
+                    boySpeechText = "That bird!!"
+                    boySpeechTimer = 1.8f
+                    showMessage("Grandpa Bao: 'Told you. A criminal.'", duration = 2.4f)
+                }
+            }
+            t < 9.2f -> {
+                boy.pose = CharacterPose.HUG
+                girl.pose = CharacterPose.HUG
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.LOVING
+                if (eventChance(1.2f, dt)) {
+                    particles.spawnHeart(cw * mid + (Random.nextFloat() - 0.5f) * 40f, ch * boy.worldY - 60f)
+                }
+            }
+            else -> return false
+        }
+        return true
+    }
+
+    /** Idle pier moments for the couple when nobody has tapped in a while. */
+    private fun triggerPierAutonomousMoment(cw: Float, ch: Float) {
+        when (pierAutonomousPicker.pick()) {
+            0 -> {
+                // She spots dolphins all on her own.
+                pierDolphinTimer = PIER_DOLPHIN_SECONDS
+                girl.emotion = CharacterEmotion.SURPRISED
+                girl.emote = EmoteType.EXCLAMATION
+                girl.emoteTimer = 2.2f
+                girl.reactionTimer = 2.2f
+                boy.direction = Direction.RIGHT
+                audio.playBubblePop()
+                showMessage("${girl.name} points out to sea: dolphins!", duration = 2.8f)
+            }
+            1 -> {
+                // A quiet lean together while the waves roll in.
+                boy.emotion = CharacterEmotion.LOVING
+                girl.emotion = CharacterEmotion.LOVING
+                girl.emote = EmoteType.HEART
+                girl.emoteTimer = 2.4f
+                pierBaoWaveTimer = 1.4f
+                particles.spawnHeart(cw * (boy.worldX + girl.worldX) / 2f, ch * boy.worldY - 70f)
+                audio.playStarTwinkle()
+                showMessage("Just the waves, the breeze, and the two of you", duration = 3.0f)
+            }
+            else -> {
+                // Pip drops by to see what's on offer.
+                if (pierGullState == GullState.AWAY) pierGullTimer = 0f
+                boy.emote = EmoteType.QUESTION
+                boy.emoteTimer = 2.0f
+                boySpeechText = "Don't even think about it, Pip."
+                boySpeechTimer = 2.4f
+            }
+        }
+    }
 
     fun onTouchKitchenStool(touchX: Float, touchY: Float) {
         if (stoolWobbleTimer > 0f) return
@@ -5691,6 +6065,242 @@ class SceneEngine(
                 showMessage("Entering our cozy cottage.", duration = 2.5f)
             }
         }
+    }
+
+    /**
+     * Rain clearing by day leaves a rainbow; the snowman only lasts while it snows,
+     * and catches are counted per weather spell.
+     */
+    private fun updateWeatherKeepsakes(dt: Float) {
+        val previous = lastSeenWeather
+        if (previous != weather) {
+            if (previous == WeatherType.RAIN && weather != WeatherType.RAIN && !timeOfDayPhase.isNight) {
+                rainbowTimer = WeatherLayout.RAINBOW_SECONDS
+            }
+            if (weather != WeatherType.SNOW) snowmanStage = 0
+            weatherCatchCount = 0
+            groundHintShown = false
+            lastSeenWeather = weather
+        }
+        if (rainbowTimer > 0f) rainbowTimer = (rainbowTimer - dt).coerceAtLeast(0f)
+        if (snowmanWobbleTimer > 0f) snowmanWobbleTimer = (snowmanWobbleTimer - dt).coerceAtLeast(0f)
+    }
+
+    /**
+     * Walking through the weather: footprints and pawprints in snow, leaves and petals
+     * kicked up underfoot, and splashes when someone steps through a puddle.
+     */
+    private fun updateGroundWeatherPlay(dt: Float, cw: Float, ch: Float) {
+        for (i in puddleSplashCooldown.indices) {
+            if (puddleSplashCooldown[i] > 0f) puddleSplashCooldown[i] -= dt
+        }
+        if (!isCurrentSceneOutdoor || currentScene == SceneType.EVENING_RIDE || cw <= 0f || ch <= 0f) return
+        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val catMoving = catState == CatState.WALK_FOLLOW &&
+            (abs(catTargetX - catWorldX) > 0.01f || abs(catTargetY - catWorldY) > 0.01f)
+        for (i in 0..2) {
+            val x: Float
+            val y: Float
+            val moving: Boolean
+            val facingLeft: Boolean
+            when (i) {
+                0 -> { x = boy.worldX; y = boy.worldY; moving = boy.isTransitioningPosition; facingLeft = boy.direction == Direction.LEFT }
+                1 -> { x = girl.worldX; y = girl.worldY; moving = girl.isTransitioningPosition; facingLeft = girl.direction == Direction.LEFT }
+                else -> { x = catWorldX; y = catWorldY; moving = catMoving; facingLeft = catFacingLeft }
+            }
+            if (!moving) {
+                lastPrintX[i] = -1f
+                continue
+            }
+            when (weather) {
+                WeatherType.SNOW -> {
+                    val step = if (i == 2) 0.028f else 0.045f
+                    if (lastPrintX[i] < 0f || kotlin.math.hypot(x - lastPrintX[i], y - lastPrintY[i]) >= step) {
+                        particles.addSnowPrint(x, y, if (i == 2) SnowPrintKind.PAW else SnowPrintKind.FOOT, facingLeft)
+                        lastPrintX[i] = x
+                        lastPrintY[i] = y
+                    }
+                }
+                WeatherType.AUTUMN, WeatherType.SAKURA -> {
+                    val kicked = particles.kickGroundParticles(cw * x, ch * y, cw, ch, unit * 7f, facingLeft)
+                    if (kicked > 0) playRustleThrottled()
+                }
+                WeatherType.RAIN -> {
+                    if (puddleSplashCooldown[i] <= 0f && particles.puddleAt(x, y, cw, ch, unit) != null) {
+                        puddleSplashCooldown[i] = 0.6f
+                        splashAt(cw * x, ch * y)
+                    }
+                }
+                else -> Unit
+            }
+        }
+    }
+
+    private fun playRustleThrottled() {
+        if (sceneTime - lastRustleTime < 0.25f) return
+        lastRustleTime = sceneTime
+        audio.playLeafRustle()
+    }
+
+    private fun splashAt(x: Float, y: Float) {
+        audio.playWaterDrip()
+        particles.spawnRainSplash(x, y)
+        particles.spawnRainSplash(x - 14f, y + 3f)
+        particles.spawnRainSplash(x + 14f, y + 3f)
+        particles.spawnSparkles(x, y - 12f, 3, Color(0xFFBFE6FF))
+    }
+
+    /** A swipe tossed some leaves or petals into the air. */
+    fun onGroundSwept(count: Int) {
+        if (count <= 0) return
+        playRustleThrottled()
+        if (!groundHintShown) {
+            groundHintShown = true
+            showMessage(
+                if (weather == WeatherType.AUTUMN) "Leaves crunch and tumble under your fingers."
+                else "Petals swirl up and drift back down like pink snow.",
+                duration = 2.6f
+            )
+        }
+    }
+
+    /** A finger drawing in fresh snow leaves a trail of little hollows. */
+    fun onDrawInSnow(x: Float, y: Float, cw: Float, ch: Float) {
+        if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
+        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        if (lastSnowTraceX >= 0f && kotlin.math.hypot(x - lastSnowTraceX, y - lastSnowTraceY) < unit * 1.1f) return
+        lastSnowTraceX = x
+        lastSnowTraceY = y
+        particles.addSnowPrint(x / cw, y / ch, SnowPrintKind.TRACE, facingLeft = false)
+        if (!groundHintShown) {
+            groundHintShown = true
+            audio.playStarTwinkle()
+            showMessage("You draw in the fresh snow. Maybe a little heart?", duration = 2.6f)
+        }
+    }
+
+    /** Lift the finger: the next stroke starts fresh instead of joining the last one. */
+    fun endSnowStroke() {
+        lastSnowTraceX = -1f
+        lastSnowTraceY = -1f
+    }
+
+    /** Tap a puddle: a big splash, and whoever is nearest does a happy little puddle jump. */
+    fun onTouchPuddle(puddle: Puddle, cw: Float, ch: Float) {
+        val x = cw * puddle.normX
+        val y = ch * puddle.normY
+        splashAt(x, y)
+        particles.spawnRainSplash(x, y - 6f)
+        val jumper = if (abs(boy.worldX - puddle.normX) <= abs(girl.worldX - puddle.normX)) boy else girl
+        if (jumper.reactionTimer <= 0f && !jumper.isMovingOrTransitioning && !isWatchSceneActive) {
+            jumper.transitionPoseTo(CharacterPose.JOY_JUMP)
+            jumper.bounceOffset = 5f
+            jumper.emotion = CharacterEmotion.HAPPY
+            jumper.emote = EmoteType.SPARKLE
+            jumper.emoteTimer = 1.6f
+            jumper.reactionTimer = 1.4f
+        }
+        if (!groundHintShown) {
+            groundHintShown = true
+            showMessage("Splash! Perfect puddle-jumping weather.", duration = 2.4f)
+        }
+    }
+
+    /** A tap caught a falling snowflake, petal, leaf or dandelion puff. */
+    fun onCatchWeather(caught: ParticleSystem.CaughtWeather) {
+        weatherCatchCount++
+        val firstCatch = weatherCatchCount == 1
+        when (caught.type) {
+            ParticleType.SNOWFLAKE -> {
+                audio.playStarTwinkle()
+                particles.spawnSparkles(caught.x, caught.y, 5, Color(0xFFF2FAFF))
+                if (firstCatch) showMessage(snowCatchLines.pick(), duration = 3.0f)
+                growSnowman()
+            }
+            ParticleType.SAKURA_PETAL -> {
+                audio.playHeartChime()
+                particles.spawnHeart(caught.x, caught.y, Color(0xFFFFB7C5))
+                if (firstCatch) showMessage(petalCatchLines.pick(), duration = 3.0f)
+            }
+            ParticleType.AUTUMN_LEAF -> {
+                audio.playLeafRustle()
+                particles.spawnSparkles(caught.x, caught.y, 4, Color(0xFFF4A261))
+                if (firstCatch) showMessage(leafCatchLines.pick(), duration = 3.0f)
+            }
+            else -> {
+                audio.playStarTwinkle()
+                particles.spawnHeart(caught.x, caught.y, Color(0xFFFFF3B0))
+                if (firstCatch) showMessage(fluffCatchLines.pick(), duration = 3.0f)
+            }
+        }
+        if (weatherCatchCount % 5 == 0) {
+            val noun = when (caught.type) {
+                ParticleType.SNOWFLAKE -> "snowflakes"
+                ParticleType.SAKURA_PETAL -> "petals"
+                ParticleType.AUTUMN_LEAF -> "leaves"
+                else -> "wishes"
+            }
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.2f
+            girl.emoteTimer = 2.2f
+            audio.playStarArpeggio()
+            showMessage("$weatherCatchCount $noun caught together", duration = 2.6f)
+        }
+    }
+
+    /** Every few snowflakes caught, the snowman in the corner grows a little more. */
+    private fun growSnowman() {
+        if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
+        val target = (weatherCatchCount / WeatherLayout.SNOWFLAKES_PER_STAGE).coerceAtMost(WeatherLayout.SNOWMAN_MAX_STAGE)
+        if (target <= snowmanStage) return
+        snowmanStage = target
+        snowmanWobbleTimer = 0.8f
+        audio.playBubblePop()
+        showMessage(
+            when (snowmanStage) {
+                1 -> "A little snowball starts rolling in the corner..."
+                2 -> "The snowman has a body now!"
+                3 -> "Head on! The snowman is smiling at you two."
+                else -> "Scarf and carrot nose: your snowman is complete!"
+            },
+            duration = 3.0f
+        )
+    }
+
+    fun onTouchSnowman(cw: Float, ch: Float) {
+        if (snowmanStage <= 0) return
+        snowmanWobbleTimer = 0.8f
+        audio.playBubblePop()
+        val base = WeatherLayout.snowmanBase(cw, ch)
+        particles.spawnSparkles(base.x, base.y - 60f, 4, Color(0xFFF2FAFF))
+        if (snowmanStage >= WeatherLayout.SNOWMAN_MAX_STAGE) {
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.0f
+            girl.emoteTimer = 2.0f
+            showMessage("The snowman wobbles happily. It looks a bit like both of you.", duration = 2.8f)
+        } else {
+            showMessage("The snowman wobbles. Catch a few more snowflakes to finish it!", duration = 2.6f)
+        }
+    }
+
+    fun onTouchRainbow(cw: Float, ch: Float) {
+        if (rainbowTimer <= 0f) return
+        audio.playStarArpeggio()
+        val c = WeatherLayout.rainbowCenter(cw, ch)
+        val r = WeatherLayout.rainbowOuterRadius(cw) - WeatherLayout.rainbowBandWidth(cw) / 2f
+        for (i in 0..4) {
+            val a = Math.PI.toFloat() * (0.15f + i * 0.175f)
+            particles.spawnSparkles(c.x - kotlin.math.cos(a) * r, c.y - kotlin.math.sin(a) * r, 2, Color(0xFFFFF3B0))
+        }
+        boy.emotion = CharacterEmotion.LOVING
+        girl.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.SPARKLE
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.4f
+        girl.emoteTimer = 2.4f
+        showMessage("A rainbow after the rain. Make a wish on it together.", duration = 3.2f)
     }
 
     fun driftWeather() {
