@@ -53,14 +53,14 @@ The user wants the UI restyle finished before anything else starts.
 - **Check:** `./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest verifyPrivacySafeguards` is green. *(Green on `3952091`: 190 app tests, shared host tests, privacy check.)*
 
 ### A3. Merge `ios/parity-first-pass`
-- [ ] `git merge ios/parity-first-pass`. Most iOS files already arrived through `c89663d`, so expect duplicates.
-- [ ] Resolve `iosApp/iosApp/ContentView.swift`. Keep the newer iOS session version; check whether the iOS session is still active and ask it first.
-- [ ] Resolve `shared/src/commonTest/kotlin/com/example/SharedCoreTest.kt` (both sides added it). Merge the tests and keep the explicit scene-name list (it now includes `SEASIDE_PIER`).
-- [ ] Confirm the shared `SceneType` change ("keep SceneType unchanged until Campfire lands") is satisfied: Campfire has landed.
+- [x] `git merge ios/parity-first-pass`. Most iOS files already arrived through `c89663d`, so expect duplicates. *(`3d1c451`: six conflicts, all resolved to this branch's newer version; the merge changes no files.)*
+- [x] Resolve `iosApp/iosApp/ContentView.swift`. Keep the newer iOS session version; check whether the iOS session is still active and ask it first.
+- [x] Resolve `shared/src/commonTest/kotlin/com/example/SharedCoreTest.kt` (both sides added it). Merge the tests and keep the explicit scene-name list (it now includes `SEASIDE_PIER`).
+- [x] Confirm the shared `SceneType` change ("keep SceneType unchanged until Campfire lands") is satisfied: Campfire has landed.
 - **Check:** shared host tests are green. The Swift code can't be built on Windows, so trigger the manual iOS GitHub workflow after A4.
 
 ### A4. Full checkpoint, push and pull request
-- [ ] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`.
+- [x] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`. *(Green on `3d1c451`: 190 app tests, 24 shared tests; release APK 27.4 MB, see D3.)*
 - [ ] `git push -u origin android-public-release`.
 - [ ] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
 - [ ] Merge the pull request once CI is green (ask the user before merging into `master`).
