@@ -61,14 +61,14 @@ The user wants the UI restyle finished before anything else starts.
 
 ### A4. Full checkpoint, push and pull request
 - [x] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`. *(Green on `3d1c451`: 190 app tests, 24 shared tests; release APK 27.4 MB, see D3.)*
-- [ ] `git push -u origin android-public-release`.
+- [x] `git push -u origin android-public-release`.
 - [ ] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
 - [ ] Merge the pull request once CI is green (ask the user before merging into `master`).
 
 ### A5. Clean up
-- [ ] `git worktree remove .claude/worktrees/ui-chrome-pass`.
-- [ ] Delete merged local branches `ui-chrome-pass` and `ios/parity-first-pass`.
-- [ ] Drop the old safety stash `stash@{0}` ("snapshot before Android plan work").
+- [x] `git worktree remove .claude/worktrees/ui-chrome-pass`. *(The empty folder stays until the UI session closes.)*
+- [x] Delete merged local branches `ui-chrome-pass` and `ios/parity-first-pass`.
+- [x] Drop the old safety stash `stash@{0}` ("snapshot before Android plan work"). *(Kept as the local tag `backup/pre-android-plan-stash`, not pushed.)*
 - **Check:** `git branch` shows only `master` and `android-public-release` (or just `master` after the PR merges).
 
 ---
