@@ -1458,6 +1458,23 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                 }
             }
 
+            // The umbrella's pole goes behind the couple; its canopy and the hand are drawn after them.
+            if (isHoldingUmbrella) {
+                WorldSprites.drawBoyHoldingUmbrella(
+                    scope = this,
+                    boyX = effectiveBoyX,
+                    boyY = effectiveBoyY,
+                    girlX = effectiveGirlX,
+                    girlY = effectiveGirlY,
+                    boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
+                    p = charPixelScale,
+                    timeSeconds = engine.sceneTime,
+                    isSitting = isSitting,
+                    boyLook = engine.boy.look,
+                    part = WorldSprites.UmbrellaPart.POLE
+                )
+            }
+
             // 2D depth sorting by vertical Y plane
             val drawBoyFirst = effectiveBoyY <= effectiveGirlY
 
@@ -1507,7 +1524,8 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                     p = charPixelScale,
                     timeSeconds = engine.sceneTime,
                     isSitting = isSitting,
-                    boyLook = engine.boy.look
+                    boyLook = engine.boy.look,
+                    part = WorldSprites.UmbrellaPart.CANOPY
                 )
             }
 
@@ -1730,11 +1748,26 @@ internal val SceneEngine.usesLowResRenderer: Boolean
 /** Draws the world, through the low-res pixel renderer for the scenes that use it (Plan 03, Phase 1). */
 internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, camera: WorldCamera) {
     if (engine.usesLowResRenderer && camera.staged) {
-        val starrySky = engine.isCurrentSceneOutdoor && engine.timeOfDayPhase.isNight
         val weather: (DrawScope.() -> Unit)? = if (engine.isCurrentSceneOutdoor) {
             { drawFallingWeather(this, engine.particles.particles, WorldViewport.pixelScale(camera.worldW)) }
         } else null
-        lowResBuffer.drawStaged(this, camera, starrySky, weather) { drawWorldFrame(engine, lowRes = true) }
+        // The sky continued above an outdoor stage gets clouds by day and the scene's own kind of
+        // stars by night.
+        val phase = engine.timeOfDayPhase
+        val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.isCurrentSceneOutdoor) {
+            { skyH ->
+                val p = WorldViewport.pixelScale(camera.worldW)
+                if (phase.isNight) {
+                    drawNightStarsAbove(this, camera.worldW, skyH, engine.sceneTime, p)
+                } else if (skyH > 30f * p) {
+                    drawSkyCloud(this, camera.worldW, camera.worldW * 0.70f, -skyH * 0.72f, 0.6f, engine.sceneTime, p, phase.isSunset, phase.isMorning)
+                    drawSkyCloud(this, camera.worldW, camera.worldW * 0.20f, -skyH * 0.32f, 0.85f, engine.sceneTime, p, phase.isSunset, phase.isMorning)
+                }
+            }
+        } else null
+        lowResBuffer.drawStaged(this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove) {
+            drawWorldFrame(engine, lowRes = true)
+        }
     } else {
         drawWorldFrame(engine)
     }

@@ -56,13 +56,15 @@ internal class LowResWorldBuffer {
      * Draws [block] (which works in world units, see [WorldCamera]) onto the camera's stage, continues
      * the background above and below it, and enlarges the frame to the screen. [beyondStage], if
      * given, is drawn again over the continued areas, shifted by one stage height, so falling
-     * weather covers the whole screen.
+     * weather covers the whole screen. [aboveStage], if given, draws into the continued area above
+     * the stage in world units (y runs from minus its height up to 0), given that height.
      */
     fun drawStaged(
         target: DrawScope,
         camera: WorldCamera,
         starrySky: Boolean = false,
         beyondStage: (DrawScope.() -> Unit)? = null,
+        aboveStage: (DrawScope.(Float) -> Unit)? = null,
         block: DrawScope.() -> Unit
     ) {
         val cnv = ensure(camera.gameW, camera.gameH)
@@ -77,6 +79,7 @@ internal class LowResWorldBuffer {
         }
         if (camera.stageH < camera.gameH) {
             extendBackground(camera, starrySky)
+            if (aboveStage != null && camera.stageY > 0) drawAboveStage(target, cnv, camera, aboveStage)
             if (beyondStage != null) drawBeyondStage(target, cnv, camera, beyondStage)
         }
         val bmp = bitmap!!
@@ -88,6 +91,17 @@ internal class LowResWorldBuffer {
             dstSize = IntSize(camera.gameW * camera.zoom, camera.gameH * camera.zoom),
             filterQuality = FilterQuality.None
         )
+    }
+
+    private fun drawAboveStage(target: DrawScope, cnv: Canvas, camera: WorldCamera, layer: DrawScope.(Float) -> Unit) {
+        val worldPerGame = WorldCamera.WORLD_PIXEL.toFloat()
+        drawScope.draw(target, target.layoutDirection, cnv, androidx.compose.ui.geometry.Size(camera.worldW, camera.worldH)) {
+            clipRect(0f, 0f, camera.gameW.toFloat(), camera.stageY.toFloat()) {
+                translate(camera.stageX.toFloat(), camera.stageY.toFloat()) {
+                    scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) { layer(camera.stageY * worldPerGame) }
+                }
+            }
+        }
     }
 
     private fun drawBeyondStage(target: DrawScope, cnv: Canvas, camera: WorldCamera, layer: DrawScope.() -> Unit) {

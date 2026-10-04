@@ -2144,6 +2144,14 @@ object WorldSprites {
         }
     }
 
+    /** Which part of the umbrella to draw: the pole goes behind the couple, the rest in front. */
+    enum class UmbrellaPart { POLE, CANOPY, ALL }
+
+    /**
+     * The boy holding an umbrella over the couple, drawn as pixel art in the characters' own grid
+     * (one block is one character sprite pixel). Draw [UmbrellaPart.POLE] before the characters
+     * and [UmbrellaPart.CANOPY] after them, so the pole never crosses a face.
+     */
     fun drawBoyHoldingUmbrella(
         scope: DrawScope,
         boyX: Float,
@@ -2154,97 +2162,88 @@ object WorldSprites {
         p: Float,
         timeSeconds: Float,
         isSitting: Boolean = false,
-        boyLook: AvatarLook = AvatarLook.DEFAULT_A
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A,
+        part: UmbrellaPart = UmbrellaPart.ALL
     ) {
-        val girlDist = abs(girlX - boyX)
-        val isGirlClose = girlDist < 38f * p
+        // One block = one character sprite pixel (drawCharacter enlarges its pixel size by 10%).
+        val q = p * 1.1f
+        fun snap(v: Float) = kotlin.math.round(v / q) * q
+        fun block(c: Color, bx: Float, by: Float, w: Float = 1f, h: Float = 1f) =
+            scope.drawRect(c, Offset(bx, by), Size(w * q, h * q))
 
-        // Center the umbrella dome to shelter both comfortably, or directly over boy if separated
-        val domeX = if (isGirlClose) {
-            (boyX + girlX) / 2f
-        } else {
-            boyX + (if (boyFacingRight) 6f else -6f) * p
+        val girlClose = abs(girlX - boyX) < 38f * p
+        // Centred over both when they're close, otherwise over the boy.
+        val cx = snap(if (girlClose) (boyX + girlX) / 2f else boyX + (if (boyFacingRight) 5f else -5f) * q)
+        val bob = if (sin(timeSeconds * 2.2f) > 0.6f) -q else 0f // a gentle one-block bob
+        val top = snap(minOf(boyY, girlY) - (if (isSitting) 29f else 34f) * q) + bob
+        val r = if (girlClose) 14 else 10 // canopy half-width in blocks
+        val handY = snap(boyY - (if (isSitting) 12f else 16f) * q)
+
+        val pole = Color(0xFF2B2D42)
+        if (part != UmbrellaPart.CANOPY) {
+            block(pole, cx, top + q, 1f, (handY - top - q) / q + 1f)
         }
+        if (part == UmbrellaPart.POLE) return
 
-        // Umbrella vertical coordinates
-        val domeTopY = minOf(boyY, girlY) - (if (isSitting) 32f else 38f) * p + sin(timeSeconds * 2.2f) * 1.5f * p
-        val domeW = if (isGirlClose) 44f * p else 32f * p
-        val domeHalfW = domeW / 2f
-
-        // The pole ALWAYS comes vertically straight down from the dome apex at domeX
-        val poleX = domeX
-        val poleColor = Color(0xFF2B2D42)
-        val poleW = 1.8f * p
-        val handY = boyY - (if (isSitting) 13.5f else 17.5f) * p
-
-        // 1. Sleek graphite umbrella pole connecting from dome apex down to boy's hand
-        scope.drawRect(
-            color = poleColor,
-            topLeft = Offset(poleX - poleW / 2f, domeTopY + 3.5f * p),
-            size = Size(poleW, (handY - (domeTopY + 3.5f * p)).coerceAtLeast(4f * p))
-        )
-
-        // 2. Wooden J-hook handle directly below boy's hand
+        // Hand on the pole, and the wooden J handle below it.
         val woodDark = Color(0xFF582F0E)
         val woodLight = Color(0xFF7F4F24)
-        // Handle grip section
-        scope.drawRect(woodDark, Offset(poleX - p, handY - 1.5f * p), Size(2 * p, 4 * p))
-        // J-curve stem and hook curved away from the girl (back towards the boy)
-        val hookDir = if (boyFacingRight) -1 else 1
-        scope.drawRect(woodLight, Offset(poleX - p, handY + 2.5f * p), Size(2 * p, 3.5f * p))
-        scope.drawRect(woodDark, Offset(poleX + hookDir * 2f * p, handY + 4.5f * p), Size(2.2f * p, 1.8f * p))
-        scope.drawRect(woodDark, Offset(poleX + hookDir * 3.2f * p, handY + 3f * p), Size(1.6f * p, 2.2f * p))
+        val hook = if (boyFacingRight) -1 else 1
+        block(woodLight, cx, handY + q, 1f, 2f)
+        block(woodDark, cx, handY + 3 * q)
+        block(woodDark, cx + hook * q, handY + 3 * q)
+        block(woodDark, cx + hook * 2 * q, handY + 2 * q)
+        block(boyLook.skin, cx - q, handY - q, 3f, 2f)
+        block(boyLook.skinShadow, cx, handY, 1f, 1f)
 
-        // 3. Boy's hand gripping the pole securely
-        val skinColor = boyLook.skin
-        val skinShadow = boyLook.skinShadow
-        scope.drawRect(skinColor, Offset(poleX - 1.8f * p, handY - 1.5f * p), Size(3.6f * p, 3.2f * p))
-        scope.drawRect(skinShadow, Offset(poleX - 0.5f * p, handY - p), Size(1.8f * p, 2.4f * p))
-
-        // 4. Elegant pointed metal tip on top of dome
-        scope.drawRect(Color(0xFF495057), Offset(domeX - p, domeTopY - 3.5f * p), Size(2 * p, 4f * p))
-        scope.drawRect(Color(0xFFCED4DA), Offset(domeX - 0.5f * p, domeTopY - 3.5f * p), Size(p, 2f * p))
-
-        // 5. Curved umbrella canopy dome (covers couple cozily) — GREEN with white polka dots
-        val canopyGreen = Color(0xFF388E3C)   // vibrant forest green
-        val canopyDark  = Color(0xFF1B5E20)   // deep green for apex/rim
-        val canopyCream = Color(0xFFFDF0D5)   // cream ribs
-
-        // Tier 1: Apex
-        scope.drawRect(canopyDark, Offset(domeX - 4 * p, domeTopY), Size(8 * p, 1.8f * p))
-        // Tier 2: Upper slope
-        scope.drawRect(canopyGreen, Offset(domeX - 10 * p, domeTopY + 1.8f * p), Size(20 * p, 2.2f * p))
-        // Tier 3: Mid dome
-        scope.drawRect(canopyGreen, Offset(domeX - 16 * p, domeTopY + 4f * p), Size(32 * p, 2.8f * p))
-        // Tier 4: Wide canopy sheltering both
-        scope.drawRect(canopyGreen, Offset(domeX - domeHalfW, domeTopY + 6.8f * p), Size(domeW, 3.2f * p))
-        // Tier 5: Scalloped rim shadow
-        scope.drawRect(canopyDark, Offset(domeX - domeHalfW, domeTopY + 10f * p), Size(domeW, 1.8f * p))
-
-        // Soft cream ribs radiating symmetrically
-        scope.drawRect(canopyCream, Offset(domeX - 0.8f * p, domeTopY + 1.5f * p), Size(1.6f * p, 9f * p))
-        if (isGirlClose) {
-            scope.drawRect(canopyCream.copy(alpha = 0.85f), Offset(domeX - 11 * p, domeTopY + 3.5f * p), Size(1.4f * p, 7f * p))
-            scope.drawRect(canopyCream.copy(alpha = 0.85f), Offset(domeX + 9.6f * p, domeTopY + 3.5f * p), Size(1.4f * p, 7f * p))
+        // Canopy: rows widening from the apex into a rounded dome.
+        val profile = floatArrayOf(0.22f, 0.45f, 0.62f, 0.75f, 0.85f, 0.92f, 0.97f, 1f)
+        val base = Color(0xFF3E9A47)
+        val light = Color(0xFF5DBB63)
+        val shade = Color(0xFF2B7535)
+        val rim = Color(0xFF1B5E20)
+        val rib = Color(0xFFFDF0D5)
+        val dot = Color(0xFFF4FFF1)
+        val rows = profile.size
+        // Metal tip above the apex.
+        block(Color(0xFF6C757D), cx, top - q)
+        for (row in 0 until rows) {
+            val half = maxOf(1, kotlin.math.round(r * profile[row]).toInt())
+            val y = top + row * q
+            block(base, cx - half * q, y, (2 * half + 1).toFloat())
+            // Light from the upper left, shade on the right edge.
+            val lightW = maxOf(1, half / 2)
+            block(light, cx - half * q, y, lightW.toFloat())
+            block(shade, cx + (half - maxOf(1, half / 4) + 1) * q, y, maxOf(1, half / 4).toFloat())
+            // Ribs: one down the middle, two curving out to the rim.
+            if (row >= 1) {
+                block(rib, cx, y)
+                val off = kotlin.math.round(half * 0.55f)
+                block(rib, cx - off * q, y)
+                block(rib, cx + off * q, y)
+            }
         }
-
-        // White polka dots on canopy
-        val dotColor = Color(0xCCFFFFFF)
-        val dotR = 1.5f * p
-        // Left cluster
-        scope.drawCircle(dotColor, dotR, Offset(domeX - 12 * p, domeTopY + 7f * p))
-        scope.drawCircle(dotColor, dotR, Offset(domeX - 6 * p, domeTopY + 5f * p))
-        // Center cluster
-        scope.drawCircle(dotColor, dotR * 0.9f, Offset(domeX, domeTopY + 8.5f * p))
-        // Right cluster
-        scope.drawCircle(dotColor, dotR, Offset(domeX + 6 * p, domeTopY + 5f * p))
-        scope.drawCircle(dotColor, dotR, Offset(domeX + 12 * p, domeTopY + 7f * p))
-
-        // 6. Rain splash droplets bouncing off umbrella dome
-        val splash1 = domeX - 8 * p + sin(timeSeconds * 12f) * 4 * p
-        val splash2 = domeX + 7 * p + cos(timeSeconds * 15f) * 4 * p
-        scope.drawRect(Color(0xB3A8DADC), Offset(splash1, domeTopY - 2.5f * p), Size(2 * p, 2 * p))
-        scope.drawRect(Color(0xB3A8DADC), Offset(splash2, domeTopY - 2.5f * p), Size(2 * p, 2 * p))
+        // Rim with scallops hanging between the ribs.
+        val rimY = top + rows * q
+        block(rim, cx - r * q, rimY, (2 * r + 1).toFloat())
+        var sx = -r
+        while (sx <= r - 1) {
+            block(rim, cx + sx * q, rimY + q, 2f)
+            sx += 4
+        }
+        // Polka dots, placed relative to the canopy's size.
+        val dots = arrayOf(-0.6f to 4, -0.25f to 2, 0.32f to 3, 0.7f to 5, 0.05f to 6, -0.82f to 6)
+        for ((fx, row) in dots) {
+            val half = kotlin.math.round(r * profile[row]).toInt()
+            val dx = kotlin.math.round(fx * r).toInt()
+            if (kotlin.math.abs(dx) < half) block(dot, cx + dx * q, top + row * q)
+        }
+        // Rain bouncing off the top.
+        val bounce = ((timeSeconds * 3f) % 1f)
+        if (bounce < 0.5f) {
+            block(Color(0xFFA8DADC), cx - 4 * q, top - q - kotlin.math.round(bounce * 4f) * q)
+            block(Color(0xFFA8DADC), cx + 5 * q, top - kotlin.math.round(bounce * 3f) * q)
+        }
     }
 
     fun drawCoupleUmbrella(scope: DrawScope, cx: Float, topY: Float, p: Float, timeSeconds: Float) {

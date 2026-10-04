@@ -50,8 +50,9 @@ class ScenePreviewTest {
                 weatherDriftEnabled = false
                 weather = com.example.scene.WeatherType.valueOf(name)
             }
-            // Let the scene-change fade finish and the characters settle (two seconds of frames).
-            repeat(120) { update(1f / 60f, cw, ch) }
+            // Let the scene-change fade finish and the characters settle (two seconds of frames;
+            // ten when previewing weather, so it has filled the sky).
+            repeat(if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
         }
 

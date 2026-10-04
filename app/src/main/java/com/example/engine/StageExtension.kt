@@ -70,14 +70,16 @@ object StageExtension {
         val columns = steadyColumns(px, w, top, band, rows[0])
         val period = period(rows)
         val edge = rows[0]
-        val starColour = if (starry) brightest(px, w, top, band, edge) ?: 0xFFE8E8F0.toInt() else null
+        // Stars as thick as the stage's own (none when clouds or rain hide them).
+        val starColour = if (starry) brightest(px, w, top, band, edge) else null
+        val starEvery = if (starColour == null) 0 else starSpacing(px, w, top, band, edge)
         for (y in top - 1 downTo 0) {
             val d = top - y
             val base = if (period > 0) rows[(period - d % period) % period] else edge
             val row = y * w
             for (x in 0 until w) {
                 var c = columns[x].takeIf { it != NONE } ?: base
-                if (starColour != null && c == base && hash(x, y) % 61 == 0) c = starColour
+                if (starEvery > 0 && c == base && hash(x, y) % starEvery == 0) c = starColour!!
                 px[row + x] = c
             }
         }
@@ -154,6 +156,16 @@ object StageExtension {
             if (n > bestN) { bestN = n; best = c }
         }
         return best
+    }
+
+    /** One star per this many sky pixels, as in the band; 0 when the band has no stars. */
+    private fun starSpacing(px: IntArray, w: Int, first: Int, band: Int, background: Int): Int {
+        var bright = 0
+        for (i in 0 until band) for (x in 0 until w) {
+            val c = px[(first + i) * w + x]
+            if (c != background && luma(c) > 150) bright++
+        }
+        return if (bright == 0) 0 else (band * w / bright).coerceAtLeast(40)
     }
 
     private fun brightest(px: IntArray, w: Int, first: Int, band: Int, background: Int): Int? {

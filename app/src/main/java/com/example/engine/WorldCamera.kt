@@ -63,11 +63,15 @@ class WorldCamera private constructor(
 
         /**
          * How much of a tall screen's spare height goes above the stage (the rest goes below), per
-         * scene: wherever the scene's edge continues best. The kitchen's striped wall extends well
-         * but its checkerboard floor doesn't; the sunroom's tiled floor extends well but its glass
-         * roof doesn't.
+         * scene: wherever the scene's edge continues best. Outdoors that is the sky; the kitchen's
+         * striped wall extends well but its checkerboard floor doesn't; the sunroom's tiled floor
+         * extends well but its glass roof doesn't.
          */
         fun aboveShareFor(scene: SceneType): Float = when (scene) {
+            // Outdoors the sky takes all of it: an open sky is naturally empty, and the ground keeps
+            // the shape it was drawn with.
+            SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.WALK, SceneType.LOOKING,
+            SceneType.MOMO_STALL, SceneType.EVENING_RIDE, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> 1f
             SceneType.COOKING -> 1f
             SceneType.SUNROOM -> 0.1f
             else -> 0.5f
