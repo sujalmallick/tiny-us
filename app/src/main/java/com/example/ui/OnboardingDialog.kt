@@ -131,7 +131,7 @@ fun OnboardingDialog(
                         Spacer(modifier = Modifier.height(TinySpace.lg))
 
                         Text(
-                            text = "Welcome to Tiny Us",
+                            text = stringResource(R.string.ui_welcome_to_tiny_us),
                             style = TinyType.Display,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.semantics { heading() }
@@ -140,7 +140,7 @@ fun OnboardingDialog(
                         Spacer(modifier = Modifier.height(TinySpace.xs))
 
                         Text(
-                            text = "A cozy, quiet world made just for the two of you.",
+                            text = stringResource(R.string.ui_a_cozy_quiet_world_made_just_for_the_two),
                             style = TinyType.Body.copy(color = TinyColors.InkMuted),
                             textAlign = TextAlign.Center
                         )
@@ -190,7 +190,7 @@ fun OnboardingDialog(
                         // Anniversary date selector
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = "Special Anniversary Date",
+                                text = stringResource(R.string.ui_special_anniversary_date),
                                 style = TinyType.Label
                             )
                             Spacer(modifier = Modifier.height(TinySpace.sm))
@@ -258,7 +258,7 @@ fun OnboardingDialog(
                                 OutlinedTextField(
                                     value = secretCode,
                                     onValueChange = { secretCode = it.take(8).uppercase() },
-                                    label = { Text("Passcode (e.g. LOVE)") },
+                                    label = { Text(stringResource(R.string.ui_passcode_e_g_love)) },
                                     singleLine = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -270,7 +270,7 @@ fun OnboardingDialog(
                                 OutlinedTextField(
                                     value = secretNote,
                                     onValueChange = { secretNote = it.take(180) },
-                                    label = { Text("Private message for your love") },
+                                    label = { Text(stringResource(R.string.ui_private_message_for_your_love)) },
                                     maxLines = 3,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -285,7 +285,7 @@ fun OnboardingDialog(
 
                         // Complete button
                         TinyButton(
-                            text = "Begin Our Journey",
+                            text = stringResource(R.string.ui_begin_our_journey),
                             onClick = {
                                 val finalBoy = boyName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_A }.take(MAX_NAME_LENGTH)
                                 val finalGirl = girlName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_B }.take(MAX_NAME_LENGTH)
@@ -345,12 +345,12 @@ fun OnboardingDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text("Confirm", style = TinyType.Label.copy(color = TinyColors.Rose))
+                    Text(stringResource(R.string.ui_confirm), style = TinyType.Label.copy(color = TinyColors.Rose))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel", style = TinyType.Label.copy(color = TinyColors.InkMuted))
+                    Text(stringResource(R.string.ui_cancel), style = TinyType.Label.copy(color = TinyColors.InkMuted))
                 }
             }
         ) {

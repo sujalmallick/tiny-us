@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -97,8 +99,8 @@ fun DateAdventuresDialog(
         maxHeight = 680.dp
     ) {
         TinyDialogHeader(
-            title = "Tiny Date Adventures",
-            subtitle = "Real-world moments to experience together",
+            title = stringResource(R.string.ui_tiny_date_adventures),
+            subtitle = stringResource(R.string.ui_real_world_moments_to_experience_togethe),
             icon = TinyIcons.DateAdventures,
             onClose = onDismiss,
             closeTestTag = "close_date_adventures"
@@ -111,7 +113,7 @@ fun DateAdventuresDialog(
         ) {
             item {
                 CategoryChip(
-                    label = "All",
+                    label = stringResource(R.string.ui_all),
                     isSelected = selectedCategory == null,
                     onClick = { selectedCategory = null }
                 )
@@ -244,7 +246,7 @@ private fun DateAdventureCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Cherished memory unlocked in our Tiny Us world",
+                    text = stringResource(R.string.ui_cherished_memory_unlocked_in_our_tiny_us),
                     style = TinyType.Caption.copy(color = TinyColors.Sage, fontWeight = FontWeight.Medium)
                 )
             }
@@ -254,7 +256,7 @@ private fun DateAdventureCard(
                 verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
                 Text(
-                    text = "Asynchronous progress:",
+                    text = stringResource(R.string.ui_asynchronous_progress),
                     style = TinyType.Micro
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
@@ -299,7 +301,7 @@ private fun DateAdventureCard(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TinyButton(
-                        text = "Complete Together",
+                        text = stringResource(R.string.ui_complete_together),
                         onClick = {
                             onUpdate(
                                 adventure.copy(
@@ -315,7 +317,7 @@ private fun DateAdventureCard(
                         icon = PixelIcons.Check
                     )
                     TinyButton(
-                        text = "Skip",
+                        text = stringResource(R.string.ui_skip),
                         onClick = {
                             onUpdate(adventure.copy(status = AdventureStatus.SKIPPED))
                         },
@@ -325,7 +327,7 @@ private fun DateAdventureCard(
             }
         } else {
             TinyButton(
-                text = "Accept Adventure",
+                text = stringResource(R.string.ui_accept_adventure),
                 onClick = {
                     onUpdate(
                         adventure.copy(status = AdventureStatus.ACCEPTED)
@@ -397,8 +399,8 @@ fun DailyMomentPromptDialog(
         verticalSpacing = TinySpace.md
     ) {
         TinyDialogHeader(
-            title = "Daily Tiny Moment",
-            subtitle = "One gentle reflection for both of you today",
+            title = stringResource(R.string.ui_daily_tiny_moment),
+            subtitle = stringResource(R.string.ui_one_gentle_reflection_for_both_of_you_to),
             icon = TinyIcons.DailyMoment,
             onClose = onDismiss
         )
@@ -429,7 +431,7 @@ fun DailyMomentPromptDialog(
                 value = answerA,
                 onValueChange = { answerA = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Write your thoughts...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                placeholder = { Text(stringResource(R.string.ui_write_your_thoughts), style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
                 maxLines = 3,
                 shape = TinyFieldShape,
                 colors = tinyTextFieldColors()
@@ -449,7 +451,7 @@ fun DailyMomentPromptDialog(
                 value = answerB,
                 onValueChange = { answerB = it },
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Write your thoughts...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                placeholder = { Text(stringResource(R.string.ui_write_your_thoughts), style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
                 maxLines = 3,
                 shape = TinyFieldShape,
                 colors = tinyTextFieldColors()
@@ -464,7 +466,7 @@ fun DailyMomentPromptDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
         ) {
             TinyButton(
-                text = "Save Our Daily Moment",
+                text = stringResource(R.string.ui_save_our_daily_moment),
                 onClick = {
                     val hasBoth = answerA.isNotBlank() && answerB.isNotBlank()
                     val updated = DailyMomentResponse(
@@ -525,8 +527,8 @@ fun TwoPersonMiniGameDialog(
         modifier = Modifier.testTag("mini_games_dialog")
     ) {
         TinyDialogHeader(
-            title = "Two-Person Mini-Games",
-            subtitle = "Playful 1-minute relationship moments",
+            title = stringResource(R.string.ui_two_person_mini_games),
+            subtitle = stringResource(R.string.ui_playful_1_minute_relationship_moments),
             icon = TinyIcons.MiniGames,
             onClose = onDismiss
         )
@@ -647,7 +649,7 @@ fun TwoPersonMiniGameDialog(
 
         if (!isRevealed) {
             TinyButton(
-                text = "Reveal Answers",
+                text = stringResource(R.string.ui_reveal_answers),
                 onClick = {
                     isRevealed = true
                     val round = MiniGameRound(
@@ -670,7 +672,7 @@ fun TwoPersonMiniGameDialog(
             )
         } else {
             TinyButton(
-                text = "Next Question",
+                text = stringResource(R.string.ui_next_question),
                 onClick = {
                     questionIndex = (questionIndex + 1) % currentQuestions.size.coerceAtLeast(1)
                     choiceAIndex = null
@@ -744,8 +746,8 @@ fun SharedMoodDialog(
         modifier = Modifier.testTag("shared_mood_dialog")
     ) {
         TinyDialogHeader(
-            title = "Shared Mood",
-            subtitle = "A gentle whisper of how you feel today",
+            title = stringResource(R.string.ui_shared_mood),
+            subtitle = stringResource(R.string.ui_a_gentle_whisper_of_how_you_feel_today),
             icon = TinyIcons.SharedMood,
             onClose = onDismiss
         )
@@ -885,8 +887,8 @@ fun LongDistanceSheet(
         maxHeight = 680.dp
     ) {
         TinyDialogHeader(
-            title = "Long-Distance Signals",
-            subtitle = "Send tender asynchronous love across the miles",
+            title = stringResource(R.string.ui_long_distance_signals),
+            subtitle = stringResource(R.string.ui_send_tender_asynchronous_love_across_the),
             icon = TinyIcons.LongDistance,
             onClose = onDismiss
         )
@@ -894,7 +896,7 @@ fun LongDistanceSheet(
         // 6 Signal Types
         TinyCard(spacing = TinySpace.md) {
             Text(
-                text = "Choose a signal to send:",
+                text = stringResource(R.string.ui_choose_a_signal_to_send),
                 style = TinyType.Label
             )
 
@@ -939,7 +941,7 @@ fun LongDistanceSheet(
             OutlinedTextField(
                 value = customNote,
                 onValueChange = { customNote = it },
-                placeholder = { Text("Add a warm note (optional)...", style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
+                placeholder = { Text(stringResource(R.string.ui_add_a_warm_note_optional), style = TinyType.Body.copy(color = TinyColors.InkMuted)) },
                 modifier = Modifier.fillMaxWidth(),
                 maxLines = 2,
                 shape = TinyFieldShape,
@@ -947,7 +949,7 @@ fun LongDistanceSheet(
             )
 
             TinyButton(
-                text = "Send Signal",
+                text = stringResource(R.string.ui_send_signal),
                 onClick = {
                     val newSignal = LongDistanceSignal(
                         id = UUID.randomUUID().toString(),
@@ -974,7 +976,7 @@ fun LongDistanceSheet(
             verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
         ) {
             Text(
-                text = "Recent Signals History:",
+                text = stringResource(R.string.ui_recent_signals_history),
                 style = TinyType.Section
             )
 
@@ -986,7 +988,7 @@ fun LongDistanceSheet(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No signals yet. Send your first signal to unlock the Origami Heart!",
+                        text = stringResource(R.string.ui_no_signals_yet_send_your_first_signal_to),
                         style = TinyType.Caption,
                         textAlign = TextAlign.Center
                     )

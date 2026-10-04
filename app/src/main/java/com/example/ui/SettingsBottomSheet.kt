@@ -242,13 +242,13 @@ fun SettingsBottomSheet(
                     ) {
                         Icon(
                             imageVector = PixelIcons.ArrowBack,
-                            contentDescription = "Back",
+                            contentDescription = stringResource(R.string.ui_back),
                             tint = TinyColors.Ink
                         )
                     }
                     Spacer(modifier = Modifier.width(TinySpace.xs))
                     Text(
-                        text = "Tiny Us Settings",
+                        text = stringResource(R.string.ui_tiny_us_settings),
                         style = TinyType.Title,
                         modifier = Modifier
                             .padding(end = TinySpace.sm)
@@ -259,15 +259,15 @@ fun SettingsBottomSheet(
                 TinyCloseButton(
                     onClick = onDismiss,
                     testTag = "settings_close_button",
-                    contentDescription = "Close"
+                    contentDescription = stringResource(R.string.ui_close)
                 )
             }
 
             // -- 1. Our World --
             SettingsCategoryHeader(
                 icon = PixelIcons.Favorite,
-                title = "Our World",
-                subtitle = "Names and special dates for your story together"
+                title = stringResource(R.string.ui_our_world),
+                subtitle = stringResource(R.string.ui_names_and_special_dates_for_your_story_t)
             )
             SettingsSectionCard {
                 // Names (Max 10 chars)
@@ -310,7 +310,7 @@ fun SettingsBottomSheet(
                         prefs.anniversaryDate = it
                         onSettingsChanged()
                     },
-                    label = { Text("Anniversary Date (YYYY-MM-DD)") },
+                    label = { Text(stringResource(R.string.ui_anniversary_date_yyyy_mm_dd)) },
                     modifier = Modifier.fillMaxWidth().testTag("input_anniversary_date"),
                     singleLine = true,
                     shape = TinyFieldShape,
@@ -327,7 +327,7 @@ fun SettingsBottomSheet(
                             onSettingsChanged()
                         },
                         label = { Text(stringResource(R.string.label_your_birthday)) },
-                        placeholder = { Text("YYYY-MM-DD") },
+                        placeholder = { Text(stringResource(R.string.ui_yyyy_mm_dd)) },
                         modifier = Modifier.weight(1f).testTag("input_boy_bday"),
                         singleLine = true,
                         shape = TinyFieldShape,
@@ -341,7 +341,7 @@ fun SettingsBottomSheet(
                             onSettingsChanged()
                         },
                         label = { Text(stringResource(R.string.label_partner_birthday)) },
-                        placeholder = { Text("YYYY-MM-DD") },
+                        placeholder = { Text(stringResource(R.string.ui_yyyy_mm_dd)) },
                         modifier = Modifier.weight(1f).testTag("input_girl_bday"),
                         singleLine = true,
                         shape = TinyFieldShape,
@@ -360,15 +360,15 @@ fun SettingsBottomSheet(
             // -- 2. Characters & Wardrobe --
             SettingsCategoryHeader(
                 icon = PixelIcons.Checkroom,
-                title = "Characters & Wardrobe",
-                subtitle = "Sweaters, hoodies & cute ribbons for both characters"
+                title = stringResource(R.string.ui_characters_wardrobe),
+                subtitle = stringResource(R.string.ui_sweaters_hoodies_cute_ribbons_for_both_c)
             )
             SettingsSectionCard {
                 Column {
                     SettingsNavRow(
                         icon = PixelIcons.Checkroom,
-                        title = "Cottage Wardrobe",
-                        subtitle = "Hoodies & Outfits",
+                        title = stringResource(R.string.ui_cottage_wardrobe),
+                        subtitle = stringResource(R.string.ui_hoodies_outfits),
                         onClick = {
                             onDismiss()
                             onOpenWardrobe()
@@ -391,11 +391,11 @@ fun SettingsBottomSheet(
             // -- 3. Atmosphere & Sky --
             SettingsCategoryHeader(
                 icon = PixelIcons.WbSunny,
-                title = "Atmosphere & Sky",
-                subtitle = "Sync with the real sky or set an intimate mood"
+                title = stringResource(R.string.ui_atmosphere_sky),
+                subtitle = stringResource(R.string.ui_sync_with_the_real_sky_or_set_an_intimat)
             )
             SettingsSectionCard {
-                Text("Sky & Atmosphere:", style = TinyType.Label)
+                Text(stringResource(R.string.ui_sky_atmosphere), style = TinyType.Label)
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -420,8 +420,8 @@ fun SettingsBottomSheet(
             // -- 4. Sounds & Music --
             SettingsCategoryHeader(
                 icon = PixelIcons.VolumeUp,
-                title = "Sounds & Music",
-                subtitle = "Gentle music box lullabies & peaceful nature ambience"
+                title = stringResource(R.string.ui_sounds_music),
+                subtitle = stringResource(R.string.ui_gentle_music_box_lullabies_peaceful_natu)
             )
             SettingsSectionCard {
                 Row(
@@ -444,7 +444,7 @@ fun SettingsBottomSheet(
                     )
                     Spacer(modifier = Modifier.width(TinySpace.md))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Cozy Ambient Lullaby & Audio", style = TinyType.BodyStrong)
+                        Text(stringResource(R.string.ui_cozy_ambient_lullaby_audio), style = TinyType.BodyStrong)
                         Text(
                             if (soundEnabled) "Gentle music box sounds on" else "Sounds muted",
                             style = TinyType.Caption,
@@ -467,8 +467,8 @@ fun SettingsBottomSheet(
             // -- 5. Memories & Keepsakes --
             SettingsCategoryHeader(
                 icon = TinyIcons.Sparkle,
-                title = "Memories & Keepsakes",
-                subtitle = "Your love notes, special days & polaroid moments"
+                title = stringResource(R.string.ui_memories_keepsakes),
+                subtitle = stringResource(R.string.ui_your_love_notes_special_days_polaroid_mo)
             )
             SettingsSectionCard {
                 Column {
@@ -484,7 +484,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = TinyIcons.Heart,
-                        title = "Our Keepsakes",
+                        title = stringResource(R.string.ui_our_keepsakes),
                         onClick = {
                             onDismiss()
                             onOpenMemories()
@@ -493,7 +493,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = PixelIcons.Drafts,
-                        title = "Love Notes",
+                        title = stringResource(R.string.ui_love_notes),
                         onClick = {
                             onDismiss()
                             onOpenLoveNotes()
@@ -502,7 +502,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = PixelIcons.PhotoLibrary,
-                        title = "Tiny Moments Gallery",
+                        title = stringResource(R.string.ui_tiny_moments_gallery),
                         onClick = {
                             onDismiss()
                             onOpenPolaroids()
@@ -511,7 +511,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = PixelIcons.Bedtime,
-                        title = "Shared Dream Journal",
+                        title = stringResource(R.string.ui_shared_dream_journal),
                         onClick = onOpenDreamJournal,
                         testTag = "settings_open_dream_journal_button"
                     )
@@ -521,14 +521,14 @@ fun SettingsBottomSheet(
             // -- Couple Activities & Connection --
             SettingsCategoryHeader(
                 icon = PixelIcons.Favorite,
-                title = "Couple Activities & Connection",
-                subtitle = "Adventures, reflections, mini-games & long-distance signals"
+                title = stringResource(R.string.ui_couple_activities_connection),
+                subtitle = stringResource(R.string.ui_adventures_reflections_mini_games_long_d)
             )
             SettingsSectionCard {
                 Column {
                     SettingsNavRow(
                         icon = TinyIcons.DateAdventures,
-                        title = "Date Adventures",
+                        title = stringResource(R.string.ui_date_adventures),
                         onClick = {
                             onDismiss()
                             onOpenDateAdventures()
@@ -538,7 +538,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = TinyIcons.DailyMoment,
-                        title = "Daily Moment",
+                        title = stringResource(R.string.ui_daily_moment),
                         onClick = {
                             onDismiss()
                             onOpenDailyMoment()
@@ -548,7 +548,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = TinyIcons.MiniGames,
-                        title = "Mini-Games",
+                        title = stringResource(R.string.ui_mini_games),
                         onClick = {
                             onDismiss()
                             onOpenMiniGames()
@@ -558,7 +558,7 @@ fun SettingsBottomSheet(
                     TinyDivider()
                     SettingsNavRow(
                         icon = TinyIcons.SharedMood,
-                        title = "Shared Mood",
+                        title = stringResource(R.string.ui_shared_mood),
                         onClick = {
                             onDismiss()
                             onOpenSharedMood()
@@ -570,7 +570,7 @@ fun SettingsBottomSheet(
                         TinyDivider()
                         SettingsNavRow(
                             icon = TinyIcons.LongDistance,
-                            title = "Long-Distance Signals",
+                            title = stringResource(R.string.ui_long_distance_signals),
                             onClick = {
                                 onDismiss()
                                 onOpenLongDistance()
@@ -584,8 +584,8 @@ fun SettingsBottomSheet(
             // -- 6. Tiny Care Notifications --
             SettingsCategoryHeader(
                 icon = PixelIcons.VolunteerActivism,
-                title = "Tiny Care",
-                subtitle = "Gentle, wholesome offline check-ins for each other"
+                title = stringResource(R.string.ui_tiny_care),
+                subtitle = stringResource(R.string.ui_gentle_wholesome_offline_check_ins_for_e)
             )
             // Tiny Care: Wholesome Offline Reminders
             SettingsSectionCard(modifier = Modifier.testTag("tiny_care_card")) {
@@ -596,7 +596,7 @@ fun SettingsBottomSheet(
                     TinyIconBadge(icon = TinyIcons.Heart)
                     Spacer(modifier = Modifier.width(TinySpace.md))
                     Column(modifier = Modifier.weight(1f)) {
-                        Text("Tiny Care", style = TinyType.BodyStrong)
+                        Text(stringResource(R.string.ui_tiny_care), style = TinyType.BodyStrong)
                         Text(
                             "Gentle, wholesome offline reminders",
                             style = TinyType.Caption,
@@ -641,7 +641,7 @@ fun SettingsBottomSheet(
 
                 if (showPermissionExplanation) {
                     Text(
-                        text = "Notification permission is needed so Tiny Care can deliver quiet offline reminders.",
+                        text = stringResource(R.string.ui_notification_permission_is_needed_so_tin),
                         style = TinyType.Caption.copy(color = TinyColors.Rose)
                     )
                 }
@@ -662,13 +662,13 @@ fun SettingsBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(TinySpace.sm))
                         Text(
-                            text = "Quiet hours: 11:00 PM - 7:00 AM (sleep window)",
+                            text = stringResource(R.string.ui_quiet_hours_11_00_pm_7_00_am_sleep_windo),
                             style = TinyType.Caption
                         )
                     }
 
                     Text(
-                        text = "Remind me about:",
+                        text = stringResource(R.string.ui_remind_me_about),
                         style = TinyType.Label
                     )
 
@@ -702,7 +702,7 @@ fun SettingsBottomSheet(
 
                     Column(verticalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
                         TinyButton(
-                            text = "Send preview reminder",
+                            text = stringResource(R.string.ui_send_preview_reminder),
                             onClick = {
                                 com.example.care.TinyCareScheduler.sendTestNotification(context)
                             },
@@ -712,7 +712,7 @@ fun SettingsBottomSheet(
                             testTag = "tiny_care_test_button"
                         )
                         Text(
-                            text = "Preview reminder does not count toward daily frequency or message history.",
+                            text = stringResource(R.string.ui_preview_reminder_does_not_count_toward_d),
                             style = TinyType.Micro,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.fillMaxWidth()
@@ -724,8 +724,8 @@ fun SettingsBottomSheet(
             // -- 7. Appearance --
             SettingsCategoryHeader(
                 icon = PixelIcons.Palette,
-                title = "Appearance & Controls",
-                subtitle = "Frosted glassmorphism intensity for buttons"
+                title = stringResource(R.string.ui_appearance_controls),
+                subtitle = stringResource(R.string.ui_frosted_glassmorphism_intensity_for_butt)
             )
             // Button Glassmorphism Setting
             SettingsSectionCard {
@@ -742,7 +742,7 @@ fun SettingsBottomSheet(
                         )
                         Spacer(modifier = Modifier.width(TinySpace.sm))
                         Text(
-                            text = "Button Glassmorphism",
+                            text = stringResource(R.string.ui_button_glassmorphism),
                             style = TinyType.BodyStrong,
                             modifier = Modifier.weight(1f)
                         )
@@ -752,7 +752,7 @@ fun SettingsBottomSheet(
                         )
                     }
                     Text(
-                        text = "Adjust the frosted translucency and shine of buttons",
+                        text = stringResource(R.string.ui_adjust_the_frosted_translucency_and_shin),
                         style = TinyType.Caption,
                         modifier = Modifier.padding(top = TinySpace.xs)
                     )
@@ -769,7 +769,7 @@ fun SettingsBottomSheet(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
-                        text = "Live Preview",
+                        text = stringResource(R.string.ui_live_preview),
                         style = TinyType.Micro.copy(color = Color.White.copy(alpha = 0.75f))
                     )
 
@@ -854,8 +854,8 @@ fun SettingsBottomSheet(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text("Clear / Subtle (10%)", style = TinyType.Micro)
-                        Text("Frosted (100%)", style = TinyType.Micro)
+                        Text(stringResource(R.string.ui_clear_subtle_10), style = TinyType.Micro)
+                        Text(stringResource(R.string.ui_frosted_100), style = TinyType.Micro)
                     }
                 }
             }
@@ -882,13 +882,13 @@ fun SettingsBottomSheet(
             // -- 8. World Exploration & Privacy --
             SettingsCategoryHeader(
                 icon = PixelIcons.Landscape,
-                title = "World & Privacy",
-                subtitle = "Scenes exploration and offline privacy guarantee"
+                title = stringResource(R.string.ui_world_privacy),
+                subtitle = stringResource(R.string.ui_scenes_exploration_and_offline_privacy_g)
             )
             SettingsSectionCard {
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     TinyButton(
-                        text = "Select Scene",
+                        text = stringResource(R.string.ui_select_scene),
                         onClick = {
                             onOpenScenePicker()
                         },
@@ -898,7 +898,7 @@ fun SettingsBottomSheet(
                         testTag = "choose_scene_button"
                     )
                     TinyButton(
-                        text = "Replay Scene",
+                        text = stringResource(R.string.ui_replay_scene),
                         onClick = {
                             onReplayScene()
                             onDismiss()

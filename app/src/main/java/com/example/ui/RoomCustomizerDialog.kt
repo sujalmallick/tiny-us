@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -44,7 +46,7 @@ fun RoomCustomizerDialog(
         verticalSpacing = 0.dp
     ) {
         TinyDialogHeader(
-            title = "Room Customizer",
+            title = stringResource(R.string.ui_room_customizer),
             subtitle = if (isLoft) "Choose the little details in your loft." else "Choose the little details in your living room.",
             icon = PixelIcons.Weekend,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
@@ -101,7 +103,7 @@ fun RoomCustomizerDialog(
                 .padding(horizontal = TinySpace.md, vertical = TinySpace.sm),
             horizontalArrangement = Arrangement.End
         ) {
-            TinyButton(text = "Done", onClick = onDismiss, style = TinyButtonStyle.Ghost)
+            TinyButton(text = stringResource(R.string.ui_done), onClick = onDismiss, style = TinyButtonStyle.Ghost)
         }
     }
 }

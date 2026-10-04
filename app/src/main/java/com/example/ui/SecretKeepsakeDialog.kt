@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -229,7 +231,7 @@ fun SecretKeepsakeDialog(
         Spacer(modifier = Modifier.height(TinySpace.xxl))
 
         TinyButton(
-            text = "Close",
+            text = stringResource(R.string.ui_close),
             onClick = onDismiss,
             style = TinyButtonStyle.Secondary
         )

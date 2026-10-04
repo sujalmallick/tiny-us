@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -187,14 +189,14 @@ fun ScenePickerDialog(
         modifier = Modifier.testTag("scene_picker_dialog")
     ) {
         TinyDialogHeader(
-            title = "Choose a Scene",
+            title = stringResource(R.string.ui_choose_a_scene),
             icon = PixelIcons.Landscape,
             onClose = onDismiss,
             closeTestTag = "close_scenes"
         )
 
         TinyButton(
-            text = "Surprise Me (Random Scene)",
+            text = stringResource(R.string.ui_surprise_me_random_scene),
             onClick = {
                 onRandomScene()
                 onDismiss()

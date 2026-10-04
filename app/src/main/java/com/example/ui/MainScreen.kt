@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import com.example.engine.WorldViewport
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
@@ -517,7 +519,7 @@ fun MainScreen(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "Tiny Us",
+                            text = stringResource(R.string.ui_tiny_us),
                             fontWeight = FontWeight.Bold,
                             fontSize = titleFontSize,
                             fontFamily = FontFamily.Serif,
@@ -689,7 +691,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = if (isSoundOn) PixelIcons.VolumeUp else PixelIcons.VolumeOff,
-                            contentDescription = "Toggle Audio",
+                            contentDescription = stringResource(R.string.ui_toggle_audio),
                             tint = if (isSoundOn) activeHeartTint else mutedIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -729,7 +731,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Headphones,
-                            contentDescription = "Music Box & Earphones",
+                            contentDescription = stringResource(R.string.ui_music_box_earphones),
                             tint = if (engine.earphonesActive) activeHeartTint else neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -790,7 +792,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Shuffle,
-                            contentDescription = "Random Scene",
+                            contentDescription = stringResource(R.string.ui_random_scene),
                             tint = shuffleIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -830,7 +832,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = stringResource(R.string.ui_settings),
                             tint = neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -881,7 +883,7 @@ fun MainScreen(
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(
-                    text = "Tap characters, cottage, tree, sky, or mailbox to explore",
+                    text = stringResource(R.string.ui_tap_characters_cottage_tree_sky_or_mailb),
                     style = TinyType.Caption.copy(color = Color.White),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -982,7 +984,7 @@ fun MainScreen(
             ) {
                 ContrastIcon(
                     imageVector = PixelIcons.Favorite,
-                    contentDescription = "Capture Tiny Moment (Long press for Gallery)",
+                    contentDescription = stringResource(R.string.ui_capture_tiny_moment_long_press_for_galle),
                     tint = activeHeartTint,
                     modifier = Modifier.size(26.dp),
                     clearFactor = clearFactor,

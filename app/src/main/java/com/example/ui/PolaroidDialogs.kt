@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -204,7 +206,7 @@ fun PolaroidCaptureOverlay(
     val flashAlpha by animateFloatAsState(
         targetValue = if (!hasFlashed) 1f else 0f,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-        label = "flash_alpha"
+        label = stringResource(R.string.ui_flash_alpha)
     )
 
     // Card drop offset
@@ -214,7 +216,7 @@ fun PolaroidCaptureOverlay(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMediumLow
         ),
-        label = "card_offset"
+        label = stringResource(R.string.ui_card_offset)
     )
 
     LaunchedEffect(Unit) {
@@ -308,7 +310,7 @@ fun PolaroidCaptureOverlay(
 
                         // 2. All Memories button
                         TinyButton(
-                            text = "Memories",
+                            text = stringResource(R.string.ui_memories),
                             onClick = onOpenGallery,
                             modifier = Modifier
                                 .weight(1f)
@@ -328,7 +330,7 @@ fun PolaroidCaptureOverlay(
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
                     ) {
                         Text(
-                            text = "Done",
+                            text = stringResource(R.string.ui_done),
                             style = TinyType.Label.copy(color = Color.Unspecified)
                         )
                     }
@@ -471,7 +473,7 @@ fun PolaroidCard(
                 ) {
                     Icon(
                         PixelIcons.DeleteOutline,
-                        contentDescription = "Delete memory",
+                        contentDescription = stringResource(R.string.ui_delete_memory),
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -540,7 +542,7 @@ fun PolaroidGalleryDialog(
                     ) {
                         // 1. Back button
                         TinyButton(
-                            text = "Back",
+                            text = stringResource(R.string.ui_back),
                             onClick = {
                                 selectedMemory = null
                                 selectedBitmap = null
@@ -586,7 +588,7 @@ fun PolaroidGalleryDialog(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = PixelIcons.DeleteOutline,
-                                    contentDescription = "Delete",
+                                    contentDescription = stringResource(R.string.ui_delete),
                                     tint = TinyColors.Rose,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -604,7 +606,7 @@ fun PolaroidGalleryDialog(
         maxHeight = 620.dp
     ) {
         TinyDialogHeader(
-            title = "Polaroid Memories",
+            title = stringResource(R.string.ui_polaroid_memories),
             subtitle = if (polaroids.isEmpty()) "No moments captured yet" else "${polaroids.size} moments captured",
             icon = PixelIcons.PhotoCamera,
             onClose = onDismiss
@@ -625,13 +627,13 @@ fun PolaroidGalleryDialog(
                     )
                     Spacer(modifier = Modifier.height(TinySpace.md))
                     Text(
-                        text = "Your album is waiting",
+                        text = stringResource(R.string.ui_your_album_is_waiting),
                         style = TinyType.Section,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(TinySpace.xs))
                     Text(
-                        text = "Tap the heart button anytime to\ncapture a cozy Polaroid moment",
+                        text = stringResource(R.string.ui_tap_the_heart_button_anytime_to_ncapture),
                         style = TinyType.Caption,
                         textAlign = TextAlign.Center
                     )
@@ -767,7 +769,7 @@ internal fun PolaroidGridTile(
             ) {
                 Icon(
                     PixelIcons.DeleteOutline,
-                    contentDescription = "Delete",
+                    contentDescription = stringResource(R.string.ui_delete),
                     tint = Color.White,
                     modifier = Modifier.size(15.dp)
                 )

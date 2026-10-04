@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -411,8 +413,8 @@ fun WardrobeDialog(
         modifier = Modifier.testTag("wardrobe_dialog")
     ) {
         TinyDialogHeader(
-            title = "Cottage Wardrobe",
-            subtitle = "Outfits & accessories for both of you",
+            title = stringResource(R.string.ui_cottage_wardrobe),
+            subtitle = stringResource(R.string.ui_outfits_accessories_for_both_of_you),
             icon = PixelIcons.Checkroom
         )
 
@@ -463,7 +465,7 @@ fun WardrobeDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = "Accessories",
+                    text = stringResource(R.string.ui_accessories),
                     style = TinyType.Section
                 )
                 Text(
@@ -561,12 +563,12 @@ fun WardrobeDialog(
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     TinyChip(
-                        text = "All",
+                        text = stringResource(R.string.ui_all),
                         selected = !filterHoodiesOnly,
                         onClick = { filterHoodiesOnly = false }
                     )
                     TinyChip(
-                        text = "Hoodies Only",
+                        text = stringResource(R.string.ui_hoodies_only),
                         selected = filterHoodiesOnly,
                         onClick = { filterHoodiesOnly = true }
                     )
@@ -658,7 +660,7 @@ fun WardrobeDialog(
                             ) {
                                 if (item.isHoodie) {
                                     TinyTag(
-                                        text = "HOODIE",
+                                        text = stringResource(R.string.ui_hoodie),
                                         color = TinyColors.Rose,
                                         background = if (isWearing) TinyColors.Card else TinyColors.RoseSoft
                                     )
@@ -678,13 +680,13 @@ fun WardrobeDialog(
 
                             if (isWearing) {
                                 TinyTag(
-                                    text = "Wearing Now",
+                                    text = stringResource(R.string.ui_wearing_now),
                                     color = TinyColors.Rose,
                                     background = TinyColors.Card
                                 )
                             } else {
                                 TinyButton(
-                                    text = "Wear Outfit",
+                                    text = stringResource(R.string.ui_wear_outfit),
                                     onClick = onWearThisOutfit,
                                     style = TinyButtonStyle.Secondary,
                                     compact = true
@@ -697,7 +699,7 @@ fun WardrobeDialog(
         }
 
         TinyButton(
-            text = "Close Wardrobe",
+            text = stringResource(R.string.ui_close_wardrobe),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(),
             style = TinyButtonStyle.Secondary,
