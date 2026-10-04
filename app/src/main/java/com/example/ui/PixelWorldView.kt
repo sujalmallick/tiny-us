@@ -356,7 +356,8 @@ fun PixelWorldView(
                                 }
                             }
                             EnvironmentType.KITCHEN -> {
-                                if (kotlin.math.hypot(tapOffset.x - w * 0.17f, tapOffset.y - h * 0.55f) < 18f * pixelScale) {
+                                val jar = com.example.scene.KitchenLayout.treatJar(w, h, pixelScale)
+                                if (kotlin.math.hypot(tapOffset.x - jar.x, tapOffset.y - (jar.y - 6f * pixelScale)) < 16f * pixelScale) {
                                     engine.onTouchKitchenTreatJar()
                                     return@detectTapGestures
                                 }
@@ -499,13 +500,15 @@ fun PixelWorldView(
                         when (engine.currentScene.environment) {
                             EnvironmentType.MEADOW -> {
                                 // Cottage Door
-                                if (abs(tapOffset.x - w * 0.20f) < 26f * pixelScale && abs(tapOffset.y - h * 0.64f) < 26f * pixelScale) {
+                                val door = com.example.scene.MeadowLayout.cottageDoor(w, h, pixelScale)
+                                if (abs(tapOffset.x - door.x) < 26f * pixelScale && abs(tapOffset.y - door.y) < 26f * pixelScale) {
                                     engine.onTouchCottageDoor()
                                     return@detectTapGestures
                                 }
                                 // Porch Wind Chimes
-                                if (abs(tapOffset.x - (w * 0.22f + 24f * pixelScale)) < 22f * pixelScale &&
-                                    abs(tapOffset.y - (h * 0.67f - 34f * pixelScale)) < 24f * pixelScale) {
+                                val chimes = com.example.scene.MeadowLayout.windChimes(w, h, pixelScale)
+                                if (abs(tapOffset.x - chimes.x) < 22f * pixelScale &&
+                                    abs(tapOffset.y - (chimes.y + 6f * pixelScale)) < 24f * pixelScale) {
                                     engine.onTouchWindChimes(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
@@ -575,7 +578,8 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                                 // 8. Wall Clock
-                                if (abs(tapOffset.x - w * 0.49f) < 16f * pixelScale && abs(tapOffset.y - (h * 0.38f + 16f * pixelScale)) < 16f * pixelScale) {
+                                val clock = com.example.scene.KitchenLayout.clockCenter(w, h, pixelScale)
+                                if (abs(tapOffset.x - clock.x) < 16f * pixelScale && abs(tapOffset.y - clock.y) < 16f * pixelScale) {
                                     engine.onTouchKitchenClock(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
@@ -1009,18 +1013,20 @@ fun PixelWorldView(
                                 EnvironmentType.SEASIDE_PIER
                             )
                             if (hasStarfield) {
+                                // The constellations turn with the sky; find where this tap was before the turn.
+                                val skyX = (tapNormX + skyDrift(engine.sceneTime)) % 1f
                                 // Constellation 1: The Two Hearts (Binary Stars)
-                                if (tapNormX in 0.08f..0.32f && ny in 0.05f..0.28f) {
+                                if (skyX in 0.08f..0.32f && ny in 0.05f..0.28f) {
                                     engine.onTouchConstellation("The Two Hearts", "Two shining stars linked across the sky", tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                                 // Constellation 2: The Celestial Teapot (Center sky warmth)
-                                if (tapNormX in 0.33f..0.52f && ny in 0.05f..0.34f) {
+                                if (skyX in 0.33f..0.52f && ny in 0.05f..0.34f) {
                                     engine.onTouchConstellation("The Celestial Teapot", "Pouring warmth and sweet tea over our world", tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                                 // Constellation 3: Starlight Trail (Guiding starry road)
-                                if (tapNormX in 0.58f..0.92f && ny in 0.06f..0.28f) {
+                                if (skyX in 0.58f..0.92f && ny in 0.06f..0.28f) {
                                     engine.onTouchConstellation("Starlight Trail", "Guiding our evening ride through gentle breezes", tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
@@ -1711,18 +1717,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
             }
         } else {
             // Indoor atmosphere (Kitchen, Living Room, Cozy Loft)
-            // Distinctly warmer and cozier than chilly outdoors
-            val indoorWarmthAlpha = when {
-                isMidnight -> 0.14f
-                isNight -> 0.10f
-                isSunset -> 0.08f
-                else -> 0.04f
-            }
-            drawRect(Color(0xFFFFB703).copy(alpha = indoorWarmthAlpha), Offset.Zero, size)
-            if (isNight || isMidnight) {
-                // Soft cozy interior evening shading
-                drawRect(Color(0xFF1B1124).copy(alpha = if (isMidnight) 0.12f else 0.07f), Offset.Zero, size)
-            }
+            drawIndoorLight(timePhase, Offset.Zero, size)
         }
 
         // 4. Ambient Dimming layer
@@ -1755,6 +1750,31 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         }
 }
 
+/**
+ * Indoor lighting over [topLeft]..[size]: distinctly warmer and cozier than the chilly outdoors,
+ * with soft shading in the evening. Shared by the frame and by floor or wall continued beyond the
+ * stage, so both match.
+ */
+internal fun DrawScope.drawIndoorLight(timePhase: com.example.engine.TimeOfDayPhase, topLeft: Offset, size: Size) {
+    val warmth = when {
+        timePhase.isMidnight -> 0.14f
+        timePhase.isNight -> 0.10f
+        timePhase.isSunset -> 0.08f
+        else -> 0.04f
+    }
+    drawRect(Color(0xFFFFB703).copy(alpha = warmth), topLeft, size)
+    if (timePhase.isNight || timePhase.isMidnight) {
+        drawRect(Color(0xFF1B1124).copy(alpha = if (timePhase.isMidnight) 0.12f else 0.07f), topLeft, size)
+    }
+}
+
+/** The loft's lighting (indoor warmth, dimming, the lamp switched off) over the roof or room continued beyond its stage. */
+private fun DrawScope.drawLoftLight(engine: SceneEngine, topLeft: Offset, size: Size) {
+    if (!engine.lampLit) drawRect(Color(0x50090D24), topLeft, size)
+    drawIndoorLight(engine.timeOfDayPhase, topLeft, size)
+    if (engine.ambientDimming > 0f) drawRect(Color(0xFF0D1117).copy(alpha = engine.ambientDimming), topLeft, size)
+}
+
 /** True when the current scene is drawn by the low-res pixel renderer (Plan 03, Phase 1). */
 @Suppress("UnusedReceiverParameter")
 internal val SceneEngine.usesLowResRenderer: Boolean
@@ -1770,12 +1790,16 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         // stars by night.
         val phase = engine.timeOfDayPhase
         val p = WorldViewport.pixelScale(camera.worldW)
-        val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.COOKING) {
-            { wallH -> drawKitchenWallAbove(this, camera.worldW, wallH, p) }
-        } else if (engine.currentScene == com.example.scene.SceneType.RAINY_CAFE) {
+        val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.RAINY_CAFE) {
             { ceilingH -> drawCafeCeilingAbove(this, camera.worldW, ceilingH, p) }
         } else if (engine.currentScene == com.example.scene.SceneType.SLEEP) {
             { wallH -> drawBedroomWallAbove(this, camera.worldW, wallH, p) }
+        } else if (engine.currentScene == com.example.scene.SceneType.COZY_LOFT) {
+            { ceilingH ->
+                drawLoftCeilingAbove(this, camera.worldW, camera.worldH, ceilingH, p, phase.isNight || phase.isMidnight, phase.isSunset)
+                // Light it like the room, so the continued roof matches the stage.
+                drawLoftLight(engine, Offset(0f, -ceilingH), Size(camera.worldW, ceilingH))
+            }
         } else if (engine.isCurrentSceneOutdoor) {
             { skyH ->
                 if (phase.isNight) {
@@ -1788,6 +1812,20 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         } else null
         val floorBelow: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.SUNROOM) {
             { floorH -> drawSunroomFloorBelow(this, camera.worldW, camera.worldH, floorH, p) }
+        } else if (engine.currentScene == com.example.scene.SceneType.COZY_LOFT) {
+            { belowH ->
+                com.example.engine.LoftSprites.drawLoftBelowStage(this, camera.worldW, camera.worldH, belowH, p)
+                drawLoftLight(engine, Offset(0f, camera.worldH), Size(camera.worldW, belowH))
+            }
+        } else if (engine.currentScene == com.example.scene.SceneType.COOKING) {
+            { floorH ->
+                drawKitchenFloorBelow(this, camera.worldW, camera.worldH, floorH, p)
+                // Light it like the room, so the continued floor matches the stage's floor.
+                drawIndoorLight(engine.timeOfDayPhase, Offset(0f, camera.worldH), Size(camera.worldW, floorH))
+                if (engine.ambientDimming > 0f) {
+                    drawRect(Color(0xFF0D1117).copy(alpha = engine.ambientDimming), Offset(0f, camera.worldH), Size(camera.worldW, floorH))
+                }
+            }
         } else null
         // Sprite animation (flames, water, bobbing, twinkles) steps like a pixel game: the frame is
         // drawn with the scene clock rounded down to the sprite frame rate. Movement itself still

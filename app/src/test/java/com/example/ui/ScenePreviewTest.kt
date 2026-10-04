@@ -52,7 +52,9 @@ class ScenePreviewTest {
             }
             // Let the scene-change fade finish and the characters settle (two seconds of frames;
             // ten when previewing weather, so it has filled the sky).
-            repeat(if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120) { update(1f / 60f, cw, ch) }
+            // SCENE_PREVIEW_FRAMES overrides the count (for example to let the birds arrive).
+            val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
+            repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
         }
 

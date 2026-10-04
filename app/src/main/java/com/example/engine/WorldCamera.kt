@@ -63,16 +63,18 @@ class WorldCamera private constructor(
 
         /**
          * How much of a tall screen's spare height goes above the stage (the rest goes below), per
-         * scene: wherever the scene's edge continues best. Outdoors that is the sky; the kitchen's
-         * striped wall extends well but its checkerboard floor doesn't; the sunroom's tiled floor
-         * extends well but its glass roof doesn't.
+         * scene: wherever the scene's edge continues best. Outdoors that is the sky; the kitchen splits
+         * between its rafter ceiling and its checkerboard floor; the sunroom's tiled floor extends well
+         * but its glass roof doesn't.
          */
         fun aboveShareFor(scene: SceneType): Float = when (scene) {
             // Outdoors the sky takes all of it: an open sky is naturally empty, and the ground keeps
             // the shape it was drawn with.
             SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.WALK, SceneType.LOOKING,
             SceneType.MOMO_STALL, SceneType.EVENING_RIDE, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> 1f
-            SceneType.COOKING -> 1f
+            SceneType.COOKING -> 0.35f
+            // The loft's sloped roof continues upward; its lower level only fills the strip under the buttons.
+            SceneType.COZY_LOFT -> 1f
             SceneType.SUNROOM -> 0.1f
             else -> 0.5f
         }
@@ -93,9 +95,7 @@ class WorldCamera private constructor(
             screenW, screenH, pixelRenderer, aboveShareFor(scene),
             // The sunroom's glass roof can't be continued upward, so it runs under the top buttons.
             if (scene == SceneType.SUNROOM) 0f else topReservePx,
-            // The kitchen's checkerboard floor can't be continued, so its floor runs to the bottom
-            // edge as it always did (the stage still clears the top buttons).
-            if (scene == SceneType.COOKING) 0f else bottomReservePx
+            bottomReservePx
         )
 
         /** The camera for a [screenW] x [screenH] pixel screen; [aboveShare] of the spare height goes above the stage. */

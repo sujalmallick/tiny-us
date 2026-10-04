@@ -69,7 +69,7 @@ object StageExtension {
     }
 
     /** Rows sampled when looking for a floor pattern that has props standing on it. */
-    private const val FLOOR_BAND = 48
+    private const val FLOOR_BAND = 72 // finds repeats up to 36 rows (two 16-pixel tile rows and more)
 
     /**
      * A floor pattern (checkerboard tiles, planks) that repeats with some period even though a
@@ -79,37 +79,43 @@ object StageExtension {
     private fun tileFloor(px: IntArray, w: Int, bottom: Int, band: Int, h: Int): Boolean {
         if (band < 8) return false
         val first = bottom - band
-        var period = 0
-        for (p in 2..band / 2) {
-            var same = 0
-            var total = 0
-            for (i in 0 until band - p) {
-                val a = (first + i) * w
-                val b = (first + i + p) * w
-                for (x in 0 until w) {
-                    total++
-                    if (px[a + x] == px[b + x]) same++
-                }
-            }
-            if (same >= total * 0.88f) { period = p; break }
-        }
-        if (period == 0) return false
-        // The band's colour counts decide between period-mates that disagree (floor beats prop).
+        // The band's colour counts: the two most common are the floor's own colours.
         val counts = HashMap<Int, Int>()
         for (i in first until bottom) for (x in 0 until w) {
             val c = px[i * w + x]
             counts[c] = (counts[c] ?: 0) + 1
         }
+        val floorColours = counts.entries.sortedByDescending { it.value }.take(2).map { it.key }.toSet()
+        var period = 0
+        for (p in 2..band / 2) {
+            var same = 0
+            var compared = 0
+            for (i in 0 until band - p) {
+                val a = (first + i) * w
+                val b = (first + i + p) * w
+                for (x in 0 until w) {
+                    val ca = px[a + x]
+                    val cb = px[b + x]
+                    // Props (rugs, crates, plants) don't count either way.
+                    if (ca !in floorColours || cb !in floorColours) continue
+                    compared++
+                    if (ca == cb) same++
+                }
+            }
+            if (compared >= band * w / 3 && same >= compared * 0.97f) { period = p; break }
+        }
+        if (period == 0) return false
         // Template row k continues the pattern k rows after the band's end.
         val template = IntArray(period * w)
         for (k in 0 until period) {
             for (x in 0 until w) {
+                // Prefer a floor colour from any period-mate row; fall back to the most common one.
                 var best = 0
                 var bestN = -1
                 var i = bottom - period + k
                 while (i >= first) {
                     val c = px[i * w + x]
-                    val n = counts[c] ?: 0
+                    val n = (counts[c] ?: 0) + (if (c in floorColours) 1_000_000 else 0)
                     if (n > bestN) { bestN = n; best = c }
                     i -= period
                 }

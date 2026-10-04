@@ -198,7 +198,7 @@ object LoftSprites {
         drawLowerWallPanels(scope, cw, windowStartX, windowBottomY, floorY, p, lampLit)
 
         // 5. POLISHED WOODEN FLOOR & VINTAGE PERSIAN RUG
-        drawLoftFloorAndRug(scope, cw, ch, floorY, p, roomTheme)
+        drawLoftFloorAndRug(scope, cw, ch, floorY, p, roomTheme, isNight, isSunset)
 
         // 6. WALL-TO-CEILING LIBRARY BOOKSHELF (LEFT WALL)
         drawLibraryBookshelf(scope, cw, ch, windowStartX, floorY, p, timeSeconds, lampLit, boyLook, girlLook)
@@ -1095,38 +1095,153 @@ object LoftSprites {
         }
     }
 
+    /** Where the loft's floor ends at the front, under the balcony railing. */
+    fun floorEdgeY(ch: Float) = ch * 0.80f
+
+    /**
+     * Floorboards in perspective: the seams fan out from a vanishing point above the window wall,
+     * boards widen and butt joints spread out toward the viewer, with a shadow along the wall,
+     * the window's light on the boards and the front edge in shade.
+     */
+    private fun drawPerspectiveFloor(
+        scope: DrawScope,
+        cw: Float,
+        floorY: Float,
+        edgeY: Float,
+        p: Float,
+        isNight: Boolean,
+        isSunset: Boolean
+    ) {
+        val seam = Color(0xFF28150A)
+        val toneDark = Color(0xFF472611)
+        val toneLight = Color(0xFF55301A)
+        scope.drawRect(PlankWood, Offset(0f, floorY), Size(cw, edgeY - floorY))
+        val vpX = cw * 0.56f
+        val vpY = floorY - 70f * p
+        val farW = 7f * p
+        // Butt-joint rows: evenly spaced in depth, so further apart toward the viewer.
+        val joints = FloatArray(6) { j -> vpY + (floorY - vpY) / (1f - (j + 1) * 0.12f) }
+        var y = floorY
+        while (y < edgeY) {
+            val w = farW * (y - vpY) / (floorY - vpY)
+            val band = joints.count { it <= y }
+            val atJoint = joints.any { y >= it && y < it + p }
+            val kMin = kotlin.math.floor(-vpX / w).toInt() - 1
+            val kMax = kotlin.math.ceil((cw - vpX) / w).toInt()
+            for (k in kMin..kMax) {
+                val x = vpX + k * w
+                val tone = ((k % 3) + 3) % 3
+                if (tone == 1) scope.drawRect(toneDark, Offset(x, y), Size(w, p))
+                if (tone == 2) scope.drawRect(toneLight, Offset(x, y), Size(w, p))
+                if (atJoint && ((k + band * 2) % 3 + 3) % 3 == 0) scope.drawRect(seam, Offset(x, y), Size(w, p))
+                scope.drawRect(seam, Offset(x, y), Size(p, p))
+            }
+            y += p
+        }
+        // Shadow along the wall and under the sofa.
+        scope.drawRect(Color(0x45000000), Offset(0f, floorY), Size(cw, 2f * p))
+        scope.drawRect(Color(0x22000000), Offset(0f, floorY + 2f * p), Size(cw, 3f * p))
+        // The window's light falling on the boards, widening toward the viewer.
+        val light = when {
+            isNight -> Color(0x10A8BEFF)
+            isSunset -> Color(0x1CFFA060)
+            else -> Color(0x1CFFE2B0)
+        }
+        var ly = floorY + 5f * p
+        while (ly < edgeY - 8f * p) {
+            val t = (ly - vpY) / (floorY - vpY)
+            val left = vpX + (cw * 0.34f - vpX) * t
+            val right = vpX + (cw * 0.98f - vpX) * t
+            scope.drawRect(light, Offset(left, ly), Size(right - left, 2f * p))
+            ly += 2f * p
+        }
+        // The far corners and the front edge fall into shade.
+        scope.drawRect(Color(0x26000000), Offset(0f, floorY), Size(cw * 0.08f, edgeY - floorY))
+        scope.drawRect(Color(0x26000000), Offset(cw * 0.94f, floorY), Size(cw * 0.06f, edgeY - floorY))
+        scope.drawRect(Color(0x30000000), Offset(0f, edgeY - 5f * p), Size(cw, 5f * p))
+    }
+
+    /**
+     * The room below the loft, seen past the floor's edge: a dim panelled wall that darkens with
+     * depth. Shades go by distance from the floor's edge, so the stage and the strip continued below
+     * it (drawLoftBelowStage) join without a seam.
+     */
+    internal fun drawLoftLowerLevel(scope: DrawScope, cw: Float, ch: Float, top: Float, bottom: Float, p: Float) {
+        val edgeY = floorEdgeY(ch)
+        val shades = arrayOf(Color(0xFF2B170B), Color(0xFF231309), Color(0xFF1C0F07), Color(0xFF160B05))
+        val bandH = 10f * p
+        var y = top
+        while (y < bottom) {
+            val band = ((y - edgeY) / bandH).toInt().coerceIn(0, shades.size - 1)
+            val bandEnd = if (band == shades.size - 1) bottom else minOf(bottom, edgeY + (band + 1) * bandH)
+            scope.drawRect(shades[band], Offset(0f, y), Size(cw, bandEnd - y))
+            // A dithered row where one shade meets the next.
+            if (band < shades.size - 1 && bandEnd - 2f * p >= top && bandEnd < bottom + p) {
+                var dx = if (band % 2 == 0) 0f else 3f * p
+                while (dx < cw) {
+                    scope.drawRect(shades[band + 1], Offset(dx, bandEnd - 2f * p), Size(3f * p, 2f * p))
+                    dx += 6f * p
+                }
+            }
+            y = bandEnd
+        }
+        // Wall panel seams, faint in the dark.
+        var px = 2f * p
+        while (px < cw) {
+            scope.drawRect(Color(0x30000000), Offset(px, top), Size(p, bottom - top))
+            px += 12f * p
+        }
+        // A little warm spill from the fairy lights just under the edge.
+        val glowTop = maxOf(top, edgeY)
+        val glowBottom = minOf(bottom, edgeY + 8f * p)
+        if (glowBottom > glowTop) scope.drawRect(Color(0x14FFB703), Offset(0f, glowTop), Size(cw, glowBottom - glowTop))
+        drawLoftStairs(scope, cw, ch, p, top, bottom)
+    }
+
+    /** The stairs down from the loft on the right, clipped to [clipTop]..[clipBottom] (they run on below the stage). */
+    private fun drawLoftStairs(scope: DrawScope, cw: Float, ch: Float, p: Float, clipTop: Float, clipBottom: Float) {
+        val start = ch * 0.72f + 6 * p
+        val stepCount = 5
+        val stepH = (ch - start) / stepCount
+        val stairStartX = cw * 0.65f
+        val stepDx = (cw - stairStartX) / stepCount * 0.4f
+        var s = 0
+        while (true) {
+            val sy = start + s * stepH
+            val sx = stairStartX + s * stepDx
+            if (sy >= clipBottom || sx >= cw) break
+            val t = maxOf(sy, clipTop)
+            val b = minOf(sy + stepH, clipBottom)
+            if (b > t) {
+                scope.drawRect(Color(0xFF381F0E), Offset(sx, t), Size(cw - sx, b - t))
+                if (sy >= clipTop) scope.drawRect(PlankWoodLight, Offset(sx, sy), Size(cw - sx, 1.2f * p))
+                val lip = sy + stepH - p
+                if (lip >= clipTop && lip < clipBottom) scope.drawRect(DarkWoodBeam, Offset(sx, lip), Size(cw - sx, p))
+            }
+            s++
+        }
+    }
+
+    /** The lower level and stairs continued below the stage on tall screens (world units, stage origin). */
+    fun drawLoftBelowStage(scope: DrawScope, cw: Float, stageH: Float, belowH: Float, p: Float) {
+        drawLoftLowerLevel(scope, cw, stageH, stageH, stageH + belowH, p)
+    }
+
     private fun drawLoftFloorAndRug(
         scope: DrawScope,
         cw: Float,
         ch: Float,
         floorY: Float,
         p: Float,
-        roomTheme: RoomTheme
+        roomTheme: RoomTheme,
+        isNight: Boolean,
+        isSunset: Boolean
     ) {
-        val floorH = ch - floorY
-
-        // Rich dark polished hardwood floorboards
-        scope.drawRect(Color(0xFF381F0E), Offset(0f, floorY), Size(cw, floorH))
-
-        // Horizontal plank joint lines with warm highlights
-        var py = floorY
-        var row = 0
-        while (py < ch) {
-            val plankH = 5 * p
-            scope.drawRect(Color(0xFF28150A), Offset(0f, py), Size(cw, 1.2f * p))
-            scope.drawRect(Color(0xFF4E2B14), Offset(0f, py + 1.2f * p), Size(cw, plankH - 1.2f * p))
-
-            // Staggered vertical plank joints
-            val offset = if (row % 2 == 0) 0f else 28 * p
-            var jx = offset
-            while (jx < cw) {
-                scope.drawRect(Color(0xFF201007), Offset(jx, py), Size(1.2f * p, plankH))
-                jx += 56 * p
-            }
-
-            py += plankH
-            row++
-        }
+        val edgeY = floorEdgeY(ch)
+        // The loft's floorboards run away from the viewer toward the window wall.
+        drawPerspectiveFloor(scope, cw, floorY, edgeY, p, isNight, isSunset)
+        // Past the floor's edge: the room below, in warm shadow.
+        drawLoftLowerLevel(scope, cw, ch, edgeY, ch, p)
 
         // VINTAGE ORNATE PERSIAN AREA RUG IN FRONT OF SOFA
         drawPersianRug(scope, cw, floorY, p, roomTheme)
@@ -1732,7 +1847,7 @@ object LoftSprites {
         roomTheme: RoomTheme
     ) {
         val railTopY = ch * 0.72f
-        val railBottomY = ch
+        val railBottomY = floorEdgeY(ch)
 
         // Balcony heavy wooden top rail
         scope.drawRect(DarkWoodBeam, Offset(0f, railTopY), Size(cw, 4.5f * p))
@@ -1747,18 +1862,13 @@ object LoftSprites {
             scope.drawRect(PlankWoodLight, Offset(px + p, railTopY + 4.5f * p), Size(0.8f * p, railBottomY - (railTopY + 4.5f * p)))
         }
 
-        // Wooden stairs on the bottom right leading downwards
-        val stairStartX = cw * 0.65f
-        val stairW = cw - stairStartX
-        val stepCount = 5
-        val stepH = (railBottomY - (railTopY + 6 * p)) / stepCount
-        for (s in 0 until stepCount) {
-            val sy = railTopY + 6 * p + s * stepH
-            val sx = stairStartX + s * (stairW / stepCount * 0.4f)
-            scope.drawRect(Color(0xFF381F0E), Offset(sx, sy), Size(cw - sx, stepH))
-            scope.drawRect(PlankWoodLight, Offset(sx, sy), Size(cw - sx, 1.2f * p))
-            scope.drawRect(DarkWoodBeam, Offset(sx, sy + stepH - p), Size(cw - sx, p))
-        }
+        // Bottom rail and the floor's front edge beam, left of the stair opening.
+        val stairX = cw * 0.65f
+        scope.drawRect(DarkWoodBeam, Offset(0f, railBottomY - 2.5f * p), Size(stairX, 2.5f * p))
+        scope.drawRect(DarkWoodBeam, Offset(0f, railBottomY), Size(stairX, 4f * p))
+        scope.drawRect(PlankWoodLight, Offset(0f, railBottomY), Size(stairX, 1.2f * p))
+        // The stairs down on the right, in front of the railing.
+        drawLoftStairs(scope, cw, ch, p, railTopY, ch)
 
         // Hanging string of cozy fairy lights along the balcony railing
         for (bxRel in LOFT_BULB_POSITIONS) {

@@ -11,60 +11,6 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  * units with the stage's own origin: above the stage y is negative, below it y passes worldH.
  */
 
-/** The kitchen's taller wall: sage cabinets to match the fridge, and a shelf of jars and a plant. */
-internal fun drawKitchenWallAbove(scope: DrawScope, cw: Float, wallH: Float, p: Float) {
-    if (wallH < 30f * p) return
-    val sage = Color(0xFFA7C4B5)
-    val sageDark = Color(0xFF8BA899)
-    val sageLight = Color(0xFFC3DBD0)
-    val brass = Color(0xFFE0B868)
-    val wood = Color(0xFF8B5A2B)
-    val woodDark = Color(0xFF6B4423)
-
-    // Upper cabinets, hung just above the stage's top edge on both sides.
-    val cabH = 22f * p
-    val cabTop = -cabH - 6f * p
-    for ((left, doors) in listOf(cw * 0.04f to 2, cw * 0.66f to 2)) {
-        val doorW = 13f * p
-        val w = doors * doorW + (doors + 1) * p
-        scope.drawRect(sageDark, Offset(left, cabTop), Size(w, cabH))
-        scope.drawRect(sageDark, Offset(left - p, cabTop + cabH), Size(w + 2 * p, 2 * p)) // underside lip
-        for (d in 0 until doors) {
-            val dx = left + p + d * (doorW + p)
-            scope.drawRect(sage, Offset(dx, cabTop + p), Size(doorW, cabH - 2 * p))
-            scope.drawRect(sageLight, Offset(dx + p, cabTop + 2 * p), Size(doorW - 2 * p, p)) // top bevel
-            val knobX = if (d % 2 == 0) dx + doorW - 3 * p else dx + p
-            scope.drawRect(brass, Offset(knobX, cabTop + cabH - 7 * p), Size(2 * p, 2 * p))
-        }
-    }
-
-    // A shelf in between, higher up, with jars and a little trailing plant.
-    if (wallH < 60f * p) return
-    val shelfY = cabTop - 20f * p
-    val shelfL = cw * 0.36f
-    val shelfW = cw * 0.26f
-    scope.drawRect(wood, Offset(shelfL, shelfY), Size(shelfW, 2 * p))
-    scope.drawRect(woodDark, Offset(shelfL, shelfY + 2 * p), Size(shelfW, p))
-    scope.drawRect(woodDark, Offset(shelfL + 3 * p, shelfY + 3 * p), Size(p, 3 * p)) // brackets
-    scope.drawRect(woodDark, Offset(shelfL + shelfW - 4 * p, shelfY + 3 * p), Size(p, 3 * p))
-    val jarColors = listOf(Color(0xFFF2D492), Color(0xFFE8A07A), Color(0xFFCFE3D6))
-    for ((i, c) in jarColors.withIndex()) {
-        val jx = shelfL + 4 * p + i * 7 * p
-        val jh = (6 + i % 2 * 2) * p
-        scope.drawRect(Color(0xFFEDE6D6), Offset(jx, shelfY - jh), Size(5 * p, jh)) // glass
-        scope.drawRect(c, Offset(jx + p, shelfY - jh + 2 * p), Size(3 * p, jh - 3 * p)) // contents
-        scope.drawRect(woodDark, Offset(jx, shelfY - jh - p), Size(5 * p, p)) // lid
-    }
-    val potX = shelfL + shelfW - 10 * p
-    scope.drawRect(Color(0xFFC7764E), Offset(potX, shelfY - 5 * p), Size(6 * p, 5 * p))
-    scope.drawRect(Color(0xFFA5603E), Offset(potX, shelfY - 5 * p), Size(6 * p, p))
-    val leaf = Color(0xFF5E9C61)
-    scope.drawRect(leaf, Offset(potX - p, shelfY - 8 * p), Size(4 * p, 3 * p))
-    scope.drawRect(leaf, Offset(potX + 3 * p, shelfY - 9 * p), Size(4 * p, 4 * p))
-    scope.drawRect(leaf, Offset(potX + 5 * p, shelfY - 2 * p), Size(2 * p, 6 * p)) // trailing vine
-    scope.drawRect(leaf, Offset(potX + 6 * p, shelfY + 4 * p), Size(2 * p, 3 * p))
-}
-
 /** The sunroom's larger floor: potted plants along the front and a woven basket. */
 internal fun drawSunroomFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
     if (floorH < 24f * p) return
@@ -212,4 +158,115 @@ internal fun drawBedroomWallAbove(scope: DrawScope, cw: Float, wallH: Float, p: 
             i++
         }
     }
+}
+
+/**
+ * The kitchen's checkerboard floor carried on below the stage: the same tiles, rows and colours as
+ * the floor drawn in the room, so the pattern runs on without a seam.
+ */
+internal fun drawKitchenFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
+    val tile = com.example.scene.KitchenLayout.FLOOR_TILE * p
+    val a = com.example.scene.KitchenLayout.FLOOR_TILE_A
+    val b = com.example.scene.KitchenLayout.FLOOR_TILE_B
+    var row = 0
+    var y = com.example.scene.KitchenLayout.floorY(stageH)
+    while (y < stageH + floorH) {
+        if (y + tile > stageH) {
+            var col = 0
+            var x = 0f
+            while (x < cw) {
+                scope.drawRect(if ((row + col) % 2 == 0) a else b, Offset(x, y), Size(tile, tile))
+                x += tile
+                col++
+            }
+        }
+        y += tile
+        row++
+    }
+}
+
+/**
+ * The cozy loft's sloped timber roof above the stage. The room's posts end at a header beam, and
+ * above it the plank ceiling runs on with rafters parallel to the room's diagonal beam and a small
+ * skylight between two of them. [stageH] is the stage's height (the room's `ch`).
+ */
+internal fun drawLoftCeilingAbove(
+    scope: DrawScope,
+    cw: Float,
+    stageH: Float,
+    ceilingH: Float,
+    p: Float,
+    isNight: Boolean,
+    isSunset: Boolean
+) {
+    if (ceilingH < 2f * p) return
+    val rafter = com.example.engine.LoftSprites.RafterWood
+    val beam = com.example.engine.LoftSprites.DarkWoodBeam
+    val beamLight = com.example.engine.LoftSprites.PlankWoodLight
+    scope.drawRect(rafter, Offset(0f, -ceilingH), Size(cw, ceilingH))
+    // Plank seams, in step with the ones in the room's own ceiling.
+    var y = -4.5f * p
+    while (y > -ceilingH) {
+        scope.drawRect(Color(0x35000000), Offset(0f, y), Size(cw, 1.2f * p))
+        y -= 4.5f * p
+    }
+
+    // The room's main beam runs from (0, 1% of the stage) down to (cw, 25%); the rafters above follow it.
+    val slope = stageH * 0.24f / cw
+    val mainY0 = stageH * 0.01f
+    val gap = 28f * p
+    val thick = 6f * p
+    val steps = 48
+    val stepW = cw / steps
+    fun rafterTop(k: Int, x: Float) = mainY0 + x * slope - k * gap
+    // Skylight between the second and third rafters, on the right.
+    if (ceilingH > 40f * p) {
+        val glass = when {
+            isNight -> Color(0xFF141B3A)
+            isSunset -> Color(0xFFF4A97A)
+            else -> Color(0xFF9CCBEA)
+        }
+        val left = cw * 0.56f
+        val right = cw * 0.86f
+        var x = left
+        while (x < right) {
+            val top = maxOf(rafterTop(3, x) + thick, -ceilingH)
+            val bottom = minOf(rafterTop(2, x), 0f)
+            if (bottom > top) {
+                scope.drawRect(glass, Offset(x, top), Size(stepW + 0.5f, bottom - top))
+            }
+            x += stepW
+        }
+        // Frame posts at each end and a glint (or a star by night).
+        for (fx in listOf(left, (left + right) / 2f, right)) {
+            val top = maxOf(rafterTop(3, fx) + thick, -ceilingH)
+            val bottom = minOf(rafterTop(2, fx), 0f)
+            if (bottom > top) scope.drawRect(beam, Offset(fx - p, top), Size(2f * p, bottom - top))
+        }
+        val gx = left + (right - left) * 0.28f
+        val gy = rafterTop(3, gx) + thick + 3f * p
+        if (gy > -ceilingH && gy < minOf(rafterTop(2, gx), 0f) - 2f * p) {
+            scope.drawRect(if (isNight) Color(0xFFFFF3C4) else Color(0xCCFFFFFF), Offset(gx, gy), Size(p, p))
+            scope.drawRect(if (isNight) Color(0xFFFFF3C4) else Color(0x99FFFFFF), Offset(gx + 3f * p, gy + 2f * p), Size(p, p))
+        }
+    }
+    // Rafters.
+    var k = 1
+    while (rafterTop(k, cw) > -ceilingH) {
+        for (i in 0 until steps) {
+            val sx = i * stepW
+            val top = rafterTop(k, sx)
+            val bottom = minOf(top + thick, 0f)
+            if (bottom <= -ceilingH || top >= 0f) continue
+            val t = maxOf(top, -ceilingH)
+            scope.drawRect(beam, Offset(sx, t), Size(stepW + 0.5f, bottom - t))
+            val edge = top + thick - 1.5f * p
+            if (edge < 0f && edge > -ceilingH) scope.drawRect(beamLight, Offset(sx, edge), Size(stepW + 0.5f, 1.5f * p))
+        }
+        k++
+    }
+    // Header beam where the room's posts end.
+    val headerH = minOf(6f * p, ceilingH)
+    scope.drawRect(beam, Offset(0f, -headerH), Size(cw, headerH))
+    scope.drawRect(beamLight, Offset(0f, -1.5f * p), Size(cw, 1.5f * p))
 }

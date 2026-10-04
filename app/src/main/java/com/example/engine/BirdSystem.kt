@@ -474,7 +474,10 @@ class BirdSystem {
     val activeBirds = ArrayList<BirdEntity>(MAX_POOL_SIZE)
 
     private var spawnTimer: Float = 0f
-    private var nextSpawnInterval: Float = 28f + Random.nextFloat() * 14f
+    // The first bird of a visit comes within seconds, so people actually see one; later ones are rarer.
+    private var nextSpawnInterval: Float = firstSpawnInterval()
+
+    private fun firstSpawnInterval() = 4f + Random.nextFloat() * 6f
 
     private val speciesList = listOf(BirdSpecies.SPARROW, BirdSpecies.BLUEBIRD, BirdSpecies.WHITE_DOVE)
     private var speciesIndex = 0
@@ -492,6 +495,7 @@ class BirdSystem {
         }
         activeBirds.clear()
         spawnTimer = 0f
+        nextSpawnInterval = firstSpawnInterval()
     }
 
     fun isOutdoorScene(scene: SceneType): Boolean {
@@ -583,8 +587,9 @@ class BirdSystem {
     fun getSurfaceCoordinates(surface: PerchSurface, cw: Float, ch: Float, p: Float): Pair<Float, Float> {
         return when (surface) {
             PerchSurface.MEADOW_ROOF -> {
-                // Cottage roof ridge safely clear of chimney smoke
-                Pair(cw * 0.24f, ch * 0.67f - 50f * p)
+                // On the cottage roof, right of the ridge and clear of the chimney smoke
+                val cp = p * com.example.scene.MeadowLayout.COTTAGE_SCALE
+                Pair(com.example.scene.MeadowLayout.cottageX(p) + 6f * cp, com.example.scene.MeadowLayout.groundY(ch) - 50f * cp)
             }
             PerchSurface.MEADOW_GROUND -> {
                 // Open lawn between flowers and characters
