@@ -104,7 +104,8 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 - `e71f0f6` C1 campfire test; the user approved the look and the couple's size (2 game pixels per sprite pixel).
 - `e7e00ef` pixel renderer for all 13 scenes: `HardEdgeCanvas` (no anti-aliasing; rectangles snap to whole pixels, never thinner than one), `PixelFont` for the momo sign, whole-pixel NPC and loft sizes.
 - `4f87cfb` barista and Grandpa Bao a bit smaller (1.5 game pixels), as the user asked.
-- Still open from C2's first item: the device frame-time check (see B), merging into `android-public-release`, and removing the `gridP` patch.
+- `gridP` patch removed (the renderer snaps every shape now).
+- Still open: the device frame-time check (see B), then merging into `android-public-release`.
 
 ### C1. Test on the campfire scene (phases 0–1, 2–3 days)
 - [x] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
@@ -116,7 +117,7 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 - [x] Show the user a before/after of the campfire. **Decide: continue or stop.** *(Continue.)*
 
 ### C2. Roll out (if approved)
-- [ ] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`. *(Every scene done; the `gridP` removal and the device check are left.)*
+- [x] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`. *(Done; only the device frame-time check (see B) is left.)*
 - [ ] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
 - [ ] **Phase 3 (do this first after Phase 1; the user flagged it): the same close-up scene on every screen size.**
   - **What the user saw** (tablet-emulator screenshots, 2026-10-04): on a wide, nearly square tablet each scene reads as a close-up. Props sit around the couple and the detail shows. But the short height cuts parts off: the momo sign is missing, the lighthouse overlaps the moon, and the kitchen table is chopped at the bottom. On a tall phone the same scene spreads out. Props drift apart, there's a lot of empty sky and floor, and the couple look far away and the scene disorganised.

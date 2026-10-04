@@ -59,6 +59,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.Fill
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
@@ -100,133 +101,29 @@ private fun nz(i: Int, salt: Int = 0): Float {
     return (x and 0xFFFF) / 65535f
 }
 
-/**
- * Pixel grid for these scenes. Every shape below snaps to blocks of this size, so props read as
- * pixel art like the rest of the world instead of smooth vector shapes. Set by each draw entry point.
+/*
+ * Drawing shorthands for these scenes. The pixel renderer (LowResWorldBuffer) puts every shape on
+ * the game-pixel grid, so these draw plain shapes; they used to snap to a grid of their own.
  */
-private var gridP = 5f
-
-private fun snapToGrid(v: Float): Float = kotlin.math.round(v / gridP) * gridP
-
-/** A rectangle snapped to the pixel grid; never thinner than one block. */
 private fun DrawScope.px(color: Color, x: Float, y: Float, w: Float, h: Float) {
-    if (w <= 0f || h <= 0f) return
-    val x0 = snapToGrid(x)
-    var x1 = snapToGrid(x + w)
-    if (x1 <= x0) x1 = x0 + gridP
-    val y0 = snapToGrid(y)
-    var y1 = snapToGrid(y + h)
-    if (y1 <= y0) y1 = y0 + gridP
-    drawRect(color, Offset(x0, y0), Size(x1 - x0, y1 - y0))
+    if (w > 0f && h > 0f) drawRect(color, Offset(x, y), Size(w, h))
 }
 
 private fun DrawScope.pRect(color: Color, topLeft: Offset, size: Size) = px(color, topLeft.x, topLeft.y, size.width, size.height)
 
-/** Stepped (row-by-row) oval; with [style] only the outline blocks are drawn. */
-private fun DrawScope.pOval(color: Color, topLeft: Offset, size: Size, style: Stroke? = null) {
-    val rx = size.width / 2f
-    val ry = size.height / 2f
-    val cx = topLeft.x + rx
-    val cy = topLeft.y + ry
-    if (style != null) {
-        pArc(color, 0f, 360f, false, topLeft, size, style)
-        return
-    }
-    val g = gridP
-    if (size.height < g * 1.5f || size.width < g * 1.5f) {
-        px(color, cx - size.width / 2f, cy - g / 2f, maxOf(size.width, g), g)
-        return
-    }
-    var y = snapToGrid(topLeft.y)
-    while (y < topLeft.y + size.height) {
-        val dy = (y + g / 2f - cy) / ry
-        if (dy > -1f && dy < 1f) {
-            val hw = rx * kotlin.math.sqrt(1f - dy * dy)
-            if (hw > g * 0.3f) px(color, cx - hw, y, hw * 2f, g)
-        }
-        y += g
-    }
-}
+private fun DrawScope.pOval(color: Color, topLeft: Offset, size: Size, style: Stroke? = null) =
+    drawOval(color, topLeft, size, style = style ?: Fill)
 
-private fun DrawScope.pCircle(color: Color, radius: Float, center: Offset) =
-    pOval(color, Offset(center.x - radius, center.y - radius), Size(radius * 2f, radius * 2f))
+private fun DrawScope.pCircle(color: Color, radius: Float, center: Offset) = drawCircle(color, radius, center)
 
-/** Rectangle with its corner blocks knocked out: the pixel-art "rounded" rectangle. */
-private fun DrawScope.pRoundRect(color: Color, topLeft: Offset, size: Size, cornerRadius: CornerRadius) {
-    val g = gridP
-    if (size.width < g * 3f || size.height < g * 3f) {
-        pRect(color, topLeft, size)
-        return
-    }
-    px(color, topLeft.x + g, topLeft.y, size.width - 2f * g, g)
-    px(color, topLeft.x, topLeft.y + g, size.width, size.height - 2f * g)
-    px(color, topLeft.x + g, topLeft.y + size.height - g, size.width - 2f * g, g)
-}
+private fun DrawScope.pRoundRect(color: Color, topLeft: Offset, size: Size, cornerRadius: CornerRadius) =
+    drawRoundRect(color, topLeft, size, cornerRadius)
 
-/** A line made of grid blocks (no anti-aliased diagonals). */
-private fun DrawScope.pLine(color: Color, start: Offset, end: Offset, strokeWidth: Float) {
-    val g = gridP
-    val t = maxOf(g, snapToGrid(strokeWidth))
-    val dx = end.x - start.x
-    val dy = end.y - start.y
-    val steps = maxOf(1, (maxOf(kotlin.math.abs(dx), kotlin.math.abs(dy)) / g).toInt())
-    var lastX = Float.NaN
-    var lastY = Float.NaN
-    for (i in 0..steps) {
-        val f = i / steps.toFloat()
-        val x = snapToGrid(start.x + dx * f - t / 2f)
-        val y = snapToGrid(start.y + dy * f - t / 2f)
-        if (x == lastX && y == lastY) continue
-        drawRect(color, Offset(x, y), Size(t, t))
-        lastX = x
-        lastY = y
-    }
-}
+private fun DrawScope.pLine(color: Color, start: Offset, end: Offset, strokeWidth: Float) =
+    drawLine(color, start, end, strokeWidth)
 
-/** Pixel arc: filled wedge when [style] is null and [useCenter] is true, otherwise an outline. */
-private fun DrawScope.pArc(color: Color, startAngle: Float, sweepAngle: Float, useCenter: Boolean, topLeft: Offset, size: Size, style: Stroke? = null) {
-    val g = gridP
-    val rx = size.width / 2f
-    val ry = size.height / 2f
-    val cx = topLeft.x + rx
-    val cy = topLeft.y + ry
-    val toRad = Math.PI.toFloat() / 180f
-    if (style == null && useCenter) {
-        var y = snapToGrid(topLeft.y)
-        while (y < topLeft.y + size.height) {
-            var x = snapToGrid(topLeft.x)
-            while (x < topLeft.x + size.width) {
-                val nx = (x + g / 2f - cx) / rx
-                val ny = (y + g / 2f - cy) / ry
-                if (nx * nx + ny * ny <= 1f) {
-                    var a = kotlin.math.atan2(ny, nx) / toRad
-                    if (a < 0f) a += 360f
-                    var rel = a - startAngle
-                    while (rel < 0f) rel += 360f
-                    while (rel >= 360f) rel -= 360f
-                    if (rel <= sweepAngle) drawRect(color, Offset(x, y), Size(g, g))
-                }
-                x += g
-            }
-            y += g
-        }
-        return
-    }
-    val t = maxOf(g, snapToGrid(style?.width ?: g))
-    val perimeter = (kotlin.math.abs(sweepAngle) * toRad) * maxOf(rx, ry)
-    val steps = maxOf(4, (perimeter / (g * 0.5f)).toInt())
-    var lastX = Float.NaN
-    var lastY = Float.NaN
-    for (i in 0..steps) {
-        val a = (startAngle + sweepAngle * i / steps) * toRad
-        val x = snapToGrid(cx + rx * cos(a) - t / 2f)
-        val y = snapToGrid(cy + ry * sin(a) - t / 2f)
-        if (x == lastX && y == lastY) continue
-        drawRect(color, Offset(x, y), Size(t, t))
-        lastX = x
-        lastY = y
-    }
-}
+private fun DrawScope.pArc(color: Color, startAngle: Float, sweepAngle: Float, useCenter: Boolean, topLeft: Offset, size: Size, style: Stroke? = null) =
+    drawArc(color, startAngle, sweepAngle, useCenter, topLeft, size, style = style ?: Fill)
 
 /** Stepped (pixel-art) triangle pointing up, with its base centred on [cx], [baseY]. */
 private fun DrawScope.pixelTriangle(color: Color, cx: Float, baseY: Float, halfW: Float, h: Float, step: Float) {
@@ -284,7 +181,6 @@ private val FAIRY_COLORS = arrayOf(Color(0xFFFFD37A), Color(0xFFFFA9B8), Color(0
 // ─────────────────────────────────────────────────────────────────────────────
 
 internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
-    gridP = p
     val phase = engine.timeOfDayPhase
     val night = phase.isNight
     val dusk = phase.isSunset
@@ -798,7 +694,6 @@ private fun drawFiddleFig(scope: DrawScope, x: Float, baseY: Float, p: Float, ti
  * laps like a real table: heart latte, bud vase and the croissant they share.
  */
 internal fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
-    gridP = p
     val tx = CafeLayout.tableX(cw, p)
     val ty = CafeLayout.tableY(ch, p)
     val tw = CafeLayout.tableW(p)
@@ -853,7 +748,6 @@ internal fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: 
 // ─────────────────────────────────────────────────────────────────────────────
 
 internal fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
-    gridP = p
     val phase = engine.timeOfDayPhase
     val night = phase.isNight
     val dusk = phase.isSunset
@@ -1222,7 +1116,6 @@ internal fun drawCampfireScene(
     isSunset: Boolean,
     isMorning: Boolean
 ) {
-    gridP = p
     // 1. Sky (stars, moon or sun, clouds) follows the real time and weather
     drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, time, p, weather = engine.weather)
     val snowing = engine.weather == WeatherType.SNOW
