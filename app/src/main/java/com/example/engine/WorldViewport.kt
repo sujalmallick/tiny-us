@@ -28,11 +28,17 @@ object WorldViewport {
     val pixelRenderer: Boolean get() = com.example.FeatureFlags.PIXEL_RENDERER
 
     /**
+     * Game pixels per sprite pixel for the barista and Grandpa Bao in the low-res renderer: a bit
+     * smaller than the couple. The canvas snaps their shapes to whole pixels, so they stay crisp.
+     */
+    const val LOW_RES_NPC_SCALE = 1.5f
+
+    /**
      * Scale for a sprite the classic renderer draws [classicScale] times the scene pixel (the
-     * barista, Grandpa Bao): the pixel renderer uses the couple's whole-pixel size instead.
+     * barista, Grandpa Bao); the pixel renderer uses [LOW_RES_NPC_SCALE].
      */
     fun spriteScale(p: Float, classicScale: Float, lowRes: Boolean = pixelRenderer): Float =
-        if (lowRes) p * LOW_RES_CHARACTER_BLOCKS else p * classicScale
+        if (lowRes) p * LOW_RES_NPC_SCALE else p * classicScale
 
     /** The loft couple's pixel size: 1.1x in the classic renderer, one whole game pixel otherwise. */
     fun loftCouplePixelScale(widthPx: Float, lowRes: Boolean = pixelRenderer): Float =
