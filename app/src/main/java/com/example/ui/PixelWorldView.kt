@@ -232,6 +232,8 @@ fun PixelWorldView(
                     onTap = { screenTap ->
                         val camera = cameraNow()
                         val tapOffset = camera.toWorld(screenTap)
+                        // The user is playing: the couple's own routine steps aside for a moment.
+                        engine.notifyUserInteraction()
                         if (engine.isDreamMode) {
                             engine.particles.spawnSparkles(tapOffset.x, tapOffset.y, 4)
                             return@detectTapGestures
@@ -1073,6 +1075,7 @@ fun PixelWorldView(
                     onDragStart = { screenOffset ->
                         val camera = cameraNow()
                         val offset = camera.toWorld(screenOffset)
+                        engine.notifyUserInteraction()
                         val w = camera.worldW
                         val h = camera.worldH
                         val pixelScale = WorldViewport.pixelScale(w)
@@ -1315,6 +1318,8 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
             // Rainbow after the rain, and the snowday snowman
             drawWeatherKeepsakes(this, cw, ch, pixelScale, engine)
         }
+        // A little something the couple might notice (flower, note, Mochi's toy...)
+        drawDiscovery(this, cw, ch, pixelScale, engine.discovery, engine.sceneTime)
 
         // 1c. Background seasonal particles (drawn behind characters so they never obscure characters or objects)
         drawBackgroundSeasonalParticles(this, engine.particles.particles, pixelScale)

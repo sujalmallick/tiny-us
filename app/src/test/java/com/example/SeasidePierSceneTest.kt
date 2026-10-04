@@ -38,6 +38,9 @@ class SeasidePierSceneTest {
             onOpenLoveNotes = {},
             onOpenMemories = {}
         )
+        // These tests check the scene's own mechanics; the couple's autonomous routine is
+        // covered by AutonomyEngineTest.
+        engine.autonomyEnabled = false
         engine.weatherDriftEnabled = false
         engine.weather = WeatherType.SUNNY
         engine.pierRng = Random(7)
