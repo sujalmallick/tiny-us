@@ -342,7 +342,7 @@ internal fun RomanticSurpriseDialog(
                     style = TinyType.BodyStrong
                 )
                 Text(
-                    text = "$letterContent\n\nForever yours,\n$creatorName",
+                    text = stringResource(R.string.ui_letter_signoff, letterContent, creatorName),
                     style = TinyType.Body
                 )
                 Column(

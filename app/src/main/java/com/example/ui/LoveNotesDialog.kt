@@ -233,12 +233,12 @@ fun LoveNotesDialog(
                 Text(stringResource(R.string.ui_from), style = TinyType.Label)
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     TinyChip(
-                        text = "From $boyfriendName",
+                        text = stringResource(R.string.ui_note_from, boyfriendName),
                         selected = noteAuthor == "From $boyfriendName",
                         onClick = { noteAuthor = "From $boyfriendName" }
                     )
                     TinyChip(
-                        text = "From $girlfriendName",
+                        text = stringResource(R.string.ui_note_from, girlfriendName),
                         selected = noteAuthor == "From $girlfriendName",
                         onClick = { noteAuthor = "From $girlfriendName" }
                     )

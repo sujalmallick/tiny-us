@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -416,7 +417,7 @@ fun MusicPlayerDialog(
                     style = TinyType.Micro.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 )
                 Text(
-                    text = "${audio.playlist.size} songs",
+                    text = pluralStringResource(R.plurals.ui_song_count, audio.playlist.size, audio.playlist.size),
                     style = TinyType.Micro
                 )
             }

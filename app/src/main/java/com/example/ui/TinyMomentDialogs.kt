@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -317,7 +318,7 @@ fun DailyTinyMomentDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = "Day $currentDay of Tiny Us",
+                                text = stringResource(R.string.ui_day_of_tiny_us, currentDay),
                                 style = TinyType.Label.copy(
                                     fontFamily = FontFamily.Serif,
                                     fontWeight = FontWeight.Bold,
@@ -516,15 +517,15 @@ fun RelationshipDurationDialog(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // Years, Months, Days
             Text(
-                text = "${duration.years} years",
+                text = pluralStringResource(R.plurals.ui_years, duration.years, duration.years),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
             Text(
-                text = "${duration.months} months",
+                text = pluralStringResource(R.plurals.ui_months, duration.months, duration.months),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
             Text(
-                text = "${duration.days} days",
+                text = pluralStringResource(R.plurals.ui_days, duration.days, duration.days),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
 
@@ -547,10 +548,10 @@ fun RelationshipDurationDialog(
         TinyDivider()
 
         // Total days count
-        val formattedTotalDays = java.text.NumberFormat.getNumberInstance(java.util.Locale.US)
+        val formattedTotalDays = java.text.NumberFormat.getNumberInstance()
             .format(duration.totalDays)
         Text(
-            text = "$formattedTotalDays days",
+            text = pluralStringResource(R.plurals.ui_total_days, duration.totalDays.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), formattedTotalDays),
             style = TinyType.Display.copy(color = TinyColors.Rose),
             textAlign = TextAlign.Center
         )
@@ -599,7 +600,7 @@ fun ShiningDayBadge(
             )
             Spacer(modifier = Modifier.width(3.dp))
             Text(
-                text = "Day $dayCount",
+                text = stringResource(R.string.ui_day_number, dayCount),
                 style = TinyType.Micro.copy(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,

@@ -261,7 +261,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = "for you ${prefs.girlfriendName}",
+                text = stringResource(R.string.ui_splash_for_you, prefs.girlfriendName),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TinyColors.Rose

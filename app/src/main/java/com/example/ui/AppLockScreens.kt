@@ -39,6 +39,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -336,7 +337,8 @@ private fun SettingSwitchRow(title: String, subtitle: String?, checked: Boolean,
 
 @Composable
 private fun PinDots(filled: Int) {
-    Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.md), modifier = Modifier.semantics { contentDescription = "$filled digits entered" }) {
+    val dotsDescription = pluralStringResource(R.plurals.ui_pin_digits_entered, filled, filled)
+    Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.md), modifier = Modifier.semantics { contentDescription = dotsDescription }) {
         repeat(AppLockPolicy.MAX_PIN_LENGTH) { i ->
             val on = i < filled
             Box(

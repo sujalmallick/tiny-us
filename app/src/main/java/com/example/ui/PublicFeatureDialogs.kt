@@ -226,7 +226,7 @@ private fun DateAdventureCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Unlocks: ${artifact.replace("_", " ")} in Tiny Home",
+                    text = stringResource(R.string.ui_unlocks_in_tiny_home, artifact.replace("_", " ")),
                     style = TinyType.Micro.copy(color = TinyColors.Rose)
                 )
             }
@@ -424,7 +424,7 @@ fun DailyMomentPromptDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
         ) {
             Text(
-                text = "${prefs.boyfriendName}'s reflection:",
+                text = stringResource(R.string.ui_partner_reflection, prefs.boyfriendName),
                 style = TinyType.Label
             )
             OutlinedTextField(
@@ -444,7 +444,7 @@ fun DailyMomentPromptDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
         ) {
             Text(
-                text = "${prefs.girlfriendName}'s reflection:",
+                text = stringResource(R.string.ui_partner_reflection, prefs.girlfriendName),
                 style = TinyType.Label
             )
             OutlinedTextField(
@@ -570,7 +570,7 @@ fun TwoPersonMiniGameDialog(
 
                 // Choices Section for Partner A (Boy)
                 Text(
-                    text = "${prefs.boyfriendName}'s choice:",
+                    text = stringResource(R.string.ui_partner_choice, prefs.boyfriendName),
                     style = TinyType.Label.copy(color = TinyColors.InkMuted)
                 )
                 Row(
@@ -595,7 +595,7 @@ fun TwoPersonMiniGameDialog(
 
                 // Choices Section for Partner B (Girl)
                 Text(
-                    text = "${prefs.girlfriendName}'s choice:",
+                    text = stringResource(R.string.ui_partner_choice, prefs.girlfriendName),
                     style = TinyType.Label.copy(color = TinyColors.InkMuted)
                 )
                 Row(
@@ -798,7 +798,7 @@ private fun PartnerMoodSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$partnerName's feeling:",
+                text = stringResource(R.string.ui_partner_feeling, partnerName),
                 style = TinyType.Label,
                 modifier = Modifier.weight(1f)
             )
@@ -1061,7 +1061,7 @@ private fun SignalHistoryCard(signal: LongDistanceSignal, senderDisplayName: Str
             Spacer(modifier = Modifier.width(TinySpace.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${signal.type.title} from $senderDisplayName",
+                    text = stringResource(R.string.ui_signal_from, signal.type.title, senderDisplayName),
                     style = TinyType.Label
                 )
                 if (!signal.note.isNullOrBlank()) {

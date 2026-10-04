@@ -494,4 +494,49 @@
     <string name="scene_auto_note_favorite_person">Thank you for being my favorite person.</string>
     <string name="scene_auto_note_choose_you">I would choose you again. Every time.</string>
     <string name="scene_auto_rare_mochi_zoomies">Mochi suddenly zooms off for no reason at all.</string>
+
+    <!-- Text built from names and numbers (plan 06, F1) -->
+    <string name="ui_letter_signoff">%1$s\n\nForever yours,\n%2$s</string>
+    <string name="ui_note_from">From %1$s</string>
+    <string name="ui_weather_desc">Weather: %1$s</string>
+    <string name="ui_unlocks_in_tiny_home">Unlocks: %1$s in Tiny Home</string>
+    <string name="ui_partner_reflection">%1$s\'s reflection:</string>
+    <string name="ui_partner_choice">%1$s\'s choice:</string>
+    <string name="ui_partner_feeling">%1$s\'s feeling:</string>
+    <string name="ui_signal_from">%1$s from %2$s</string>
+    <string name="ui_calendar_subtitle">%1$s &amp; %2$s • Precious Moments</string>
+    <string name="ui_today_prefix">TODAY • %1$s</string>
+    <string name="ui_splash_for_you">for you %1$s</string>
+    <string name="ui_day_of_tiny_us">Day %1$d of Tiny Us</string>
+    <string name="ui_day_number">Day %1$d</string>
+    <string name="widget_mood">Mood: %1$s</string>
+    <string name="widget_status_default">Quiet peaceful moments together.</string>
+    <plurals name="ui_pin_digits_entered">
+        <item quantity="one">%d digit entered</item>
+        <item quantity="other">%d digits entered</item>
+    </plurals>
+    <plurals name="ui_song_count">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+    <plurals name="ui_countdown_days">
+        <item quantity="one">%d DAY</item>
+        <item quantity="other">%d DAYS</item>
+    </plurals>
+    <plurals name="ui_years">
+        <item quantity="one">%d year</item>
+        <item quantity="other">%d years</item>
+    </plurals>
+    <plurals name="ui_months">
+        <item quantity="one">%d month</item>
+        <item quantity="other">%d months</item>
+    </plurals>
+    <plurals name="ui_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="ui_total_days">
+        <item quantity="one">%1$s day</item>
+        <item quantity="other">%1$s days</item>
+    </plurals>
 </resources>

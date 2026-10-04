@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -190,7 +191,7 @@ fun SpecialCalendarDialog(
     ) {
         TinyDialogHeader(
             title = stringResource(R.string.ui_our_special_calendar),
-            subtitle = "$boyfriendName & $girlfriendName • Precious Moments",
+            subtitle = stringResource(R.string.ui_calendar_subtitle, boyfriendName, girlfriendName),
             icon = TinyIcons.Heart,
             onClose = onDismiss,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.sm, top = TinySpace.lg, bottom = TinySpace.sm)
@@ -232,7 +233,7 @@ fun SpecialCalendarDialog(
                         Spacer(modifier = Modifier.width(TinySpace.sm))
                         Column {
                             Text(
-                                text = "TODAY • ${firstToday.title.uppercase()}",
+                                text = stringResource(R.string.ui_today_prefix, firstToday.title.uppercase()),
                                 style = TinyType.Label.copy(color = TinyColors.Rose)
                             )
                             Text(
@@ -533,7 +534,7 @@ fun CalendarMemoryDetailCard(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = "${countdown.days} DAYS",
+                                text = pluralStringResource(R.plurals.ui_countdown_days, countdown.days.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), countdown.days),
                                 style = TinyType.Title.copy(color = TinyColors.Rose)
                             )
                             Spacer(modifier = Modifier.height(TinySpace.xs))

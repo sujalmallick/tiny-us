@@ -659,7 +659,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.AutoAwesome,
-                            contentDescription = "Weather: ${engine.weather.displayName}",
+                            contentDescription = stringResource(R.string.ui_weather_desc, engine.weather.displayName),
                             tint = weatherIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
