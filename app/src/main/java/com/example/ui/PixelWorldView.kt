@@ -1772,6 +1772,10 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         val p = WorldViewport.pixelScale(camera.worldW)
         val skyAbove: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.COOKING) {
             { wallH -> drawKitchenWallAbove(this, camera.worldW, wallH, p) }
+        } else if (engine.currentScene == com.example.scene.SceneType.RAINY_CAFE) {
+            { ceilingH -> drawCafeCeilingAbove(this, camera.worldW, ceilingH, p) }
+        } else if (engine.currentScene == com.example.scene.SceneType.SLEEP) {
+            { wallH -> drawBedroomWallAbove(this, camera.worldW, wallH, p) }
         } else if (engine.isCurrentSceneOutdoor) {
             { skyH ->
                 if (phase.isNight) {

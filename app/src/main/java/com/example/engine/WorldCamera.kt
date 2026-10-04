@@ -90,7 +90,9 @@ class WorldCamera private constructor(
             topReservePx: Float = 0f,
             bottomReservePx: Float = 0f
         ): WorldCamera = forScreen(
-            screenW, screenH, pixelRenderer, aboveShareFor(scene), topReservePx,
+            screenW, screenH, pixelRenderer, aboveShareFor(scene),
+            // The sunroom's glass roof can't be continued upward, so it runs under the top buttons.
+            if (scene == SceneType.SUNROOM) 0f else topReservePx,
             // The kitchen's checkerboard floor can't be continued, so its floor runs to the bottom
             // edge as it always did (the stage still clears the top buttons).
             if (scene == SceneType.COOKING) 0f else bottomReservePx
