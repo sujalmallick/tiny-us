@@ -26,30 +26,31 @@ The user wants the UI restyle finished before anything else starts.
 - zero emoji, enforced by `NoEmojiPolicyTest`.
 
 **To finish:**
-- [ ] The UI session lists what's left on its own plan and completes it in the worktree.
-- [ ] After-screenshots of every restyled screen. Book the emulator; the machine is short on memory, so run nothing else alongside it.
-- [ ] The user reviews the before/after screenshots and approves the look.
-- [ ] Decide whether the pixel UI (font, framed pixel buttons, pixel icons, Phase 5 of `03_PIXEL_ART_OVERHAUL_PLAN.md`) belongs in this pass or waits for C.
-- [ ] The UI session runs its tests (including `NoEmojiPolicyTest`) and commits, then sends "ui-chrome-pass ready" with the final commit hash.
+- [x] The UI session lists what's left on its own plan and completes it in the worktree.
+- [x] After-screenshots of every restyled screen. Book the emulator; the machine is short on memory, so run nothing else alongside it. *(Emulator and JVM rendering both ran out of memory on this machine; the user reviewed the build on a device instead. Before-shots: `.claude/worktrees/ui-chrome-pass/build/ui-pass/before/`.)*
+- [x] The user reviews the before/after screenshots and approves the look. *(Approved 2026-10-04.)*
+- [x] Decide whether the pixel UI (font, framed pixel buttons, pixel icons, Phase 5 of `03_PIXEL_ART_OVERHAUL_PLAN.md`) belongs in this pass or waits for C. *(Decision: waits for C.)*
+- [x] The UI session runs its tests (including `NoEmojiPolicyTest`) and commits, then sends "ui-chrome-pass ready" with the final commit hash. *(Final hash `3952091`.)*
 - **Check:** the user signs off on the UI. Only then start A1.
 
 ## A. Tidy up and merge (about 1 day)
 
 ### A1. Commit pending work on `android-public-release`
-- [ ] FEATURES commits its weather work: `ParticleSystem.kt`, `WorldParticles.kt`, `WorldWeatherExtras.kt`, the weather blocks in `SceneEngine.kt`, `SceneLayouts.kt` (`WeatherLayout`), `PixelWorldView.kt` hooks, 4 speed constants in `WorldSpecialScenes.kt`, and `CozyWeatherTest.kt`.
-- [ ] Commit `docs/plans/03_PIXEL_ART_OVERHAUL_PLAN.md` and this file.
+- [x] FEATURES commits its weather work: `ParticleSystem.kt`, `WorldParticles.kt`, `WorldWeatherExtras.kt`, the weather blocks in `SceneEngine.kt`, `SceneLayouts.kt` (`WeatherLayout`), `PixelWorldView.kt` hooks, 4 speed constants in `WorldSpecialScenes.kt`, and `CozyWeatherTest.kt`. *(`4dfe314`.)*
+- [x] Commit `docs/plans/03_PIXEL_ART_OVERHAUL_PLAN.md` and this file. *(`06274e0`.)*
 - **Check:** `git status` is clean.
 
 ### A2. Merge `ui-chrome-pass` (the UI session confirms it's finished first)
-- [ ] `git merge ui-chrome-pass` into `android-public-release`.
-- [ ] Resolve the known conflict in `SceneEngine.kt`, keeping both sides' changes.
-- [ ] Its new `NoEmojiPolicyTest` will flag emoji added on this branch after it forked. Replace them with TinyChrome pixel icons or plain text:
+- [x] `git merge ui-chrome-pass` into `android-public-release`. *(Fast-forward to `3952091`: the UI branch had already merged `06274e0`.)*
+- [x] Resolve the known conflict in `SceneEngine.kt`, keeping both sides' changes. *(Lighthouse tap: kept this branch's emoji-free gull-flock version.)*
+- [x] Its new `NoEmojiPolicyTest` will flag emoji added on this branch after it forked. Replace them with TinyChrome pixel icons or plain text:
   - the "Make Us" and "Our Story" buttons (`strings.xml`),
   - garden bloom and welcome-back messages (`GardenGrowth.kt`, `MainScreen.kt`),
   - Our Story entry icons (`StoryTimeline.kt`),
   - pier, weather and scene-message emoji (`SceneEngine.kt`).
-- [ ] Re-check the screens the restyle touched that were added after it forked: `AppLockScreens`, `AvatarCustomizerDialog`, `BackupRestoreSettings`, `OurStoryDialog`.
-- **Check:** `./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest verifyPrivacySafeguards` is green.
+  *(None left after the merge: the repository-wide audit and `NoEmojiPolicyTest` both report zero.)*
+- [x] Re-check the screens the restyle touched that were added after it forked: `AppLockScreens`, `AvatarCustomizerDialog`, `BackupRestoreSettings`, `OurStoryDialog`. *(All four were restyled in `923532a`; nothing newer landed in them.)*
+- **Check:** `./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest verifyPrivacySafeguards` is green. *(Green on `3952091`: 190 app tests, shared host tests, privacy check.)*
 
 ### A3. Merge `ios/parity-first-pass`
 - [ ] `git merge ios/parity-first-pass`. Most iOS files already arrived through `c89663d`, so expect duplicates.
