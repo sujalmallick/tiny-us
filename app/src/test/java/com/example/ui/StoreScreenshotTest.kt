@@ -61,6 +61,19 @@ class StoreScreenshotTest {
     @Config(sdk = [34], qualifiers = "w800dp-h1280dp-port-xhdpi")
     fun tablet10() = renderAll("tablet10")
 
+    /**
+     * Plan 06, F2: the same screens in the en-XA pseudo-locale, where every string is about a
+     * third longer, to spot text that would clip in a longer language. On the smallest common
+     * phone width as well as the usual one.
+     */
+    @Test
+    @Config(sdk = [34], qualifiers = "en-rXA-w360dp-h800dp-port-xxhdpi")
+    fun phonePseudoLocale() = renderAll("pseudo_en_xa")
+
+    @Test
+    @Config(sdk = [34], qualifiers = "en-rXA-w320dp-h640dp-port-xhdpi")
+    fun smallPhonePseudoLocale() = renderAll("pseudo_en_xa_small")
+
     private fun renderAll(device: String, polaroid: Boolean = false) {
         val root = outDir
         assumeTrue("Set STORE_SHOTS_DIR to render store screenshots", root != null)

@@ -312,7 +312,8 @@ fun SpecialCalendarDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             // Days of Week Header
-            val daysOfWeek = listOf("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun")
+            // Short weekday names in the phone's language, Monday first.
+            val daysOfWeek = java.time.DayOfWeek.values().map { it.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()) }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween

@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -293,7 +294,7 @@ fun PolaroidCaptureOverlay(
                     ) {
                         // 1. Save to Device (primary action)
                         TinyButton(
-                            text = if (savedToDevice) "Saved to Photos" else "Save to Device",
+                            text = if (savedToDevice) stringResource(R.string.ui_saved_to_photos) else stringResource(R.string.ui_save_to_device),
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(bitmap, memory.title)
                                 if (success) {
@@ -303,7 +304,7 @@ fun PolaroidCaptureOverlay(
                             },
                             modifier = Modifier
                                 .weight(1.2f)
-                                .semantics { contentDescription = "Save to Device" },
+                                .describedAs(R.string.ui_save_to_device),
                             style = if (savedToDevice) TinyButtonStyle.Success else TinyButtonStyle.Primary,
                             icon = if (savedToDevice) PixelIcons.Check else PixelIcons.Download
                         )
@@ -314,7 +315,7 @@ fun PolaroidCaptureOverlay(
                             onClick = onOpenGallery,
                             modifier = Modifier
                                 .weight(1f)
-                                .semantics { contentDescription = "Memories" },
+                                .describedAs(R.string.memories),
                             style = TinyButtonStyle.Secondary,
                             icon = TinyIcons.Heart
                         )
@@ -547,14 +548,14 @@ fun PolaroidGalleryDialog(
                                 selectedMemory = null
                                 selectedBitmap = null
                             },
-                            modifier = Modifier.semantics { contentDescription = "Back" },
+                            modifier = Modifier.describedAs(R.string.ui_back),
                             style = TinyButtonStyle.Secondary,
                             icon = PixelIcons.ArrowBack
                         )
 
                         // 2. Save to Device button
                         TinyButton(
-                            text = if (savedInInspector) "Saved" else "Save to Device",
+                            text = if (savedInInspector) stringResource(R.string.ui_saved) else stringResource(R.string.ui_save_to_device),
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(
                                     selectedBitmap!!,
@@ -567,7 +568,7 @@ fun PolaroidGalleryDialog(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .semantics { contentDescription = "Save to Device" },
+                                .describedAs(R.string.ui_save_to_device),
                             style = if (savedInInspector) TinyButtonStyle.Success else TinyButtonStyle.Primary,
                             icon = if (savedInInspector) PixelIcons.Check else PixelIcons.Download
                         )
@@ -607,7 +608,7 @@ fun PolaroidGalleryDialog(
     ) {
         TinyDialogHeader(
             title = stringResource(R.string.ui_polaroid_memories),
-            subtitle = if (polaroids.isEmpty()) "No moments captured yet" else "${polaroids.size} moments captured",
+            subtitle = if (polaroids.isEmpty()) stringResource(R.string.ui_no_moments_captured_yet) else pluralStringResource(R.plurals.ui_moments_captured, polaroids.size, polaroids.size),
             icon = PixelIcons.PhotoCamera,
             onClose = onDismiss
         )

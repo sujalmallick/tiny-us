@@ -182,7 +182,7 @@ private fun CouplePreview(
             .clip(TinyRadius.Large)
             .background(Color(0xFFFDE8E4), TinyRadius.Large)
             .border(1.dp, TinyColors.Line, TinyRadius.Large)
-            .semantics { contentDescription = "Preview of both characters" }
+            .describedAs(R.string.ui_preview_of_both_characters)
     ) {
         Canvas(Modifier.fillMaxWidth().height(150.dp)) {
             val ground = size.height * 0.88f

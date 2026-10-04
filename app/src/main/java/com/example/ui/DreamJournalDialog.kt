@@ -241,6 +241,7 @@ fun DreamJournalDialog(
     var dreamText by remember { mutableStateOf("") }
     var dreamsList by remember { mutableStateOf(prefs.getDreamEntries()) }
     var errorText by remember { mutableStateOf("") }
+    val emptyDreamError = stringResource(R.string.ui_dream_empty_error)
 
     TinyDialog(
         onDismissRequest = onDismiss,
@@ -290,7 +291,7 @@ fun DreamJournalDialog(
                 onClick = {
                     val trimmed = dreamText.trim()
                     if (trimmed.isEmpty()) {
-                        errorText = "Please write a few words about your dream first."
+                        errorText = emptyDreamError
                     } else {
                         val (theme, keywords) = parseDreamTheme(trimmed)
                         val entry = com.example.data.DreamEntry(
@@ -333,17 +334,17 @@ fun DreamJournalDialog(
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
                                         val themeLabel = when (entry.dreamTheme) {
-                                            "JAPAN" -> "Japan"
-                                            "NORWAY" -> "Aurora"
-                                            "OCEAN" -> "Ocean"
-                                            "FLYING" -> "Flying"
-                                            "STARS" -> "Stars"
-                                            "FOREST" -> "Forest"
-                                            "HOME" -> "Cozy"
-                                            "RAIN" -> "Rain"
-                                            "CITY" -> "City"
-                                            "SWEET" -> "Sweet"
-                                            else -> "Dream"
+                                            "JAPAN" -> stringResource(R.string.ui_dream_theme_japan)
+                                            "NORWAY" -> stringResource(R.string.ui_dream_theme_aurora)
+                                            "OCEAN" -> stringResource(R.string.ui_dream_theme_ocean)
+                                            "FLYING" -> stringResource(R.string.ui_dream_theme_flying)
+                                            "STARS" -> stringResource(R.string.ui_dream_theme_stars)
+                                            "FOREST" -> stringResource(R.string.ui_dream_theme_forest)
+                                            "HOME" -> stringResource(R.string.ui_dream_theme_cozy)
+                                            "RAIN" -> stringResource(R.string.ui_dream_theme_rain)
+                                            "CITY" -> stringResource(R.string.ui_dream_theme_city)
+                                            "SWEET" -> stringResource(R.string.ui_dream_theme_sweet)
+                                            else -> stringResource(R.string.ui_dream_theme_dream)
                                         }
                                         TinyTag(
                                             text = themeLabel,

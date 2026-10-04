@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -225,6 +226,8 @@ fun WardrobeDialog(
     boyWearsDress: Boolean = false
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Girl, 1: Boy
+    // The catalogue below is built inside remember { }, so it reads its text through resources.
+    val res = LocalContext.current.resources
     var filterHoodiesOnly by remember { mutableStateOf(false) }
 
     var selectedGirlOutfit by remember(currentGirlOutfitIndex) { mutableStateOf(currentGirlOutfitIndex) }
@@ -236,92 +239,92 @@ fun WardrobeDialog(
         listOf(
             WardrobeItem(
                 id = 0,
-                name = "Strawberry Cream Sundress",
-                tag = "Signature Classic",
-                description = "Soft blush-pink sweater and rosy pleated skirt. The timeless outfit $boyfriendName fell in love with.",
+                name = res.getString(R.string.wardrobe_strawberry_cream_sundress),
+                tag = res.getString(R.string.wardrobe_signature_classic),
+                description = res.getString(R.string.wardrobe_soft_blush_pink_sweater_and_rosy_p, boyfriendName),
                 primaryColor = Color(0xFFF5CAC3),
                 accentColor = Color(0xFFD6587A)
             ),
             WardrobeItem(
                 id = 1,
-                name = "Lavender Dream Wrap Dress",
-                tag = "Garden Stroll",
-                description = "Delicate lilac petals woven into flowing silk. Smells like blooming lavender and gentle morning breezes.",
+                name = res.getString(R.string.wardrobe_lavender_dream_wrap_dress),
+                tag = res.getString(R.string.wardrobe_garden_stroll),
+                description = res.getString(R.string.wardrobe_delicate_lilac_petals_woven_into_f),
                 primaryColor = Color(0xFFE8D7F1),
                 accentColor = Color(0xFF9D4EDD)
             ),
             WardrobeItem(
                 id = 2,
-                name = "Emerald Velvet Romance",
-                tag = "Candlelit Evening",
-                description = "Deep forest emerald velvet with shimmering dark green folds. Made for rooftop starlight and warm slow dances.",
+                name = res.getString(R.string.wardrobe_emerald_velvet_romance),
+                tag = res.getString(R.string.wardrobe_candlelit_evening),
+                description = res.getString(R.string.wardrobe_deep_forest_emerald_velvet_with_sh),
                 primaryColor = Color(0xFF74C69D),
                 accentColor = Color(0xFF2D6A4F)
             ),
             WardrobeItem(
                 id = 3,
-                name = "Lemon Sunshine Picnic Dress",
-                tag = "Meadow Picnic",
-                description = "Cheerful lemon-yellow linen with sweet honey accents. Brings warm golden sunshine wherever $girlfriendName walks.",
+                name = res.getString(R.string.wardrobe_lemon_sunshine_picnic_dress),
+                tag = res.getString(R.string.wardrobe_meadow_picnic),
+                description = res.getString(R.string.wardrobe_cheerful_lemon_yellow_linen_with_s, girlfriendName),
                 primaryColor = Color(0xFFFFF3B0),
                 accentColor = Color(0xFFE9C46A)
             ),
             WardrobeItem(
                 id = 4,
-                name = "Midnight Starlight Gown",
-                tag = "Midnight Date",
-                description = "Deep midnight blue with celestial starlight highlights. For whispering secrets under constellations.",
+                name = res.getString(R.string.wardrobe_midnight_starlight_gown),
+                tag = res.getString(R.string.wardrobe_midnight_date),
+                description = res.getString(R.string.wardrobe_deep_midnight_blue_with_celestial),
                 primaryColor = Color(0xFF4A6FA5),
                 accentColor = Color(0xFF1E3A8A)
             ),
             WardrobeItem(
                 id = 5,
-                name = "Mint Macaron Tea Dress",
-                tag = "Cozy Cafe",
-                description = "Sweet pastel mint chiffon as light as a daydream. Perfect for sipping steaming tea by the cottage window.",
+                name = res.getString(R.string.wardrobe_mint_macaron_tea_dress),
+                tag = res.getString(R.string.wardrobe_cozy_cafe),
+                description = res.getString(R.string.wardrobe_sweet_pastel_mint_chiffon_as_light),
                 primaryColor = Color(0xFFC3DBD0),
                 accentColor = Color(0xFF6B9080)
             ),
             WardrobeItem(
                 id = 6,
-                name = "$boyfriendName's Stolen Oversized Flannel",
-                tag = "Stolen with Love",
-                description = "Comfortable deep blue flannel shirt. Originally belonged to $boyfriendName, but $girlfriendName claimed it forever because it smells like home.",
+                name = res.getString(R.string.wardrobe_s_stolen_oversized_flannel, boyfriendName),
+                tag = res.getString(R.string.wardrobe_stolen_with_love),
+                description = res.getString(R.string.wardrobe_comfortable_deep_blue_flannel_shir, boyfriendName, girlfriendName),
                 primaryColor = Color(0xFF457B9D),
                 accentColor = Color(0xFF1D3557)
             ),
             WardrobeItem(
                 id = 7,
-                name = "Blush Rose Cropped Hoodie",
-                tag = "Cozy Streetwear",
-                description = "Soft blush-rose cropped knit hoodie with a flared pleated skirt. Wonderfully cozy for cool afternoon strolls.",
+                name = res.getString(R.string.wardrobe_blush_rose_cropped_hoodie),
+                tag = res.getString(R.string.wardrobe_cozy_streetwear),
+                description = res.getString(R.string.wardrobe_soft_blush_rose_cropped_knit_hoodi),
                 primaryColor = Color(0xFFF4ACB7),
                 accentColor = Color(0xFFFFCAD4),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 8,
-                name = "Sage & Cream Colorblock Hoodie",
-                tag = "Forest Breeze",
-                description = "Earthy sage and fresh cream colorblock hoodie with a linen skirt. Feels like a quiet walk through misty pines.",
+                name = res.getString(R.string.wardrobe_sage_cream_colorblock_hoodie),
+                tag = res.getString(R.string.wardrobe_forest_breeze),
+                description = res.getString(R.string.wardrobe_earthy_sage_and_fresh_cream_colorb),
                 primaryColor = Color(0xFF84A98C),
                 accentColor = Color(0xFF52796F),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 9,
-                name = "Lavender Cloud Oversized Hoodie",
-                tag = "Cloud Cozy",
-                description = "Fluffy lavender fleece oversized hoodie with denim skirt. Like wrapping up inside a warm, sweet-scented cloud.",
+                name = res.getString(R.string.wardrobe_lavender_cloud_oversized_hoodie),
+                tag = res.getString(R.string.wardrobe_cloud_cozy),
+                description = res.getString(R.string.wardrobe_fluffy_lavender_fleece_oversized_h),
                 primaryColor = Color(0xFFD8BBFF),
                 accentColor = Color(0xFF3D5A80),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 10,
-                name = "Buttercream Star Shimmer Hoodie",
-                tag = "Golden Glow",
-                description = "Sunny buttercream hoodie with warm honey shimmer and golden accents. Radiates gentle warmth and smiles.",
+                name = res.getString(R.string.wardrobe_buttercream_star_shimmer_hoodie),
+                tag = res.getString(R.string.wardrobe_golden_glow),
+                description = res.getString(R.string.wardrobe_sunny_buttercream_hoodie_with_warm),
                 primaryColor = Color(0xFFFFF1C5),
                 accentColor = Color(0xFFFFD166),
                 isHoodie = true
@@ -333,45 +336,45 @@ fun WardrobeDialog(
         listOf(
             WardrobeItem(
                 id = 0,
-                name = "Classic Spruce Knit & Navy Pants",
-                tag = "Signature Everyday",
-                description = "$boyfriendName's iconic spruce green sweater paired with relaxed navy trousers. Trusty, warm, and familiar.",
+                name = res.getString(R.string.wardrobe_classic_spruce_knit_navy_pants),
+                tag = res.getString(R.string.wardrobe_signature_everyday),
+                description = res.getString(R.string.wardrobe_s_iconic_spruce_green_sweater_pair, boyfriendName),
                 primaryColor = Color(0xFF2D6A4F),
                 accentColor = Color(0xFF1B4332),
                 isHoodie = false
             ),
             WardrobeItem(
                 id = 1,
-                name = "White & Emerald Varsity Hoodie",
-                tag = "Varsity Campus",
-                description = "Clean white hoodie with deep emerald varsity stripes, kangaroo pouch, and khaki chinos. Sharp and sporty.",
+                name = res.getString(R.string.wardrobe_white_emerald_varsity_hoodie),
+                tag = res.getString(R.string.wardrobe_varsity_campus),
+                description = res.getString(R.string.wardrobe_clean_white_hoodie_with_deep_emera),
                 primaryColor = Color(0xFFF8F9FA),
                 accentColor = Color(0xFF2D6A4F),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 2,
-                name = "Charcoal Streetwear Zip Hoodie",
-                tag = "Urban Evening",
-                description = "Heavy charcoal zip-up hoodie over dark indigo denim. Modern, comfortable, and effortlessly cool.",
+                name = res.getString(R.string.wardrobe_charcoal_streetwear_zip_hoodie),
+                tag = res.getString(R.string.wardrobe_urban_evening),
+                description = res.getString(R.string.wardrobe_heavy_charcoal_zip_up_hoodie_over),
                 primaryColor = Color(0xFF343A40),
                 accentColor = Color(0xFF495057),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 3,
-                name = "Oatmeal Cloud Oversized Hoodie",
-                tag = "Weekend Comfort",
-                description = "Ultra-soft oatmeal heather oversized hoodie with comfortable slate cargo trousers. Maximum cozy lounging.",
+                name = res.getString(R.string.wardrobe_oatmeal_cloud_oversized_hoodie),
+                tag = res.getString(R.string.wardrobe_weekend_comfort),
+                description = res.getString(R.string.wardrobe_ultra_soft_oatmeal_heather_oversiz),
                 primaryColor = Color(0xFFEDE0D4),
                 accentColor = Color(0xFFB08968),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 4,
-                name = "Midnight Starlight Graphic Hoodie",
-                tag = "Stargazing Date",
-                description = "Deep starlight navy hoodie with celestial accents over black denim. Matches $girlfriendName's evening starlight look.",
+                name = res.getString(R.string.wardrobe_midnight_starlight_graphic_hoodie),
+                tag = res.getString(R.string.wardrobe_stargazing_date),
+                description = res.getString(R.string.wardrobe_deep_starlight_navy_hoodie_with_ce, girlfriendName),
                 primaryColor = Color(0xFF1E293B),
                 accentColor = Color(0xFF64748B),
                 isHoodie = true
@@ -383,26 +386,26 @@ fun WardrobeDialog(
         listOf(
             AccessoryItem(
                 id = 0,
-                name = "Natural Look",
-                description = "No headwear or neck accessory.",
+                name = res.getString(R.string.wardrobe_natural_look),
+                description = res.getString(R.string.wardrobe_no_headwear_or_neck_accessory),
                 iconType = "none"
             ),
             AccessoryItem(
                 id = 1,
-                name = "Cozy Beanie",
-                description = "Ribbed knit beanie with fluffy pom-pom.",
+                name = res.getString(R.string.wardrobe_cozy_beanie),
+                description = res.getString(R.string.wardrobe_ribbed_knit_beanie_with_fluffy_pom),
                 iconType = "beanie"
             ),
             AccessoryItem(
                 id = 2,
-                name = "Wool Scarf",
-                description = "Warm chunky wool scarf with gentle fringe.",
+                name = res.getString(R.string.wardrobe_wool_scarf),
+                description = res.getString(R.string.wardrobe_warm_chunky_wool_scarf_with_gentle),
                 iconType = "scarf"
             ),
             AccessoryItem(
                 id = 3,
-                name = "Baseball Cap",
-                description = "Casual streetwear twill cap with forward visor.",
+                name = res.getString(R.string.wardrobe_baseball_cap),
+                description = res.getString(R.string.wardrobe_casual_streetwear_twill_cap_with_f),
                 iconType = "cap"
             )
         )
@@ -469,7 +472,7 @@ fun WardrobeDialog(
                     style = TinyType.Section
                 )
                 Text(
-                    text = if (selectedTab == 1) "Glasses stay on" else "Layers over outfits",
+                    text = if (selectedTab == 1) stringResource(R.string.wardrobe_glasses_stay_on) else stringResource(R.string.wardrobe_layers_over_outfits),
                     style = TinyType.Caption
                 )
             }
@@ -558,7 +561,7 @@ fun WardrobeDialog(
             // Outfits Section Header with filter
             Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                 Text(
-                    text = if (selectedTab == 0) "Dresses & Hoodies" else "Sweaters & Hoodies",
+                    text = if (selectedTab == 0) stringResource(R.string.wardrobe_dresses_and_hoodies) else stringResource(R.string.wardrobe_sweaters_and_hoodies),
                     style = TinyType.Section
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {

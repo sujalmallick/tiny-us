@@ -416,8 +416,8 @@ fun MainScreen(
                 if (newBloom != null) delay(5000)
             }
             if (newBloom != null) {
-                val text = if (newBloom.isGolden) "A golden bloom sparkles in your garden."
-                else "A ${newBloom.plant.name} bloomed in your garden."
+                val text = if (newBloom.isGolden) context.getString(R.string.ui_golden_bloom)
+                else context.getString(R.string.ui_new_bloom, newBloom.plant.name)
                 engine.showMessage(text, duration = 4.5f)
             }
         }
@@ -497,7 +497,9 @@ fun MainScreen(
             val titleFontSize = if (isCompact) 10.sp else if (isMedium) 11.sp else 11.5.sp
             val dotFontSize = if (isCompact) 9.sp else if (isMedium) 10.sp else 10.5.sp
             val namesFontSize = if (isCompact) 9.5.sp else if (isMedium) 10.sp else 10.5.sp
-            // The room customizer adds a sixth button; drop the separator dot so the names keep their room.
+            // The room customizer adds a sixth button; then the pill shows just the heart and the names
+            // (no "Tiny Us", no separator dot), so the names never get cut off, even on small phones or
+            // in longer languages.
             val crowded = engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT
 
             Box(
@@ -529,6 +531,7 @@ fun MainScreen(
                             clearFactor = clearFactor,
                             isDark = isDark
                         )
+                        if (!crowded) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = stringResource(R.string.ui_tiny_us),
@@ -549,6 +552,7 @@ fun MainScreen(
                             },
                             maxLines = 1
                         )
+                        }
                     }
 
                     if (crowded) {
@@ -765,7 +769,7 @@ fun MainScreen(
                                 .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContrastIcon(PixelIcons.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                            ContrastIcon(PixelIcons.Palette, stringResource(R.string.ui_customize_room), activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
                         }
                     }
                 }

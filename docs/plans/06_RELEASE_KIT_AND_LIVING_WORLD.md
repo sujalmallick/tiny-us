@@ -59,9 +59,10 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 
 ## F. Text and translation
 
-- [ ] F1. Move the last ~31 built UI strings into `strings.xml` (with `tools/i18n`), including the widget's ("Day", "Mood:", "Quiet peaceful moments together.").
-- [ ] F2. Pseudo-locale render check: no clipped or overlapping text in long languages.
+- [x] F1. Move the last built UI strings into `strings.xml`, including the widget's. *(There were more than ~31: 35 built strings with plurals for counts, 57 if/else, screen-reader and default texts (`Modifier.describedAs`), and the 60-line wardrobe catalogue. Still in code: the shared module's text (scene titles, weather and plant names, garden and calendar messages, Tiny Care notifications), which iOS shares too and needs its own approach; see F4.)*
+- [x] F2. Pseudo-locale render check: debug builds include en-XA/ar-XB; `StoreScreenshotTest.*PseudoLocale` renders the main screen at 360 and 320 dp. Speech bubbles wrap fine; the title pill cut the names off in the loft and living room, so there it now shows the heart and names only (longer names still end in "..." on 320 dp phones).
 - [ ] F3. *(User's call)* A first translation, e.g. Hindi (`values-hi`).
+- [ ] F4. *(Needs a decision)* Text in the shared module (`shared/src`), used by Android and iOS: move it to resources on each platform, or a shared string table.
 
 ## G. A world that follows the real calendar
 

@@ -446,7 +446,7 @@ fun SettingsBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(R.string.ui_cozy_ambient_lullaby_audio), style = TinyType.BodyStrong)
                         Text(
-                            if (soundEnabled) "Gentle music box sounds on" else "Sounds muted",
+                            if (soundEnabled) stringResource(R.string.ui_sounds_on) else stringResource(R.string.ui_sounds_muted),
                             style = TinyType.Caption,
                             modifier = Modifier.padding(top = 2.dp)
                         )
@@ -598,7 +598,7 @@ fun SettingsBottomSheet(
                     Column(modifier = Modifier.weight(1f)) {
                         Text(stringResource(R.string.ui_tiny_care), style = TinyType.BodyStrong)
                         Text(
-                            "Gentle, wholesome offline reminders",
+                            stringResource(R.string.ui_tiny_care_description),
                             style = TinyType.Caption,
                             modifier = Modifier.padding(top = 2.dp)
                         )

@@ -58,6 +58,9 @@ android {
     }
     debug {
       // Uses default Android debug signing configuration
+      // Pseudo-locales (en-XA: longer accented text, ar-XB: right to left) to check that the
+      // layouts survive longer translations. Debug builds only.
+      isPseudoLocalesEnabled = true
     }
   }
 

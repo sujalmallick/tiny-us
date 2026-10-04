@@ -123,7 +123,7 @@ fun OnboardingDialog(
                         // Header icon
                         TinyIconBadge(
                             icon = TinyIcons.Heart,
-                            modifier = Modifier.semantics { contentDescription = "Heart" },
+                            modifier = Modifier.describedAs(R.string.ui_heart),
                             size = 56.dp,
                             iconSize = 28.dp
                         )
@@ -239,7 +239,7 @@ fun OnboardingDialog(
                             )
                             Spacer(modifier = Modifier.width(TinySpace.sm))
                             Text(
-                                text = if (showSecretFields) "Hide Secret Keepsake Note" else "+ Add Secret Keepsake Note (Optional)",
+                                text = if (showSecretFields) stringResource(R.string.ui_hide_secret_note) else stringResource(R.string.ui_add_secret_note),
                                 style = TinyType.Label.copy(color = TinyColors.Rose)
                             )
                         }

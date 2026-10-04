@@ -1,6 +1,8 @@
 package com.example.ui
 
 import androidx.compose.animation.AnimatedVisibility
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -66,6 +68,7 @@ import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.heading
+import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -155,6 +158,13 @@ fun TinyEnterTransition(content: @Composable () -> Unit) {
     ) { content() }
 }
 
+/** A screen-reader label from strings.xml (semantics blocks can't look strings up themselves). */
+@Composable
+fun Modifier.describedAs(@androidx.annotation.StringRes label: Int): Modifier {
+    val text = stringResource(label)
+    return this.semantics { contentDescription = text }
+}
+
 /** Dialog header: optional icon badge, Serif title, muted subtitle, 48dp close button. */
 @Composable
 fun TinyDialogHeader(
@@ -166,7 +176,7 @@ fun TinyDialogHeader(
     accentSoft: Color = TinyColors.RoseSoft,
     onClose: (() -> Unit)? = null,
     closeTestTag: String? = null,
-    closeDescription: String = "Close"
+    closeDescription: String = stringResource(R.string.ui_close)
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {
