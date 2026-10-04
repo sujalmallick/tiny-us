@@ -1,8 +1,7 @@
 # Privacy Policy for Tiny Us
 
-**Effective Date:** October 1, 2026  
-**Last Updated:** October 1, 2026  
-**Status:** DRAFT (Subject to independent legal review before store publication)
+**Effective Date:** October 5, 2026  
+**Last Updated:** October 5, 2026
 
 ---
 
@@ -24,19 +23,18 @@ All content created, customized, or logged within Tiny Us is stored strictly on 
 2. **Love Notes & Keepsake Journal:** Offline messages written to your partner and milestone memories.
 3. **Polaroid Memories:** Pixel-art snapshot cards generated via the in-game camera feature, stored locally in private app storage.
 4. **App Preferences & Progress:** Garden growth stage, pet interactions, selected outfits and hairstyles, ambient sound toggles, and notification preferences.
+5. **Privacy Lock (optional):** whether the lock is on, a salted hash of your PIN, and whether fingerprint or face unlock is allowed. This is never included in backups.
 
 **None of this data is ever transmitted to us or any third party.** You retain full ownership and control over your data at all times.
 
 ---
 
-## 3. Network Access & In-App Purchases
+## 3. No Internet Access, No Purchases
 
-Tiny Us does not request generic network access for regular gameplay. The sole exception is **Google Play Billing**, which is utilized exclusively when you choose to make an optional one-time digital purchase (such as an optional cosmetic expansion pack or developer tip):
+Tiny Us does not use the internet at all. The app does not request Android's `INTERNET` permission, so it cannot send or receive anything over a network.
 
-- **Transaction Processing:** In-app purchases are handled directly through Google Play Services and Google LLC. When completing a transaction, Google processes payment details (such as credit card information and billing addresses) under the [Google Play Terms of Service](https://play.google.com/intl/en_us/about/play-terms/) and [Google Privacy Policy](https://policies.google.com/privacy).
-- **Strict Scope of INTERNET Permission:** The newly required `android.permission.INTERNET` permission is invoked only during an active purchase or restore-purchases transaction, and is never used for anything else or checked in the background. The app contains zero background network syncs, zero remote analytics, and zero telemetry pings.
-- **What Tiny Us Receives:** The app only receives an anonymous, cryptographically signed purchase token and product identifier from Google Play to confirm your entitlement. We never see, receive, or store your credit card or financial details.
-- **Offline Entitlement Caching:** Once a purchase is completed and verified, your entitlement is cached locally on your device. You do not need an active internet connection to use previously purchased content.
+- There are no in-app purchases, no ads, no analytics, no crash reporting and no telemetry.
+- Nothing you create in the app ever leaves your device unless you move it yourself (see section 5).
 
 ---
 
@@ -47,6 +45,7 @@ Tiny Us requests a minimal set of Android system permissions, each serving a dir
 - **Notifications (`POST_NOTIFICATIONS` - Android 13+):** Used exclusively to deliver optional, offline "Tiny Care" check-in reminders (such as water reminders, sleep prompts, or sweet check-ins) scheduled by you.
 - **Run at Startup (`RECEIVE_BOOT_COMPLETED`):** Used solely to restore your local inexact alarm schedules if your phone is restarted.
 - **Photos / Storage (`WRITE_EXTERNAL_STORAGE` - Android 9 and older only):** Used strictly when you explicitly tap "Save to Photos" to export a Polaroid snapshot to your device's picture gallery. On modern Android versions, this uses standard system photo saving without requiring broad storage permissions.
+- **Fingerprint / Face unlock (`USE_BIOMETRIC`):** Used only if you turn on the optional privacy lock and choose to unlock with your fingerprint or face. Android checks your fingerprint or face itself; Tiny Us never sees or stores it. The lock's PIN is stored only as a salted, one-way hash on your device.
 
 ---
 
@@ -77,11 +76,11 @@ Because all personal data resides entirely on your device:
 
 ## 8. Changes to This Privacy Policy
 
-We may update this policy periodically to reflect new offline features or updates to Google Play policies. Any changes will be posted in-app or in public release notes with an updated effective date.
+We may update this policy to reflect new features or changes to Google Play policies. If Tiny Us ever starts using the internet, this policy will say so first. Any changes will be posted in-app or in public release notes with an updated effective date.
 
 ---
 
 ## 9. Contact Us
 
 If you have any questions or feedback regarding privacy in Tiny Us, please contact:
-- **Support / Developer Email:** support@tinyus.app *(Replace with verified developer email)*
+- **Support / Developer Email:** [CONTACT EMAIL - to be filled in before publishing]

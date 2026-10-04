@@ -8,9 +8,9 @@ Use this checklist to complete the **Data Safety** questionnaire directly inside
 
 | Play Console Question | Exact Answer | Rationale / Explanation |
 | :--- | :--- | :--- |
-| **Does your app collect or share any of the required user data types?** | **Yes** | Even though Tiny Us itself collects zero data, integrating Google Play Billing causes Google Play Services to collect/process transaction data on Google's behalf. Under Google's guidelines, third-party libraries integrated into the app must be disclosed. |
-| **Is all of the user data collected by your app encrypted in transit?** | **Yes** | All purchase communications between the device and Google Play servers occur over encrypted HTTPS protocols handled by Google Play Services. |
-| **Do you provide a way for users to request that their data be deleted?** | **Yes** | Users can delete all locally stored data at any time by clearing application data in Android settings or uninstalling the app. |
+| **Does your app collect or share any of the required user data types?** | **No** | Tiny Us has no internet access (no `INTERNET` permission), no in-app purchases, no ads and no analytics or crash-reporting SDKs. Everything stays on the device, and Google's definition of "collected" only covers data sent off the device by the app. |
+
+When you answer **No** here, the Play Console skips the per-type questions and the encryption and deletion questions. Section 2 is kept so you can double-check each type if Google asks.
 
 ---
 
@@ -32,13 +32,7 @@ Go through each category in the questionnaire and match these selections:
 - **Date of birth:** **No** *(Anniversaries/birthdays are stored strictly on-device).*
 
 ### 3. Financial Info
-- **User payment info (credit card, bank account):** **No**  
-  *(Processed by Google Play directly in its own system dialogs; Tiny Us code never touches card details).*
-- **Purchase history:** **Yes (Collected by Google Play Billing SDK)**
-  - *Is this data shared with third parties?* **No** (Shared with Google as service provider).
-  - *Is this data processed ephemerally?* **No**
-  - *Is this data required or optional?* **Optional** (Users can use the entire core app without making purchases; only collected if the user chooses to buy an optional pack).
-  - *Why is this data collected?* **App functionality / Account management** (to deliver digital purchases and enable purchase restoration across devices).
+- **User payment info / Purchase history:** **No** (there are no in-app purchases).
 
 ### 4. Health and Fitness
 - **No** (None collected).
@@ -53,7 +47,7 @@ Go through each category in the questionnaire and match these selections:
 
 ### 7. Audio Files
 - **Voice or sound recordings:** **No**  
-  *(Ambient audio and synth music are generated procedurally on-device using AudioTrack PCM waveforms. No microphone input or audio collection exists).*
+  *(The background music is bundled with the app and the sound effects are generated on the device. The app never uses the microphone.)*
 
 ### 8. Files and Docs
 - **Files and docs:** **No**
@@ -72,22 +66,19 @@ Go through each category in the questionnaire and match these selections:
 - **Web browsing history:** **No**
 
 ### 13. App Info and Performance
-- **Crash logs / Diagnostics:** **No**  
-  *(Unless an optional mail-based feedback intent is triggered by the user via their own email client, no crash reporting SDK like Firebase Crashlytics is embedded).*
+- **Crash logs / Diagnostics:** **No** (no crash-reporting SDK such as Firebase Crashlytics).
 
 ### 14. Device or Other Identifiers
-- **Device or other identifiers:** **Yes (Collected by Google Play Billing SDK)**
-  - *Is this data collected or shared?* **Collected by Google Play Services**
-  - *Is this data optional?* **Optional** (Only accessed during purchase transactions).
-  - *Why is this data collected?* **Fraud prevention, security, and compliance / App functionality**.
+- **Device or other identifiers:** **No**
 
 ---
 
 ## Section 3: Summary for Play Console Submission
 
 When prompted to review your answers before submitting:
-- **Data Collected:** Purchase history, Device identifiers (both exclusively for Google Play in-app purchase functionality).
-- **Data Shared:** None (no third-party advertising or analytics data sharing).
-- **Tracking:** No data is used to track users across apps or websites.
-- **Security:** Encrypted in transit (HTTPS).
-- **Data Deletion:** Full deletion supported locally via device app settings or app uninstall.
+- **Data collected:** None.
+- **Data shared:** None.
+- **Tracking:** None.
+- The store listing will show "No data collected" and "No data shared with third parties".
+
+If the app ever adds internet access, purchases or an SDK that sends data, this form must be redone before that version is uploaded.
