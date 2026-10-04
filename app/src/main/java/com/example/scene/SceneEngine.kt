@@ -654,6 +654,7 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
         sceneTime = 0f
         sceneMessage = null

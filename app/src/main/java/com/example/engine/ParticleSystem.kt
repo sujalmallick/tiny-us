@@ -54,7 +54,8 @@ data class SnowPrint(
 enum class SnowPrintKind { FOOT, PAW, TRACE }
 
 /** A rain puddle on the ground; [size] grows 0..1 while it rains and shrinks as it dries. */
-data class Puddle(val normX: Float, val normY: Float, var size: Float = 0f)
+/** A puddle spot on the ground (fractions of the scene); it fills in the rain and dries after. */
+data class Puddle(var normX: Float, var normY: Float, var size: Float = 0f)
 
 enum class ParticleType {
     LEAF,
@@ -176,6 +177,18 @@ class ParticleSystem {
     val fallenParticles = mutableListOf<FallenParticle>()
     val snowPrints = ArrayList<SnowPrint>(MAX_SNOW_PRINTS)
     val puddles: List<Puddle> = PUDDLE_SPOTS.map { (x, y) -> Puddle(x, y) }
+
+    /** Moves the puddle spots to fit a scene's ground; puddles that move start dry. */
+    fun placePuddles(spots: List<Pair<Float, Float>>) {
+        for ((i, puddle) in puddles.withIndex()) {
+            val (x, y) = spots.getOrNull(i) ?: PUDDLE_SPOTS[i]
+            if (puddle.normX != x || puddle.normY != y) {
+                puddle.normX = x
+                puddle.normY = y
+                puddle.size = 0f
+            }
+        }
+    }
     var groundSeededWeather: com.example.scene.WeatherType? = null
 
     private val particlePool = ArrayList<PixelParticle>(256)

@@ -277,6 +277,23 @@ object PierLayout {
 
 /** Where the outdoor weather keepsakes sit: the rainbow after rain and the snowday snowman. */
 object WeatherLayout {
+    /**
+     * Where rain puddles form in each outdoor scene (fractions of the scene): on the ground where
+     * water would gather, clear of the props. Scenes not listed use the meadow spots.
+     */
+    fun puddleSpotsFor(scene: SceneType): List<Pair<Float, Float>> = when (scene) {
+        // On the cobbled path in front of the stall and along the walk.
+        SceneType.MOMO_STALL -> listOf(0.18f to 0.71f, 0.55f to 0.72f, 0.86f to 0.70f)
+        SceneType.WALK -> listOf(0.22f to 0.70f, 0.58f to 0.71f, 0.86f to 0.70f)
+        // On the road the scooter rides along.
+        SceneType.EVENING_RIDE -> listOf(0.20f to 0.86f, 0.62f to 0.90f, 0.88f to 0.84f)
+        // On the deck, away from the bench, the cart and Grandpa Bao's crate.
+        SceneType.SEASIDE_PIER -> listOf(0.30f to 0.86f, 0.66f to 0.90f, 0.88f to 0.82f)
+        // In the grass, clear of the fire ring, the woodpile and the blanket.
+        SceneType.CAMPFIRE -> listOf(0.22f to 0.88f, 0.70f to 0.90f, 0.46f to 0.95f)
+        else -> com.example.engine.ParticleSystem.PUDDLE_SPOTS
+    }
+
     const val RAINBOW_SECONDS = 40f
     const val SNOWMAN_MAX_STAGE = 4
     /** Snowflakes to catch for each new snowman stage. */
