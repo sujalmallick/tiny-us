@@ -119,15 +119,17 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 ### C2. Roll out (if approved)
 - [x] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`. *(Done; only the device frame-time check (see B) is left.)*
 - [ ] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
-- [ ] **Phase 3 (do this first after Phase 1; the user flagged it): the same close-up scene on every screen size.**
+- [x] **Phase 3 (do this first after Phase 1; the user flagged it): the same close-up scene on every screen size.** *(`33e08b9`; comparisons in `build/pixel-test/phase3/`.)*
   - **What the user saw** (tablet-emulator screenshots, 2026-10-04): on a wide, nearly square tablet each scene reads as a close-up. Props sit around the couple and the detail shows. But the short height cuts parts off: the momo sign is missing, the lighthouse overlaps the moon, and the kitchen table is chopped at the bottom. On a tall phone the same scene spreads out. Props drift apart, there's a lot of empty sky and floor, and the couple look far away and the scene disorganised.
   - **Why:** positions are fractions of the screen (`cw * x`, `ch * y`), and the game-pixel size is set by width alone. A tall screen stretches the layout; a short one crops it.
   - **Goal:** every phone and tablet shows the whole scene with the tablet's close-up feel, nothing cut off, and the couple about the same size relative to the scene.
-  - [ ] Give each scene a fixed design stage in game pixels (for example about 160 × 200) and lay its props, characters, Mochi and tap targets out inside it, instead of using screen fractions (`SceneLayouts`, the engine's character and cat positions, the hit tests).
-  - [ ] Pick the largest whole-number zoom at which the whole stage fits the screen's width **and** height. On phones this makes everything bigger than now.
-  - [ ] Fill leftover screen space by extending the background (more sky or ceiling above, more ground or floor below, more scenery at the sides), never by spreading props apart.
+  - [x] Give each scene a fixed design stage in game pixels (for example about 160 × 200) and lay its props, characters, Mochi and tap targets out inside it, instead of using screen fractions (`SceneLayouts`, the engine's character and cat positions, the hit tests). *(Done with `WorldCamera`: the stage is about 144 game pixels wide and 4:3 to 3:2 tall. The layout code is unchanged; it now gets the stage's size instead of the screen's.)*
+  - [x] Pick the largest whole-number zoom at which the whole stage fits the screen's width **and** height. On phones this makes everything bigger than now. *(7× on a 1080 × 2400 phone.)*
+  - [x] Fill leftover screen space by extending the background (more sky or ceiling above, more ground or floor below, more scenery at the sides), never by spreading props apart. *(`StageExtension`; each scene sets where the spare height goes.)*
+  - [ ] Nicer extensions where they're plain: the kitchen's tall wall and the sunroom's floor are flat. Consider per-scene extra props there (shelves, more pots).
+  - [ ] Weather in the extension: rain, snow, petals and leaves fall only over the stage. Draw the falling layer over the whole screen.
   - [ ] Keep the HUD (top buttons, heart button, message box) clear of the stage, or reserve room for it.
-  - [ ] `ScenePreviewTest` renders every scene at phone 20:9, 19.5:9 and 16:9, at tablet 4:3, and nearly square. Check that nothing is cut off and the composition matches.
+  - [x] `ScenePreviewTest` renders every scene at phone 20:9, 19.5:9 and 16:9, at tablet 4:3, and nearly square. Check that nothing is cut off and the composition matches. *(`SCENE_PREVIEW_SIZE`; phone and square checked, and `WorldCameraTest` covers seven screen sizes.)*
   - [ ] Layered backgrounds with slight parallax (the original Phase 3 idea), once the stage works.
 - [ ] Phase 4: `SpriteClock` at 10 fps, whole-pixel positions, walk cycles, readable particles, pixel-dissolve scene change, haptics.
 - [ ] Phase 5: bundled OFL pixel font, framed pixel buttons and dialogs, a 16×16 pixel icon set (built on the UI restyle's components), with accessibility fallbacks.
@@ -151,4 +153,4 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 
 0 (finish UI, user sign-off) → A1 → A2 → A3 → A4 → A5 → B (fix and retest) → C1 (user decision) → C2 phases → D (D1–D4 can also slot in between C phases).
 
-**Done:** 0, A1–A5, C1, and C2's Phase 1 rollout (local branch). **Next:** B on the emulator with the frame-time check → merge the pixel branch → C2 Phase 3 (same scene on every screen) → D3 (app size) → C2 Phases 2, 4 and 5 → the rest of D.
+**Done:** 0, A1–A5, C1, C2's Phase 1 rollout and Phase 3 (local branch). **Next (the user moved the emulator check to the end):** D3 (app size) → C2 Phases 2, 4 and 5 → the rest of D → B on the emulator with the frame-time check → merge the pixel branch.
