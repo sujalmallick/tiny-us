@@ -62,8 +62,8 @@ The user wants the UI restyle finished before anything else starts.
 ### A4. Full checkpoint, push and pull request
 - [x] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`. *(Green on `3d1c451`: 190 app tests, 24 shared tests; release APK 27.4 MB, see D3.)*
 - [x] `git push -u origin android-public-release`.
-- [ ] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
-- [ ] Merge the pull request once CI is green (ask the user before merging into `master`).
+- [x] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
+- [x] Merge the pull request once CI is green (ask the user before merging into `master`). *(sujalmallick/tiny-us#1, merged 2026-10-04 as `68706cd`.)*
 
 ### A5. Clean up
 - [x] `git worktree remove .claude/worktrees/ui-chrome-pass`. *(The empty folder stays until the UI session closes.)*
@@ -74,6 +74,8 @@ The user wants the UI restyle finished before anything else starts.
 ---
 
 ## B. Real-device check (about half a day)
+
+**Not done yet.** The user has no Android phone, so this runs on the emulator, with everything else closed (Android Studio, other Claude sessions, the browser) and the emulator's RAM lowered to about 2 GB. Also measure the pixel renderer's frame time in each scene.
 
 Install the merged release build, uninstalling the old one first if the signatures differ. Open scenes directly with `adb shell am start -n com.tinyus.app/com.example.MainActivity --es scene <SCENE>`.
 
@@ -98,19 +100,34 @@ Install the merged release build, uninstalling the old one first if the signatur
 
 Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 
+**Progress (2026-10-04)**, on the local branch `pixel/phase-0-1-campfire` (not yet merged or pushed):
+- `e71f0f6` C1 campfire test; the user approved the look and the couple's size (2 game pixels per sprite pixel).
+- `e7e00ef` pixel renderer for all 13 scenes: `HardEdgeCanvas` (no anti-aliasing; rectangles snap to whole pixels, never thinner than one), `PixelFont` for the momo sign, whole-pixel NPC and loft sizes.
+- `4f87cfb` barista and Grandpa Bao a bit smaller (1.5 game pixels), as the user asked.
+- Still open from C2's first item: the device frame-time check (see B), merging into `android-public-release`, and removing the `gridP` patch.
+
 ### C1. Test on the campfire scene (phases 0–1, 2–3 days)
-- [ ] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
-- [ ] Phase 1 on the campfire only:
+- [x] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
+- [x] Phase 1 on the campfire only:
   - draw the world into a small offscreen image and enlarge it by a whole number with `FilterQuality.None`,
-  - characters drop the 1.38× scale,
-  - taps are divided by the scale before hit-testing,
-  - particles and overlays move to game pixels.
-- [ ] Show the user a before/after of the campfire. **Decide: continue or stop.**
+  - characters drop the 1.38× scale *(done differently: characters use exactly 2 game pixels, so their details survive)*,
+  - taps are divided by the scale before hit-testing *(not needed: the world still draws in screen coordinates and the canvas shrinks it, so taps and overlays work unchanged)*,
+  - particles and overlays move to game pixels *(same reason)*.
+- [x] Show the user a before/after of the campfire. **Decide: continue or stop.** *(Continue.)*
 
 ### C2. Roll out (if approved)
-- [ ] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`.
+- [ ] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`. *(Every scene done; the `gridP` removal and the device check are left.)*
 - [ ] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
-- [ ] Phase 3: per-scene framing so the couple are 10–12% of screen height; layered backgrounds with slight parallax; review all 13 scenes at 16:9, 19.5:9 and 20:9.
+- [ ] **Phase 3 (do this first after Phase 1; the user flagged it): the same close-up scene on every screen size.**
+  - **What the user saw** (tablet-emulator screenshots, 2026-10-04): on a wide, nearly square tablet each scene reads as a close-up. Props sit around the couple and the detail shows. But the short height cuts parts off: the momo sign is missing, the lighthouse overlaps the moon, and the kitchen table is chopped at the bottom. On a tall phone the same scene spreads out. Props drift apart, there's a lot of empty sky and floor, and the couple look far away and the scene disorganised.
+  - **Why:** positions are fractions of the screen (`cw * x`, `ch * y`), and the game-pixel size is set by width alone. A tall screen stretches the layout; a short one crops it.
+  - **Goal:** every phone and tablet shows the whole scene with the tablet's close-up feel, nothing cut off, and the couple about the same size relative to the scene.
+  - [ ] Give each scene a fixed design stage in game pixels (for example about 160 × 200) and lay its props, characters, Mochi and tap targets out inside it, instead of using screen fractions (`SceneLayouts`, the engine's character and cat positions, the hit tests).
+  - [ ] Pick the largest whole-number zoom at which the whole stage fits the screen's width **and** height. On phones this makes everything bigger than now.
+  - [ ] Fill leftover screen space by extending the background (more sky or ceiling above, more ground or floor below, more scenery at the sides), never by spreading props apart.
+  - [ ] Keep the HUD (top buttons, heart button, message box) clear of the stage, or reserve room for it.
+  - [ ] `ScenePreviewTest` renders every scene at phone 20:9, 19.5:9 and 16:9, at tablet 4:3, and nearly square. Check that nothing is cut off and the composition matches.
+  - [ ] Layered backgrounds with slight parallax (the original Phase 3 idea), once the stage works.
 - [ ] Phase 4: `SpriteClock` at 10 fps, whole-pixel positions, walk cycles, readable particles, pixel-dissolve scene change, haptics.
 - [ ] Phase 5: bundled OFL pixel font, framed pixel buttons and dialogs, a 16×16 pixel icon set (built on the UI restyle's components), with accessibility fallbacks.
 - **Checks for each phase:** picture tests reviewed, every pixel opaque and from the palette (from phase 2 on), tap tests green, frame time 8 ms or less.
@@ -132,3 +149,5 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 ## Order at a glance
 
 0 (finish UI, user sign-off) → A1 → A2 → A3 → A4 → A5 → B (fix and retest) → C1 (user decision) → C2 phases → D (D1–D4 can also slot in between C phases).
+
+**Done:** 0, A1–A5, C1, and C2's Phase 1 rollout (local branch). **Next:** B on the emulator with the frame-time check → merge the pixel branch → C2 Phase 3 (same scene on every screen) → D3 (app size) → C2 Phases 2, 4 and 5 → the rest of D.
