@@ -167,5 +167,18 @@ class ScenePreviewTest {
         }
     }
 
+    @Test
+    fun writesDissolvePreviewWhenAsked() {
+        val out = File(System.getenv("SCENE_PREVIEW_DIR") ?: return).apply { mkdirs() }
+        val camera = WorldCamera.forScreen(cw, ch, SceneType.SEASIDE_PIER, pixelRenderer = true)
+        val engine = engineFor(SceneType.SEASIDE_PIER, TimeOfDayPhase.AFTERNOON, camera.worldW, camera.worldH)
+        for (wipe in listOf(0.45f, 0.75f)) {
+            engine.wipeAlpha = wipe
+            val frame = render { drawWorld(engine, LowResWorldBuffer(), camera) }
+            save(frame, File(out, "dissolve_${(wipe * 100).toInt()}.png"))
+            frame.recycle()
+        }
+    }
+
     private fun save(bmp: Bitmap, file: File) = file.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
 }

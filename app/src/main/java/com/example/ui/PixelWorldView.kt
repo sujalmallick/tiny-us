@@ -1,6 +1,7 @@
 package com.example.ui
 
 import androidx.compose.foundation.Canvas
+import com.example.engine.SpriteClock
 import com.example.engine.WorldCamera
 import com.example.engine.WorldViewport
 import androidx.compose.foundation.background
@@ -1743,7 +1744,8 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         }
 
         // 6. Smooth scene transition fade overlay (no line artifacts or jarring bars)
-        if (engine.wipeAlpha > 0f) {
+        // The pixel renderer dissolves scene changes block by block instead (LowResWorldBuffer).
+        if (engine.wipeAlpha > 0f && !lowRes) {
             val fadeAlpha = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f)
             drawRect(
                 color = Color(0xFF0F1423).copy(alpha = fadeAlpha),
@@ -1783,8 +1785,20 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
         val floorBelow: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.SUNROOM) {
             { floorH -> drawSunroomFloorBelow(this, camera.worldW, camera.worldH, floorH, p) }
         } else null
-        lowResBuffer.drawStaged(this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove, belowStage = floorBelow) {
-            drawWorldFrame(engine, lowRes = true)
+        // Sprite animation (flames, water, bobbing, twinkles) steps like a pixel game: the frame is
+        // drawn with the scene clock rounded down to the sprite frame rate. Movement itself still
+        // updates every frame, on whole pixels.
+        val realTime = engine.sceneTime
+        engine.sceneTime = SpriteClock.step(realTime)
+        try {
+            lowResBuffer.drawStaged(
+                this, camera, starrySky = false, beyondStage = weather, aboveStage = skyAbove, belowStage = floorBelow,
+                dissolve = (engine.wipeAlpha * engine.wipeAlpha).coerceIn(0f, 1f)
+            ) {
+                drawWorldFrame(engine, lowRes = true)
+            }
+        } finally {
+            engine.sceneTime = realTime
         }
     } else {
         drawWorldFrame(engine)

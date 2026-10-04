@@ -19,6 +19,7 @@ import androidx.compose.ui.graphics.drawscope.scale
 import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.example.engine.PixelDissolve
 import com.example.engine.StageExtension
 import com.example.engine.WorldCamera
 import kotlin.math.ceil
@@ -34,6 +35,11 @@ import kotlin.math.ceil
  * canvas shrinks them. Taps and Compose overlays keep working in screen coordinates.
  */
 internal class LowResWorldBuffer {
+    private companion object {
+        /** The scene-change colour (the classic renderer fades to the same colour). */
+        const val WIPE_COLOUR = 0xFF0F1423.toInt()
+    }
+
     private var bitmap: ImageBitmap? = null
     private var pixelsBitmap: Bitmap? = null
     private var canvas: Canvas? = null
@@ -66,6 +72,7 @@ internal class LowResWorldBuffer {
         beyondStage: (DrawScope.() -> Unit)? = null,
         aboveStage: (DrawScope.(Float) -> Unit)? = null,
         belowStage: (DrawScope.(Float) -> Unit)? = null,
+        dissolve: Float = 0f,
         block: DrawScope.() -> Unit
     ) {
         val cnv = ensure(camera.gameW, camera.gameH)
@@ -84,6 +91,7 @@ internal class LowResWorldBuffer {
             if (belowStage != null && camera.stageY + camera.stageH < camera.gameH) drawBelowStage(target, cnv, camera, belowStage)
             if (beyondStage != null) drawBeyondStage(target, cnv, camera, beyondStage)
         }
+        if (dissolve > 0f) dissolveFrame(camera.gameW, camera.gameH, dissolve)
         val bmp = bitmap!!
         target.drawImage(
             image = bmp,
@@ -139,6 +147,18 @@ internal class LowResWorldBuffer {
                 }
             }
         }
+    }
+
+    /**
+     * Scene-change dissolve: [amount] of the frame's 2x2-pixel cells turn to the night-blue wipe
+     * colour, in an ordered (Bayer) pattern, so the scene breaks up into blocks instead of fading.
+     */
+    private fun dissolveFrame(w: Int, h: Int, amount: Float) {
+        val raw = pixelsBitmap ?: return
+        if (pixels.size != w * h) pixels = IntArray(w * h)
+        raw.getPixels(pixels, 0, w, 0, 0, w, h)
+        PixelDissolve.apply(pixels, w, h, amount, WIPE_COLOUR)
+        raw.setPixels(pixels, 0, w, 0, 0, w, h)
     }
 
     /** Fills the rows above and below the stage by continuing the stage's own top and bottom edges. */
