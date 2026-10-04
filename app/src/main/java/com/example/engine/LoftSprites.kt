@@ -22,16 +22,24 @@ private val LOFT_STARS = arrayOf(
     Triple(0.44f, 0.32f, 2.1f)
 )
 
+/**
+ * A skyscraper in the loft's window: left edge and top as shares of the window, width in scene
+ * pixels, and whether it has a narrower crown and a blinking antenna.
+ */
+private class LoftTower(val x: Float, val top: Float, val w: Float, val crown: Boolean, val spire: Boolean)
+
+// Tall and slim, with sky between them; the ones under the moon and sun stay lower.
 private val LOFT_BACK_BUILDINGS = arrayOf(
-    Triple(0.02f, 0.26f, 14f),
-    Triple(0.12f, 0.18f, 16f),
-    Triple(0.24f, 0.12f, 18f),
-    Triple(0.38f, 0.22f, 15f),
-    Triple(0.48f, 0.16f, 17f),
-    Triple(0.60f, 0.24f, 14f),
-    Triple(0.70f, 0.14f, 19f),
-    Triple(0.82f, 0.20f, 16f),
-    Triple(0.94f, 0.28f, 14f)
+    LoftTower(0.01f, 0.18f, 9f, crown = false, spire = false),
+    LoftTower(0.10f, 0.08f, 8f, crown = true, spire = false),
+    LoftTower(0.19f, 0.02f, 10f, crown = true, spire = true),
+    LoftTower(0.30f, 0.13f, 8f, crown = false, spire = false),
+    LoftTower(0.39f, 0.05f, 9f, crown = true, spire = false),
+    LoftTower(0.49f, 0.16f, 8f, crown = false, spire = false),
+    LoftTower(0.57f, 0.07f, 10f, crown = true, spire = true),
+    LoftTower(0.67f, 0.36f, 9f, crown = false, spire = false),
+    LoftTower(0.77f, 0.40f, 8f, crown = true, spire = false),
+    LoftTower(0.87f, 0.10f, 9f, crown = true, spire = false)
 )
 
 private val LOFT_FRONT_BUILDINGS = arrayOf(
@@ -796,22 +804,26 @@ object LoftSprites {
             else -> Color(0xFF747D8C)
         }
 
-        for ((bRelX, bRelTop, bwFactor) in LOFT_BACK_BUILDINGS) {
-            val bw = bwFactor * p
-            val bx = startX + windowW * bRelX
-            val by = windowH * bRelTop
-            val bh = riverTopY - by
-            scope.drawRect(backBldgColor, Offset(bx, by), Size(bw, bh))
+        for (tower in LOFT_BACK_BUILDINGS) {
+            val bw = tower.w * p
+            val bx = startX + windowW * tower.x
+            val by = windowH * tower.top
+            // A narrower crown on top, then the full-width tower below it.
+            val bodyY = if (tower.crown) by + 7 * p else by
+            if (tower.crown) scope.drawRect(backBldgColor, Offset(bx + 2 * p, by), Size(bw - 4 * p, 7 * p))
+            scope.drawRect(backBldgColor, Offset(bx, bodyY), Size(bw, riverTopY - bodyY))
+            // A lit edge down one side gives the slim towers some depth.
+            scope.drawRect(spireColor, Offset(bx + bw - p, bodyY), Size(p, riverTopY - bodyY))
 
             // Radio antenna spire
-            if (bRelX in 0.22f..0.26f || bRelX in 0.68f..0.72f) {
+            if (tower.spire) {
                 scope.drawRect(spireColor, Offset(bx + bw / 2f - 0.7f * p, by - 12 * p), Size(1.4f * p, 12 * p))
                 val blink = if (sin(timeSeconds * 5f) > 0f) Color(0xFFFF3366) else Color(0x30FF3366)
                 scope.drawRect(blink, Offset(bx + bw / 2f - 1.2f * p, by - 14 * p), Size(2.4f * p, 2 * p))
             }
 
             // Window Grid
-            var wy = by + 4 * p
+            var wy = bodyY + 3 * p
             while (wy < riverTopY - 4 * p) {
                 var wx = bx + 2 * p
                 while (wx < bx + bw - 2 * p) {
