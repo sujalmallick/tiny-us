@@ -358,3 +358,22 @@ fun OnboardingDialog(
         }
     }
 }
+
+/**
+ * Asked once of couples whose saved names are still an older build's "Him"/"Her" defaults: set
+ * names now (opens the setup with empty name fields) or keep them. Nothing is renamed silently.
+ */
+@Composable
+fun NamePromptDialog(onSetNames: () -> Unit, onKeep: () -> Unit) {
+    TinyDialog(onDismissRequest = onKeep) {
+        TinyDialogHeader(
+            title = stringResource(R.string.name_prompt_title),
+            icon = com.example.ui.theme.PixelIcons.Favorite
+        )
+        Text(stringResource(R.string.name_prompt_body), style = com.example.ui.theme.TinyType.Body)
+        Row(horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.TinySpace.sm)) {
+            TinyButton(text = stringResource(R.string.name_prompt_keep), onClick = onKeep, style = TinyButtonStyle.Outline)
+            TinyButton(text = stringResource(R.string.name_prompt_set), onClick = onSetNames)
+        }
+    }
+}

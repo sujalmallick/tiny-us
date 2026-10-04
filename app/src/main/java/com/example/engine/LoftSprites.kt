@@ -145,7 +145,9 @@ object LoftSprites {
         weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
         isNight: Boolean = true,
         isSunset: Boolean = false,
-        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE,
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A,
+        girlLook: AvatarLook = AvatarLook.DEFAULT_B
     ) {
         val floorY = ch * 0.55f
         val windowStartX = cw * 0.32f
@@ -199,7 +201,7 @@ object LoftSprites {
         drawLoftFloorAndRug(scope, cw, ch, floorY, p, roomTheme)
 
         // 6. WALL-TO-CEILING LIBRARY BOOKSHELF (LEFT WALL)
-        drawLibraryBookshelf(scope, cw, ch, windowStartX, floorY, p, timeSeconds, lampLit)
+        drawLibraryBookshelf(scope, cw, ch, windowStartX, floorY, p, timeSeconds, lampLit, boyLook, girlLook)
 
         // 7. SOFA BASE & CUSHIONS (Behind characters)
         drawLoftSofaBase(scope, cw, floorY, p, lampLit)
@@ -1177,7 +1179,9 @@ object LoftSprites {
         floorY: Float,
         p: Float,
         timeSeconds: Float,
-        lampLit: Boolean
+        lampLit: Boolean,
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A,
+        girlLook: AvatarLook = AvatarLook.DEFAULT_B
     ) {
         val shelfW = windowStartX - 5 * p
 
@@ -1226,12 +1230,19 @@ object LoftSprites {
                 if (tier == 2 && curX in (shelfW * 0.25f)..(shelfW * 0.60f)) {
                     scope.drawRect(Color(0xFFDDA15E), Offset(curX, tierBaseY - 10 * p), Size(10 * p, 10 * p))
                     scope.drawRect(Color(0xFFFFF0F5), Offset(curX + 0.8f * p, tierBaseY - 9.2f * p), Size(8.4f * p, 8.4f * p))
-                    // Boy pixel avatar
-                    scope.drawRect(Color(0xFF2A2829), Offset(curX + 1.5f * p, tierBaseY - 7.5f * p), Size(2.5f * p, 2.5f * p))
-                    scope.drawRect(PixelArtRenderer.SkinToneBoy, Offset(curX + 1.5f * p, tierBaseY - 5 * p), Size(2.5f * p, 2.5f * p))
-                    // Girl pixel avatar
-                    scope.drawRect(Color(0xFF6A381F), Offset(curX + 5.5f * p, tierBaseY - 7.5f * p), Size(2.5f * p, 2.5f * p))
-                    scope.drawRect(PixelArtRenderer.SkinToneGirl, Offset(curX + 5.5f * p, tierBaseY - 5 * p), Size(2.5f * p, 2.5f * p))
+                    // The couple, in their Make Us hair and skin
+                    scope.drawRect(boyLook.hair, Offset(curX + 1.5f * p, tierBaseY - 7.5f * p), Size(2.5f * p, 2.5f * p))
+                    scope.drawRect(boyLook.skin, Offset(curX + 1.5f * p, tierBaseY - 5 * p), Size(2.5f * p, 2.5f * p))
+                    scope.drawRect(girlLook.hair, Offset(curX + 5.5f * p, tierBaseY - 7.5f * p), Size(2.5f * p, 2.5f * p))
+                    scope.drawRect(girlLook.skin, Offset(curX + 5.5f * p, tierBaseY - 5 * p), Size(2.5f * p, 2.5f * p))
+                    if (girlLook.longHair) { // strands down both sides of the face
+                        scope.drawRect(girlLook.hair, Offset(curX + 4.7f * p, tierBaseY - 6.5f * p), Size(0.8f * p, 4 * p))
+                        scope.drawRect(girlLook.hair, Offset(curX + 8f * p, tierBaseY - 6.5f * p), Size(0.8f * p, 4 * p))
+                    }
+                    if (boyLook.longHair) {
+                        scope.drawRect(boyLook.hair, Offset(curX + 0.8f * p, tierBaseY - 6.5f * p), Size(0.7f * p, 4 * p))
+                        scope.drawRect(boyLook.hair, Offset(curX + 4f * p, tierBaseY - 6.5f * p), Size(0.7f * p, 4 * p))
+                    }
                     // Red heart between them
                     scope.drawRect(Color(0xFFFF4D6D), Offset(curX + 4.2f * p, tierBaseY - 4 * p), Size(1.5f * p, 1.5f * p))
                     curX += 11 * p

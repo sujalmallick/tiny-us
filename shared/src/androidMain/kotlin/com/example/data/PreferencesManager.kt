@@ -59,6 +59,11 @@ class PreferencesManager(
         get() = prefs.getBoolean("onboarding_completed", false)
         set(value) = prefs.edit().putBoolean("onboarding_completed", value).apply()
 
+    /** Set once the couple has answered the one-time "Want to set your names?" prompt. */
+    var namePromptAnswered: Boolean
+        get() = prefs.getBoolean("name_prompt_answered", false)
+        set(value) = prefs.edit().putBoolean("name_prompt_answered", value).apply()
+
     var secretCode: String
         get() = prefs.getString("secret_code", "LOVE") ?: "LOVE"
         set(value) = prefs.edit().putString("secret_code", value.trim().uppercase()).apply()

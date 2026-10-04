@@ -599,7 +599,9 @@ internal fun drawEnvironment(
                 weather = engine.weather,
                 isNight = isNight,
                 isSunset = isSunset,
-                roomTheme = engine.roomTheme
+                roomTheme = engine.roomTheme,
+                boyLook = engine.boy.look,
+                girlLook = engine.girl.look
             )
 
             // Loft panoramic window breeze shimmer & leaves

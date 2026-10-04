@@ -115,4 +115,8 @@
     <string name="discreet_setting_subtitle">Shows a plain “Journal” icon and keeps reminders generic. Your launcher may take a moment to update.</string>
     <string name="discreet_notification_title">A gentle reminder</string>
     <string name="discreet_notification_body">Take a small moment for yourself today.</string>
+    <string name="name_prompt_title">Want to set your names?</string>
+    <string name="name_prompt_body">You two are still called “Him” and “Her” from an older version. Pick names that feel like you, or keep these.</string>
+    <string name="name_prompt_set">Set our names</string>
+    <string name="name_prompt_keep">Keep them</string>
 </resources>

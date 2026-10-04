@@ -4,6 +4,7 @@ import com.example.engine.WorldViewport
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.data.PersonalProfile
 
 import com.example.engine.AvatarLook
 import androidx.compose.animation.AnimatedVisibility
@@ -153,6 +154,14 @@ fun MainScreen(
     var showAvatarCustomizer by remember { mutableStateOf(false) }
     var showOurStory by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
+    // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
+    var showNamePrompt by remember {
+        mutableStateOf(
+            PersonalProfile.shouldOfferNamePrompt(
+                prefs.boyfriendName, prefs.girlfriendName, prefs.isOnboardingCompleted, prefs.namePromptAnswered
+            )
+        )
+    }
 
     var showDateAdventures by remember { mutableStateOf(false) }
     var showDailyMomentPrompt by remember { mutableStateOf(false) }
@@ -1140,6 +1149,20 @@ fun MainScreen(
             SecretKeepsakeDialog(
                 onDismiss = { showSecretKeepsake = false },
                 prefs = prefs
+            )
+        }
+
+        if (showNamePrompt && !showOnboarding) {
+            NamePromptDialog(
+                onSetNames = {
+                    prefs.namePromptAnswered = true
+                    showNamePrompt = false
+                    showOnboarding = true
+                },
+                onKeep = {
+                    prefs.namePromptAnswered = true
+                    showNamePrompt = false
+                }
             )
         }
 
