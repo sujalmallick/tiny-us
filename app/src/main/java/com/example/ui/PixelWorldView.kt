@@ -1,6 +1,7 @@
 package com.example.ui
 
 import androidx.compose.foundation.Canvas
+import com.example.engine.WorldCamera
 import com.example.engine.WorldViewport
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -115,6 +116,9 @@ fun PixelWorldView(
     var frameNanos by remember { mutableLongStateOf(0L) }
     var viewportWidth by remember { mutableFloatStateOf(1080f) }
     var viewportHeight by remember { mutableFloatStateOf(2400f) }
+    // Where the world sits on the screen for the current scene; taps, the engine and overlays work
+    // in its world units.
+    fun cameraNow() = WorldCamera.forScreen(viewportWidth, viewportHeight, engine.currentScene)
     val haptic = LocalHapticFeedback.current
     val lowResBuffer = remember { LowResWorldBuffer() }
     val coroutineScope = rememberCoroutineScope()
@@ -127,7 +131,8 @@ fun PixelWorldView(
                 if (lastNanos != 0L) {
                     val delta = (nanos - lastNanos) / 1_000_000_000f
                     val dt = delta.coerceIn(0.005f, 0.05f)
-                    engine.update(dt, viewportWidth, viewportHeight)
+                    val camera = cameraNow()
+                    engine.update(dt, camera.worldW, camera.worldH)
                 }
                 lastNanos = nanos
                 frameNanos = nanos
@@ -178,15 +183,17 @@ fun PixelWorldView(
                 }
 
                 detectTapGestures(
-                    onLongPress = { tapOffset ->
+                    onLongPress = { screenTap ->
+                        val camera = cameraNow()
+                        val tapOffset = camera.toWorld(screenTap)
                         pendingTapJob?.cancel()
                         pendingTapJob = null
                         pendingAction = null
                         tapCount = 0
                         lastTargetKind = null
 
-                        val w = size.width.toFloat()
-                        val h = size.height.toFloat()
+                        val w = camera.worldW
+                        val h = camera.worldH
                         val pixelScale = WorldViewport.pixelScale(w)
                         val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
 
@@ -208,7 +215,9 @@ fun PixelWorldView(
                             engine.onLongPressCharacter(w, h)
                         }
                     },
-                    onTap = { tapOffset ->
+                    onTap = { screenTap ->
+                        val camera = cameraNow()
+                        val tapOffset = camera.toWorld(screenTap)
                         if (engine.isDreamMode) {
                             engine.particles.spawnSparkles(tapOffset.x, tapOffset.y, 4)
                             return@detectTapGestures
@@ -223,8 +232,8 @@ fun PixelWorldView(
                             lastScene = engine.currentScene
                         }
 
-                        val w = size.width.toFloat()
-                        val h = size.height.toFloat()
+                        val w = camera.worldW
+                        val h = camera.worldH
                         val pixelScale = WorldViewport.pixelScale(w)
                         val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
                         val ny = tapOffset.y / h
@@ -1041,9 +1050,11 @@ fun PixelWorldView(
             .pointerInput(engine) {
                 var isMochiBeingDragged = false
                 detectDragGestures(
-                    onDragStart = { offset ->
-                        val w = size.width.toFloat()
-                        val h = size.height.toFloat()
+                    onDragStart = { screenOffset ->
+                        val camera = cameraNow()
+                        val offset = camera.toWorld(screenOffset)
+                        val w = camera.worldW
+                        val h = camera.worldH
                         val pixelScale = WorldViewport.pixelScale(w)
                         val catX = w * engine.catWorldX
                         val catY = h * engine.catWorldY - 7f * pixelScale
@@ -1073,22 +1084,25 @@ fun PixelWorldView(
                             engine.onDrawInSnow(offset.x, offset.y, w, h)
                         }
                     },
-                    onDrag = { change, dragAmount ->
+                    onDrag = { change, screenDrag ->
+                        val camera = cameraNow()
+                        val position = camera.toWorld(change.position)
+                        val dragAmount = Offset(camera.toWorldLength(screenDrag.x), camera.toWorldLength(screenDrag.y))
                         if (isMochiBeingDragged) {
                             change.consume()
-                            val w = size.width.toFloat()
-                            val h = size.height.toFloat()
-                            val newX = (change.position.x / w).coerceIn(0.10f, 0.90f)
-                            val newY = (change.position.y / h).coerceIn(0.55f, 0.85f)
+                            val w = camera.worldW
+                            val h = camera.worldH
+                            val newX = (position.x / w).coerceIn(0.10f, 0.90f)
+                            val newY = (position.y / h).coerceIn(0.55f, 0.85f)
                             engine.catWorldX = newX
                             engine.catWorldY = newY
                             engine.catTargetX = newX
                             engine.catTargetY = newY
                             engine.catState = CatState.WALK_FOLLOW
                         } else {
-                            val w = size.width.toFloat()
-                            val h = size.height.toFloat()
-                            val isGrassArea = change.position.y >= h * 0.65f
+                            val w = camera.worldW
+                            val h = camera.worldH
+                            val isGrassArea = position.y >= h * 0.65f
                             if (engine.isCurrentSceneOutdoor && isGrassArea &&
                                 (engine.weather == WeatherType.SAKURA || engine.weather == WeatherType.AUTUMN)
                             ) {
@@ -1096,8 +1110,8 @@ fun PixelWorldView(
                                 val pixelScale = WorldViewport.pixelScale(w)
                                 val sweepRadius = 42f * pixelScale
                                 val swept = engine.particles.sweepGroundParticles(
-                                    touchX = change.position.x,
-                                    touchY = change.position.y,
+                                    touchX = position.x,
+                                    touchY = position.y,
                                     cw = w,
                                     ch = h,
                                     radiusPx = sweepRadius,
@@ -1107,18 +1121,19 @@ fun PixelWorldView(
                                 engine.onGroundSwept(swept)
                             } else if (engine.isCurrentSceneOutdoor && isGrassArea && engine.weather == WeatherType.SNOW) {
                                 change.consume()
-                                engine.onDrawInSnow(change.position.x, change.position.y, w, h)
+                                engine.onDrawInSnow(position.x, position.y, w, h)
                             }
                         }
                     },
                     onDragEnd = {
+                        val camera = cameraNow()
                         if (isMochiBeingDragged) {
                             engine.catState = CatState.SITTING_PURR
                             engine.catSleeping = false
                             engine.catFacingLeft = false
                             engine.audio.playCatPurr()
-                            val w = size.width.toFloat()
-                            val h = size.height.toFloat()
+                            val w = camera.worldW
+                            val h = camera.worldH
                             engine.particles.spawnHeart(w * engine.catWorldX, h * engine.catWorldY - 20f, Color(0xFFFF8FA3))
                             engine.showMessage("Mochi settled cozily right here.", duration = 2.0f)
                             isMochiBeingDragged = false
@@ -1131,10 +1146,11 @@ fun PixelWorldView(
         Canvas(modifier = Modifier.fillMaxSize()) {
             @Suppress("UNUSED_VARIABLE")
             val currentFrame = frameNanos // Explicitly read frameNanos to trigger continuous 60 FPS redraws!
-            drawWorld(engine, lowResBuffer)
+            drawWorld(engine, lowResBuffer, cameraNow())
         }
 
-        val pixelScale = WorldViewport.pixelScale(viewportWidth)
+        val camera = cameraNow()
+        val pixelScale = WorldViewport.pixelScale(camera.worldW)
         val isRideScene = engine.currentScene == com.example.scene.SceneType.EVENING_RIDE
         val isLoftScene = engine.currentScene.environment == EnvironmentType.COZY_LOFT
 
@@ -1149,20 +1165,20 @@ fun PixelWorldView(
                          engine.boy.pose == com.example.engine.CharacterPose.SIT_SNUGGLE ||
                          engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE)
         val cuddleEased = CharacterMotionTween.easeInOutCubic(engine.cuddleProgress)
-        val charPixelScale = WorldViewport.characterPixelScale(viewportWidth, engine.usesLowResRenderer)
+        val charPixelScale = WorldViewport.characterPixelScale(camera.worldW, engine.usesLowResRenderer)
         val targetHugOffset = when {
             isKissing -> 6.2f * charPixelScale
             else -> 4.8f * charPixelScale
         }
 
-        val rawBoyX = viewportWidth * engine.boy.worldX
-        val rawGirlX = viewportWidth * engine.girl.worldX
+        val rawBoyX = camera.worldW * engine.boy.worldX
+        val rawGirlX = camera.worldW * engine.girl.worldX
         val midCharX = (rawBoyX + rawGirlX) / 2f
 
         val effectiveBoyX = rawBoyX + ((midCharX - targetHugOffset) - rawBoyX) * cuddleEased
         val effectiveGirlX = rawGirlX + ((midCharX + targetHugOffset) - rawGirlX) * cuddleEased
-        val rawBoyY = viewportHeight * engine.boy.worldY
-        val rawGirlY = viewportHeight * engine.girl.worldY
+        val rawBoyY = camera.worldH * engine.boy.worldY
+        val rawGirlY = camera.worldH * engine.girl.worldY
         val effectiveBoyY = rawBoyY + (maxOf(rawBoyY, rawGirlY) - rawBoyY) * cuddleEased
         val effectiveGirlY = rawGirlY + (maxOf(rawBoyY, rawGirlY) - rawGirlY) * cuddleEased
 
@@ -1170,24 +1186,24 @@ fun PixelWorldView(
         val isGirlSitting = engine.girl.pose == com.example.engine.CharacterPose.SIT || engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE
 
         val boyHeadX = when {
-            isRideScene -> viewportWidth * 0.50f - 14f * pixelScale
+            isRideScene -> camera.worldW * 0.50f - 14f * pixelScale
             isLoftScene -> rawBoyX
             else -> effectiveBoyX + engine.boy.idleSwayOffset
         }
         val girlHeadX = when {
-            isRideScene -> viewportWidth * 0.50f + 6f * pixelScale
+            isRideScene -> camera.worldW * 0.50f + 6f * pixelScale
             isLoftScene -> rawGirlX
             else -> effectiveGirlX + engine.girl.idleSwayOffset
         }
 
         val boyHeadY = when {
-            isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
-            isLoftScene -> viewportHeight * 0.55f - 24f * WorldViewport.loftCouplePixelScale(viewportWidth)
+            isRideScene -> camera.worldH * 0.70f - 52f * pixelScale
+            isLoftScene -> camera.worldH * 0.55f - 24f * WorldViewport.loftCouplePixelScale(camera.worldW)
             else -> effectiveBoyY - (38.5f * pixelScale) - engine.boy.bounceOffset + (if (isBoySitting) 7.5f * pixelScale else 0f)
         }
         val girlHeadY = when {
-            isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
-            isLoftScene -> viewportHeight * 0.55f - 24f * WorldViewport.loftCouplePixelScale(viewportWidth)
+            isRideScene -> camera.worldH * 0.70f - 52f * pixelScale
+            isLoftScene -> camera.worldH * 0.55f - 24f * WorldViewport.loftCouplePixelScale(camera.worldW)
             else -> effectiveGirlY - (38.5f * pixelScale) - engine.girl.bounceOffset + (if (isGirlSitting) 7.5f * pixelScale else 0f)
         }
 
@@ -1195,10 +1211,10 @@ fun PixelWorldView(
             PixelSpeechBubblesOverlay(
                 boyText = if (showBoyBubble) engine.boySpeechText else null,
                 girlText = if (showGirlBubble) engine.girlSpeechText else null,
-                boyHeadX = boyHeadX,
-                boyHeadY = boyHeadY,
-                girlHeadX = girlHeadX,
-                girlHeadY = girlHeadY,
+                boyHeadX = camera.toScreenX(boyHeadX),
+                boyHeadY = camera.toScreenY(boyHeadY),
+                girlHeadX = camera.toScreenX(girlHeadX),
+                girlHeadY = camera.toScreenY(girlHeadY),
                 viewportWidth = viewportWidth,
                 viewportHeight = viewportHeight
             )
@@ -1712,9 +1728,10 @@ internal val SceneEngine.usesLowResRenderer: Boolean
     get() = WorldViewport.pixelRenderer
 
 /** Draws the world, through the low-res pixel renderer for the scenes that use it (Plan 03, Phase 1). */
-internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer) {
-    if (engine.usesLowResRenderer) {
-        lowResBuffer.draw(this, WorldViewport.gameScale(size.width)) { drawWorldFrame(engine, lowRes = true) }
+internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, camera: WorldCamera) {
+    if (engine.usesLowResRenderer && camera.staged) {
+        val starrySky = engine.isCurrentSceneOutdoor && engine.timeOfDayPhase.isNight
+        lowResBuffer.drawStaged(this, camera, starrySky) { drawWorldFrame(engine, lowRes = true) }
     } else {
         drawWorldFrame(engine)
     }

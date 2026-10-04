@@ -356,9 +356,11 @@ fun MainScreen(
         if (!targetBirdSurface.isNullOrBlank()) {
             val surf = try { com.example.engine.PerchSurface.valueOf(targetBirdSurface) } catch (e: Exception) { null }
             if (surf != null) {
-                val p = WorldViewport.pixelScale(screenWidthPx)
-                val (destX, destY) = engine.birdSystem.getSurfaceCoordinates(surf, screenWidthPx, screenHeightPx, p)
-                val bird = engine.forceSpawnBirdForTest(surface = surf, cw = screenWidthPx, ch = screenHeightPx, p = p)
+                // The engine works in world units (see WorldCamera), not screen pixels.
+                val camera = com.example.engine.WorldCamera.forScreen(screenWidthPx, screenHeightPx, engine.currentScene)
+                val p = WorldViewport.pixelScale(camera.worldW)
+                val (destX, destY) = engine.birdSystem.getSurfaceCoordinates(surf, camera.worldW, camera.worldH, p)
+                val bird = engine.forceSpawnBirdForTest(surface = surf, cw = camera.worldW, ch = camera.worldH, p = p)
                 if (bird != null) {
                     bird.x = destX
                     bird.y = destY

@@ -14,9 +14,13 @@ import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.drawscope.clipRect
 import androidx.compose.ui.graphics.drawscope.scale
+import androidx.compose.ui.graphics.drawscope.translate
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
+import com.example.engine.StageExtension
+import com.example.engine.WorldCamera
 import kotlin.math.ceil
 
 /**
@@ -31,25 +35,67 @@ import kotlin.math.ceil
  */
 internal class LowResWorldBuffer {
     private var bitmap: ImageBitmap? = null
+    private var pixelsBitmap: Bitmap? = null
     private var canvas: Canvas? = null
     private val drawScope = CanvasDrawScope()
+    private var pixels = IntArray(0)
 
     /** The last frame at game resolution (for tests). */
     val frame: ImageBitmap? get() = bitmap
+
+    private fun ensure(gw: Int, gh: Int): Canvas {
+        val cnv = canvas
+        if (cnv != null && bitmap?.width == gw && bitmap?.height == gh) return cnv
+        val raw = Bitmap.createBitmap(gw, gh, Bitmap.Config.ARGB_8888)
+        pixelsBitmap = raw
+        bitmap = raw.asImageBitmap()
+        return Canvas(HardEdgeCanvas(raw)).also { canvas = it }
+    }
+
+    /**
+     * Draws [block] (which works in world units, see [WorldCamera]) onto the camera's stage, continues
+     * the background above and below it, and enlarges the frame to the screen.
+     */
+    fun drawStaged(target: DrawScope, camera: WorldCamera, starrySky: Boolean = false, block: DrawScope.() -> Unit) {
+        val cnv = ensure(camera.gameW, camera.gameH)
+        val worldPerGame = WorldCamera.WORLD_PIXEL.toFloat()
+        drawScope.draw(target, target.layoutDirection, cnv, androidx.compose.ui.geometry.Size(camera.worldW, camera.worldH)) {
+            drawRect(Color.Transparent, Offset.Zero, androidx.compose.ui.geometry.Size(camera.gameW.toFloat(), camera.gameH.toFloat()), blendMode = BlendMode.Clear)
+            translate(camera.stageX.toFloat(), camera.stageY.toFloat()) {
+                clipRect(0f, 0f, camera.stageW.toFloat(), camera.stageH.toFloat()) {
+                    scale(1f / worldPerGame, 1f / worldPerGame, pivot = Offset.Zero) { block() }
+                }
+            }
+        }
+        if (camera.stageH < camera.gameH) extendBackground(camera, starrySky)
+        val bmp = bitmap!!
+        target.drawImage(
+            image = bmp,
+            srcOffset = IntOffset.Zero,
+            srcSize = IntSize(camera.gameW, camera.gameH),
+            dstOffset = IntOffset.Zero,
+            dstSize = IntSize(camera.gameW * camera.zoom, camera.gameH * camera.zoom),
+            filterQuality = FilterQuality.None
+        )
+    }
+
+    /** Fills the rows above and below the stage by continuing the stage's own top and bottom edges. */
+    private fun extendBackground(camera: WorldCamera, starrySky: Boolean) {
+        val raw = pixelsBitmap ?: return
+        val w = camera.gameW
+        val h = camera.gameH
+        if (pixels.size != w * h) pixels = IntArray(w * h)
+        raw.getPixels(pixels, 0, w, 0, 0, w, h)
+        StageExtension.fill(pixels, w, h, camera.stageY, camera.stageY + camera.stageH, starrySky)
+        raw.setPixels(pixels, 0, w, 0, 0, w, h)
+    }
 
     fun draw(target: DrawScope, scale: Int, block: DrawScope.() -> Unit) {
         val screen = target.size
         val gw = ceil(screen.width / scale).toInt().coerceAtLeast(1)
         val gh = ceil(screen.height / scale).toInt().coerceAtLeast(1)
-        var bmp = bitmap
-        var cnv = canvas
-        if (bmp == null || cnv == null || bmp.width != gw || bmp.height != gh) {
-            val pixels = Bitmap.createBitmap(gw, gh, Bitmap.Config.ARGB_8888)
-            bmp = pixels.asImageBitmap()
-            cnv = Canvas(HardEdgeCanvas(pixels))
-            bitmap = bmp
-            canvas = cnv
-        }
+        val cnv = ensure(gw, gh)
+        val bmp = bitmap!!
         drawScope.draw(target, target.layoutDirection, cnv, screen) {
             drawRect(Color.Transparent, Offset.Zero, size, blendMode = BlendMode.Clear)
             scale(1f / scale, 1f / scale, pivot = Offset.Zero) { block() }
