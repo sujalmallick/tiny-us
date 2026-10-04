@@ -33,6 +33,16 @@ import com.example.engine.BirdEntity
 import com.example.engine.BirdSpecies
 import com.example.engine.BirdSystem
 import com.example.engine.PerchSurface
+import com.example.scene.autonomy.AgentPhase
+import com.example.scene.autonomy.AutonomyAgent
+import com.example.scene.autonomy.Behavior
+import com.example.scene.autonomy.BehaviorBrain
+import com.example.scene.autonomy.BehaviorContext
+import com.example.scene.autonomy.Discovery
+import com.example.scene.autonomy.DiscoveryKind
+import com.example.scene.autonomy.SceneSpot
+import com.example.scene.autonomy.SceneSpots
+import com.example.scene.autonomy.SpotAction
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.sin
@@ -67,6 +77,25 @@ class SceneEngine(
         const val PIER_BOTTLE_RESPAWN_SECONDS = 30f
         const val PIER_BAO_DOZE_SECONDS = 25f
         const val PIER_DOLPHIN_SECONDS = 3.5f
+
+        /** How long autonomy steps aside after the user touches the world. */
+        const val AUTONOMY_USER_PAUSE_SECONDS = 5f
+        /** Rest between a character's activities: min + up to range seconds. */
+        const val AUTONOMY_REST_MIN = 2.5f
+        const val AUTONOMY_REST_RANGE = 4f
+        /** Give up on a walk that hasn't arrived after this long. */
+        const val AUTONOMY_WALK_TIMEOUT = 12f
+        /** Rare surprises: none in the first minute or so, then at least this far apart. */
+        const val RARE_EVENT_FIRST_DELAY = 75f
+        const val RARE_EVENT_GAP = 150f
+        const val MOCHI_ROAM_SPEED = 0.052f
+        const val MOCHI_ZOOM_SPEED = 0.16f
+        /** Discoveries: the first turns up after about a minute, then every 45-90 s. */
+        const val DISCOVERY_FIRST_DELAY = 40f
+        const val DISCOVERY_GAP_MIN = 45f
+        const val DISCOVERY_GAP_RANGE = 45f
+        /** Unnoticed finds fade away after this long. */
+        const val DISCOVERY_LIFETIME = 50f
         const val PIER_FLOCK_SECONDS = 4f
         const val PIER_LIGHT_PALETTES = 3
     }
@@ -533,6 +562,28 @@ class SceneEngine(
     private val worldEventListener = com.example.data.WorldEventListener { event ->
         triggerWorldEventReaction(event)
     }
+
+    // ── Autonomous behavior state (declared before init, which loads the first scene) ──
+    /** Master switch, e.g. for tests that need the couple to stay put. */
+    var autonomyEnabled: Boolean = true
+
+    /** Exposed for tests: the boy's and girl's routine. */
+    internal val boyAgent = AutonomyAgent()
+    internal val girlAgent = AutonomyAgent()
+    internal val behaviorBrain = BehaviorBrain()
+    private val behaviorContext = BehaviorContext()
+    private val walkBounds = FloatArray(4) // minX, maxX, minY, maxY
+    private var autonomyUserPause = 0f
+    private var autonomyHomeCaptured = false
+    /** Seconds until any rare event may happen again (shared by the couple). */
+    internal var rareEventCooldown = RARE_EVENT_FIRST_DELAY
+    private var mochiZoomTimer = 0f
+
+    /** The last few things the couple did on their own (newest last); for tests and debugging. */
+    internal val autonomyLog = ArrayDeque<Behavior>()
+
+    internal val discovery = Discovery()
+    private var discoverySpawnTimer = DISCOVERY_FIRST_DELAY
 
     init {
         loadScene(SceneType.FLOWER)
@@ -1063,6 +1114,7 @@ class SceneEngine(
         catFacingLeft = false
         boyHome = HomeSpot(boy.worldX, boy.worldY, boy.pose, boy.direction)
         girlHome = HomeSpot(girl.worldX, girl.worldY, girl.pose, girl.direction)
+        resetAutonomy()
         boyAwayIdle = 0f
         girlAwayIdle = 0f
     }
@@ -1948,14 +2000,18 @@ class SceneEngine(
             SceneType.COZY_LOFT -> sceneTime < 5.6f
             SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> sceneTime < 1.5f // no opening script; just the scene wipe
         }
-        autonomousTimer += deltaSeconds
-        if (!isScriptActive && !isWatchSceneActive && autonomousTimer >= nextAutonomousInterval &&
-            boy.reactionTimer <= 0 && girl.reactionTimer <= 0 &&
-            !boy.isMovingOrTransitioning && !girl.isMovingOrTransitioning &&
-            livingRoomReturnTimer <= 0f) {
-            autonomousTimer = 0f
-            nextAutonomousInterval = 11f + Random.nextFloat() * 9f
-            triggerAutonomousMoment(canvasWidth, canvasHeight)
+        if (autonomyEnabled) {
+            updateAutonomy(deltaSeconds, canvasWidth, canvasHeight, isScriptActive)
+        } else {
+            autonomousTimer += deltaSeconds
+            if (!isScriptActive && !isWatchSceneActive && autonomousTimer >= nextAutonomousInterval &&
+                boy.reactionTimer <= 0 && girl.reactionTimer <= 0 &&
+                !boy.isMovingOrTransitioning && !girl.isMovingOrTransitioning &&
+                livingRoomReturnTimer <= 0f) {
+                autonomousTimer = 0f
+                nextAutonomousInterval = 11f + Random.nextFloat() * 9f
+                triggerAutonomousMoment(canvasWidth, canvasHeight)
+            }
         }
 
         // Living Dynamic Weather System (particles & soundscapes)
@@ -2305,12 +2361,12 @@ class SceneEngine(
             }
         } else if (t < 11.0f) {
             // Stand close holding hands
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.RECEIVE_FLOWER
+            if (idleLoopMayPose(boy)) boy.pose = CharacterPose.HOLD_HANDS
+            if (idleLoopMayPose(girl)) girl.pose = CharacterPose.RECEIVE_FLOWER
         } else {
             // Cozy living idle together
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.RECEIVE_FLOWER
+            if (idleLoopMayPose(boy)) boy.pose = CharacterPose.HOLD_HANDS
+            if (idleLoopMayPose(girl)) girl.pose = CharacterPose.RECEIVE_FLOWER
             if (eventChance(0.35f, dt)) {
                 particles.spawnPetals(cw * Random.nextFloat(), ch * 0.35f, 1)
             }
@@ -2352,8 +2408,8 @@ class SceneEngine(
                 particles.spawnHeart(cw * 0.5f, ch * 0.58f)
             }
         } else {
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.SIT_SNUGGLE
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.SIT_SNUGGLE
+            if (idleLoopMayPose(boy)) boy.pose = CharacterPose.SIT_SNUGGLE
+            if (idleLoopMayPose(girl)) girl.pose = CharacterPose.SIT_SNUGGLE
             if (eventChance(0.18f, dt)) {
                 audio.playBirdChirp()
             }
@@ -2429,10 +2485,10 @@ class SceneEngine(
             }
         } else {
             // Sharing food happily together on the rug
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) {
+            if (idleLoopMayPose(boy)) {
                 boy.pose = CharacterPose.EAT_SNEAK
             }
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) {
+            if (idleLoopMayPose(girl)) {
                 girl.pose = CharacterPose.IDLE
                 girl.direction = Direction.LEFT
                 girl.emotion = CharacterEmotion.HAPPY
@@ -2485,10 +2541,10 @@ class SceneEngine(
                 }
             } else {
                 // Full awake idle sitting together on couch
-                if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0 && boy.pose != CharacterPose.SIT_SNUGGLE) {
+                if (idleLoopMayPose(boy) && boy.pose != CharacterPose.SIT_SNUGGLE) {
                     boy.pose = CharacterPose.SIT
                 }
-                if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0 && girl.pose != CharacterPose.SIT_SNUGGLE) {
+                if (idleLoopMayPose(girl) && girl.pose != CharacterPose.SIT_SNUGGLE) {
                     girl.pose = CharacterPose.SIT
                 }
             }
@@ -2685,10 +2741,10 @@ class SceneEngine(
             }
         } else {
             // Holding hands under the lantern light
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.HOLD_HANDS
-            boy.direction = Direction.RIGHT
-            girl.direction = Direction.LEFT
+            if (idleLoopMayPose(boy)) boy.pose = CharacterPose.HOLD_HANDS
+            if (idleLoopMayPose(girl)) girl.pose = CharacterPose.HOLD_HANDS
+            if (!autonomyHolds(boy)) boy.direction = Direction.RIGHT
+            if (!autonomyHolds(girl)) girl.direction = Direction.LEFT
             if (eventChance(0.20f, dt)) {
                 particles.spawnSparkles(cw * 0.48f, ch * 0.62f, 3)
             }
@@ -2729,8 +2785,8 @@ class SceneEngine(
                 particles.spawnHeart(cw * 0.50f, ch * 0.52f, Color(0xFFFF3366))
             }
         } else {
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) girl.pose = CharacterPose.HOLD_HANDS
+            if (idleLoopMayPose(boy)) boy.pose = CharacterPose.HOLD_HANDS
+            if (idleLoopMayPose(girl)) girl.pose = CharacterPose.HOLD_HANDS
             if (eventChance(0.20f, dt)) {
                 particles.spawnSparkles(cw * 0.50f, ch * 0.65f, 3)
             }
@@ -2743,6 +2799,7 @@ class SceneEngine(
      * Returns the new away-from-home linger time; a negative value marks a walk home in progress.
      */
     private fun settleToHome(c: PixelCharacter, home: HomeSpot, awayIdle: Float, waveTimer: Float, dt: Float): Float {
+        if (autonomyHolds(c)) return 0f
         if (isWatchSceneActive || c.reactionTimer > 0f || c.isMovingOrTransitioning ||
             waveTimer > 0f || groundInteractionCharacter === c
         ) return if (awayIdle < 0f) awayIdle else 0f
@@ -2830,12 +2887,12 @@ class SceneEngine(
             }
         } else {
             // Sweet idle momo date loop
-            if (!boy.isMovingOrTransitioning && boy.reactionTimer <= 0) {
+            if (idleLoopMayPose(boy)) {
                 boy.pose = CharacterPose.FEED_MOMO
                 boy.direction = Direction.RIGHT
                 boy.emotion = CharacterEmotion.LOVING
             }
-            if (!girl.isMovingOrTransitioning && girl.reactionTimer <= 0) {
+            if (idleLoopMayPose(girl)) {
                 girl.pose = CharacterPose.EAT_MOMO
                 girl.direction = Direction.LEFT
                 girl.emotion = CharacterEmotion.HAPPY
@@ -2930,14 +2987,14 @@ class SceneEngine(
                 particles.spawnHeart(cw * 0.53f, ch * 0.50f, Color(0xFFFF3366))
             }
         } else {
-            if (boy.reactionTimer <= 0) {
+            if (boy.reactionTimer <= 0 && !boy.isMovingOrTransitioning && !autonomyHolds(boy)) {
                 boy.worldX = 0.58f
                 boy.worldY = 0.575f
                 boy.pose = CharacterPose.SIT
                 boy.direction = Direction.RIGHT
                 boy.emotion = CharacterEmotion.LOVING
             }
-            if (girl.reactionTimer <= 0) {
+            if (girl.reactionTimer <= 0 && !girl.isMovingOrTransitioning && !autonomyHolds(girl)) {
                 girl.worldX = 0.65f
                 girl.worldY = 0.575f
                 girl.pose = CharacterPose.SIT_SNUGGLE
@@ -3557,24 +3614,27 @@ class SceneEngine(
     }
 
     // Autonomous Spontaneous Affectionate Moments — scene-aware (Feature 2 & 8)
-    private fun triggerAutonomousMoment(cw: Float, ch: Float) {
+    /** [sceneOnly]: play this scene's own hand-made moment (the autonomy brain asked for it). */
+    private fun triggerAutonomousMoment(cw: Float, ch: Float, sceneOnly: Boolean = false) {
         nextAutonomousInterval = 12f + Random.nextFloat() * 10f
 
-        // Quiet idle beats carry most of the time; existing scene-specific moments remain
-        // occasional surprises. Loft and scooter poses stay planted by design.
-        if (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.EVENING_RIDE) {
-            triggerWeightedIdleMoment(cw, ch)
-            return
-        }
-        if (Random.nextInt(100) < 72) {
-            triggerWeightedIdleMoment(cw, ch)
-            return
-        }
-
-        // Occasional weather-specific autonomous moment in outdoor scenes
-        if (isCurrentSceneOutdoor && Random.nextFloat() < 0.35f) {
-            if (triggerWeatherAutonomousMoment(cw, ch)) {
+        if (!sceneOnly) {
+            // Quiet idle beats carry most of the time; existing scene-specific moments remain
+            // occasional surprises. Loft and scooter poses stay planted by design.
+            if (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.EVENING_RIDE) {
+                triggerWeightedIdleMoment(cw, ch)
                 return
+            }
+            if (Random.nextInt(100) < 72) {
+                triggerWeightedIdleMoment(cw, ch)
+                return
+            }
+
+            // Occasional weather-specific autonomous moment in outdoor scenes
+            if (isCurrentSceneOutdoor && Random.nextFloat() < 0.35f) {
+                if (triggerWeatherAutonomousMoment(cw, ch)) {
+                    return
+                }
             }
         }
 
@@ -6306,6 +6366,926 @@ class SceneEngine(
         boy.emoteTimer = 2.4f
         girl.emoteTimer = 2.4f
         showMessage(GameText.get(R.string.scene_a_rainbow_after_the_rain_make_a_wish_on), duration = 3.2f)
+    }
+
+    // ── Autonomous behavior ──────────────────────────────────────────────
+    // Each character runs a small decide → walk → perform → rest routine. The brain picks
+    // what to do with weighted randomness shaped by the scene, weather, time of day, the
+    // partner, Mochi and what they did recently. User taps, cinematics and opening scripts
+    // always win: autonomy pauses and picks up again naturally afterwards.
+
+    private val talkLinePicker = AntiRepeatRandomPicker(listOf(
+        R.string.scene_auto_talk_cloud_mochi, R.string.scene_auto_talk_happy_now,
+        R.string.scene_auto_talk_keep_you, R.string.scene_auto_talk_what_next,
+        R.string.scene_auto_talk_thinking_of_you, R.string.scene_auto_talk_stay_like_this,
+        R.string.scene_auto_talk_tea_later, R.string.scene_auto_talk_your_laugh
+    ))
+    private val replyLinePicker = AntiRepeatRandomPicker(listOf(
+        R.string.scene_auto_reply_me_too, R.string.scene_auto_reply_always,
+        R.string.scene_auto_reply_silly, R.string.scene_auto_reply_okay,
+        R.string.scene_auto_reply_mhm
+    ))
+
+    private fun agentFor(c: PixelCharacter): AutonomyAgent = if (c === boy) boyAgent else girlAgent
+    private fun homeFor(c: PixelCharacter): HomeSpot = if (c === boy) boyHome else girlHome
+
+    /**
+     * True while autonomy owns this character: mid-activity, or out and about away from
+     * their home spot. Scene idle loops leave such a character's pose and place alone.
+     */
+    private fun autonomyHolds(c: PixelCharacter): Boolean {
+        if (!autonomyEnabled || !autonomyHomeCaptured) return false
+        val agent = agentFor(c)
+        if (agent.phase != AgentPhase.IDLE) return true
+        val home = homeFor(c)
+        return abs(c.worldX - home.x) > 0.03f || abs(c.worldY - home.y) > 0.03f
+    }
+
+    /** Scene idle loops may set this character's pose only when nobody else owns them. */
+    private fun idleLoopMayPose(c: PixelCharacter): Boolean =
+        !c.isMovingOrTransitioning && c.reactionTimer <= 0 && !autonomyHolds(c)
+
+    /** The user touched the world: autonomy steps aside for a few seconds. */
+    fun notifyUserInteraction() {
+        autonomyUserPause = AUTONOMY_USER_PAUSE_SECONDS
+        stopAutonomy(halt = true)
+    }
+
+    private fun stopAutonomy(halt: Boolean) {
+        for (c in charactersBoyGirl) {
+            val agent = agentFor(c)
+            if (agent.phase == AgentPhase.WALKING && halt && c.isTransitioningPosition) {
+                c.moveTo(c.worldX, c.worldY)
+            }
+            if (agent.phase != AgentPhase.IDLE) agent.rest(3f + Random.nextFloat() * 2f)
+        }
+        discovery.claimed = false
+    }
+
+    private val charactersBoyGirl: Array<PixelCharacter> by lazy { arrayOf(boy, girl) }
+
+    private fun resetAutonomy() {
+        autonomyHomeCaptured = false
+        autonomyUserPause = 0f
+        mochiZoomTimer = 0f
+        boyAgent.reset(firstDecisionIn = 1.5f + Random.nextFloat() * 1.5f)
+        girlAgent.reset(firstDecisionIn = 4f + Random.nextFloat() * 3f)
+        if (rareEventCooldown < RARE_EVENT_FIRST_DELAY) rareEventCooldown = RARE_EVENT_FIRST_DELAY
+        resetDiscovery()
+    }
+
+    /** Fills [walkBounds] for the current scene; false where walking makes no sense (the scooter). */
+    private fun fillWalkBounds(cw: Float, ch: Float): Boolean {
+        val px = WorldViewport.pixelScale(cw)
+        when (currentScene) {
+            SceneType.FLOWER, SceneType.LOOKING -> setBounds(0.12f, 0.88f, 0.68f, 0.80f)
+            SceneType.UNDER_TREE -> setBounds(0.14f, 0.86f, 0.69f, 0.80f)
+            SceneType.WALK -> setBounds(0.12f, 0.88f, 0.68f, (0.66f + (30f * px / ch) + 0.08f).coerceAtMost(0.84f))
+            SceneType.MOMO_STALL -> setBounds(0.12f, 0.88f, 0.69f, (0.66f + (30f * px / ch) + 0.10f).coerceAtMost(0.86f))
+            SceneType.COOKING -> setBounds(0.16f, 0.84f, 0.69f, 0.79f)
+            SceneType.SLEEP -> setBounds(0.18f, 0.82f, 0.68f, 0.77f)
+            SceneType.COZY_LOFT -> setBounds(0.40f, 0.80f, 0.56f, 0.66f)
+            SceneType.RAINY_CAFE -> setBounds(0.16f, 0.84f, 0.69f, 0.79f)
+            SceneType.SUNROOM -> setBounds(0.14f, 0.86f, 0.67f, 0.80f)
+            SceneType.CAMPFIRE -> setBounds(0.14f, 0.86f, 0.68f, 0.80f)
+            SceneType.SEASIDE_PIER -> setBounds(PierLayout.WALK_MIN_X, PierLayout.WALK_MAX_X, PierLayout.WALK_MIN_Y, PierLayout.WALK_MAX_Y)
+            SceneType.EVENING_RIDE -> return false
+        }
+        return true
+    }
+
+    private fun setBounds(minX: Float, maxX: Float, minY: Float, maxY: Float) {
+        walkBounds[0] = minX; walkBounds[1] = maxX; walkBounds[2] = minY; walkBounds[3] = maxY
+    }
+
+    private fun isCharacterFree(c: PixelCharacter): Boolean =
+        c.reactionTimer <= 0f && !c.isMovingOrTransitioning && groundInteractionCharacter !== c &&
+            (if (c === boy) boyIdleWaveTimer else girlIdleWaveTimer) <= 0f
+
+    private fun updateAutonomy(dt: Float, cw: Float, ch: Float, isScriptActive: Boolean) {
+        boyAgent.memory.tick(dt)
+        girlAgent.memory.tick(dt)
+        if (rareEventCooldown > 0f) rareEventCooldown -= dt
+        if (autonomyUserPause > 0f) autonomyUserPause -= dt
+        updateMochiZoomies(dt)
+
+        val sleepingOnCouch = currentScene == SceneType.SLEEP && !lampLit
+        if (isWatchSceneActive || isDreamMode || sleepingOnCouch) {
+            stopAutonomy(halt = false)
+            return
+        }
+        updateDiscovery(dt, cw, ch)
+        if (isScriptActive || autonomyUserPause > 0f || mochiMatchmakerActive ||
+            livingRoomReturnTimer > 0f || catTreatInProgress
+        ) return
+
+        // Homes are where each scene's opening script leaves the couple.
+        if (!autonomyHomeCaptured) {
+            if (boy.isMovingOrTransitioning || girl.isMovingOrTransitioning || sceneTime < scriptEndTime() + 0.6f) return
+            boyHome = HomeSpot(boy.worldX, boy.worldY, boy.pose, boy.direction)
+            girlHome = HomeSpot(girl.worldX, girl.worldY, girl.pose, girl.direction)
+            autonomyHomeCaptured = true
+        }
+
+        updateAgent(boy, boyAgent, girl, girlAgent, dt, cw, ch)
+        updateAgent(girl, girlAgent, boy, boyAgent, dt, cw, ch)
+    }
+
+    /** When each scene's opening script ends (the same table that gates the old moments). */
+    private fun scriptEndTime(): Float = when (currentScene) {
+        SceneType.FLOWER -> 8.2f
+        SceneType.UNDER_TREE -> 7.2f
+        SceneType.COOKING -> 7.6f
+        SceneType.SLEEP -> 6.9f
+        SceneType.WALK -> 6.6f
+        SceneType.LOOKING -> 7.6f
+        SceneType.MOMO_STALL -> 6.2f
+        SceneType.EVENING_RIDE -> 7.0f
+        SceneType.COZY_LOFT -> 5.6f
+        SceneType.RAINY_CAFE, SceneType.SUNROOM, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER -> 1.5f
+    }
+
+    private fun updateAgent(
+        c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, partnerAgent: AutonomyAgent,
+        dt: Float, cw: Float, ch: Float
+    ) {
+        when (agent.phase) {
+            AgentPhase.IDLE -> {
+                if (!isCharacterFree(c)) return
+                agent.decisionTimer -= dt
+                if (agent.decisionTimer > 0f) return
+                decideAndStart(c, agent, partner, partnerAgent, cw, ch)
+            }
+            AgentPhase.WALKING -> {
+                agent.walkTimer += dt
+                if (c.isTransitioningPosition && agent.walkTimer < AUTONOMY_WALK_TIMEOUT) return
+                if (agent.walkTimer >= AUTONOMY_WALK_TIMEOUT) {
+                    c.moveTo(c.worldX, c.worldY)
+                    agent.rest(3f)
+                    return
+                }
+                arrive(c, agent, partner, partnerAgent, cw, ch)
+            }
+            AgentPhase.PERFORMING -> {
+                agent.performTimer -= dt
+                agent.stepTimer += dt
+                if (!agent.isFollower) performStep(c, agent, partner, cw, ch)
+                if (agent.performTimer <= 0f) finishActivity(c, agent)
+            }
+        }
+    }
+
+    private fun decideAndStart(
+        c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, partnerAgent: AutonomyAgent,
+        cw: Float, ch: Float
+    ) {
+        val canWalk = fillWalkBounds(cw, ch)
+        val ctx = behaviorContext
+        val home = homeFor(c)
+        ctx.scene = currentScene
+        ctx.isOutdoor = isCurrentSceneOutdoor
+        ctx.weather = weather
+        ctx.isNight = timeOfDayPhase.isNight
+        ctx.isMorning = timeOfDayPhase == TimeOfDayPhase.MORNING
+        ctx.isSunset = timeOfDayPhase.isSunset
+        ctx.canWalk = canWalk
+        ctx.prefersSeated = currentScene == SceneType.COZY_LOFT
+        ctx.distanceToPartner = kotlin.math.hypot(partner.worldX - c.worldX, partner.worldY - c.worldY)
+        ctx.partnerAvailable = isPartnerJoinable(partner, partnerAgent)
+        val mochiHere = currentScene != SceneType.EVENING_RIDE
+        ctx.mochiPresent = mochiHere
+        ctx.distanceToMochi = kotlin.math.hypot(catWorldX - c.worldX, catWorldY - c.worldY)
+        ctx.mochiWalking = catState == CatState.WALK_FOLLOW && abs(catTargetX - catWorldX) > 0.02f
+        ctx.mochiAsleep = catState == CatState.SLEEPING
+        ctx.distanceFromHome = kotlin.math.hypot(c.worldX - home.x, c.worldY - home.y)
+        ctx.activitiesSinceHome = agent.activitiesSinceHome
+        ctx.propAvailable = canWalk && pickSpot(c, agent, partner, partnerAgent, dryRun = true) != null
+        ctx.sceneMomentAvailable = sceneHasMoments() &&
+            ctx.distanceFromHome < 0.05f &&
+            kotlin.math.hypot(partner.worldX - homeFor(partner).x, partner.worldY - homeFor(partner).y) < 0.05f
+        ctx.discoveryAvailable = canWalk && discoveryNear(c) != null
+        ctx.isSitting = c.pose == CharacterPose.SIT || c.pose == CharacterPose.SIT_SNUGGLE
+        ctx.rareCooldown = rareEventCooldown
+
+        val choice = behaviorBrain.choose(ctx, agent.memory)
+        agent.memory.remember(choice)
+        startBehavior(choice, c, agent, partner, partnerAgent, cw, ch)
+    }
+
+    /**
+     * The partner can be drawn into something together when they're free, or only doing
+     * something casual on their own (looking around, resting, watching Mochi).
+     */
+    private fun isPartnerJoinable(partner: PixelCharacter, partnerAgent: AutonomyAgent): Boolean {
+        if (partner.isMovingOrTransitioning || groundInteractionCharacter === partner) return false
+        if (partnerAgent.phase == AgentPhase.IDLE) return isCharacterFree(partner)
+        if (partnerAgent.phase != AgentPhase.PERFORMING || partnerAgent.isFollower) return false
+        return when (partnerAgent.behavior) {
+            Behavior.LOOK_AROUND, Behavior.LOOK_AT_SKY, Behavior.REST, Behavior.WATCH_MOCHI, Behavior.WEATHER_REACT -> true
+            else -> false
+        }
+    }
+
+    private fun sceneHasMoments(): Boolean = when (currentScene) {
+        SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.COOKING, SceneType.SLEEP, SceneType.WALK,
+        SceneType.LOOKING, SceneType.MOMO_STALL, SceneType.SEASIDE_PIER -> true
+        else -> false
+    }
+
+    private fun startBehavior(
+        b: Behavior, c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, partnerAgent: AutonomyAgent,
+        cw: Float, ch: Float
+    ) {
+        agent.behavior = b
+        agent.step = 0
+        agent.stepTimer = 0f
+        agent.isFollower = false
+        when (b) {
+            Behavior.WANDER -> {
+                val minX = walkBounds[0]; val maxX = walkBounds[1]; val minY = walkBounds[2]; val maxY = walkBounds[3]
+                var tx = c.worldX
+                var ty = c.worldY
+                for (attempt in 0 until 6) {
+                    val x = minX + Random.nextFloat() * (maxX - minX)
+                    val y = minY + Random.nextFloat() * (maxY - minY)
+                    if (abs(x - c.worldX) < 0.08f) continue
+                    if (kotlin.math.hypot(partner.worldX - x, partner.worldY - y) < 0.11f) continue
+                    if (avoidCampfirePit(x, y) != x) continue
+                    tx = x; ty = y
+                    break
+                }
+                walkTo(c, agent, tx, ty)
+            }
+            Behavior.VISIT_PROP -> {
+                val spot = pickSpot(c, agent, partner, partnerAgent, dryRun = false)
+                if (spot == null) { agent.rest(2f); return }
+                agent.spot = spot
+                agent.lastSpotId = spot.id
+                walkTo(c, agent, spot.x, spot.y)
+            }
+            Behavior.APPROACH_PARTNER, Behavior.SHELTER_CLOSE, Behavior.RARE_FLOWER_GIFT -> {
+                val gap = if (b == Behavior.SHELTER_CLOSE) 0.10f else 0.12f
+                val side = if (c.worldX < partner.worldX) -1f else 1f
+                fillWalkBounds(cw, ch)
+                val tx = (partner.worldX + side * gap).coerceIn(walkBounds[0], walkBounds[1])
+                val ty = partner.worldY.coerceIn(walkBounds[2], walkBounds[3])
+                if (b != Behavior.APPROACH_PARTNER) claimPartner(partner, partnerAgent, b, 30f)
+                walkTo(c, agent, avoidCampfirePit(tx, ty), ty)
+            }
+            Behavior.APPROACH_MOCHI -> {
+                val side = if (c.worldX < catWorldX) -1f else 1f
+                fillWalkBounds(cw, ch)
+                val tx = (catWorldX + side * 0.07f).coerceIn(walkBounds[0], walkBounds[1])
+                val ty = catWorldY.coerceIn(walkBounds[2], walkBounds[3])
+                if (kotlin.math.hypot(partner.worldX - tx, partner.worldY - ty) < 0.10f) { agent.rest(2f); return }
+                walkTo(c, agent, avoidCampfirePit(tx, ty), ty)
+            }
+            Behavior.GO_HOME -> {
+                val home = homeFor(c)
+                walkTo(c, agent, home.x, home.y)
+            }
+            Behavior.DISCOVER -> walkToDiscovery(c, agent, cw, ch)
+            Behavior.SCENE_MOMENT -> {
+                // The scene's own hand-made moments, played as one shared activity.
+                triggerAutonomousMoment(cw, ch, sceneOnly = true)
+                autonomyLog.addLast(Behavior.SCENE_MOMENT)
+                if (autonomyLog.size > 64) autonomyLog.removeFirst()
+                partnerAgent.memory.remember(Behavior.SCENE_MOMENT)
+                agent.rest(3f + Random.nextFloat() * 3f)
+                partnerAgent.rest(4f + Random.nextFloat() * 3f)
+            }
+            Behavior.TALK, Behavior.HUG, Behavior.HOLD_HANDS, Behavior.SIT_TOGETHER,
+            Behavior.RARE_SHOOTING_STAR, Behavior.RARE_DOZE_OFF, Behavior.RARE_DANCE -> {
+                val duration = performDuration(b)
+                claimPartner(partner, partnerAgent, b, duration)
+                beginPerforming(c, agent, duration, partner, cw, ch)
+            }
+            else -> beginPerforming(c, agent, performDuration(b), partner, cw, ch)
+        }
+    }
+
+    /** The partner joins in: they hold still (or walk with) for [duration] seconds. */
+    private fun claimPartner(partner: PixelCharacter, partnerAgent: AutonomyAgent, b: Behavior, duration: Float) {
+        if (partnerAgent.phase == AgentPhase.PERFORMING && partnerAgent.behavior == Behavior.REST &&
+            partner.pose == CharacterPose.SIT && homeFor(partner).pose != CharacterPose.SIT
+        ) partner.transitionPoseTo(CharacterPose.IDLE)
+        partnerAgent.phase = AgentPhase.PERFORMING
+        partnerAgent.behavior = b
+        partnerAgent.isFollower = true
+        partnerAgent.performTimer = duration
+        partnerAgent.memory.remember(b)
+        partner.reactionTimer = duration
+    }
+
+    private fun releasePartner(c: PixelCharacter) {
+        val partnerAgent = if (c === boy) girlAgent else boyAgent
+        val partner = if (c === boy) girl else boy
+        if (partnerAgent.isFollower) {
+            partnerAgent.rest(2.5f + Random.nextFloat() * 3f)
+            partner.reactionTimer = 0f
+        }
+    }
+
+    private fun performDuration(b: Behavior): Float = when (b) {
+        Behavior.LOOK_AROUND -> 3.0f
+        Behavior.LOOK_AT_SKY -> 3.4f
+        Behavior.STRETCH -> 2.4f
+        Behavior.REST -> 6f + Random.nextFloat() * 3f
+        Behavior.WANDER -> 1.6f
+        Behavior.APPROACH_PARTNER -> 2.2f
+        Behavior.TALK -> 4.4f
+        Behavior.HUG -> 3.2f
+        Behavior.HOLD_HANDS -> 4.5f
+        Behavior.SIT_TOGETHER -> 7f
+        Behavior.APPROACH_MOCHI, Behavior.PET_MOCHI -> 2.8f
+        Behavior.WATCH_MOCHI -> 3.0f
+        Behavior.WEATHER_REACT -> 2.8f
+        Behavior.SHELTER_CLOSE -> 2.4f
+        Behavior.GO_HOME -> 0.3f
+        Behavior.DISCOVER -> 3.2f
+        Behavior.RARE_FLOWER_GIFT -> 3.4f
+        Behavior.RARE_SHOOTING_STAR -> 3.6f
+        Behavior.RARE_DOZE_OFF -> 9f
+        Behavior.RARE_DANCE -> 3.6f
+        Behavior.RARE_MOCHI_ZOOMIES -> 3.2f
+        Behavior.VISIT_PROP, Behavior.SCENE_MOMENT -> 3.2f
+    }
+
+    private fun walkTo(c: PixelCharacter, agent: AutonomyAgent, x: Float, y: Float) {
+        agent.targetX = x
+        agent.targetY = y
+        agent.walkTimer = 0f
+        if (kotlin.math.hypot(x - c.worldX, y - c.worldY) < 0.012f) {
+            agent.phase = AgentPhase.WALKING // arrives on the next frame
+            return
+        }
+        agent.phase = AgentPhase.WALKING
+        c.emotion = CharacterEmotion.CURIOUS
+        c.moveTo(x, y, arrivePose = CharacterPose.IDLE)
+    }
+
+    private fun arrive(c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, partnerAgent: AutonomyAgent, cw: Float, ch: Float) {
+        when (agent.behavior) {
+            Behavior.GO_HOME -> {
+                val home = homeFor(c)
+                c.transitionPoseTo(home.pose)
+                c.direction = home.direction
+                agent.activitiesSinceHome = -1 // finishing the walk home counts as zero
+            }
+            Behavior.VISIT_PROP -> {
+                val spot = agent.spot
+                if (spot == null) { agent.rest(2f); return }
+                c.direction = if (spot.faceLeft) Direction.LEFT else Direction.RIGHT
+                if (spot.pose != CharacterPose.IDLE) c.transitionPoseTo(spot.pose)
+                playSpotAction(c, spot, cw, ch)
+                beginPerforming(c, agent, spot.dwellSeconds, partner, cw, ch)
+                return
+            }
+            Behavior.APPROACH_PARTNER, Behavior.SHELTER_CLOSE, Behavior.RARE_FLOWER_GIFT -> {
+                faceEachOther(c, partner)
+                if (agent.behavior == Behavior.APPROACH_PARTNER && !(partnerAgent.phase == AgentPhase.IDLE && isCharacterFree(partner))) {
+                    // They got busy meanwhile; just smile at them.
+                    c.emote = EmoteType.HEART
+                    c.emoteTimer = 1.6f
+                }
+            }
+            Behavior.APPROACH_MOCHI -> {
+                // Walking over to Mochi turns into a pet once they're close.
+                agent.behavior = Behavior.PET_MOCHI
+            }
+            else -> Unit
+        }
+        beginPerforming(c, agent, performDuration(agent.behavior ?: Behavior.LOOK_AROUND), partner, cw, ch)
+    }
+
+    private fun beginPerforming(c: PixelCharacter, agent: AutonomyAgent, duration: Float, partner: PixelCharacter, cw: Float, ch: Float) {
+        agent.behavior?.let {
+            autonomyLog.addLast(it)
+            if (autonomyLog.size > 64) autonomyLog.removeFirst()
+        }
+        agent.phase = AgentPhase.PERFORMING
+        agent.performTimer = duration
+        agent.stepTimer = 0f
+        agent.step = 0
+        c.reactionTimer = duration
+        startPerformance(c, agent, partner, cw, ch)
+    }
+
+    /** The first beat of a performance. */
+    private fun startPerformance(c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, cw: Float, ch: Float) {
+        val headX = cw * c.worldX
+        val headY = ch * c.worldY - 70f
+        when (agent.behavior) {
+            Behavior.LOOK_AROUND -> {
+                c.direction = if (Random.nextBoolean()) Direction.LEFT else Direction.RIGHT
+                c.emotion = CharacterEmotion.CURIOUS
+                if (Random.nextFloat() < 0.25f) emote(c, EmoteType.DOTS, 1.4f)
+            }
+            Behavior.LOOK_AT_SKY -> {
+                c.emotion = CharacterEmotion.HAPPY
+                emote(c, EmoteType.SPARKLE, 1.8f)
+                if (timeOfDayPhase.isNight && isCurrentSceneOutdoor && Random.nextFloat() < 0.25f) {
+                    particles.spawnShootingStar(cw * (0.1f + Random.nextFloat() * 0.5f), ch * 0.10f)
+                }
+            }
+            Behavior.STRETCH -> {
+                c.transitionPoseTo(CharacterPose.WAVE)
+                c.emotion = CharacterEmotion.SLEEPY
+                emote(c, EmoteType.SLEEP_Z, 1.4f)
+            }
+            Behavior.REST -> {
+                if (currentScene != SceneType.EVENING_RIDE) c.transitionPoseTo(CharacterPose.SIT)
+                c.emotion = if (timeOfDayPhase.isNight) CharacterEmotion.SLEEPY else CharacterEmotion.HAPPY
+                if (timeOfDayPhase.isNight) emote(c, EmoteType.SLEEP_Z, 2f)
+            }
+            Behavior.WANDER -> {
+                c.emotion = CharacterEmotion.HAPPY
+                if (Random.nextFloat() < 0.4f) c.direction = if (c.direction == Direction.LEFT) Direction.RIGHT else Direction.LEFT
+            }
+            Behavior.APPROACH_PARTNER -> {
+                faceEachOther(c, partner)
+                c.transitionPoseTo(CharacterPose.WAVE)
+                c.emotion = CharacterEmotion.LOVING
+                emote(c, EmoteType.HEART, 1.8f)
+            }
+            Behavior.TALK -> {
+                faceEachOther(c, partner)
+                c.emotion = CharacterEmotion.HAPPY
+                partner.emotion = CharacterEmotion.HAPPY
+                speakerSpeech(c, GameText.get(talkLine()), 2.6f)
+            }
+            Behavior.HUG -> {
+                faceEachOther(c, partner)
+                c.transitionPoseTo(CharacterPose.HUG)
+                partner.transitionPoseTo(CharacterPose.HUG)
+                c.emotion = CharacterEmotion.LOVING
+                partner.emotion = CharacterEmotion.LOVING
+                particles.spawnHeart(cw * (c.worldX + partner.worldX) / 2f, ch * c.worldY - 80f)
+                audio.playHeartChime()
+            }
+            Behavior.HOLD_HANDS -> {
+                faceEachOther(c, partner)
+                c.transitionPoseTo(CharacterPose.HOLD_HANDS)
+                partner.transitionPoseTo(CharacterPose.HOLD_HANDS)
+                c.emotion = CharacterEmotion.LOVING
+                partner.emotion = CharacterEmotion.SHY
+                emote(partner, EmoteType.BLUSH, 2f)
+            }
+            Behavior.SIT_TOGETHER -> {
+                faceEachOther(c, partner)
+                c.transitionPoseTo(CharacterPose.SIT)
+                partner.transitionPoseTo(CharacterPose.SIT_SNUGGLE)
+                c.emotion = CharacterEmotion.LOVING
+                partner.emotion = CharacterEmotion.LOVING
+            }
+            Behavior.PET_MOCHI, Behavior.APPROACH_MOCHI -> {
+                c.direction = if (catWorldX < c.worldX) Direction.LEFT else Direction.RIGHT
+                if (abs(catWorldX - c.worldX) < 0.16f) {
+                    c.transitionPoseTo(CharacterPose.HEAD_PAT)
+                    if (catState != CatState.WALK_FOLLOW) {
+                        catState = CatState.SITTING_PURR
+                        catSleeping = false
+                    }
+                    audio.playCatPurr()
+                    particles.spawnHeart(cw * catWorldX, ch * catWorldY - 40f, Color(0xFFFF8FA3))
+                    if (Random.nextFloat() < 0.3f) speakerSpeech(c, GameText.get(R.string.scene_auto_pet_mochi_soft), 2.2f)
+                } else {
+                    emote(c, EmoteType.HEART, 1.6f)
+                }
+                c.emotion = CharacterEmotion.LOVING
+            }
+            Behavior.WATCH_MOCHI -> {
+                c.direction = if (catWorldX < c.worldX) Direction.LEFT else Direction.RIGHT
+                c.emotion = CharacterEmotion.CURIOUS
+                emote(c, if (Random.nextBoolean()) EmoteType.QUESTION else EmoteType.HEART, 1.6f)
+            }
+            Behavior.WEATHER_REACT -> playWeatherReaction(c, cw, ch)
+            Behavior.SHELTER_CLOSE -> {
+                faceEachOther(c, partner)
+                c.emotion = CharacterEmotion.LOVING
+                partner.emotion = CharacterEmotion.LOVING
+                emote(c, EmoteType.HEART, 1.6f)
+                if (Random.nextFloat() < 0.5f) speakerSpeech(c, GameText.get(R.string.scene_auto_rain_stay_close), 2.4f)
+            }
+            Behavior.RARE_FLOWER_GIFT -> {
+                faceEachOther(c, partner)
+                c.transitionPoseTo(CharacterPose.GIVE_FLOWER)
+                partner.transitionPoseTo(CharacterPose.RECEIVE_FLOWER)
+                partner.emotion = CharacterEmotion.SHY
+                emote(partner, EmoteType.BLUSH, 2.4f)
+                particles.spawnPetals(cw * partner.worldX, ch * partner.worldY - 60f, 4)
+                audio.playHeartChime()
+                showMessage(GameText.get(R.string.scene_auto_rare_flower_gift, c.name, partner.name), duration = 3.2f)
+                markRareEvent()
+            }
+            Behavior.RARE_SHOOTING_STAR -> {
+                for (k in charactersBoyGirl) {
+                    k.emotion = CharacterEmotion.SURPRISED
+                    emote(k, EmoteType.SPARKLE, 2.4f)
+                }
+                particles.spawnShootingStar(cw * 0.15f, ch * 0.08f)
+                particles.spawnShootingStar(cw * 0.35f, ch * 0.05f)
+                audio.playStarArpeggio()
+                showMessage(GameText.get(R.string.scene_auto_rare_shooting_star), duration = 3.2f)
+                markRareEvent()
+            }
+            Behavior.RARE_DOZE_OFF -> {
+                faceEachOther(c, partner)
+                c.emotion = CharacterEmotion.SLEEPY
+                emote(c, EmoteType.SLEEP_Z, 4f)
+                if (c.pose != CharacterPose.SIT_SNUGGLE) c.transitionPoseTo(CharacterPose.SIT_SNUGGLE)
+                partner.emotion = CharacterEmotion.LOVING
+                showMessage(GameText.get(R.string.scene_auto_rare_doze_off, c.name, partner.name), duration = 3.4f)
+                markRareEvent()
+            }
+            Behavior.RARE_DANCE -> {
+                faceEachOther(c, partner)
+                audio.playHeartChime()
+                showMessage(GameText.get(R.string.scene_auto_rare_dance), duration = 2.8f)
+                markRareEvent()
+            }
+            Behavior.RARE_MOCHI_ZOOMIES -> {
+                startMochiZoomies(cw)
+                c.emotion = CharacterEmotion.SURPRISED
+                emote(c, EmoteType.EXCLAMATION, 1.8f)
+                showMessage(GameText.get(R.string.scene_auto_rare_mochi_zoomies), duration = 2.8f)
+                markRareEvent()
+            }
+            Behavior.DISCOVER -> startDiscovery(c, cw, ch)
+            else -> Unit
+        }
+        if (agent.behavior != Behavior.LOOK_AT_SKY && agent.behavior != Behavior.WEATHER_REACT) {
+            // Tiny touch of life: a sparkle above the head now and then
+            if (Random.nextFloat() < 0.08f) particles.spawnSparkles(headX, headY, 2)
+        }
+    }
+
+    /** Later beats of multi-step performances. */
+    private fun performStep(c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, cw: Float, ch: Float) {
+        when (agent.behavior) {
+            Behavior.LOOK_AROUND -> {
+                if (agent.step == 0 && agent.stepTimer > 1.0f || agent.step == 1 && agent.stepTimer > 2.0f) {
+                    c.direction = if (c.direction == Direction.LEFT) Direction.RIGHT else Direction.LEFT
+                    agent.step++
+                }
+            }
+            Behavior.STRETCH, Behavior.APPROACH_PARTNER -> {
+                if (agent.step == 0 && agent.stepTimer > 1.5f) {
+                    c.transitionPoseTo(CharacterPose.IDLE)
+                    agent.step++
+                }
+            }
+            Behavior.TALK -> {
+                if (agent.step == 0 && agent.stepTimer > 2.2f) {
+                    speakerSpeech(partner, GameText.get(replyLinePicker.pick()), 1.8f)
+                    emote(partner, if (Random.nextBoolean()) EmoteType.HEART else EmoteType.BLUSH, 1.6f)
+                    agent.step++
+                }
+            }
+            Behavior.WATCH_MOCHI -> {
+                // Keep following Mochi with their eyes.
+                c.direction = if (catWorldX < c.worldX) Direction.LEFT else Direction.RIGHT
+            }
+            Behavior.RARE_DANCE -> {
+                val beat = (agent.stepTimer * 3f).toInt()
+                if (beat != agent.step) {
+                    agent.step = beat
+                    val up = beat % 2 == 0
+                    c.pose = if (up) CharacterPose.JOY_JUMP else CharacterPose.IDLE
+                    partner.pose = if (up) CharacterPose.IDLE else CharacterPose.JOY_JUMP
+                    if (up) particles.spawnMusicNote(cw * c.worldX, ch * c.worldY - 80f)
+                }
+            }
+            Behavior.HUG -> {
+                if (eventChance(1.2f, 1f / 60f) && agent.step < 3) {
+                    particles.spawnHeart(cw * (c.worldX + partner.worldX) / 2f, ch * c.worldY - 80f)
+                    agent.step++
+                }
+            }
+            else -> Unit
+        }
+    }
+
+    private fun finishActivity(c: PixelCharacter, agent: AutonomyAgent) {
+        val b = agent.behavior
+        if (agent.isFollower) {
+            agent.rest(2.5f + Random.nextFloat() * 3f)
+            return
+        }
+        c.reactionTimer = 0f
+        when (b) {
+            // Poses that shouldn't linger once the moment is over.
+            Behavior.HUG, Behavior.HOLD_HANDS, Behavior.RARE_FLOWER_GIFT, Behavior.RARE_DANCE,
+            Behavior.PET_MOCHI, Behavior.APPROACH_MOCHI, Behavior.STRETCH, Behavior.APPROACH_PARTNER -> {
+                c.transitionPoseTo(CharacterPose.IDLE)
+                val partner = if (c === boy) girl else boy
+                if (b == Behavior.HUG || b == Behavior.HOLD_HANDS || b == Behavior.RARE_FLOWER_GIFT || b == Behavior.RARE_DANCE) {
+                    partner.transitionPoseTo(CharacterPose.IDLE)
+                }
+            }
+            Behavior.VISIT_PROP -> {
+                if (agent.spot?.pose != CharacterPose.IDLE) c.transitionPoseTo(CharacterPose.IDLE)
+            }
+            Behavior.REST, Behavior.SIT_TOGETHER, Behavior.RARE_DOZE_OFF -> {
+                // Stand up again unless this is where they sit at home.
+                val home = homeFor(c)
+                val atHome = abs(c.worldX - home.x) < 0.03f
+                if (!atHome || (home.pose != CharacterPose.SIT && home.pose != CharacterPose.SIT_SNUGGLE)) {
+                    c.transitionPoseTo(CharacterPose.IDLE)
+                }
+                if (b != Behavior.REST) {
+                    val partner = if (c === boy) girl else boy
+                    val partnerHome = homeFor(partner)
+                    if (abs(partner.worldX - partnerHome.x) > 0.03f ||
+                        (partnerHome.pose != CharacterPose.SIT && partnerHome.pose != CharacterPose.SIT_SNUGGLE)
+                    ) partner.transitionPoseTo(CharacterPose.IDLE)
+                }
+            }
+            else -> Unit
+        }
+        releasePartner(c)
+        agent.activitiesSinceHome++
+        agent.rest(AUTONOMY_REST_MIN + Random.nextFloat() * AUTONOMY_REST_RANGE)
+    }
+
+    /** A free spot this character hasn't just used and nobody else is standing at. */
+    private fun pickSpot(c: PixelCharacter, agent: AutonomyAgent, partner: PixelCharacter, partnerAgent: AutonomyAgent, dryRun: Boolean): SceneSpot? {
+        val spots = SceneSpots.forScene(currentScene)
+        if (spots.isEmpty()) return null
+        val preferWindows = weather == WeatherType.RAIN && !isCurrentSceneOutdoor
+        var chosen: SceneSpot? = null
+        var bestScore = -1f
+        for (spot in spots) {
+            if (spot.id == agent.lastSpotId) continue
+            if (partnerAgent.spot?.id == spot.id) continue
+            if (kotlin.math.hypot(partner.worldX - spot.x, partner.worldY - spot.y) < 0.10f) continue
+            if (dryRun) return spot
+            var score = Random.nextFloat()
+            if (preferWindows && spot.isWindow) score += 1f
+            if (score > bestScore) { bestScore = score; chosen = spot }
+        }
+        return chosen
+    }
+
+    /** What happens at each interaction spot: the prop's own little animation, a sound, a feeling. */
+    private fun playSpotAction(c: PixelCharacter, spot: SceneSpot, cw: Float, ch: Float) {
+        val x = cw * spot.x
+        val y = ch * spot.y
+        c.emotion = CharacterEmotion.HAPPY
+        when (spot.action) {
+            SpotAction.SMELL_FLOWERS -> { particles.spawnPetals(x, y - 30f, 3); emote(c, EmoteType.HEART, 1.8f); audio.playStarTwinkle() }
+            SpotAction.PICK_FLOWER -> { flowerWiggleTimer = 1.2f; particles.spawnPetals(x, y - 20f, 2); emote(c, EmoteType.SPARKLE, 1.8f) }
+            SpotAction.LISTEN_CHIMES -> { windChimeSwayTimer = 2.5f; audio.playWindChime(); emote(c, EmoteType.MUSIC_NOTE, 2f) }
+            SpotAction.LOOK_UP_TREE -> { particles.spawnPetals(x, ch * 0.40f, 3); emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
+            SpotAction.SIT_GRASS -> { c.emotion = CharacterEmotion.HAPPY; emote(c, EmoteType.HEART, 1.4f) }
+            SpotAction.STIR_POT -> { repeat(3) { particles.spawnSteam(x + 20f, y - 90f) }; audio.playCookingBubbles() }
+            SpotAction.RINSE_DISHES -> { particles.spawnSparkles(x - 20f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
+            SpotAction.PEEK_OVEN -> { cabinetOpenTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f); audio.playWoodKnock() }
+            SpotAction.SIT_TABLE -> { c.emotion = CharacterEmotion.HAPPY }
+            SpotAction.WATER_PLANT -> { plantWaterTimer = 2.4f; sunroomMistTimer = 1.6f; particles.spawnSparkles(x - 30f, y - 60f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
+            SpotAction.PEEK_BOX -> { cardboardBoxTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f) }
+            SpotAction.SIT_POUF -> { poufBounceTimer = 0.8f; audio.playBubblePop() }
+            SpotAction.LIGHT_CANDLE -> { tableCandleTimer = 3f; audio.playCandleFlicker(); emote(c, EmoteType.SPARKLE, 1.6f) }
+            SpotAction.USE_TELESCOPE -> { telescopeStarTimer = 3f; particles.spawnSparkles(cw * 0.5f, ch * 0.12f, 6); emote(c, EmoteType.SPARKLE, 2f); audio.playStarTwinkle() }
+            SpotAction.ADMIRE_LANTERN -> { pagodaGlowTimer = 2.4f; emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.SMELL_LAVENDER -> { lavenderSwayTimer = 2.4f; particles.spawnSparkles(x, y - 30f, 3, Color(0xFFC9B6FF)); emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.POKE_MUSHROOMS -> { mushroomBounceTimer = 1.6f; emote(c, EmoteType.SPARKLE, 1.4f); audio.playBubblePop() }
+            SpotAction.SNIFF_STEAMER -> { momoSteamerTimer = 2.4f; repeat(2) { particles.spawnSteam(x, y - 120f) }; emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.READ_CHALKBOARD -> { chalkboardTimer = 2.4f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
+            SpotAction.CHECK_CRATE -> { bambooCrateTimer = 1.6f; audio.playWoodKnock() }
+            SpotAction.FILL_SAUCER -> { milkSaucerTimer = 2.4f; emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.LOOK_WINDOW -> { loftWindowTimer = 3f; emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
+            SpotAction.BROWSE_BOOKS -> { loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
+            SpotAction.ADMIRE_FAIRY_LIGHTS -> { loftFairyLightsTimer = 3f; emote(c, EmoteType.SPARKLE, 1.6f) }
+            SpotAction.FOG_WINDOW -> {
+                cafeWindowHeartTimer = 2.8f
+                cafeWindowHeartX = (spot.x + if (spot.faceLeft) -0.06f else 0.06f).coerceIn(0.40f, 0.90f)
+                cafeWindowHeartY = 0.34f
+                audio.playWaterDrip()
+                emote(c, EmoteType.HEART, 1.6f)
+            }
+            SpotAction.PET_PUP -> { cafePupPetTimer = 2.4f; audio.playBubblePop(); particles.spawnHeart(x + 40f, y - 30f, Color(0xFFFFCAD4)) }
+            SpotAction.ORDER_COFFEE -> { cafeBaristaBrewTimer = 2.5f; audio.playSteamHiss(); emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.MIST_PLANTS -> { sunroomMistTimer = 2f; particles.spawnSparkles(x + 30f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
+            SpotAction.LOOK_SKYLIGHT -> { sunroomSkylightTimer = 2f; emote(c, EmoteType.SPARKLE, 1.6f) }
+            SpotAction.WARM_HANDS -> { campfireEmbersTimer = 2.2f; c.emotion = CharacterEmotion.LOVING; audio.playCandleFlicker() }
+            SpotAction.STRUM_GUITAR -> { campGuitarStrumTimer = 3f; audio.playStarArpeggio(); emote(c, EmoteType.MUSIC_NOTE, 2.4f) }
+            SpotAction.TEND_LANTERN -> { emote(c, EmoteType.SPARKLE, 1.6f); audio.playWoodKnock() }
+            SpotAction.SPOT_DOLPHINS -> {
+                if (pierDolphinTimer <= 0f) pierDolphinTimer = PIER_DOLPHIN_SECONDS
+                c.emotion = CharacterEmotion.SURPRISED
+                emote(c, EmoteType.EXCLAMATION, 2f)
+                audio.playBubblePop()
+            }
+            SpotAction.LOOK_SEA -> { c.emotion = CharacterEmotion.LOVING; emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.PEEK_BUCKET -> { pierBucketFlopTimer = 1.6f; audio.playWaterDrip(); emote(c, EmoteType.QUESTION, 1.4f) }
+        }
+    }
+
+    private fun playWeatherReaction(c: PixelCharacter, cw: Float, ch: Float) {
+        val x = cw * c.worldX
+        val y = ch * c.worldY
+        when (weather) {
+            WeatherType.SNOW -> {
+                c.emotion = CharacterEmotion.HAPPY
+                emote(c, EmoteType.SPARKLE, 2f)
+                particles.spawnSparkles(x, y - 90f, 4, Color(0xFFF2FAFF))
+                audio.playStarTwinkle()
+            }
+            WeatherType.SAKURA -> {
+                c.transitionPoseTo(CharacterPose.RECEIVE_FLOWER)
+                particles.spawnPetals(x, y - 90f, 3)
+                emote(c, EmoteType.HEART, 1.8f)
+            }
+            WeatherType.AUTUMN -> {
+                c.transitionPoseTo(CharacterPose.JOY_JUMP)
+                c.bounceOffset = 4f
+                particles.kickGroundParticles(x, y, cw, ch, cw * 0.06f, c.direction == Direction.LEFT)
+                particles.spawnLeaf(x, y - 20f)
+                audio.playLeafRustle()
+            }
+            WeatherType.RAIN -> {
+                c.emotion = CharacterEmotion.CURIOUS
+                emote(c, if (Random.nextBoolean()) EmoteType.DOTS else EmoteType.SWEAT, 1.6f)
+                particles.spawnRainSplash(x, y)
+            }
+            WeatherType.SUNNY -> {
+                c.emotion = CharacterEmotion.HAPPY
+                particles.spawnSunSparkle(x, y - 100f)
+                emote(c, EmoteType.SPARKLE, 1.6f)
+            }
+        }
+    }
+
+    private fun faceEachOther(a: PixelCharacter, b: PixelCharacter) {
+        a.direction = if (b.worldX < a.worldX) Direction.LEFT else Direction.RIGHT
+        b.direction = if (a.worldX < b.worldX) Direction.LEFT else Direction.RIGHT
+    }
+
+    private fun emote(c: PixelCharacter, e: EmoteType, seconds: Float) {
+        c.emote = e
+        c.emoteTimer = seconds
+    }
+
+    private fun talkLine(): Int = when {
+        isCurrentSceneOutdoor && weather == WeatherType.RAIN && Random.nextFloat() < 0.5f -> R.string.scene_auto_rain_stay_close
+        isCurrentSceneOutdoor && weather == WeatherType.SNOW && Random.nextFloat() < 0.4f -> R.string.scene_auto_talk_snow_nose
+        isCurrentSceneOutdoor && weather == WeatherType.SAKURA && Random.nextFloat() < 0.4f -> R.string.scene_auto_talk_petal_hair
+        timeOfDayPhase.isNight && isCurrentSceneOutdoor && Random.nextFloat() < 0.4f -> R.string.scene_auto_talk_stars_closer
+        else -> talkLinePicker.pick()
+    }
+
+    private fun markRareEvent() {
+        rareEventCooldown = RARE_EVENT_GAP + Random.nextFloat() * 60f
+    }
+
+    private fun startMochiZoomies(cw: Float) {
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return
+        val farSide = if (catWorldX < 0.5f) 0.80f else 0.20f
+        catTargetX = avoidCampfirePit(farSide, catWorldY)
+        catTargetY = catWorldY
+        catFacingLeft = catTargetX < catWorldX
+        catState = CatState.WALK_FOLLOW
+        catSleeping = false
+        catRoamSpeed = MOCHI_ZOOM_SPEED
+        mochiZoomTimer = 3f
+        audio.playCatPurr()
+    }
+
+    private fun updateMochiZoomies(dt: Float) {
+        if (mochiZoomTimer <= 0f) return
+        mochiZoomTimer -= dt
+        if (mochiZoomTimer <= 0f) catRoamSpeed = MOCHI_ROAM_SPEED
+    }
+
+    // ── Discoveries ──────────────────────────────────────────────────────
+    // Every minute or so something small turns up: a wildflower, a red leaf, a folded note,
+    // Mochi's lost toy, a seashell. A character may notice it, wander over and react.
+
+    private val noteLinePicker = AntiRepeatRandomPicker(listOf(
+        R.string.scene_auto_note_ordinary_days, R.string.scene_auto_note_under_stars,
+        R.string.scene_auto_note_favorite_person, R.string.scene_auto_note_choose_you
+    ))
+
+    private fun resetDiscovery() {
+        discovery.clear()
+        discoverySpawnTimer = DISCOVERY_FIRST_DELAY + Random.nextFloat() * 20f
+    }
+
+    /** Ages the current discovery, or places a new one when it's time. */
+    private fun updateDiscovery(dt: Float, cw: Float, ch: Float) {
+        if (discovery.active) {
+            discovery.age += dt
+            // A claimed find whose finder got interrupted still fades away eventually.
+            if (discovery.age > DISCOVERY_LIFETIME && (!discovery.claimed || discovery.age > DISCOVERY_LIFETIME * 2f)) {
+                discovery.clear()
+                discoverySpawnTimer = DISCOVERY_GAP_MIN + Random.nextFloat() * DISCOVERY_GAP_RANGE
+            }
+            return
+        }
+        discoverySpawnTimer -= dt
+        if (discoverySpawnTimer > 0f) return
+        discoverySpawnTimer = DISCOVERY_GAP_MIN + Random.nextFloat() * DISCOVERY_GAP_RANGE
+        if (!fillWalkBounds(cw, ch)) return
+        val kind = pickDiscoveryKind()
+        for (attempt in 0 until 8) {
+            val x = walkBounds[0] + 0.04f + Random.nextFloat() * (walkBounds[1] - walkBounds[0] - 0.08f)
+            val y = walkBounds[2] + 0.02f + Random.nextFloat() * (walkBounds[3] - walkBounds[2] - 0.02f)
+            if (kotlin.math.hypot(boy.worldX - x, boy.worldY - y) < 0.15f) continue
+            if (kotlin.math.hypot(girl.worldX - x, girl.worldY - y) < 0.15f) continue
+            if (avoidCampfirePit(x, y) != x) continue
+            discovery.place(kind, x, y)
+            return
+        }
+    }
+
+    private fun pickDiscoveryKind(): DiscoveryKind {
+        val roll = Random.nextFloat()
+        return when {
+            currentScene == SceneType.SEASIDE_PIER -> if (roll < 0.6f) DiscoveryKind.SEASHELL else DiscoveryKind.LOVE_NOTE
+            !isCurrentSceneOutdoor -> if (roll < 0.5f) DiscoveryKind.MOCHI_TOY else DiscoveryKind.LOVE_NOTE
+            timeOfDayPhase.isNight && roll < 0.5f -> DiscoveryKind.STAR_PEBBLE
+            weather == WeatherType.AUTUMN && roll < 0.7f -> DiscoveryKind.RED_LEAF
+            weather == WeatherType.SNOW -> if (roll < 0.5f) DiscoveryKind.STAR_PEBBLE else DiscoveryKind.LOVE_NOTE
+            roll < 0.55f -> DiscoveryKind.WILDFLOWER
+            roll < 0.8f -> DiscoveryKind.LOVE_NOTE
+            else -> DiscoveryKind.MOCHI_TOY
+        }
+    }
+
+    /** Something worth noticing, once it has been there a moment and nobody is already going for it. */
+    private fun discoveryNear(c: PixelCharacter): Discovery? =
+        if (discovery.active && !discovery.claimed && discovery.age > 2f) discovery else null
+
+    /** Walk up beside the discovery (called when the brain picks DISCOVER). */
+    private fun walkToDiscovery(c: PixelCharacter, agent: AutonomyAgent, cw: Float, ch: Float) {
+        val d = discoveryNear(c)
+        if (d == null || !fillWalkBounds(cw, ch)) {
+            agent.rest(2f)
+            return
+        }
+        d.claimed = true
+        val side = if (c.worldX < d.x) -1f else 1f
+        val tx = (d.x + side * 0.05f).coerceIn(walkBounds[0], walkBounds[1])
+        walkTo(c, agent, avoidCampfirePit(tx, d.y), d.y)
+    }
+
+    /** They've reached it: pick it up and react. */
+    private fun startDiscovery(c: PixelCharacter, cw: Float, ch: Float) {
+        if (!discovery.active) return
+        val partner = if (c === boy) girl else boy
+        val x = cw * discovery.x
+        val y = ch * discovery.y
+        c.direction = if (discovery.x < c.worldX) Direction.LEFT else Direction.RIGHT
+        c.transitionPoseTo(CharacterPose.GIVE_FLOWER)
+        c.emotion = CharacterEmotion.SURPRISED
+        audio.playStarTwinkle()
+        particles.spawnSparkles(x, y - 20f, 5)
+        when (discovery.kind) {
+            DiscoveryKind.WILDFLOWER -> {
+                emote(c, EmoteType.HEART, 2f)
+                val closeToPartner = kotlin.math.hypot(partner.worldX - c.worldX, partner.worldY - c.worldY) < 0.3f
+                showMessage(
+                    if (closeToPartner) GameText.get(R.string.scene_auto_found_flower_for, c.name, partner.name)
+                    else GameText.get(R.string.scene_auto_found_flower, c.name),
+                    duration = 3f
+                )
+                if (closeToPartner) emote(partner, EmoteType.BLUSH, 2f)
+            }
+            DiscoveryKind.RED_LEAF -> {
+                emote(c, EmoteType.SPARKLE, 2f)
+                particles.spawnLeaf(x, y - 30f)
+                showMessage(GameText.get(R.string.scene_auto_found_leaf, c.name), duration = 3f)
+            }
+            DiscoveryKind.LOVE_NOTE -> {
+                emote(c, EmoteType.BLUSH, 2.4f)
+                audio.playPaperFlip()
+                showMessage(GameText.get(R.string.scene_auto_found_note, c.name, GameText.get(noteLinePicker.pick())), duration = 4f)
+            }
+            DiscoveryKind.MOCHI_TOY -> {
+                emote(c, EmoteType.EXCLAMATION, 1.8f)
+                showMessage(GameText.get(R.string.scene_auto_found_mochi_toy, c.name), duration = 3f)
+                if (currentScene != SceneType.COZY_LOFT && catState != CatState.WALK_FOLLOW) {
+                    catTargetX = avoidCampfirePit(discovery.x, catWorldY)
+                    catTargetY = catWorldY
+                    catFacingLeft = catTargetX < catWorldX
+                    catState = CatState.WALK_FOLLOW
+                    catSleeping = false
+                    audio.playCatPurr()
+                }
+            }
+            DiscoveryKind.SEASHELL -> {
+                emote(c, EmoteType.HEART, 2f)
+                showMessage(GameText.get(R.string.scene_auto_found_shell, c.name), duration = 3f)
+            }
+            DiscoveryKind.STAR_PEBBLE -> {
+                emote(c, EmoteType.SPARKLE, 2.2f)
+                particles.spawnSparkles(x, y - 40f, 6, Color(0xFFFFF3B0))
+                showMessage(GameText.get(R.string.scene_auto_found_pebble, c.name), duration = 3f)
+            }
+        }
+        discovery.clear()
+        discoverySpawnTimer = DISCOVERY_GAP_MIN + Random.nextFloat() * DISCOVERY_GAP_RANGE
     }
 
     fun driftWeather() {
