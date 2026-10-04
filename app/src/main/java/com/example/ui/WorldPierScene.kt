@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.engine.WorldViewport
+
 import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
@@ -245,7 +247,7 @@ internal fun drawSeasidePierScene(
     val bao = PierLayout.bao(cw, ch)
     // Bao is drawn at the couple's scale so he reads as a person, not a prop.
     PierSprites.drawGrandpaBao(
-        scope, bao.x, bao.y, p * PierLayout.BAO_SCALE, time, engine.pierFishingPhase, engine.pierLastCatch,
+        scope, bao.x, bao.y, PierLayout.baoScale(p), time, engine.pierFishingPhase, engine.pierLastCatch,
         waterY = horizonY + (railY - horizonY) * 0.62f,
         sipping = engine.pierBaoSipTimer > 0f,
         waving = engine.pierBaoWaveTimer > 0f,
@@ -265,7 +267,7 @@ internal fun drawSeasidePierScene(
 /** Things in front of the couple: their ice-cream cones and Pip in flight. */
 internal fun drawPierForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     if (engine.pierIceCreamTimer > 0f) {
-        val cps = p * 1.38f
+        val cps = WorldViewport.characterPixelScale(cw, WorldViewport.pixelRenderer)
         // Melting a little as the timer runs down.
         val scoop = 2.4f * p * (0.6f + 0.4f * (engine.pierIceCreamTimer / SceneEngine.PIER_ICE_CREAM_SECONDS))
         drawCone(scope, cw * engine.boy.worldX + 6f * cps, ch * engine.boy.worldY - 11f * cps, p, scoop)

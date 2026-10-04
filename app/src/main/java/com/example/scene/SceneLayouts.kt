@@ -1,5 +1,7 @@
 package com.example.scene
 
+import com.example.engine.WorldViewport
+
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import kotlin.math.abs
@@ -65,6 +67,9 @@ object CafeLayout {
     /** Leo's feet line, behind the counter. */
     fun barista(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) * 0.56f, barY(ch, p) + 12f * p)
 
+    /** The barista's drawn scale for scene pixel [p] (whole pixels in the pixel renderer). */
+    fun baristaScale(p: Float) = WorldViewport.spriteScale(p, 1.38f)
+
     /** Chalkboard menu hanging on the brick wall above the counter. */
     fun menuTopLeft(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) / 2f - 16f * p, ch * 0.21f)
 
@@ -102,7 +107,7 @@ object CafeLayout {
         val leo = barista(cw, ch, p)
         val menu = menuTopLeft(cw, ch, p)
         val targets = buildList {
-            add(PropTarget(CafeProp.BARISTA, leo - Offset(0f, 15f * p), 17f * p))
+            add(PropTarget(CafeProp.BARISTA, leo - Offset(0f, 10.9f * baristaScale(p)), 12.3f * baristaScale(p)))
             add(PropTarget(CafeProp.MENU, menu + Offset(16f * p, 21f * p), 21f * p))
             add(PropTarget(CafeProp.PUP, pup(cw, ch, p), 11f * p))
             add(PropTarget(CafeProp.LATTE, latte(cw, ch, p), 11f * p))
@@ -225,6 +230,9 @@ object PierLayout {
     /** Bao's sprite scale relative to the scene's pixel size, close to the couple's. */
     const val BAO_SCALE = 1.3f
 
+    /** Bao's drawn scale for scene pixel [p] (whole pixels in the pixel renderer). */
+    fun baoScale(p: Float) = WorldViewport.spriteScale(p, BAO_SCALE)
+
     /** Where Mochi trots to collect a fish from Bao. */
     const val MOCHI_FISH_X = 0.74f
     const val MOCHI_FISH_Y = 0.73f
@@ -250,7 +258,7 @@ object PierLayout {
         val bottleBob = kotlin.math.sin(time * 1.8f) * 1.5f * p
         val targets = buildList {
             if (state.gullVisible) add(PropTarget(PierProp.PIP, Offset(cw * state.gullX, ch * state.gullY - 4f * p), 12f * p))
-            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 16f * p), 16f * p))
+            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 12.3f * baoScale(p)), 12.3f * baoScale(p)))
             add(PropTarget(PierProp.CART, cart(cw, ch) - Offset(0f, 15f * p), 17f * p))
             if (state.bottleVisible) add(PropTarget(PierProp.BOTTLE, bottle(cw, ch) + Offset(0f, bottleBob), 10f * p))
             add(PropTarget(PierProp.LIGHTHOUSE, lighthouseBase(cw, ch) - Offset(0f, 22f * p), 20f * p))

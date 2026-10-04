@@ -1,7 +1,6 @@
 package com.example.ui
 
 import androidx.compose.foundation.Canvas
-import com.example.FeatureFlags
 import com.example.engine.WorldViewport
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -1183,12 +1182,12 @@ fun PixelWorldView(
 
         val boyHeadY = when {
             isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
-            isLoftScene -> viewportHeight * 0.55f - 24f * (pixelScale * 1.10f)
+            isLoftScene -> viewportHeight * 0.55f - 24f * WorldViewport.loftCouplePixelScale(viewportWidth)
             else -> effectiveBoyY - (38.5f * pixelScale) - engine.boy.bounceOffset + (if (isBoySitting) 7.5f * pixelScale else 0f)
         }
         val girlHeadY = when {
             isRideScene -> viewportHeight * 0.70f - 52f * pixelScale
-            isLoftScene -> viewportHeight * 0.55f - 24f * (pixelScale * 1.10f)
+            isLoftScene -> viewportHeight * 0.55f - 24f * WorldViewport.loftCouplePixelScale(viewportWidth)
             else -> effectiveGirlY - (38.5f * pixelScale) - engine.girl.bounceOffset + (if (isGirlSitting) 7.5f * pixelScale else 0f)
         }
 
@@ -1372,7 +1371,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                 boyX = boyX,
                 girlX = girlX,
                 floorY = ch * 0.55f,
-                p = pixelScale * 1.10f,
+                p = WorldViewport.loftCouplePixelScale(cw, lowRes),
                 timeSeconds = engine.sceneTime,
                 boyEmotion = engine.boy.emotion,
                 girlEmotion = engine.girl.emotion,
@@ -1708,8 +1707,9 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
 }
 
 /** True when the current scene is drawn by the low-res pixel renderer (Plan 03, Phase 1). */
+@Suppress("UnusedReceiverParameter")
 internal val SceneEngine.usesLowResRenderer: Boolean
-    get() = FeatureFlags.PIXEL_RENDERER && currentScene in FeatureFlags.PIXEL_RENDERER_SCENES
+    get() = WorldViewport.pixelRenderer
 
 /** Draws the world, through the low-res pixel renderer for the scenes that use it (Plan 03, Phase 1). */
 internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer) {

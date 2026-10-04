@@ -1,13 +1,10 @@
 package com.example.engine
 
-import android.graphics.Paint
-import android.graphics.Typeface
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.withTransform
-import androidx.compose.ui.graphics.nativeCanvas
 import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.abs
@@ -1391,20 +1388,17 @@ object WorldSprites {
         scope.drawRect(Color(0xCCFFFFFF), Offset(momoIconX + 3 * p + steamSway, momoIconY - 2 * p), Size(1.5f * p, 2.5f * p))
         scope.drawRect(Color(0xAAFFFFFF), Offset(momoIconX + 5 * p - steamSway, momoIconY - 3 * p), Size(1.5f * p, 2.5f * p))
 
-        // Draw stall signboard text using native canvas
-        val signboardText = com.example.data.ProfileManager.getProfile().stallSignboardText
-        scope.drawContext.canvas.nativeCanvas.apply {
-            val textPaint = Paint().apply {
-                color = android.graphics.Color.parseColor("#FFF3B0")
-                textSize = 9.5f * p
-                typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
-                isAntiAlias = false // crisp retro pixel look
-                setShadowLayer(4f * p, 0f, 0f, android.graphics.Color.parseColor("#E63946"))
-            }
-            val textX = signX + 15 * p
-            val textY = signY + 12.5f * p
-            drawText(signboardText, textX, textY, textPaint)
-        }
+        // Signboard lettering in the pixel font
+        PixelFont.drawCentered(
+            scope = scope,
+            text = com.example.data.ProfileManager.getProfile().stallSignboardText,
+            x = signX + 15 * p,
+            y = signY + 2 * p,
+            maxWidth = 59,
+            boxHeight = 14,
+            p = p,
+            color = Color(0xFFFFF3B0)
+        )
 
         // 6. Momo Steamer Pots (Aluminum Steamer on Counter)
         val steamerW = 18 * p

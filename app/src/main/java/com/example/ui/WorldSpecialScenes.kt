@@ -610,7 +610,7 @@ internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float
 
     // 7. Leo the barista behind a waist-high counter
     val leo = CafeLayout.barista(cw, ch, p)
-    drawBarista(scope, leo.x, leo.y, p * 1.38f, time, engine.cafeBaristaBrewTimer > 0f)
+    drawBarista(scope, leo.x, leo.y, CafeLayout.baristaScale(p), time, engine.cafeBaristaBrewTimer > 0f)
     val counterBase = ch * (CafeLayout.WALL_BOTTOM + 0.01f)
     scope.px(Color(0xFF5A3825), barX, barY, barW, counterBase - barY)
     var slat = barX + 3f * p

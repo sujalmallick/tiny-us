@@ -1,7 +1,10 @@
 package com.example.ui
 
 import android.graphics.Bitmap
+import androidx.compose.ui.geometry.CornerRadius
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.drawscope.CanvasDrawScope
 import androidx.compose.ui.graphics.drawscope.DrawScope
@@ -25,8 +28,10 @@ import java.io.File
 /**
  * Renders the real world frame offscreen (Plan 03, Phase 0) and checks the low-res renderer's grid.
  *
- * Set SCENE_PREVIEW_DIR to also write PNGs of every scene at morning, sunset and night, drawn by
- * both renderers, for side-by-side review.
+ * Set SCENE_PREVIEW_DIR to also write PNGs of every scene at day, sunset and night, drawn by
+ * both renderers, for side-by-side review (SCENE_PREVIEW_SCENES=A,B limits the scenes; run with
+ * --rerun, since Gradle doesn't see environment changes). The "classic" images keep the pixel
+ * renderer's sprite sizes for the barista and Grandpa Bao.
  */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -52,10 +57,9 @@ class ScenePreviewTest {
     }
 
     @Test
-    fun campfireUsesTheLowResRenderer() {
+    fun everySceneUsesThePixelRenderer() {
         assertTrue(FeatureFlags.PIXEL_RENDERER)
-        assertTrue(engineFor(SceneType.CAMPFIRE, TimeOfDayPhase.NIGHT).usesLowResRenderer)
-        assertTrue(!engineFor(SceneType.FLOWER, TimeOfDayPhase.NIGHT).usesLowResRenderer)
+        for (scene in SceneType.values()) assertTrue(scene.name, engineFor(scene, TimeOfDayPhase.NIGHT).usesLowResRenderer)
     }
 
     @Test
@@ -89,6 +93,25 @@ class ScenePreviewTest {
         }
         assertTrue("only ${colours.size} colours", colours.size > 40)
         assertEquals("transparent game pixels", 0, transparent)
+    }
+
+    @Test
+    fun lowResShapesHaveHardEdges() {
+        // Off-grid shapes on black must come out as pure white or pure black game pixels.
+        val buffer = LowResWorldBuffer()
+        render {
+            buffer.draw(this, 5) {
+                drawRect(Color.Black, Offset.Zero, size)
+                drawCircle(Color.White, 37.3f, Offset(101.7f, 98.2f))
+                drawOval(Color.White, Offset(302.4f, 51.1f), Size(83.3f, 41.7f))
+                drawLine(Color.White, Offset(12.2f, 400.4f), Offset(611.9f, 523.3f), strokeWidth = 7.3f)
+                drawRoundRect(Color.White, Offset(640.6f, 700.3f), Size(97.1f, 61.9f), CornerRadius(14f))
+            }
+        }
+        val frame = buffer.frame!!.asAndroidBitmap()
+        val colours = HashSet<Int>()
+        for (y in 0 until frame.height) for (x in 0 until frame.width) colours += frame.getPixel(x, y)
+        assertEquals(setOf(android.graphics.Color.BLACK, android.graphics.Color.WHITE), colours)
     }
 
     @Test

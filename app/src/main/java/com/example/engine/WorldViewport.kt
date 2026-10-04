@@ -24,6 +24,20 @@ object WorldViewport {
      */
     const val LOW_RES_CHARACTER_BLOCKS = 2
 
+    /** True when the world is drawn by the low-res pixel renderer. */
+    val pixelRenderer: Boolean get() = com.example.FeatureFlags.PIXEL_RENDERER
+
+    /**
+     * Scale for a sprite the classic renderer draws [classicScale] times the scene pixel (the
+     * barista, Grandpa Bao): the pixel renderer uses the couple's whole-pixel size instead.
+     */
+    fun spriteScale(p: Float, classicScale: Float, lowRes: Boolean = pixelRenderer): Float =
+        if (lowRes) p * LOW_RES_CHARACTER_BLOCKS else p * classicScale
+
+    /** The loft couple's pixel size: 1.1x in the classic renderer, one whole game pixel otherwise. */
+    fun loftCouplePixelScale(widthPx: Float, lowRes: Boolean = pixelRenderer): Float =
+        if (lowRes) pixelScale(widthPx) else pixelScale(widthPx) * 1.10f
+
     /** Screen pixels per scene pixel for a world [widthPx] wide. */
     fun pixelScale(widthPx: Float): Float = (widthPx / SCENE_PIXELS_ACROSS).coerceIn(MIN_PIXEL, MAX_PIXEL)
 
