@@ -1,7 +1,6 @@
 package com.example
 
 import android.os.Bundle
-import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedContent
@@ -15,13 +14,19 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.fragment.app.FragmentActivity
+import com.example.security.AppLock
+import com.example.security.AppLockStore
+import com.example.ui.AppLockScreen
 import com.example.ui.MainScreen
 import com.example.ui.SplashScreen
 import com.example.ui.theme.MyApplicationTheme
 
 import android.content.Intent
 
-class MainActivity : ComponentActivity() {
+// FragmentActivity (a ComponentActivity) is required by the biometric prompt used for the app lock.
+class MainActivity : FragmentActivity() {
+    private val lockStore by lazy { AppLockStore(this) }
     private val sceneTarget = mutableStateOf<Pair<String, Long>?>(null)
     private val atmosphereTarget = mutableStateOf<String?>(null)
     private val birdSurfaceTarget = mutableStateOf<String?>(null)
@@ -30,6 +35,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         enableHighRefreshRate()
+        AppLock.onActivityCreated(this, lockStore)
         com.example.care.TinyCareScheduler.createNotificationChannel(this)
         checkTinyCarePermissionStatus()
         val sc = intent?.getStringExtra("scene")
@@ -43,6 +49,11 @@ class MainActivity : ComponentActivity() {
         setContent {
             MyApplicationTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
+                    // Replace the whole app (and any open dialogs) while locked.
+                    if (AppLock.isLocked) {
+                        AppLockScreen(lockStore)
+                        return@Surface
+                    }
                     val target = sceneTarget.value
                     var isSplashVisible by remember { mutableStateOf(target == null) }
                     if (target != null) {
@@ -114,6 +125,17 @@ class MainActivity : ComponentActivity() {
                 android.util.Log.w("TinyUs", "Unable to set high refresh rate display mode", e)
             }
         }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        AppLock.onAppForegrounded(lockStore)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // Not when merely rotating/recreating; only when the user actually leaves the app.
+        if (!isChangingConfigurations) AppLock.onAppBackgrounded()
     }
 
     override fun onResume() {

@@ -56,6 +56,7 @@ import com.example.ui.theme.DarkSlate
 import com.example.ui.theme.DeepRose
 import com.example.ui.theme.PeachMuted
 import com.example.ui.theme.SoftRose
+import com.example.ui.theme.TinyColors
 import kotlinx.coroutines.delay
 import kotlin.random.Random
 
@@ -82,7 +83,8 @@ fun SplashScreen(
             pose = CharacterPose.IDLE,
             direction = Direction.RIGHT,
             emote = EmoteType.HEART,
-            emoteTimer = 99f
+            emoteTimer = 99f,
+            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = false))
         )
     }
 
@@ -95,7 +97,8 @@ fun SplashScreen(
             pose = CharacterPose.IDLE,
             direction = Direction.LEFT,
             emote = EmoteType.BLUSH,
-            emoteTimer = 99f
+            emoteTimer = 99f,
+            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = true))
         )
     }
 
@@ -249,7 +252,7 @@ fun SplashScreen(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Serif,
-                color = DarkSlate.copy(alpha = 0.75f)
+                color = TinyColors.InkMuted
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -257,8 +260,8 @@ fun SplashScreen(
             Text(
                 text = "for you ${prefs.girlfriendName}",
                 fontSize = 14.sp,
-                fontWeight = FontWeight.Bold,
-                color = SoftRose
+                fontWeight = FontWeight.SemiBold,
+                color = TinyColors.Rose
             )
         }
 

@@ -19,7 +19,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="🏡 Tiny Us"
+            android:text="Tiny Us"
             android:textColor="#C9184A"
             android:textSize="13sp"
             android:textStyle="bold" />
@@ -39,7 +39,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="2dp"
-        android:text="Him &amp; Her"
+        android:text="Tiny Us"
         android:textColor="#555B6E"
         android:textSize="11sp" />
 

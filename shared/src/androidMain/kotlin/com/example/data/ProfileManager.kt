@@ -47,8 +47,8 @@ actual object ProfileManager : ProfileRepository {
     }
 
     fun parseJsonToProfile(obj: JSONObject): PersonalProfile {
-        val bName = obj.optString("boyName", "Him")
-        val gName = obj.optString("girlName", "Her")
+        val bName = obj.optString("boyName", PersonalProfile.DEFAULT_NAME_A)
+        val gName = obj.optString("girlName", PersonalProfile.DEFAULT_NAME_B)
         val annDateStr = obj.optString("anniversaryDate", "")
         val annDate = if (annDateStr.isNotBlank()) {
             runCatching { KxLocalDate.parse(annDateStr) }.getOrNull()

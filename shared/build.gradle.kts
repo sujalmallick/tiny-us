@@ -14,6 +14,9 @@ kotlin {
         namespace = "com.example.shared"
         compileSdk = 35
         minSdk = 26
+
+        // Runs commonTest on the JVM too, so shared logic is tested on any dev machine (not only macOS).
+        withHostTest {}
     }
 
     listOf(
@@ -32,6 +35,10 @@ kotlin {
         commonMain.dependencies {
             api(libs.kotlinx.coroutines.core)
             api(libs.kotlinx.datetime)
+        }
+
+        commonTest.dependencies {
+            implementation(kotlin("test"))
         }
     }
 }

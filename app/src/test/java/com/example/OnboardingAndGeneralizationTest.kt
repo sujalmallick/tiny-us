@@ -55,11 +55,11 @@ class OnboardingAndGeneralizationTest {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val prefs = PreferencesManager(context)
 
-        // Empty string should fall back to profile default ("Him" / "Her")
+        // Empty string should fall back to the gender-neutral profile defaults
         prefs.boyfriendName = "   "
         prefs.girlfriendName = ""
-        assertEquals("Him", prefs.boyfriendName)
-        assertEquals("Her", prefs.girlfriendName)
+        assertEquals(com.example.data.PersonalProfile.DEFAULT_NAME_A, prefs.boyfriendName)
+        assertEquals(com.example.data.PersonalProfile.DEFAULT_NAME_B, prefs.girlfriendName)
 
         // Length restriction
         val longName = "MaximilianBartholomew"

@@ -1,57 +1,43 @@
 package com.example.ui.theme
 
-import android.os.Build
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.material3.dynamicDarkColorScheme
-import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 
-private val DarkColorScheme = darkColorScheme(
-    primary = SoftRose,
+// The chrome is a warm paper frame around the pixel world, so it always uses this light scheme.
+// (Following the system dark setting used to mix dark Material parts into light dialogs.)
+private val CozyColorScheme = lightColorScheme(
+    primary = TinyColors.Rose,
     onPrimary = Color.White,
-    primaryContainer = DeepRose,
-    secondary = SageGreen,
-    tertiary = PeachMuted,
-    background = SoftMidnight,
-    surface = SurfaceCardDark,
-    onBackground = CozyCream,
-    onSurface = CozyCream
-)
-
-private val LightColorScheme = lightColorScheme(
-    primary = DeepRose,
-    onPrimary = Color.White,
-    primaryContainer = BlushPink,
-    secondary = SageGreen,
-    tertiary = PeachMuted,
-    background = CozyCream,
-    surface = SurfaceCardLight,
-    onBackground = DarkSlate,
-    onSurface = DarkSlate
+    primaryContainer = TinyColors.RoseSoft,
+    onPrimaryContainer = TinyColors.Ink,
+    secondary = TinyColors.Sage,
+    onSecondary = Color.White,
+    secondaryContainer = TinyColors.SageSoft,
+    onSecondaryContainer = TinyColors.Ink,
+    tertiary = TinyColors.Honey,
+    onTertiary = TinyColors.Ink,
+    background = TinyColors.Paper,
+    onBackground = TinyColors.Ink,
+    surface = TinyColors.Paper,
+    onSurface = TinyColors.Ink,
+    surfaceVariant = TinyColors.Muted,
+    onSurfaceVariant = TinyColors.InkMuted,
+    surfaceContainerLowest = TinyColors.Card,
+    surfaceContainerLow = TinyColors.Card,
+    surfaceContainer = TinyColors.Paper,
+    surfaceContainerHigh = TinyColors.Paper,
+    surfaceContainerHighest = TinyColors.Muted,
+    outline = TinyColors.Line,
+    outlineVariant = TinyColors.Line,
+    scrim = TinyColors.Scrim
 )
 
 @Composable
-fun MyApplicationTheme(
-    darkTheme: Boolean = isSystemInDarkTheme(),
-    dynamicColor: Boolean = false, // Keep custom cozy theme palette consistent
-    content: @Composable () -> Unit
-) {
-    val colorScheme = when {
-        dynamicColor && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S -> {
-            val context = LocalContext.current
-            if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
-        }
-        darkTheme -> DarkColorScheme
-        else -> LightColorScheme
-    }
-
+fun MyApplicationTheme(content: @Composable () -> Unit) {
     MaterialTheme(
-        colorScheme = colorScheme,
+        colorScheme = CozyColorScheme,
         typography = Typography,
         content = content
     )

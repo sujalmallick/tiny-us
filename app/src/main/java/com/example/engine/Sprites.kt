@@ -1743,7 +1743,9 @@ object WorldSprites {
         girlOutfitIndex: Int = 0,
         boyAccessoryIndex: Int = 0,
         girlAccessoryIndex: Int = 0,
-        boyWearsGlasses: Boolean = true
+        boyWearsGlasses: Boolean = true,
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A,
+        girlLook: AvatarLook = AvatarLook.DEFAULT_B
     ) {
         val boyOutfit = PixelArtRenderer.getBoyOutfitPalette(boyOutfitIndex)
         val girlDress = PixelArtRenderer.getGirlDressPalette(girlOutfitIndex)
@@ -1873,14 +1875,19 @@ object WorldSprites {
 
         // Boy Arms WRAPPED TIGHTLY AROUND GIRL'S WAIST (True romantic hug on the bike!)
         scope.drawRect(boyOutfit.sweater, Offset(boySeatX + 6 * p, boyTorsoY + 8 * p), Size(14 * p, 4.5f * p))
-        scope.drawRect(PixelArtRenderer.SkinToneBoy, Offset(boySeatX + 18 * p, boyTorsoY + 8 * p), Size(4.5f * p, 4.5f * p))
+        scope.drawRect(boyLook.skin, Offset(boySeatX + 18 * p, boyTorsoY + 8 * p), Size(4.5f * p, 4.5f * p))
 
         // Boy Head leaning forward against girl's back
         val boyHeadY = boyTorsoY - 14 * p
-        scope.drawRect(PixelArtRenderer.SkinToneBoy, Offset(boySeatX - 2 * p, boyHeadY), Size(12 * p, 12 * p))
+        scope.drawRect(boyLook.skin, Offset(boySeatX - 2 * p, boyHeadY), Size(12 * p, 12 * p))
         val hairFlutter = sin(timeSeconds * 10f) * 1.8f * p
-        scope.drawRect(Color(0xFF2A2829), Offset(boySeatX - 5 * p, boyHeadY - 3 * p), Size(15 * p, 6 * p))
-        scope.drawRect(Color(0xFF2A2829), Offset(boySeatX - 8 * p + hairFlutter, boyHeadY - 1 * p), Size(5 * p, 6 * p))
+        scope.drawRect(boyLook.hair, Offset(boySeatX - 5 * p, boyHeadY - 3 * p), Size(15 * p, 6 * p))
+        scope.drawRect(boyLook.hair, Offset(boySeatX - 8 * p + hairFlutter, boyHeadY - 1 * p), Size(5 * p, 6 * p))
+        if (boyLook.longHair) {
+            // Longer locks streaming back in the wind
+            scope.drawRect(boyLook.hair, Offset(boySeatX - 10 * p + hairFlutter, boyHeadY + 3 * p), Size(8 * p, 12 * p))
+            scope.drawRect(boyLook.hairShadow, Offset(boySeatX - 12 * p + hairFlutter, boyHeadY + 6 * p), Size(4 * p, 9 * p))
+        }
 
         // Sweet closed smiling eyes (^), blushing cheeks
         scope.drawRect(Color(0xFF22223B), Offset(boySeatX + 4 * p, boyHeadY + 4 * p), Size(2.2f * p, p))
@@ -1918,8 +1925,13 @@ object WorldSprites {
         val girlBottomY = seatY + 2 * p
 
         scope.drawRect(girlDress.skirt, Offset(girlSeatX - 6 * p, girlBottomY - 10 * p), Size(14 * p, 10 * p))
-        scope.drawRect(PixelArtRenderer.SkinToneGirl, Offset(girlSeatX + 2 * p, girlBottomY), Size(5 * p, 11 * p))
-        scope.drawRect(Color(0xFFFFF1E6), Offset(girlSeatX + 2 * p, girlBottomY + 7 * p), Size(5 * p, 4 * p))
+        if (girlLook.wearsDress) {
+            scope.drawRect(girlLook.skin, Offset(girlSeatX + 2 * p, girlBottomY), Size(5 * p, 11 * p))
+            scope.drawRect(Color(0xFFFFF1E6), Offset(girlSeatX + 2 * p, girlBottomY + 7 * p), Size(5 * p, 4 * p))
+        } else {
+            // Trousers instead of a skirt with bare legs
+            scope.drawRect(girlDress.skirtShadow, Offset(girlSeatX + 2 * p, girlBottomY), Size(5 * p, 11 * p))
+        }
         scope.drawRect(PixelArtRenderer.ShoesGirl, Offset(girlSeatX + 3 * p, girlBottomY + 10 * p), Size(7 * p, 3 * p))
 
         val girlTorsoY = girlBottomY - 26 * p
@@ -1935,21 +1947,26 @@ object WorldSprites {
 
         // Girl Arms reaching forward holding handlebars firmly
         scope.drawRect(girlDress.sweater, Offset(girlSeatX + 6 * p, girlTorsoY + 4 * p), Size(13 * p, 4 * p))
-        scope.drawRect(PixelArtRenderer.SkinToneGirl, Offset(girlSeatX + 17 * p, girlTorsoY + 5 * p), Size(4 * p, 4 * p))
+        scope.drawRect(girlLook.skin, Offset(girlSeatX + 17 * p, girlTorsoY + 5 * p), Size(4 * p, 4 * p))
 
         val girlHeadY = girlTorsoY - 14 * p
-        scope.drawRect(PixelArtRenderer.SkinToneGirl, Offset(girlSeatX + 2 * p, girlHeadY), Size(11 * p, 12 * p))
+        scope.drawRect(girlLook.skin, Offset(girlSeatX + 2 * p, girlHeadY), Size(11 * p, 12 * p))
 
         // Long wind-blown hair flowing back horizontally with fluttering ribbon
         val girlHairWind = sin(timeSeconds * 12f) * 2.5f * p
-        scope.drawRect(Color(0xFF6A381F), Offset(girlSeatX - 2 * p, girlHeadY - 3 * p), Size(15 * p, 6 * p))
-        scope.drawRect(Color(0xFF6A381F), Offset(girlSeatX - 9 * p + girlHairWind, girlHeadY + 2 * p), Size(9 * p, 15 * p))
-        scope.drawRect(Color(0xFF492413), Offset(girlSeatX - 13 * p + girlHairWind, girlHeadY + 6 * p), Size(6 * p, 13 * p))
+        scope.drawRect(girlLook.hair, Offset(girlSeatX - 2 * p, girlHeadY - 3 * p), Size(15 * p, 6 * p))
+        if (girlLook.longHair) {
+            scope.drawRect(girlLook.hair, Offset(girlSeatX - 9 * p + girlHairWind, girlHeadY + 2 * p), Size(9 * p, 15 * p))
+            scope.drawRect(girlLook.hairShadow, Offset(girlSeatX - 13 * p + girlHairWind, girlHeadY + 6 * p), Size(6 * p, 13 * p))
 
-        // Ribbon fluttering back in wind
-        val ribbonWave = sin(timeSeconds * 14f) * 3f * p
-        scope.drawRect(girlDress.ribbon, Offset(girlSeatX - 4 * p, girlHeadY - 4 * p), Size(3.5f * p, 3.5f * p))
-        scope.drawRect(girlDress.ribbon, Offset(girlSeatX - 9 * p + ribbonWave, girlHeadY - 2 * p), Size(6 * p, 2 * p))
+            // Ribbon fluttering back in wind
+            val ribbonWave = sin(timeSeconds * 14f) * 3f * p
+            scope.drawRect(girlDress.ribbon, Offset(girlSeatX - 4 * p, girlHeadY - 4 * p), Size(3.5f * p, 3.5f * p))
+            scope.drawRect(girlDress.ribbon, Offset(girlSeatX - 9 * p + ribbonWave, girlHeadY - 2 * p), Size(6 * p, 2 * p))
+        } else {
+            // Short tousled tuft fluttering in the wind
+            scope.drawRect(girlLook.hair, Offset(girlSeatX - 5 * p + girlHairWind * 0.6f, girlHeadY - 1 * p), Size(5 * p, 6 * p))
+        }
 
         // Girl Accessory on bike
         when (girlAccessoryIndex) {
@@ -2142,7 +2159,8 @@ object WorldSprites {
         boyFacingRight: Boolean,
         p: Float,
         timeSeconds: Float,
-        isSitting: Boolean = false
+        isSitting: Boolean = false,
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A
     ) {
         val girlDist = abs(girlX - boyX)
         val isGirlClose = girlDist < 38f * p
@@ -2184,8 +2202,8 @@ object WorldSprites {
         scope.drawRect(woodDark, Offset(poleX + hookDir * 3.2f * p, handY + 3f * p), Size(1.6f * p, 2.2f * p))
 
         // 3. Boy's hand gripping the pole securely
-        val skinColor = PixelArtRenderer.SkinToneBoy
-        val skinShadow = PixelArtRenderer.SkinToneBoyShadow
+        val skinColor = boyLook.skin
+        val skinShadow = boyLook.skinShadow
         scope.drawRect(skinColor, Offset(poleX - 1.8f * p, handY - 1.5f * p), Size(3.6f * p, 3.2f * p))
         scope.drawRect(skinShadow, Offset(poleX - 0.5f * p, handY - p), Size(1.8f * p, 2.4f * p))
 

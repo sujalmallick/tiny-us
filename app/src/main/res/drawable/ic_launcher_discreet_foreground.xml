@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Neutral notebook glyph for discreet mode: nothing on it hints at a couples app. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Cover -->
+    <path
+        android:fillColor="#5B6B73"
+        android:pathData="M38,32h32a4,4 0,0 1,4 4v36a4,4 0,0 1,-4 4h-32a4,4 0,0 1,-4 -4v-36a4,4 0,0 1,4 -4z" />
+    <!-- Spine band -->
+    <path
+        android:fillColor="#3F4C53"
+        android:pathData="M34,36a4,4 0,0 1,4 -4h4v44h-4a4,4 0,0 1,-4 -4z" />
+    <!-- Label -->
+    <path
+        android:fillColor="#E9E4DA"
+        android:pathData="M48,42h18v8h-18z" />
+    <!-- Elastic strap -->
+    <path
+        android:fillColor="#3F4C53"
+        android:pathData="M64,32h3v44h-3z" />
+</vector>

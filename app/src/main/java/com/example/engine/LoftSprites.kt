@@ -231,7 +231,9 @@ object LoftSprites {
         girlOutfitIndex: Int = 0,
         boyAccessoryIndex: Int = 0,
         girlAccessoryIndex: Int = 0,
-        boyWearsGlasses: Boolean = true
+        boyWearsGlasses: Boolean = true,
+        boyLook: AvatarLook = AvatarLook.DEFAULT_A,
+        girlLook: AvatarLook = AvatarLook.DEFAULT_B
     ) {
         val seatY = floorY - 5 * p
 
@@ -242,12 +244,12 @@ object LoftSprites {
         // 1. The Boy sitting on the left side of the couch
         val boyXPos = if (isKissing) (boyX + girlX) / 2f - 2.5f * p else boyX
         val boyYPos = seatY + breathBoy
-        drawBoyOnSofa(scope, boyXPos, boyYPos, p, timeSeconds, boyEmotion, isKissing, isReadingBook, boyOutfitIndex, boyAccessoryIndex, boyWearsGlasses)
+        drawBoyOnSofa(scope, boyXPos, boyYPos, p, timeSeconds, boyEmotion, isKissing, isReadingBook, boyOutfitIndex, boyAccessoryIndex, boyWearsGlasses, boyLook)
 
         // 2. The Girl snuggling sweetly against the boy
         val girlXPos = if (isKissing) (boyX + girlX) / 2f + 2.5f * p else girlX
         val girlY = seatY + breathGirl
-        drawGirlOnSofa(scope, girlXPos, girlY, p, timeSeconds, girlEmotion, isKissing, isReadingBook, girlOutfitIndex, girlAccessoryIndex)
+        drawGirlOnSofa(scope, girlXPos, girlY, p, timeSeconds, girlEmotion, isKissing, isReadingBook, girlOutfitIndex, girlAccessoryIndex, girlLook)
 
         // 3. Floating little cuddle heart
         if (isKissing || (boyEmotion == CharacterEmotion.LOVING && sin(timeSeconds * 2.5f) > 0.70f)) {
@@ -255,6 +257,33 @@ object LoftSprites {
             val hy = seatY - 22 * p - (sin(timeSeconds * 3f) * 4 * p)
             scope.drawRect(Color(0xFFFF3366), Offset(hx - 2 * p, hy), Size(5 * p, 4 * p))
             scope.drawRect(Color(0xFFFF3366), Offset(hx - p, hy + 3 * p), Size(3 * p, 2 * p))
+        }
+    }
+
+    /** Sofa-pose hair: long wavy locks with a ribbon, or short tousled bangs, in the partner's colours. */
+    private fun drawSofaHair(scope: DrawScope, hx: Float, headY: Float, headW: Float, p: Float, look: AvatarLook) {
+        val hair = look.hair
+        val hairHigh = look.hairHighlight
+        if (look.longHair) {
+            scope.drawRect(hair, Offset(hx - 1.5f * p, headY), Size(headW + 3 * p, 3.5f * p))
+            scope.drawRect(hairHigh, Offset(hx + 1.5f * p, headY), Size(4 * p, p))
+            // Cascading side locks framing face
+            scope.drawRect(hair, Offset(hx - 2 * p, headY + 3.2f * p), Size(2.8f * p, 9 * p))
+            scope.drawRect(look.hairShadow, Offset(hx - 2.5f * p, headY + 5.5f * p), Size(1.6f * p, 6.5f * p))
+            scope.drawRect(hair, Offset(hx + headW - 0.8f * p, headY + 3.2f * p), Size(2.8f * p, 9 * p))
+            // Soft bangs
+            scope.drawRect(hair, Offset(hx + 0.8f * p, headY + 2.5f * p), Size(2.5f * p, 2 * p))
+            scope.drawRect(hair, Offset(hx + 4f * p, headY + 2.5f * p), Size(2.5f * p, 2 * p))
+            // Cute pink hair ribbon
+            scope.drawRect(PixelArtRenderer.RibbonGirl, Offset(hx + headW - 2.5f * p, headY + 0.8f * p), Size(2.8f * p, 2 * p))
+            scope.drawRect(PixelArtRenderer.RibbonCenter, Offset(hx + headW - 1.6f * p, headY + 1.2f * p), Size(1.2f * p, 1.2f * p))
+        } else {
+            scope.drawRect(hair, Offset(hx - 0.8f * p, headY), Size(headW + 1.6f * p, 3.5f * p))
+            scope.drawRect(hairHigh, Offset(hx + 1.5f * p, headY), Size(4 * p, p))
+            // Bangs hanging over forehead
+            scope.drawRect(hair, Offset(hx, headY + 2.5f * p), Size(2.5f * p, 3 * p))
+            scope.drawRect(hair, Offset(hx + 3.5f * p, headY + 2.5f * p), Size(2 * p, 2 * p))
+            scope.drawRect(hair, Offset(hx + 6.5f * p, headY + 2.5f * p), Size(3 * p, 3 * p))
         }
     }
 
@@ -269,7 +298,8 @@ object LoftSprites {
         isReadingBook: Boolean,
         boyOutfitIndex: Int = 0,
         boyAccessoryIndex: Int = 0,
-        boyWearsGlasses: Boolean = true
+        boyWearsGlasses: Boolean = true,
+        look: AvatarLook = AvatarLook.DEFAULT_A
     ) {
         val headY = by - 19 * p
         val headW = 10 * p
@@ -277,20 +307,12 @@ object LoftSprites {
         val hx = bx - headW / 2f
 
         // Head / Skin
-        val skinBoy = PixelArtRenderer.SkinToneBoy
-        val skinBoyShadow = PixelArtRenderer.SkinToneBoyShadow
+        val skinBoy = look.skin
+        val skinBoyShadow = look.skinShadow
         scope.drawRect(skinBoy, Offset(hx + 0.8f * p, headY + 2.5f * p), Size(headW - 1.6f * p, headH - 2.5f * p))
         scope.drawRect(skinBoyShadow, Offset(hx + headW - 1.8f * p, headY + 4 * p), Size(p, 3.5f * p))
 
-        // Hair (Black styled bangs and side tufts)
-        val hairBoy = PixelArtRenderer.HairBoy
-        val hairHigh = PixelArtRenderer.HairBoyHighlight
-        scope.drawRect(hairBoy, Offset(hx - 0.8f * p, headY), Size(headW + 1.6f * p, 3.5f * p))
-        scope.drawRect(hairHigh, Offset(hx + 1.5f * p, headY), Size(4 * p, p))
-        // Bangs hanging over forehead
-        scope.drawRect(hairBoy, Offset(hx, headY + 2.5f * p), Size(2.5f * p, 3 * p))
-        scope.drawRect(hairBoy, Offset(hx + 3.5f * p, headY + 2.5f * p), Size(2 * p, 2 * p))
-        scope.drawRect(hairBoy, Offset(hx + 6.5f * p, headY + 2.5f * p), Size(3 * p, 3 * p))
+        drawSofaHair(scope, hx, headY, headW, p, look)
 
         // Eyes
         val eyeDark = PixelArtRenderer.EyeDark
@@ -425,7 +447,8 @@ object LoftSprites {
         isKissing: Boolean,
         isReadingBook: Boolean,
         girlOutfitIndex: Int = 0,
-        girlAccessoryIndex: Int = 0
+        girlAccessoryIndex: Int = 0,
+        look: AvatarLook = AvatarLook.DEFAULT_B
     ) {
         val headY = gy - 18 * p
         val headW = 9 * p
@@ -433,29 +456,12 @@ object LoftSprites {
         val hx = gx - headW / 2f
 
         // Head / Skin (warm light golden tone)
-        val skinGirl = PixelArtRenderer.SkinToneGirl
-        val skinGirlShadow = PixelArtRenderer.SkinToneGirlShadow
+        val skinGirl = look.skin
+        val skinGirlShadow = look.skinShadow
         scope.drawRect(skinGirl, Offset(hx + 0.8f * p, headY + 2.5f * p), Size(headW - 1.6f * p, headH - 2.5f * p))
         scope.drawRect(skinGirlShadow, Offset(hx + headW - 1.6f * p, headY + 4 * p), Size(0.8f * p, 3.5f * p))
 
-        // Hair (Wavy warm brown hair cascading down shoulders)
-        val hairGirl = PixelArtRenderer.HairGirl
-        val hairHigh = PixelArtRenderer.HairGirlHighlight
-        val hairShadow = PixelArtRenderer.HairGirlShadow
-
-        scope.drawRect(hairGirl, Offset(hx - 1.5f * p, headY), Size(headW + 3 * p, 3.5f * p))
-        scope.drawRect(hairHigh, Offset(hx + 1.5f * p, headY), Size(4 * p, p))
-        // Cascading side locks framing face
-        scope.drawRect(hairGirl, Offset(hx - 2 * p, headY + 3.2f * p), Size(2.8f * p, 9 * p))
-        scope.drawRect(hairShadow, Offset(hx - 2.5f * p, headY + 5.5f * p), Size(1.6f * p, 6.5f * p))
-        scope.drawRect(hairGirl, Offset(hx + headW - 0.8f * p, headY + 3.2f * p), Size(2.8f * p, 9 * p))
-        // Soft bangs
-        scope.drawRect(hairGirl, Offset(hx + 0.8f * p, headY + 2.5f * p), Size(2.5f * p, 2 * p))
-        scope.drawRect(hairGirl, Offset(hx + 4f * p, headY + 2.5f * p), Size(2.5f * p, 2 * p))
-
-        // Cute pink hair ribbon
-        scope.drawRect(PixelArtRenderer.RibbonGirl, Offset(hx + headW - 2.5f * p, headY + 0.8f * p), Size(2.8f * p, 2 * p))
-        scope.drawRect(PixelArtRenderer.RibbonCenter, Offset(hx + headW - 1.6f * p, headY + 1.2f * p), Size(1.2f * p, 1.2f * p))
+        drawSofaHair(scope, hx, headY, headW, p, look)
 
         // Sweet peaceful closed smiling eyes leaning into him (^_^)
         val eyeDark = PixelArtRenderer.EyeDark

@@ -131,7 +131,10 @@ data class PixelCharacter(
     var previousPose: CharacterPose = pose,
     var poseTransitionProgress: Float = 1f,
     var poseTransitionDuration: Float = 0f,
-    var isTransitioningPose: Boolean = false
+    var isTransitioningPose: Boolean = false,
+
+    /** Skin, hair and outfit style; defaults to the original look for this slot. */
+    var look: AvatarLook = AvatarLook.defaultFor(isGirl)
 ) {
     /**
      * Smoothly interpolates character to a new world position.
@@ -598,12 +601,15 @@ object PixelArtRenderer {
         isHoldingUmbrella: Boolean = false,
         isSnow: Boolean = false
     ) {
-        val isGirl = char.isGirl
+        val look = char.look
+        // Clothing silhouette follows the chosen look, not the character slot.
+        val isGirl = look.wearsDress
+        val longHair = look.longHair
         val girlDress = getGirlDressPalette(char.outfitIndex)
         val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = if (isGirl) HairGirl else HairBoy
-        val hairHigh = if (isGirl) HairGirlHighlight else HairBoyHighlight
-        val hairShadow = if (isGirl) HairGirlShadow else HairBoyShadow
+        val hairColor = look.hair
+        val hairHigh = look.hairHighlight
+        val hairShadow = look.hairShadow
         val sweaterColor = if (isSnow) {
             if (isGirl) WinterCoatGirl else WinterCoatBoy
         } else {
@@ -614,8 +620,8 @@ object PixelArtRenderer {
         } else {
             if (isGirl) girlDress.trim else boyOutfit.sweaterHighlight
         }
-        val skinColor = if (isGirl) SkinToneGirl else SkinToneBoy
-        val skinShadow = if (isGirl) SkinToneGirlShadow else SkinToneBoyShadow
+        val skinColor = look.skin
+        val skinShadow = look.skinShadow
         val blushColor = if (isSnow) BlushRose else (if (char.emotion == CharacterEmotion.LOVING || char.emotion == CharacterEmotion.SHY) BlushRose else BlushCoral)
         val handColor = if (isSnow) {
             if (isGirl) WinterMittensGirl else WinterGlovesBoy
@@ -658,7 +664,7 @@ object PixelArtRenderer {
         }
 
         // --- 1. Head & Hair Base ---
-        if (isSnow && !isGirl) {
+        if (isSnow && !longHair) {
             // Boy Winter Beanie with pom-pom on top
             fillRect(8, 0, 2, 2, WinterPomPomBoy) // pom-pom
             fillRect(6, 2, 7, 3, WinterBeanieBoy) // beanie dome
@@ -675,7 +681,7 @@ object PixelArtRenderer {
             fillRect(6, 2, 7, 2, hairColor)
             fillRect(5, 4, 9, 3, hairColor)
 
-            if (isGirl) {
+            if (longHair) {
                 // Cute wavy side locks framing face
                 fillRect(4, 5, 2, 10, hairColor)
                 fillRect(12, 5, 2, 10, hairColor)
@@ -710,7 +716,7 @@ object PixelArtRenderer {
             }
         }
 
-        if (isSnow && isGirl) {
+        if (isSnow && longHair) {
             // Plush winter earmuffs on girl
             fillRect(6, 2, 6, 1, WinterEarmuffsGirl) // top band
             fillRect(3, 6, 2, 4, WinterEarmuffsFluff) // left ear fluff
@@ -885,7 +891,7 @@ object PixelArtRenderer {
         }
 
         // --- 7. Arms & Actions ---
-        if (isHoldingUmbrella && !isGirl) {
+        if (isHoldingUmbrella && !char.isGirl) {
             // Boy raised arm reaching up and outward towards umbrella handle centered between couple
             fillRect(12, 12, 2, 3, sweaterColor)
             fillRect(13, 11, 2, 2, sweaterColor)
@@ -1160,11 +1166,14 @@ object PixelArtRenderer {
         isHoldingUmbrella: Boolean = false,
         isSnow: Boolean = false
     ) {
-        val isGirl = char.isGirl
+        val look = char.look
+        // Clothing silhouette follows the chosen look, not the character slot.
+        val isGirl = look.wearsDress
+        val longHair = look.longHair
         val girlDress = getGirlDressPalette(char.outfitIndex)
         val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = if (isGirl) HairGirl else HairBoy
-        val hairHigh = if (isGirl) HairGirlHighlight else HairBoyHighlight
+        val hairColor = look.hair
+        val hairHigh = look.hairHighlight
         val sweaterColor = if (isSnow) {
             if (isGirl) WinterCoatGirl else WinterCoatBoy
         } else {
@@ -1180,8 +1189,8 @@ object PixelArtRenderer {
         } else {
             if (isGirl) ShoesGirl else boyOutfit.shoes
         }
-        val skinColor = if (isGirl) SkinToneGirl else SkinToneBoy
-        val skinShadow = if (isGirl) SkinToneGirlShadow else SkinToneBoyShadow
+        val skinColor = look.skin
+        val skinShadow = look.skinShadow
         val blushColor = if (isSnow) BlushRose else (if (char.emotion == CharacterEmotion.LOVING) BlushRose else BlushCoral)
         val handColor = if (isSnow) {
             if (isGirl) WinterMittensGirl else WinterGlovesBoy
@@ -1224,7 +1233,7 @@ object PixelArtRenderer {
         }
 
         // Head and hair
-        if (isSnow && !isGirl) {
+        if (isSnow && !longHair) {
             // Boy Beanie with pom-pom
             fillRect(8, 1, 2, 2, WinterPomPomBoy)
             fillRect(6, 3, 7, 3, WinterBeanieBoy)
@@ -1234,7 +1243,7 @@ object PixelArtRenderer {
         } else {
             fillRect(6, 3, 7, 2, hairColor)
             fillRect(5, 5, 9, 3, hairColor)
-            if (isGirl) {
+            if (longHair) {
                 fillRect(4, 6, 2, 9, hairColor)
                 fillRect(12, 6, 2, 9, hairColor)
                 fillRect(11, 4, 2, 2, girlDress.ribbon)
@@ -1247,7 +1256,7 @@ object PixelArtRenderer {
             }
         }
 
-        if (isSnow && isGirl) {
+        if (isSnow && longHair) {
             // Girl Earmuffs
             fillRect(6, 3, 6, 1, WinterEarmuffsGirl)
             fillRect(3, 7, 2, 4, WinterEarmuffsFluff)
@@ -1332,7 +1341,7 @@ object PixelArtRenderer {
             }
         }
 
-        if (isHoldingUmbrella && !isGirl) {
+        if (isHoldingUmbrella && !char.isGirl) {
             // Boy sitting with raised arm reaching up and outward towards umbrella handle
             fillRect(12, 12, 2, 3, sweaterColor)
             fillRect(13, 11, 2, 2, sweaterColor)
@@ -1363,10 +1372,13 @@ object PixelArtRenderer {
         flip: Boolean,
         isSnow: Boolean = false
     ) {
-        val isGirl = char.isGirl
+        val look = char.look
+        // Clothing silhouette follows the chosen look, not the character slot.
+        val isGirl = look.wearsDress
+        val longHair = look.longHair
         val girlDress = getGirlDressPalette(char.outfitIndex)
         val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = if (isGirl) HairGirl else HairBoy
+        val hairColor = look.hair
         val sweaterColor = if (isSnow) {
             if (isGirl) WinterCoatGirl else WinterCoatBoy
         } else {
@@ -1382,7 +1394,7 @@ object PixelArtRenderer {
         } else {
             if (isGirl) ShoesGirl else boyOutfit.shoes
         }
-        val skinColor = if (isGirl) SkinToneGirl else SkinToneBoy
+        val skinColor = look.skin
         val blushColor = BlushCoral
 
         fun px(gridX: Int, gridY: Int, color: Color) {
@@ -1421,7 +1433,7 @@ object PixelArtRenderer {
 
         // Tilted cozy sleeping head
         fillRect(7, 4, 7, 4, hairColor)
-        if (isGirl) {
+        if (longHair) {
             fillRect(5, 6, 3, 8, hairColor)
             fillRect(12, 5, 2, 2, RibbonGirl)
         }
@@ -1448,11 +1460,14 @@ object PixelArtRenderer {
         flip: Boolean,
         isSnow: Boolean = false
     ) {
-        val isGirl = char.isGirl
+        val look = char.look
+        // Clothing silhouette follows the chosen look, not the character slot.
+        val isGirl = look.wearsDress
+        val longHair = look.longHair
         val girlDress = getGirlDressPalette(char.outfitIndex)
         val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = if (isGirl) HairGirl else HairBoy
-        val hairHigh = if (isGirl) HairGirlHighlight else HairBoyHighlight
+        val hairColor = look.hair
+        val hairHigh = look.hairHighlight
         val sweaterColor = if (isSnow) {
             if (isGirl) WinterCoatGirl else WinterCoatBoy
         } else {
@@ -1468,7 +1483,7 @@ object PixelArtRenderer {
         } else {
             if (isGirl) ShoesGirl else boyOutfit.shoes
         }
-        val skinColor = if (isGirl) SkinToneGirl else SkinToneBoy
+        val skinColor = look.skin
         val handColor = if (isSnow) {
             if (isGirl) WinterMittensGirl else WinterGlovesBoy
         } else {
@@ -1510,14 +1525,14 @@ object PixelArtRenderer {
         }
 
         // Embracing pose leaning forward
-        if (isSnow && !isGirl) {
+        if (isSnow && !longHair) {
             fillRect(8, 0, 2, 2, WinterPomPomBoy)
             fillRect(6, 2, 7, 3, WinterBeanieBoy)
             fillRect(5, 4, 8, 2, WinterBeanieBrimBoy)
         } else {
             fillRect(7, 2, 7, 3, hairColor)
             fillRect(6, 4, 8, 3, hairColor)
-            if (isGirl) {
+            if (longHair) {
                 fillRect(5, 5, 2, 10, hairColor)
                 fillRect(12, 4, 2, 2, RibbonGirl)
                 px(13, 4, RibbonCenter)
@@ -1526,7 +1541,7 @@ object PixelArtRenderer {
             }
         }
 
-        if (isSnow && isGirl) {
+        if (isSnow && longHair) {
             fillRect(6, 2, 6, 1, WinterEarmuffsGirl)
             fillRect(3, 6, 2, 4, WinterEarmuffsFluff)
             fillRect(13, 6, 2, 4, WinterEarmuffsFluff)
@@ -1581,12 +1596,15 @@ object PixelArtRenderer {
         flip: Boolean,
         isSnow: Boolean = false
     ) {
-        val isGirl = char.isGirl
+        val look = char.look
+        // Clothing silhouette follows the chosen look, not the character slot.
+        val isGirl = look.wearsDress
+        val longHair = look.longHair
         val girlDress = getGirlDressPalette(char.outfitIndex)
         val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = if (isGirl) HairGirl else HairBoy
-        val hairHigh = if (isGirl) HairGirlHighlight else HairBoyHighlight
-        val hairShadow = if (isGirl) HairGirlShadow else HairBoyShadow
+        val hairColor = look.hair
+        val hairHigh = look.hairHighlight
+        val hairShadow = look.hairShadow
         val sweaterColor = if (isSnow) {
             if (isGirl) WinterCoatGirl else WinterCoatBoy
         } else {
@@ -1602,7 +1620,7 @@ object PixelArtRenderer {
         } else {
             if (isGirl) ShoesGirl else boyOutfit.shoes
         }
-        val skinColor = if (isGirl) SkinToneGirl else SkinToneBoy
+        val skinColor = look.skin
         val handColor = if (isSnow) {
             if (isGirl) WinterMittensGirl else WinterGlovesBoy
         } else {
@@ -1645,14 +1663,14 @@ object PixelArtRenderer {
         }
 
         // Leaning head forward for tender kiss
-        if (isSnow && !isGirl) {
+        if (isSnow && !longHair) {
             fillRect(9, 0, 2, 2, WinterPomPomBoy)
             fillRect(7, 2, 8, 3, WinterBeanieBoy)
             fillRect(6, 4, 9, 2, WinterBeanieBrimBoy)
         } else {
             fillRect(7, 2, 8, 3, hairColor)
             fillRect(6, 4, 9, 3, hairColor)
-            if (isGirl) {
+            if (longHair) {
                 fillRect(5, 5, 2, 11, hairColor)
                 fillRect(4, 8, 2, 6, hairShadow)
                 fillRect(13, 4, 2, 2, RibbonGirl)
@@ -1663,7 +1681,7 @@ object PixelArtRenderer {
             }
         }
 
-        if (isSnow && isGirl) {
+        if (isSnow && longHair) {
             fillRect(7, 2, 6, 1, WinterEarmuffsGirl)
             fillRect(4, 6, 2, 4, WinterEarmuffsFluff)
             fillRect(14, 6, 2, 4, WinterEarmuffsFluff)

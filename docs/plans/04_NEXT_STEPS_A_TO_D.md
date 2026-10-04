@@ -1,0 +1,134 @@
+# Plan 04: Next steps A–D (merge, device check, pixel overhaul, leftovers)
+
+Written 2026-10-04, to start 2026-10-05.
+
+**State at the time of writing:**
+- Branch `android-public-release` holds `c89663d` (public-release polish), `6ffb0be` (pixel-art redraw of the cafe, sunroom and campfire) and `47b532e` (Grandpa Bao and the Seaside Pier).
+- Uncommitted in the main tree: FEATURES' weather work and `docs/plans/03_PIXEL_ART_OVERHAUL_PLAN.md`.
+- Other branches: `ui-chrome-pass` (worktree `.claude/worktrees/ui-chrome-pass`) and `ios/parity-first-pass`.
+- Nothing has been pushed; `origin/master` is still `dd3a979`.
+
+**Ground rules for the day:**
+- **One session merges.** Others work in their own worktrees and don't touch the main tree during A.
+- **One Gradle build at a time.** The machine struggles with parallel builds plus the emulator. Run targeted tests while iterating and the full suite only at the checkpoints below.
+- **Emulator use is booked** between sessions: message "emulator free" when done.
+
+---
+
+## 0. Finish the UI work first (the UI session, in its worktree)
+
+The user wants the UI restyle finished before anything else starts.
+
+**Already done** on `ui-chrome-pass` (`adfecc7`, `923532a`; worktree clean):
+- the "Cozy Frame" design system: tokens, `TinyChrome` components, light theme,
+- every dialog, the settings sheet, onboarding, app lock, backup, wardrobe, calendar, music box, polaroid and Our Story moved onto it,
+- 48dp touch targets, WCAG AA contrast,
+- zero emoji, enforced by `NoEmojiPolicyTest`.
+
+**To finish:**
+- [x] The UI session lists what's left on its own plan and completes it in the worktree.
+- [x] After-screenshots of every restyled screen. Book the emulator; the machine is short on memory, so run nothing else alongside it. *(Emulator and JVM rendering both ran out of memory on this machine; the user reviewed the build on a device instead. Before-shots: `.claude/worktrees/ui-chrome-pass/build/ui-pass/before/`.)*
+- [x] The user reviews the before/after screenshots and approves the look. *(Approved 2026-10-04.)*
+- [x] Decide whether the pixel UI (font, framed pixel buttons, pixel icons, Phase 5 of `03_PIXEL_ART_OVERHAUL_PLAN.md`) belongs in this pass or waits for C. *(Decision: waits for C.)*
+- [x] The UI session runs its tests (including `NoEmojiPolicyTest`) and commits, then sends "ui-chrome-pass ready" with the final commit hash. *(Final hash `3952091`.)*
+- **Check:** the user signs off on the UI. Only then start A1.
+
+## A. Tidy up and merge (about 1 day)
+
+### A1. Commit pending work on `android-public-release`
+- [x] FEATURES commits its weather work: `ParticleSystem.kt`, `WorldParticles.kt`, `WorldWeatherExtras.kt`, the weather blocks in `SceneEngine.kt`, `SceneLayouts.kt` (`WeatherLayout`), `PixelWorldView.kt` hooks, 4 speed constants in `WorldSpecialScenes.kt`, and `CozyWeatherTest.kt`. *(`4dfe314`.)*
+- [x] Commit `docs/plans/03_PIXEL_ART_OVERHAUL_PLAN.md` and this file. *(`06274e0`.)*
+- **Check:** `git status` is clean.
+
+### A2. Merge `ui-chrome-pass` (the UI session confirms it's finished first)
+- [x] `git merge ui-chrome-pass` into `android-public-release`. *(Fast-forward to `3952091`: the UI branch had already merged `06274e0`.)*
+- [x] Resolve the known conflict in `SceneEngine.kt`, keeping both sides' changes. *(Lighthouse tap: kept this branch's emoji-free gull-flock version.)*
+- [x] Its new `NoEmojiPolicyTest` will flag emoji added on this branch after it forked. Replace them with TinyChrome pixel icons or plain text:
+  - the "Make Us" and "Our Story" buttons (`strings.xml`),
+  - garden bloom and welcome-back messages (`GardenGrowth.kt`, `MainScreen.kt`),
+  - Our Story entry icons (`StoryTimeline.kt`),
+  - pier, weather and scene-message emoji (`SceneEngine.kt`).
+  *(None left after the merge: the repository-wide audit and `NoEmojiPolicyTest` both report zero.)*
+- [x] Re-check the screens the restyle touched that were added after it forked: `AppLockScreens`, `AvatarCustomizerDialog`, `BackupRestoreSettings`, `OurStoryDialog`. *(All four were restyled in `923532a`; nothing newer landed in them.)*
+- **Check:** `./gradlew :app:testDebugUnitTest :shared:testAndroidHostTest verifyPrivacySafeguards` is green. *(Green on `3952091`: 190 app tests, shared host tests, privacy check.)*
+
+### A3. Merge `ios/parity-first-pass`
+- [x] `git merge ios/parity-first-pass`. Most iOS files already arrived through `c89663d`, so expect duplicates. *(`3d1c451`: six conflicts, all resolved to this branch's newer version; the merge changes no files.)*
+- [x] Resolve `iosApp/iosApp/ContentView.swift`. Keep the newer iOS session version; check whether the iOS session is still active and ask it first.
+- [x] Resolve `shared/src/commonTest/kotlin/com/example/SharedCoreTest.kt` (both sides added it). Merge the tests and keep the explicit scene-name list (it now includes `SEASIDE_PIER`).
+- [x] Confirm the shared `SceneType` change ("keep SceneType unchanged until Campfire lands") is satisfied: Campfire has landed.
+- **Check:** shared host tests are green. The Swift code can't be built on Windows, so trigger the manual iOS GitHub workflow after A4.
+
+### A4. Full checkpoint, push and pull request
+- [x] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`. *(Green on `3d1c451`: 190 app tests, 24 shared tests; release APK 27.4 MB, see D3.)*
+- [x] `git push -u origin android-public-release`.
+- [ ] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
+- [ ] Merge the pull request once CI is green (ask the user before merging into `master`).
+
+### A5. Clean up
+- [x] `git worktree remove .claude/worktrees/ui-chrome-pass`. *(The empty folder stays until the UI session closes.)*
+- [x] Delete merged local branches `ui-chrome-pass` and `ios/parity-first-pass`.
+- [x] Drop the old safety stash `stash@{0}` ("snapshot before Android plan work"). *(Kept as the local tag `backup/pre-android-plan-stash`, not pushed.)*
+- **Check:** `git branch` shows only `master` and `android-public-release` (or just `master` after the PR merges).
+
+---
+
+## B. Real-device check (about half a day)
+
+Install the merged release build, uninstalling the old one first if the signatures differ. Open scenes directly with `adb shell am start -n com.tinyus.app/com.example.MainActivity --es scene <SCENE>`.
+
+| # | What to check | Pass when |
+|---|---|---|
+| B1 | Cafe, sunroom, campfire (day, sunset, night) | Pixel blocks look even; the cafe table sits in front of the seated couple; the tent stands on the grass; taps on the latte, croissant, pup, barista, menu, window, fire, guitar, lantern, watering can, plants and skylight all respond |
+| B2 | Seaside Pier and Grandpa Bao | Interactions work; Pip the seagull and the bottle can be tapped |
+| B3 | Weather | Rain, snow, petals and leaves are slow enough to see; the weather interactions respond |
+| B4 | Privacy lock | PIN set, wrong PIN, cooldown, unlock; fingerprint (enrol a test fingerprint on the emulator, then `adb emu finger touch 1`); "Forgot PIN" with the phone's screen lock; hidden in Recents |
+| B5 | Discreet icon | The launcher shows "Journal" and switches back; reminders show generic text |
+| B6 | Backup & Restore | Save through the file picker, change some data, restore, data is back (photos included); a wrong password leaves data untouched |
+| B7 | Make Us | Look changes apply in every scene (sofa, scooter, umbrella included) and survive a restart |
+| B8 | Our Story | Milestones, letters, keepsakes and photos in date order; filters work |
+| B9 | Garden | Speed time up with a debug day offset, or restore a prepared backup: blooms appear, the welcome-back message shows, blooms appear in Our Story |
+
+- [ ] Fix anything found. Use targeted tests while iterating and one full run at the end.
+- **Check:** every row passes, with screenshots kept for the store listing later.
+
+---
+
+## C. Pixel-art overhaul (about 2–3 weeks; details in `03_PIXEL_ART_OVERHAUL_PLAN.md`)
+
+Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
+
+### C1. Test on the campfire scene (phases 0–1, 2–3 days)
+- [ ] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
+- [ ] Phase 1 on the campfire only:
+  - draw the world into a small offscreen image and enlarge it by a whole number with `FilterQuality.None`,
+  - characters drop the 1.38× scale,
+  - taps are divided by the scale before hit-testing,
+  - particles and overlays move to game pixels.
+- [ ] Show the user a before/after of the campfire. **Decide: continue or stop.**
+
+### C2. Roll out (if approved)
+- [ ] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`.
+- [ ] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
+- [ ] Phase 3: per-scene framing so the couple are 10–12% of screen height; layered backgrounds with slight parallax; review all 13 scenes at 16:9, 19.5:9 and 20:9.
+- [ ] Phase 4: `SpriteClock` at 10 fps, whole-pixel positions, walk cycles, readable particles, pixel-dissolve scene change, haptics.
+- [ ] Phase 5: bundled OFL pixel font, framed pixel buttons and dialogs, a 16×16 pixel icon set (built on the UI restyle's components), with accessibility fallbacks.
+- **Checks for each phase:** picture tests reviewed, every pixel opaque and from the palette (from phase 2 on), tap tests green, frame time 8 ms or less.
+
+---
+
+## D. Leftovers from the first plan (about 2–3 days)
+
+- [ ] **D1. Translatable text:** move the remaining hard-coded strings in older screens (Settings sheet, dialogs, scene messages) into `strings.xml`. Scene messages built in `SceneEngine` need string resources with arguments.
+- [ ] **D2. Old "Him"/"Her" names:** when the saved names are the old placeholders, show a one-time gentle prompt ("Want to set your names?") instead of renaming silently. Add a test.
+- [ ] **D3. App size:** re-encode the bundled music at a lower bitrate (for example 96–128 kbps), or stream nothing and keep fewer tracks. Target a release APK under about 12 MB. Make sure the audio still sounds clean.
+- [ ] **D4. Loft bookshelf figures:** pass each partner's Make Us look into `LoftSprites` (the mini figures currently use the default skin and hair).
+- [ ] **D5. Per-scene puddle spots** for rain (FEATURES' open item): puddles placed to fit each scene's ground instead of generic positions.
+- [ ] **D6. Deferred plan-01 performance items** (FEATURES' open item): cache static background layers instead of redrawing them every frame, and remove allocations made each frame. This dovetails with C Phase 1 (offscreen rendering), so it may be cheapest to do there.
+- **Check:** full suite green, release APK size recorded, the D2 prompt checked on the device.
+
+---
+
+## Order at a glance
+
+0 (finish UI, user sign-off) → A1 → A2 → A3 → A4 → A5 → B (fix and retest) → C1 (user decision) → C2 phases → D (D1–D4 can also slot in between C phases).

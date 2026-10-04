@@ -5,7 +5,9 @@ data class MemoryItem(
     val title: String,
     val date: String,
     val note: String,
-    val iconType: String = "heart" // "heart", "tree", "flower", "cooking", "stars", "couch"
+    val iconType: String = "heart", // "heart", "tree", "flower", "cooking", "stars", "couch"
+    /** Epoch millis when added in-app; 0 for older saves and bundled samples. */
+    val createdAt: Long = 0L
 )
 
 data class LoveNoteItem(
@@ -13,7 +15,9 @@ data class LoveNoteItem(
     val text: String,
     val author: String,
     val date: String,
-    val isCustom: Boolean = false
+    val isCustom: Boolean = false,
+    /** Epoch millis when written in-app; 0 for older saves and bundled samples. */
+    val createdAt: Long = 0L
 )
 
 data class TinyMoment(

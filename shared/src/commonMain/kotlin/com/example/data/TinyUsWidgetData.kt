@@ -13,7 +13,6 @@ data class TinyUsWidgetData(
     val dailyMomentPrompt: String? = null,
     val dailyMomentAnswered: Boolean = false,
     val latestSignalText: String? = null,
-    val sharedMoodEmoji: String? = null,
     val sharedMoodText: String? = null,
     val lastUpdatedTimestamp: Long = 0L
 )

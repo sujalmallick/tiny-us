@@ -1,36 +1,24 @@
 package com.example.ui.theme
 
 import androidx.compose.material3.Typography
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
-val Typography =
-  Typography(
-    bodyLarge =
-      TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp,
-      )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-    */
-  )
+private fun TextStyle.noColor() = copy(color = Color.Unspecified)
+
+// Material styles mapped onto the TinyType scale so stock components (text fields, chips,
+// date picker) match the custom chrome.
+val Typography = Typography(
+    headlineSmall = TinyType.Display.noColor(),
+    titleLarge = TinyType.Title.noColor(),
+    titleMedium = TinyType.Section.noColor(),
+    titleSmall = TinyType.Label.noColor(),
+    bodyLarge = TextStyle(fontWeight = FontWeight.Normal, fontSize = 16.sp, lineHeight = 22.sp),
+    bodyMedium = TinyType.Body.noColor(),
+    bodySmall = TinyType.Caption.noColor(),
+    labelLarge = TinyType.Label.copy(fontSize = 14.sp).noColor(),
+    labelMedium = TinyType.Label.noColor(),
+    labelSmall = TinyType.Micro.noColor()
+)

@@ -1,6 +1,16 @@
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.kotlin.compose)
+}
+
+// Release signing comes from an uncommitted keystore.properties at the repo root:
+//   storeFile=release.jks  storePassword=…  keyAlias=…  keyPassword=…
+// Without it, release builds fall back to the debug key (fine locally, never for the Play Store).
+val releaseKeystore = Properties().apply {
+  val file = rootProject.file("keystore.properties")
+  if (file.exists()) file.inputStream().use { load(it) }
 }
 
 android {
@@ -17,12 +27,24 @@ android {
     testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
   }
 
+  signingConfigs {
+    if (!releaseKeystore.isEmpty) {
+      create("release") {
+        storeFile = rootProject.file(releaseKeystore.getProperty("storeFile"))
+        storePassword = releaseKeystore.getProperty("storePassword")
+        keyAlias = releaseKeystore.getProperty("keyAlias")
+        keyPassword = releaseKeystore.getProperty("keyPassword")
+      }
+    }
+  }
+
   buildTypes {
     release {
       isCrunchPngs = false
-      isMinifyEnabled = false
+      isMinifyEnabled = true
+      isShrinkResources = true
       proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-      signingConfig = signingConfigs.getByName("debug")
+      signingConfig = signingConfigs.findByName("release") ?: signingConfigs.getByName("debug")
     }
     debug {
       // Uses default Android debug signing configuration
@@ -59,6 +81,9 @@ dependencies {
   implementation(project(":shared"))
   implementation(platform(libs.androidx.compose.bom))
   implementation(libs.androidx.activity.compose)
+  // Privacy lock: fingerprint/face/device-credential prompt (on-device only, no network).
+  implementation(libs.androidx.biometric)
+  implementation(libs.androidx.fragment.ktx)
   implementation(libs.androidx.compose.material.icons.core)
   implementation(libs.androidx.compose.material.icons.extended)
   implementation(libs.androidx.compose.material3)
@@ -93,5 +118,6 @@ dependencies {
 
 tasks.named("preBuild").configure {
   dependsOn(rootProject.tasks.named("verifyPrivacySafeguards"))
+  dependsOn(rootProject.tasks.named("verifyNoPersonalData"))
 }
 

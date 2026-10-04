@@ -12,8 +12,8 @@ import kotlinx.datetime.LocalDate
  * or configured through the onboarding / settings flow.
  */
 data class PersonalProfile(
-    val boyName: String = "Him",
-    val girlName: String = "Her",
+    val boyName: String = DEFAULT_NAME_A,
+    val girlName: String = DEFAULT_NAME_B,
     val anniversaryDate: LocalDate? = null,
     val secretLetter: String = "I built this little digital home so we can always share cozy moments together, no matter where we are. Every single pixel, every melody, and every little secret was crafted with all my love, just for you.",
     val secretCodeTitle: String = "A Secret Note",
@@ -48,4 +48,16 @@ data class PersonalProfile(
     ),
     val stallSignboardText: String = "WARM BITES",
     val milestoneText: String = "TINY US 0 KM"
-)
+) {
+    companion object {
+        /** Gender-neutral names used until the couple types their own. */
+        const val DEFAULT_NAME_A = "Bean"
+        const val DEFAULT_NAME_B = "Sprout"
+
+        // Older builds defaulted to "Him"/"Her"; still treat those as unset.
+        private val LEGACY_DEFAULT_NAMES = setOf("Him", "Her")
+
+        fun isPlaceholderName(name: String): Boolean =
+            name.isBlank() || name == DEFAULT_NAME_A || name == DEFAULT_NAME_B || name in LEGACY_DEFAULT_NAMES
+    }
+}

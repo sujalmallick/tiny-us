@@ -19,3 +19,7 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# --- Tiny Us ---
+# Enum constant names are saved in preferences (scene, room theme, weather…); keep them stable.
+-keepclassmembers enum com.example.** { <fields>; }

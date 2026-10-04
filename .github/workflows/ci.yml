@@ -31,3 +31,6 @@ jobs:
 
       - name: Run Unit & Robolectric Tests
         run: ./gradlew testDebugUnitTest
+
+      - name: Run Shared (commonTest) Tests on the JVM
+        run: ./gradlew :shared:testAndroidHostTest

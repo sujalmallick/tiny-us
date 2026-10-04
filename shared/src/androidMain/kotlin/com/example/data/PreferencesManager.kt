@@ -131,6 +131,32 @@ class PreferencesManager(
         get() = prefs.getInt("boy_accessory_index", 0)
         set(value) = prefs.edit().putInt("boy_accessory_index", value.coerceIn(0, 10)).apply()
 
+    /**
+     * Avatar look per character slot. Slot A is the "boy" slot and slot B the "girl" slot internally;
+     * missing keys mean "never customized" and return the original look for that slot.
+     */
+    fun getAvatarAppearance(isSlotB: Boolean): AvatarAppearance {
+        val prefix = if (isSlotB) "avatar_b_" else "avatar_a_"
+        val fallback = AvatarAppearance.defaultFor(isSlotB)
+        return AvatarAppearance(
+            skinTone = prefs.getInt(prefix + "skin", fallback.skinTone),
+            hairColor = prefs.getInt(prefix + "hair_color", fallback.hairColor),
+            longHair = prefs.getBoolean(prefix + "long_hair", fallback.longHair),
+            wearsDress = prefs.getBoolean(prefix + "wears_dress", fallback.wearsDress)
+        ).normalized()
+    }
+
+    fun setAvatarAppearance(isSlotB: Boolean, appearance: AvatarAppearance) {
+        val prefix = if (isSlotB) "avatar_b_" else "avatar_a_"
+        val a = appearance.normalized()
+        prefs.edit()
+            .putInt(prefix + "skin", a.skinTone)
+            .putInt(prefix + "hair_color", a.hairColor)
+            .putBoolean(prefix + "long_hair", a.longHair)
+            .putBoolean(prefix + "wears_dress", a.wearsDress)
+            .apply()
+    }
+
     var buttonGlassIntensity: Float
         get() = prefs.getFloat("button_glass_intensity", 0.65f)
         set(value) = prefs.edit().putFloat("button_glass_intensity", value.coerceIn(0.10f, 1.0f)).apply()
@@ -169,17 +195,7 @@ class PreferencesManager(
         prefs.edit().putString("tiny_care_recent_ids", trimmed.joinToString(",")).apply()
     }
 
-    fun computeGardenStage(days: Int): Int {
-        return when {
-            days <= 1 -> 0 // Bare soil with tiny sprout specks
-            days == 2 -> 1 // Clover patches & green sprouts
-            days in 3..4 -> 2 // Small floral buds appearing
-            days in 5..6 -> 3 // Blooming wildflowers
-            days in 7..9 -> 4 // Lush flower bushes & butterflies
-            days in 10..13 -> 5 // Blossom tree sapling
-            else -> 6 // Paradise blooming tree, golden sparkles, ladybugs
-        }
-    }
+    fun computeGardenStage(days: Int): Int = GardenGrowth.stageFor(days)
 
     private fun getEffectiveDateString(): String {
         val calendar = Calendar.getInstance()
@@ -196,13 +212,49 @@ class PreferencesManager(
         }
         val isFirst = (lastOpenedDate != today)
         if (isFirst) {
-            if (lastOpenedDate.isNotEmpty()) {
+            val previous = lastOpenedDate
+            if (previous.isNotEmpty()) {
                 uniqueDaysOpened += 1
+                pendingDaysAway = daysBetween(previous, today)
             }
             lastOpenedDate = today
             gardenStage = computeGardenStage(uniqueDaysOpened)
+            recordNewGardenBlooms(today)
         }
         return isFirst
+    }
+
+    /** Days between the previous visit and today, set on the first open of a new day; read once. */
+    private var pendingDaysAway: Int = 0
+
+    fun consumeDaysAway(): Int = pendingDaysAway.also { pendingDaysAway = 0 }
+
+    private fun daysBetween(from: String, to: String): Int = runCatching {
+        val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
+        val ms = fmt.parse(to)!!.time - fmt.parse(from)!!.time
+        (ms / (24L * 60 * 60 * 1000)).toInt()
+    }.getOrDefault(0)
+
+    /**
+     * Calendar date each garden bloom first appeared ("index=yyyy-MM-dd,..."), so Our Story can
+     * place blooms on the right day. Blooms are never removed.
+     */
+    fun getGardenBloomDates(): Map<Int, String> {
+        val raw = prefs.getString("garden_bloom_dates", "") ?: ""
+        if (raw.isEmpty()) return emptyMap()
+        return raw.split(",").mapNotNull { part ->
+            val (idx, date) = part.split("=").takeIf { it.size == 2 } ?: return@mapNotNull null
+            idx.toIntOrNull()?.let { it to date }
+        }.toMap()
+    }
+
+    private fun recordNewGardenBlooms(today: String) {
+        val known = getGardenBloomDates()
+        val earned = GardenGrowth.bloomsFor(uniqueDaysOpened)
+        val fresh = earned.filter { it.index !in known }
+        if (fresh.isEmpty()) return
+        val merged = known + fresh.associate { it.index to today }
+        prefs.edit().putString("garden_bloom_dates", merged.entries.sortedBy { it.key }.joinToString(",") { "${it.key}=${it.value}" }).apply()
     }
 
     fun fastForwardDayForDebug(): Int {
@@ -291,7 +343,8 @@ class PreferencesManager(
                                     title = obj.getString("title"),
                                     date = obj.getString("date"),
                                     note = obj.getString("note"),
-                                    iconType = obj.optString("iconType", "heart")
+                                    iconType = obj.optString("iconType", "heart"),
+                                    createdAt = obj.optLong("createdAt", 0L)
                                 )
                             )
                         }
@@ -325,7 +378,8 @@ class PreferencesManager(
                         title = obj.getString("title"),
                         date = obj.getString("date"),
                         note = obj.getString("note"),
-                        iconType = obj.optString("iconType", "heart")
+                        iconType = obj.optString("iconType", "heart"),
+                                    createdAt = obj.optLong("createdAt", 0L)
                     )
                 )
             }
@@ -344,7 +398,8 @@ class PreferencesManager(
             title = title,
             date = date.ifEmpty { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date()) },
             note = note,
-            iconType = iconType
+            iconType = iconType,
+            createdAt = System.currentTimeMillis()
         )
         current.add(0, newItem)
         saveMemories(current)
@@ -360,6 +415,7 @@ class PreferencesManager(
                 put("date", item.date)
                 put("note", item.note)
                 put("iconType", item.iconType)
+                if (item.createdAt > 0L) put("createdAt", item.createdAt)
             }
             arr.put(obj)
         }
@@ -390,7 +446,8 @@ class PreferencesManager(
                                     text = obj.getString("text"),
                                     author = obj.getString("author"),
                                     date = obj.getString("date"),
-                                    isCustom = true
+                                    isCustom = true,
+                                    createdAt = obj.optLong("createdAt", 0L)
                                 )
                             )
                         }
@@ -424,7 +481,8 @@ class PreferencesManager(
                         text = obj.getString("text"),
                         author = obj.getString("author"),
                         date = obj.getString("date"),
-                        isCustom = obj.optBoolean("isCustom", false)
+                        isCustom = obj.optBoolean("isCustom", false),
+                        createdAt = obj.optLong("createdAt", 0L)
                     )
                 )
             }
@@ -443,7 +501,8 @@ class PreferencesManager(
             text = text,
             author = author,
             date = SimpleDateFormat("MMM d", Locale.getDefault()).format(Date()),
-            isCustom = true
+            isCustom = true,
+            createdAt = System.currentTimeMillis()
         )
         current.add(0, newItem)
         saveLoveNotes(current)
@@ -459,6 +518,7 @@ class PreferencesManager(
                 put("author", item.author)
                 put("date", item.date)
                 put("isCustom", item.isCustom)
+                if (item.createdAt > 0L) put("createdAt", item.createdAt)
             }
             arr.put(obj)
         }
@@ -472,7 +532,7 @@ class PreferencesManager(
         TinyMoment(
             dayIndex = 0,
             title = "A Tiny Blossom",
-            description = "He picked a fresh flower just to make you smile.",
+            description = "A fresh flower, picked just to make you smile.",
             sceneHint = "Scene: Flower",
             quote = "Small gestures speak the softest truths."
         ),
@@ -974,8 +1034,7 @@ class PreferencesManager(
             timePhase = timePhase,
             dailyMomentPrompt = prompt.question,
             dailyMomentAnswered = momentResp.isBothAnswered || momentResp.isRevealed,
-            latestSignalText = latestSig?.let { "${it.type.emoji} ${it.type.title}" },
-            sharedMoodEmoji = mood.boyMood.emoji,
+            latestSignalText = latestSig?.type?.title,
             sharedMoodText = mood.boyMood.displayName,
             lastUpdatedTimestamp = System.currentTimeMillis()
         )

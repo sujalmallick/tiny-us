@@ -25,8 +25,8 @@ object SpecialCalendarManager {
 
     var boyBirthday: LocalDate? = null
     var girlBirthday: LocalDate? = null
-    var boyName: String = "Him"
-    var girlName: String = "Her"
+    var boyName: String = PersonalProfile.DEFAULT_NAME_A
+    var girlName: String = PersonalProfile.DEFAULT_NAME_B
 
     // Base template memories (dynamic based on relationship start date & birthdays)
     val fixedMemories: List<TinyUsMemory>

@@ -45,7 +45,7 @@ Go through each category in the questionnaire and match these selections:
 
 ### 5. Messages
 - **Emails / SMS / Other in-app messages:** **No**  
-  *(Love notes written in the app are stored purely in local device files/SharedPreferences and never leave the device).*
+  *(Love notes are stored in local SharedPreferences and are never sent to the developer. Android Auto Backup may include them in the user's own end-to-end encrypted device backup — see `app/src/main/res/xml/data_extraction_rules.xml`. Re-check Play's current Data safety guidance on OS-level backups before submitting.)*
 
 ### 6. Photos and Videos
 - **Photos / Videos:** **No**  
