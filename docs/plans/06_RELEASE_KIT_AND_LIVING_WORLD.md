@@ -26,6 +26,7 @@ Written 2026-10-04 and checked against the code on 2026-10-05 (`master` at `e9cc
 The Play Console steps themselves (developer account, upload, forms) are the user's. We prepare every file and answer.
 
 ### E0. Signing and the app bundle (blocks upload)
+- [x] Step-by-step guide in `docs/store/RELEASE_SIGNING.md`; `bundleRelease` now refuses to run with the debug key.
 - [ ] The user creates the upload key with `keytool` and writes `keystore.properties` (passwords stay with the user; both files are git-ignored). Back them up somewhere safe: a lost upload key means contacting Google to reset it.
 - [ ] Enrol in Play App Signing when creating the app in the Play Console.
 - [ ] Build the app bundle with `:app:bundleRelease` (Play takes `.aab`, not `.apk`) and confirm it's signed with the upload key.
@@ -33,25 +34,26 @@ The Play Console steps themselves (developer account, upload, forms) are the use
 
 ### E1. Store screenshots
 The heart button's Tiny Moment polaroids are for players and need a running app. Store screenshots need the whole screen, buttons included, at exact sizes, so they're rendered on the JVM.
-- [ ] A `StoreScreenshotTest` (runs only when `STORE_SHOTS_DIR` is set) that draws the full app screen (scene + HUD) at phone size 1080x2400 and tablet sizes 1600x2560 (7") and 2560x1600 (10").
-- [ ] 6-8 scenes and times that show the app best: meadow by day, loft at night, campfire, rainy cafe, seaside pier at sunset, a weather season, the kitchen. Let the autonomy run a few seconds first so the couple is doing something.
-- [ ] One Tiny Moment polaroid card (`PolaroidManager.renderPolaroidCard`) to show the heart feature.
-- [ ] Optional caption band above each shot, in the pixel font.
-- [ ] The user picks the final set.
+- [x] A `StoreScreenshotTest` (runs only when `STORE_SHOTS_DIR` is set) that draws the full app screen (scene + HUD) at phone size 1080x2400 and tablet sizes 1600x2560 (7") and 2560x1600 (10").
+- [x] 6-8 scenes and times that show the app best: meadow by day, loft at night, campfire, rainy cafe, seaside pier at sunset, a weather season, the kitchen. Let the autonomy run a few seconds first so the couple is doing something.
+- [x] One Tiny Moment polaroid card (`PolaroidManager.renderPolaroidCard`) to show the heart feature.
+- [ ] Optional caption band above each shot, in the pixel font. *(Not done; the user decides.)*
+- [ ] The user picks the final set from `docs/store/screenshots/` (phone 1080x2400, 7" 1200x1920, 10" 1600x2560). *(The engine is run forward first and the screen drawn once: about 5 s a shot, instead of minutes.)*
 
 ### E2. Store listing text
-- [ ] App name and short description (80 characters at most).
-- [ ] Full description (4000 at most): the scenes, seasons and weather, the couple living their own little life, Tiny Moments, fully offline, no ads, no account.
-- [ ] Saved in `docs/store/listing.md` for the user to paste.
+- [x] App name and short description (80 characters at most).
+- [x] Full description (4000 at most): the scenes, seasons and weather, the couple living their own little life, Tiny Moments, fully offline, no ads, no account.
+- [x] Saved in `docs/store/listing.md` for the user to paste.
 
 ### E3. Graphics
-- [ ] Feature graphic 1024x500: a wide pixel-art banner (the couple on the meadow, title in the pixel font), rendered on the JVM.
-- [ ] Hi-res icon 512x512, made from the current launcher icon (`mipmap-*/ic_launcher.webp`).
+- [x] Feature graphic 1024x500: a wide pixel-art banner (the couple on the meadow, title in the pixel font), rendered on the JVM.
+- [x] Hi-res icon 512x512, made from the adaptive launcher icon's layers. Both in `docs/store/graphics/`, rendered by `StoreGraphicsTest`.
 
 ### E4. Bring the store docs up to date
-- [ ] `PRIVACY_POLICY.md`: remove the in-app purchase and `INTERNET` section; add the app lock (biometrics stay on the device); set the effective date; replace the placeholder contact email (`support@tinyus.app`) with the user's real one; drop "DRAFT".
-- [ ] `PLAY_CONSOLE_DATA_SAFETY.md`: no purchase history and no device identifiers. The answer becomes "no data collected or shared".
-- [ ] `STORE_COMPLIANCE_CHECKLIST.md`: remove the billing section; content rating "digital purchases" becomes No; list the permissions as they are now.
+- [x] `PRIVACY_POLICY.md`: remove the in-app purchase and `INTERNET` section; add the app lock (biometrics stay on the device); set the effective date; drop "DRAFT". **The contact email is still a placeholder for the user to fill in** (also in `TERMS_OF_SERVICE.md`).
+- [x] `PLAY_CONSOLE_DATA_SAFETY.md`: no purchase history and no device identifiers. The answer becomes "no data collected or shared".
+- [x] `STORE_COMPLIANCE_CHECKLIST.md`: remove the billing section; content rating "digital purchases" becomes No; list the permissions as they are now.
+- [x] `TERMS_OF_SERVICE.md`: the purchases section replaced (the app is free). *Open for the user: the liability cap still refers to "in-app purchases", and the repo has no LICENSE although it's public while the terms forbid redistribution.*
 - [ ] Host the privacy policy at a public URL (e.g. GitHub Pages). This is the user's step.
 - **Check:** the user reviews E0-E4 and submits in the Play Console.
 

@@ -123,7 +123,15 @@ fun MainScreen(
     targetScene: String? = null,
     targetToken: Long = 0L,
     targetAtmosphere: String? = null,
-    targetBirdSurface: String? = null
+    targetBirdSurface: String? = null,
+    /** Pins the weather (a WeatherType name) instead of letting the season drift; for store screenshots. */
+    targetWeather: String? = null,
+    /**
+     * An engine already set up and run forward, shown instead of a new one. Store screenshots use
+     * it: stepping the engine directly is far faster than letting the whole screen recompose for
+     * every frame in a JVM test.
+     */
+    previewEngine: SceneEngine? = null
 ) {
     val context = LocalContext.current
     val prefs = remember { PreferencesManager(context) }
@@ -235,7 +243,7 @@ fun MainScreen(
 
     // Scene Engine
     val engine = remember {
-        SceneEngine(
+        previewEngine ?: SceneEngine(
             audio = audio,
             onOpenLoveNotes = { showLoveNotes = true },
             onOpenMemories = { showMemories = true },
@@ -355,7 +363,11 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(targetScene, targetToken, targetAtmosphere, targetBirdSurface) {
+    LaunchedEffect(targetScene, targetToken, targetAtmosphere, targetBirdSurface, targetWeather) {
+        com.example.scene.WeatherType.values().firstOrNull { it.name.equals(targetWeather, ignoreCase = true) }?.let {
+            engine.weatherDriftEnabled = false
+            engine.weather = it
+        }
         android.util.Log.d("TinyUs", "MainScreen LaunchedEffect targetScene: $targetScene, token: $targetToken, targetAtmosphere: $targetAtmosphere, birdSurface: $targetBirdSurface")
         atmosphere = targetAtmosphere ?: prefs.atmosphereMode
         if (!targetScene.isNullOrBlank()) {
@@ -411,8 +423,8 @@ fun MainScreen(
         }
     }
 
-    // Subtle interaction hint fade
-    var showHint by remember { mutableStateOf(true) }
+    // Subtle interaction hint fade (not on store screenshots, which show the app mid-use)
+    var showHint by remember { mutableStateOf(previewEngine == null) }
     LaunchedEffect(Unit) {
         delay(7000)
         showHint = false
