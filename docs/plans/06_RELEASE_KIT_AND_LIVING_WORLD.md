@@ -72,10 +72,10 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 - [x] Unit test: known dates give the right phase. *(`MoonPhaseTest`: solar eclipses fall on new moons, lunar eclipses on full moons. `SCENE_PREVIEW_MOON=0.25` previews any phase.)*
 
 ### G2. Special days
-- [ ] Anniversary and both birthdays (from `SpecialCalendarManager` and the profile): small decorations in the scene, plus a line from the couple through the autonomy system (agree with FEATURES).
-- [ ] Fixed-date days: New Year, Valentine's Day, Christmas.
-- [ ] *(User picks)* Festivals with changing dates, e.g. Diwali or Holi, from a table of dates for the next few years. Verify every date before adding it.
-- [ ] Debug override to preview any special day; renders of each.
+- [x] Anniversary and both birthdays (from `SpecialCalendarManager` and the profile): decorations in every scene, and the couple greets the day once on its first open (`SceneEngine.greetSpecialDay`; other speech waits 6 s so the greeting can be read). *FEATURES wasn't reachable to agree on it; the engine change is one public method, a 6 s hold in `speakerSpeech` and a constant, covered by `SpecialDayGreetingTest`.*
+- [x] Fixed-date days: New Year (31 Dec and 1 Jan), Valentine's Day, Christmas (24 and 25 Dec).
+- [x] Festivals with changing dates: Diwali (the day and Choti Diwali before it) and Holi (Holika Dahan and the colours), 2026-2030, checked against panchang sources. Add years before 2031. *(Chosen by default; easy to drop.)*
+- [x] Debug override to preview any special day (`SpecialDays.override`, `SCENE_PREVIEW_SPECIAL=DIWALI`); renders of each in the meadow and the loft. `SpecialDaysTest` covers the dates, the order (the couple's days first), and 29 February birthdays.
 
 ### G3. Small polish
 - [x] The loft's night skyline: give the towers a slightly lighter outline so they keep their shape after dark.

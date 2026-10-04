@@ -664,4 +664,25 @@
     <string name="wardrobe_layers_over_outfits">Layers over outfits</string>
     <string name="wardrobe_dresses_and_hoodies">Dresses &amp; Hoodies</string>
     <string name="wardrobe_sweaters_and_hoodies">Sweaters &amp; Hoodies</string>
+
+    <!-- Special days: the couple's greeting (plan 06, G2) -->
+    <string name="special_boy_birthday_boy">Wait... is it my birthday?</string>
+    <string name="special_boy_birthday_girl">Happy birthday, %1$s! I made a wish for you.</string>
+    <string name="special_girl_birthday_boy">Happy birthday, %1$s! You make every day brighter.</string>
+    <string name="special_girl_birthday_girl">You remembered!</string>
+    <plurals name="special_anniversary_boy">
+        <item quantity="one">Happy anniversary. One whole year with you.</item>
+        <item quantity="other">Happy anniversary. %d years with you.</item>
+    </plurals>
+    <string name="special_anniversary_girl">And it still feels like the first day.</string>
+    <string name="special_new_year_boy">Happy New Year!</string>
+    <string name="special_new_year_girl">Another whole year of us.</string>
+    <string name="special_valentines_boy">Will you be my valentine? Again?</string>
+    <string name="special_valentines_girl">Always.</string>
+    <string name="special_holi_boy">Happy Holi! Hold still...</string>
+    <string name="special_holi_girl">Not the pink! Not the pink!</string>
+    <string name="special_diwali_boy">Happy Diwali! Every lamp is lit.</string>
+    <string name="special_diwali_girl">Our little home has never looked brighter.</string>
+    <string name="special_christmas_boy">Merry Christmas!</string>
+    <string name="special_christmas_girl">I hope you like your present.</string>
 </resources>

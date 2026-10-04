@@ -287,6 +287,7 @@ fun MainScreen(
         com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
         com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
         com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+        com.example.engine.SpecialDays.refresh()
     }
 
     val isDark = engine.timeOfDayPhase.isNight || engine.timeOfDayPhase.isSunset
@@ -419,6 +420,12 @@ fun MainScreen(
                 val text = if (newBloom.isGolden) context.getString(R.string.ui_golden_bloom)
                 else context.getString(R.string.ui_new_bloom, newBloom.plant.name)
                 engine.showMessage(text, duration = 4.5f)
+            }
+            // Special days (plan 06, G2): the couple greets the day once, on its first open.
+            com.example.engine.SpecialDays.today()?.let { day ->
+                delay(if (welcome != null || newBloom != null) 5000 else 3500)
+                val (boyLine, girlLine) = specialDayLines(context, day, prefs.boyfriendName, prefs.girlfriendName)
+                engine.greetSpecialDay(boyLine, girlLine)
             }
         }
     }
@@ -1084,6 +1091,7 @@ fun MainScreen(
                     com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
                     com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
                     com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+        com.example.engine.SpecialDays.refresh()
                 },
                 onReplayScene = {
                     engine.loadScene(engine.currentScene)
@@ -1205,6 +1213,7 @@ fun MainScreen(
 
                     engine.updateNames(bName, gName)
                     com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate
+                    com.example.engine.SpecialDays.refresh()
                     com.example.data.SpecialCalendarManager.boyName = bName
                     com.example.data.SpecialCalendarManager.girlName = gName
 
@@ -1409,5 +1418,32 @@ private fun ContrastIcon(
             tint = tint,
             modifier = modifier
         )
+    }
+}
+
+/** The couple's two lines for a special day: (boy, girl). */
+internal fun specialDayLines(
+    context: android.content.Context,
+    day: com.example.engine.SpecialDay,
+    boyName: String,
+    girlName: String
+): Pair<String, String> {
+    val r = context.resources
+    return when (day) {
+        com.example.engine.SpecialDay.BOY_BIRTHDAY ->
+            r.getString(R.string.special_boy_birthday_boy) to r.getString(R.string.special_boy_birthday_girl, boyName)
+        com.example.engine.SpecialDay.GIRL_BIRTHDAY ->
+            r.getString(R.string.special_girl_birthday_boy, girlName) to r.getString(R.string.special_girl_birthday_girl)
+        com.example.engine.SpecialDay.ANNIVERSARY -> {
+            val years = com.example.engine.SpecialDays.yearsTogether(
+                java.time.LocalDate.now(), com.example.data.RelationshipTimeManager.relationshipStartDate
+            ).coerceAtLeast(1)
+            r.getQuantityString(R.plurals.special_anniversary_boy, years, years) to r.getString(R.string.special_anniversary_girl)
+        }
+        com.example.engine.SpecialDay.NEW_YEAR -> r.getString(R.string.special_new_year_boy) to r.getString(R.string.special_new_year_girl)
+        com.example.engine.SpecialDay.VALENTINES -> r.getString(R.string.special_valentines_boy) to r.getString(R.string.special_valentines_girl)
+        com.example.engine.SpecialDay.HOLI -> r.getString(R.string.special_holi_boy) to r.getString(R.string.special_holi_girl)
+        com.example.engine.SpecialDay.DIWALI -> r.getString(R.string.special_diwali_boy) to r.getString(R.string.special_diwali_girl)
+        com.example.engine.SpecialDay.CHRISTMAS -> r.getString(R.string.special_christmas_boy) to r.getString(R.string.special_christmas_girl)
     }
 }

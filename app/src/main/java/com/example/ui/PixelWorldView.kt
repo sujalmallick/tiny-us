@@ -1672,6 +1672,11 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
         drawForegroundParticles(this, engine.particles.particles, pixelScale)
 
+        // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
+        com.example.engine.SpecialDays.today()?.let { day ->
+            drawSpecialDayDecor(this, day, cw, ch, pixelScale, engine.sceneTime, isNight || timePhase.isMidnight)
+        }
+
         // Atmospheric Lighting & Time-of-Day Layering
         val isTwilight = timePhase.isTwilight
         val isMidnight = timePhase.isMidnight
