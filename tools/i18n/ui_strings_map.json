@@ -1,0 +1,1292 @@
+[
+ {
+  "file": "AvatarCustomizerDialog.kt",
+  "line": 185,
+  "key": "ui_preview_of_both_characters",
+  "literal": "Preview of both characters"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 249,
+  "key": "ui_shared_dream_journal",
+  "literal": "Shared Dream Journal"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 250,
+  "key": "ui_type_a_dream_and_watch_it_come_alive",
+  "literal": "Type a dream and watch it come alive"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 271,
+  "key": "ui_describe_your_dream",
+  "literal": "Describe your dream..."
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 272,
+  "key": "ui_e_g_we_walked_under_cherry_blossoms_in_j",
+  "literal": "e.g. We walked under cherry blossoms in Japan"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 287,
+  "key": "ui_visualize_dream",
+  "literal": "Visualize Dream"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 314,
+  "key": "ui_past_dreams",
+  "literal": "Past Dreams"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 363,
+  "key": "ui_relive_dream",
+  "literal": "Relive dream"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 376,
+  "key": "ui_delete_dream",
+  "literal": "Delete dream"
+ },
+ {
+  "file": "DreamJournalDialog.kt",
+  "line": 390,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 85,
+  "key": "ui_glowpulse",
+  "literal": "glowPulse"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 96,
+  "key": "ui_wobble",
+  "literal": "wobble"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 115,
+  "key": "ui_a_secret_surprise_for_you",
+  "literal": "A Secret Surprise for You"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 211,
+  "key": "ui_your_surprise_is_ready",
+  "literal": "Your surprise is ready"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 216,
+  "key": "ui_open_your_surprise",
+  "literal": "Open Your Surprise"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 223,
+  "key": "ui_rewrap_gift",
+  "literal": "Rewrap Gift"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 253,
+  "key": "ui_surpriseglowpulse",
+  "literal": "surpriseGlowPulse"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 262,
+  "key": "ui_a_gift_made_with_love",
+  "literal": "A Gift Made With Love"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 263,
+  "key": "ui_made_with_love_by_yours",
+  "literal": "MADE with love by yours"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 307,
+  "key": "ui_tap_to_unhide_name",
+  "literal": "Tap to Unhide Name"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 323,
+  "key": "ui_always_yours_tap_to_hide",
+  "literal": "Always yours! (Tap to hide)"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 339,
+  "key": "ui_to_the_love_of_my_life",
+  "literal": "To the love of my life,"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 370,
+  "key": "ui_a_little_guide_for_you_how_to_play",
+  "literal": "A Little Guide for You (How to Play)"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 375,
+  "key": "ui_street_food_date_our_food_stall",
+  "literal": "Street Food Date (Our Food Stall)"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 380,
+  "key": "ui_double_click_secret_whispers",
+  "literal": "Double-Click Secret Whispers"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 385,
+  "key": "ui_cozy_couple_hug",
+  "literal": "Cozy Couple Hug"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 390,
+  "key": "ui_interactive_world_touches",
+  "literal": "Interactive World Touches"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 395,
+  "key": "ui_atmosphere_and_relaxing_melodies",
+  "literal": "Atmosphere and Relaxing Melodies"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 400,
+  "key": "ui_love_letters_and_keepsakes",
+  "literal": "Love Letters and Keepsakes"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 408,
+  "key": "ui_take_me_to_street_food_date",
+  "literal": "Take Me to Street Food Date!"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 421,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "GiftBoxEasterEgg.kt",
+  "line": 422,
+  "key": "ui_rewrap_gift",
+  "literal": "Rewrap Gift"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 186,
+  "key": "ui_secret_love_letters",
+  "literal": "Secret Love Letters"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 187,
+  "key": "ui_heartfelt_words_left_for_each_other",
+  "literal": "Heartfelt words left for each other"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 206,
+  "key": "ui_write_secret_letter",
+  "literal": "Write Secret Letter"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 222,
+  "key": "ui_your_message",
+  "literal": "Your Message"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 223,
+  "key": "ui_write_something_sweet_that_will_make_the",
+  "literal": "Write something sweet that will make them smile..."
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 231,
+  "key": "ui_from",
+  "literal": "From:"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 253,
+  "key": "ui_cancel",
+  "literal": "Cancel"
+ },
+ {
+  "file": "LoveNotesDialog.kt",
+  "line": 259,
+  "key": "ui_send_to_mailbox",
+  "literal": "Send to Mailbox"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 520,
+  "key": "ui_tiny_us",
+  "literal": "Tiny Us"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 692,
+  "key": "ui_toggle_audio",
+  "literal": "Toggle Audio"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 732,
+  "key": "ui_music_box_earphones",
+  "literal": "Music Box & Earphones"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 793,
+  "key": "ui_random_scene",
+  "literal": "Random Scene"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 833,
+  "key": "ui_settings",
+  "literal": "Settings"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 884,
+  "key": "ui_tap_characters_cottage_tree_sky_or_mailb",
+  "literal": "Tap characters, cottage, tree, sky, or mailbox to explore"
+ },
+ {
+  "file": "MainScreen.kt",
+  "line": 985,
+  "key": "ui_capture_tiny_moment_long_press_for_galle",
+  "literal": "Capture Tiny Moment (Long press for Gallery)"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 193,
+  "key": "ui_our_keepsakes",
+  "literal": "Our Keepsakes"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 194,
+  "key": "ui_memories_captured_in_our_tiny_world",
+  "literal": "Memories captured in our tiny world"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 213,
+  "key": "ui_add_our_memory",
+  "literal": "Add Our Memory"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 229,
+  "key": "ui_memory_title",
+  "literal": "Memory Title"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 230,
+  "key": "ui_e_g_rainy_day_cocoa",
+  "literal": "e.g. Rainy Day Cocoa"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 239,
+  "key": "ui_date_season",
+  "literal": "Date / Season"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 240,
+  "key": "ui_e_g_autumn_afternoon",
+  "literal": "e.g. Autumn Afternoon"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 249,
+  "key": "ui_sweet_note",
+  "literal": "Sweet Note"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 250,
+  "key": "ui_what_made_this_moment_special",
+  "literal": "What made this moment special?"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 258,
+  "key": "ui_select_icon",
+  "literal": "Select Icon:"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 297,
+  "key": "ui_cancel",
+  "literal": "Cancel"
+ },
+ {
+  "file": "MemoriesDialog.kt",
+  "line": 303,
+  "key": "ui_save",
+  "literal": "Save"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 195,
+  "key": "ui_vinyl_rotation",
+  "literal": "vinyl_rotation"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 207,
+  "key": "ui_music_box",
+  "literal": "Music Box"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 212,
+  "key": "ui_listening_together",
+  "literal": "listening together"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 241,
+  "key": "ui_earphones",
+  "literal": "Earphones"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 315,
+  "key": "ui_mp3",
+  "literal": "MP3"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 351,
+  "key": "ui_previous_song",
+  "literal": "Previous Song"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 378,
+  "key": "ui_play_pause",
+  "literal": "Play/Pause"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 395,
+  "key": "ui_next_song",
+  "literal": "Next Song"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 413,
+  "key": "ui_playlist",
+  "literal": "PLAYLIST"
+ },
+ {
+  "file": "MusicPlayerDialog.kt",
+  "line": 478,
+  "key": "ui_mp3",
+  "literal": "MP3"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 126,
+  "key": "ui_heart",
+  "literal": "Heart"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 134,
+  "key": "ui_welcome_to_tiny_us",
+  "literal": "Welcome to Tiny Us"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 143,
+  "key": "ui_a_cozy_quiet_world_made_just_for_the_two",
+  "literal": "A cozy, quiet world made just for the two of you."
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 193,
+  "key": "ui_special_anniversary_date",
+  "literal": "Special Anniversary Date"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 261,
+  "key": "ui_passcode_e_g_love",
+  "literal": "Passcode (e.g. LOVE)"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 273,
+  "key": "ui_private_message_for_your_love",
+  "literal": "Private message for your love"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 288,
+  "key": "ui_begin_our_journey",
+  "literal": "Begin Our Journey"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 348,
+  "key": "ui_confirm",
+  "literal": "Confirm"
+ },
+ {
+  "file": "OnboardingDialog.kt",
+  "line": 353,
+  "key": "ui_cancel",
+  "literal": "Cancel"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 207,
+  "key": "ui_flash_alpha",
+  "literal": "flash_alpha"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 217,
+  "key": "ui_card_offset",
+  "literal": "card_offset"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 304,
+  "key": "ui_save_to_device",
+  "literal": "Save to Device"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 311,
+  "key": "ui_memories",
+  "literal": "Memories"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 315,
+  "key": "ui_memories",
+  "literal": "Memories"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 331,
+  "key": "ui_done",
+  "literal": "Done"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 474,
+  "key": "ui_delete_memory",
+  "literal": "Delete memory"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 543,
+  "key": "ui_back",
+  "literal": "Back"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 548,
+  "key": "ui_back",
+  "literal": "Back"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 568,
+  "key": "ui_save_to_device",
+  "literal": "Save to Device"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 589,
+  "key": "ui_delete",
+  "literal": "Delete"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 607,
+  "key": "ui_polaroid_memories",
+  "literal": "Polaroid Memories"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 628,
+  "key": "ui_your_album_is_waiting",
+  "literal": "Your album is waiting"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 634,
+  "key": "ui_tap_the_heart_button_anytime_to_ncapture",
+  "literal": "Tap the heart button anytime to\\ncapture a cozy Polaroid moment"
+ },
+ {
+  "file": "PolaroidDialogs.kt",
+  "line": 770,
+  "key": "ui_delete",
+  "literal": "Delete"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 100,
+  "key": "ui_tiny_date_adventures",
+  "literal": "Tiny Date Adventures"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 101,
+  "key": "ui_real_world_moments_to_experience_togethe",
+  "literal": "Real-world moments to experience together"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 114,
+  "key": "ui_all",
+  "literal": "All"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 247,
+  "key": "ui_cherished_memory_unlocked_in_our_tiny_us",
+  "literal": "Cherished memory unlocked in our Tiny Us world"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 257,
+  "key": "ui_asynchronous_progress",
+  "literal": "Asynchronous progress:"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 302,
+  "key": "ui_complete_together",
+  "literal": "Complete Together"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 318,
+  "key": "ui_skip",
+  "literal": "Skip"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 328,
+  "key": "ui_accept_adventure",
+  "literal": "Accept Adventure"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 400,
+  "key": "ui_daily_tiny_moment",
+  "literal": "Daily Tiny Moment"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 401,
+  "key": "ui_one_gentle_reflection_for_both_of_you_to",
+  "literal": "One gentle reflection for both of you today"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 432,
+  "key": "ui_write_your_thoughts",
+  "literal": "Write your thoughts..."
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 452,
+  "key": "ui_write_your_thoughts",
+  "literal": "Write your thoughts..."
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 467,
+  "key": "ui_save_our_daily_moment",
+  "literal": "Save Our Daily Moment"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 528,
+  "key": "ui_two_person_mini_games",
+  "literal": "Two-Person Mini-Games"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 529,
+  "key": "ui_playful_1_minute_relationship_moments",
+  "literal": "Playful 1-minute relationship moments"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 650,
+  "key": "ui_reveal_answers",
+  "literal": "Reveal Answers"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 673,
+  "key": "ui_next_question",
+  "literal": "Next Question"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 747,
+  "key": "ui_shared_mood",
+  "literal": "Shared Mood"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 748,
+  "key": "ui_a_gentle_whisper_of_how_you_feel_today",
+  "literal": "A gentle whisper of how you feel today"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 888,
+  "key": "ui_long_distance_signals",
+  "literal": "Long-Distance Signals"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 889,
+  "key": "ui_send_tender_asynchronous_love_across_the",
+  "literal": "Send tender asynchronous love across the miles"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 897,
+  "key": "ui_choose_a_signal_to_send",
+  "literal": "Choose a signal to send:"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 942,
+  "key": "ui_add_a_warm_note_optional",
+  "literal": "Add a warm note (optional)..."
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 950,
+  "key": "ui_send_signal",
+  "literal": "Send Signal"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 977,
+  "key": "ui_recent_signals_history",
+  "literal": "Recent Signals History:"
+ },
+ {
+  "file": "PublicFeatureDialogs.kt",
+  "line": 989,
+  "key": "ui_no_signals_yet_send_your_first_signal_to",
+  "literal": "No signals yet. Send your first signal to unlock the Origami Heart!"
+ },
+ {
+  "file": "RoomCustomizerDialog.kt",
+  "line": 47,
+  "key": "ui_room_customizer",
+  "literal": "Room Customizer"
+ },
+ {
+  "file": "RoomCustomizerDialog.kt",
+  "line": 104,
+  "key": "ui_done",
+  "literal": "Done"
+ },
+ {
+  "file": "ScenePickerDialog.kt",
+  "line": 190,
+  "key": "ui_choose_a_scene",
+  "literal": "Choose a Scene"
+ },
+ {
+  "file": "ScenePickerDialog.kt",
+  "line": 197,
+  "key": "ui_surprise_me_random_scene",
+  "literal": "Surprise Me (Random Scene)"
+ },
+ {
+  "file": "SecretKeepsakeDialog.kt",
+  "line": 232,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 245,
+  "key": "ui_back",
+  "literal": "Back"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 251,
+  "key": "ui_tiny_us_settings",
+  "literal": "Tiny Us Settings"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 262,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 269,
+  "key": "ui_our_world",
+  "literal": "Our World"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 270,
+  "key": "ui_names_and_special_dates_for_your_story_t",
+  "literal": "Names and special dates for your story together"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 313,
+  "key": "ui_anniversary_date_yyyy_mm_dd",
+  "literal": "Anniversary Date (YYYY-MM-DD)"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 330,
+  "key": "ui_yyyy_mm_dd",
+  "literal": "YYYY-MM-DD"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 344,
+  "key": "ui_yyyy_mm_dd",
+  "literal": "YYYY-MM-DD"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 363,
+  "key": "ui_characters_wardrobe",
+  "literal": "Characters & Wardrobe"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 364,
+  "key": "ui_sweaters_hoodies_cute_ribbons_for_both_c",
+  "literal": "Sweaters, hoodies & cute ribbons for both characters"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 370,
+  "key": "ui_cottage_wardrobe",
+  "literal": "Cottage Wardrobe"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 371,
+  "key": "ui_hoodies_outfits",
+  "literal": "Hoodies & Outfits"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 394,
+  "key": "ui_atmosphere_sky",
+  "literal": "Atmosphere & Sky"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 395,
+  "key": "ui_sync_with_the_real_sky_or_set_an_intimat",
+  "literal": "Sync with the real sky or set an intimate mood"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 398,
+  "key": "ui_sky_atmosphere",
+  "literal": "Sky & Atmosphere:"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 423,
+  "key": "ui_sounds_music",
+  "literal": "Sounds & Music"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 424,
+  "key": "ui_gentle_music_box_lullabies_peaceful_natu",
+  "literal": "Gentle music box lullabies & peaceful nature ambience"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 447,
+  "key": "ui_cozy_ambient_lullaby_audio",
+  "literal": "Cozy Ambient Lullaby & Audio"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 470,
+  "key": "ui_memories_keepsakes",
+  "literal": "Memories & Keepsakes"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 471,
+  "key": "ui_your_love_notes_special_days_polaroid_mo",
+  "literal": "Your love notes, special days & polaroid moments"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 487,
+  "key": "ui_our_keepsakes",
+  "literal": "Our Keepsakes"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 496,
+  "key": "ui_love_notes",
+  "literal": "Love Notes"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 505,
+  "key": "ui_tiny_moments_gallery",
+  "literal": "Tiny Moments Gallery"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 514,
+  "key": "ui_shared_dream_journal",
+  "literal": "Shared Dream Journal"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 524,
+  "key": "ui_couple_activities_connection",
+  "literal": "Couple Activities & Connection"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 525,
+  "key": "ui_adventures_reflections_mini_games_long_d",
+  "literal": "Adventures, reflections, mini-games & long-distance signals"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 531,
+  "key": "ui_date_adventures",
+  "literal": "Date Adventures"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 541,
+  "key": "ui_daily_moment",
+  "literal": "Daily Moment"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 551,
+  "key": "ui_mini_games",
+  "literal": "Mini-Games"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 561,
+  "key": "ui_shared_mood",
+  "literal": "Shared Mood"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 573,
+  "key": "ui_long_distance_signals",
+  "literal": "Long-Distance Signals"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 587,
+  "key": "ui_tiny_care",
+  "literal": "Tiny Care"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 588,
+  "key": "ui_gentle_wholesome_offline_check_ins_for_e",
+  "literal": "Gentle, wholesome offline check-ins for each other"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 599,
+  "key": "ui_tiny_care",
+  "literal": "Tiny Care"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 644,
+  "key": "ui_notification_permission_is_needed_so_tin",
+  "literal": "Notification permission is needed so Tiny Care can deliver quiet offline reminders."
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 665,
+  "key": "ui_quiet_hours_11_00_pm_7_00_am_sleep_windo",
+  "literal": "Quiet hours: 11:00 PM - 7:00 AM (sleep window)"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 671,
+  "key": "ui_remind_me_about",
+  "literal": "Remind me about:"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 705,
+  "key": "ui_send_preview_reminder",
+  "literal": "Send preview reminder"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 715,
+  "key": "ui_preview_reminder_does_not_count_toward_d",
+  "literal": "Preview reminder does not count toward daily frequency or message history."
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 727,
+  "key": "ui_appearance_controls",
+  "literal": "Appearance & Controls"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 728,
+  "key": "ui_frosted_glassmorphism_intensity_for_butt",
+  "literal": "Frosted glassmorphism intensity for buttons"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 745,
+  "key": "ui_button_glassmorphism",
+  "literal": "Button Glassmorphism"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 755,
+  "key": "ui_adjust_the_frosted_translucency_and_shin",
+  "literal": "Adjust the frosted translucency and shine of buttons"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 772,
+  "key": "ui_live_preview",
+  "literal": "Live Preview"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 857,
+  "key": "ui_clear_subtle_10",
+  "literal": "Clear / Subtle (10%)"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 858,
+  "key": "ui_frosted_100",
+  "literal": "Frosted (100%)"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 885,
+  "key": "ui_world_privacy",
+  "literal": "World & Privacy"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 886,
+  "key": "ui_scenes_exploration_and_offline_privacy_g",
+  "literal": "Scenes exploration and offline privacy guarantee"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 891,
+  "key": "ui_select_scene",
+  "literal": "Select Scene"
+ },
+ {
+  "file": "SettingsBottomSheet.kt",
+  "line": 901,
+  "key": "ui_replay_scene",
+  "literal": "Replay Scene"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 190,
+  "key": "ui_our_special_calendar",
+  "literal": "Our Special Calendar"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 237,
+  "key": "ui_tap_to_view_today_s_memory",
+  "literal": "Tap to view today's memory"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 262,
+  "key": "ui_previous_month",
+  "literal": "Previous Month"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 282,
+  "key": "ui_jump_to_today",
+  "literal": "Jump to Today"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 302,
+  "key": "ui_next_month",
+  "literal": "Next Month"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 418,
+  "key": "ui_moments",
+  "literal": "Moments"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 419,
+  "key": "ui_birthdays",
+  "literal": "Birthdays"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 420,
+  "key": "ui_next_meet",
+  "literal": "Next Meet"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 421,
+  "key": "ui_special",
+  "literal": "Special"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 427,
+  "key": "ui_close_scrapbook",
+  "literal": "Close Scrapbook"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 504,
+  "key": "ui_today",
+  "literal": "TODAY"
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 509,
+  "key": "ui_you_re_finally_together_again",
+  "literal": "You're finally together again."
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 524,
+  "key": "ui_coming_in",
+  "literal": "Coming in..."
+ },
+ {
+  "file": "SpecialCalendarDialog.kt",
+  "line": 566,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 115,
+  "key": "ui_heartscale",
+  "literal": "heartScale"
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 126,
+  "key": "ui_charbob",
+  "literal": "charBob"
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 241,
+  "key": "ui_tiny_us",
+  "literal": "Tiny Us"
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 252,
+  "key": "ui_a_little_place_for_you_and_me",
+  "literal": "A little place for you and me"
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 277,
+  "key": "ui_entering_our_cozy_world",
+  "literal": "Entering our cozy world..."
+ },
+ {
+  "file": "SplashScreen.kt",
+  "line": 284,
+  "key": "ui_tap_anywhere_to_skip",
+  "literal": "Tap anywhere to skip"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 214,
+  "key": "ui_today_s_tiny_moment",
+  "literal": "Today's Tiny Moment"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 235,
+  "key": "ui_shinesweep",
+  "literal": "shineSweep"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 244,
+  "key": "ui_shineglow",
+  "literal": "shineGlow"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 251,
+  "key": "ui_day_scale",
+  "literal": "day_scale"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 338,
+  "key": "ui_tap_to_view_our_live_love_clock",
+  "literal": "Tap to view our live love clock"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 365,
+  "key": "ui_previous_scene",
+  "literal": "Previous scene"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 379,
+  "key": "ui_next_scene",
+  "literal": "Next scene"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 403,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 410,
+  "key": "ui_watch_scene",
+  "literal": "Watch Scene"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 483,
+  "key": "ui_our_time",
+  "literal": "OUR TIME"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 496,
+  "key": "ui_together_since",
+  "literal": "Together since"
+ },
+ {
+  "file": "TinyMomentDialogs.kt",
+  "line": 557,
+  "key": "ui_close",
+  "literal": "Close"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 414,
+  "key": "ui_cottage_wardrobe",
+  "literal": "Cottage Wardrobe"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 415,
+  "key": "ui_outfits_accessories_for_both_of_you",
+  "literal": "Outfits & accessories for both of you"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 466,
+  "key": "ui_accessories",
+  "literal": "Accessories"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 564,
+  "key": "ui_all",
+  "literal": "All"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 569,
+  "key": "ui_hoodies_only",
+  "literal": "Hoodies Only"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 661,
+  "key": "ui_hoodie",
+  "literal": "HOODIE"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 681,
+  "key": "ui_wearing_now",
+  "literal": "Wearing Now"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 687,
+  "key": "ui_wear_outfit",
+  "literal": "Wear Outfit"
+ },
+ {
+  "file": "WardrobeDialog.kt",
+  "line": 700,
+  "key": "ui_close_wardrobe",
+  "literal": "Close Wardrobe"
+ }
+]

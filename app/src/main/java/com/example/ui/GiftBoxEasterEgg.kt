@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -24,8 +26,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -51,6 +51,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCornerShape
+import com.example.ui.theme.PixelCircleShape
 
 @Composable
 fun GiftBoxEasterEgg(
@@ -82,7 +84,7 @@ fun GiftBoxEasterEgg(
             animation = tween(1100, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "glowPulse"
+        label = stringResource(R.string.ui_glowpulse)
     )
 
     val wobbleAngle by animateFloatAsState(
@@ -93,7 +95,7 @@ fun GiftBoxEasterEgg(
             else -> 10f
         },
         animationSpec = spring(dampingRatio = 0.4f, stiffness = 400f),
-        label = "wobble"
+        label = stringResource(R.string.ui_wobble)
     )
 
     Surface(
@@ -112,7 +114,7 @@ fun GiftBoxEasterEgg(
             if (!isOpened) {
                 // UNOPENED GIFT BOX
                 Text(
-                    text = "A Secret Surprise for You",
+                    text = stringResource(R.string.ui_a_secret_surprise_for_you),
                     style = TinyType.Section.copy(color = TinyColors.Rose),
                     textAlign = TextAlign.Center
                 )
@@ -193,7 +195,7 @@ fun GiftBoxEasterEgg(
                         Box(
                             modifier = Modifier
                                 .size(8.dp)
-                                .clip(CircleShape)
+                                .clip(PixelCircleShape)
                                 .background(
                                     if (tapCount >= i) TinyColors.Rose else TinyColors.Blush.copy(alpha = 0.5f)
                                 )
@@ -208,19 +210,19 @@ fun GiftBoxEasterEgg(
                     verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
                 ) {
                     Text(
-                        text = "Your surprise is ready",
+                        text = stringResource(R.string.ui_your_surprise_is_ready),
                         style = TinyType.Section.copy(color = TinyColors.Rose),
                         textAlign = TextAlign.Center
                     )
                     TinyButton(
-                        text = "Open Your Surprise",
+                        text = stringResource(R.string.ui_open_your_surprise),
                         onClick = { showSurpriseDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         style = TinyButtonStyle.Primary,
                         icon = TinyIcons.Gift
                     )
                     TinyButton(
-                        text = "Rewrap Gift",
+                        text = stringResource(R.string.ui_rewrap_gift),
                         onClick = {
                             tapCount = 0
                             isOpened = false
@@ -250,7 +252,7 @@ internal fun RomanticSurpriseDialog(
             animation = tween(1100, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = "surpriseGlowPulse"
+        label = stringResource(R.string.ui_surpriseglowpulse)
     )
 
     TinyDialog(
@@ -259,8 +261,8 @@ internal fun RomanticSurpriseDialog(
         verticalSpacing = TinySpace.lg
     ) {
         TinyDialogHeader(
-            title = "A Gift Made With Love",
-            subtitle = "MADE with love by yours",
+            title = stringResource(R.string.ui_a_gift_made_with_love),
+            subtitle = stringResource(R.string.ui_made_with_love_by_yours),
             icon = TinyIcons.Gift
         )
 
@@ -273,7 +275,7 @@ internal fun RomanticSurpriseDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.lg)
         ) {
             // Glowing interactive secret name capsule
-            val capsuleShape = RoundedCornerShape(18.dp)
+            val capsuleShape = PixelCornerShape(18.dp)
             Surface(
                 modifier = Modifier
                     .padding(top = TinySpace.xs)
@@ -304,7 +306,7 @@ internal fun RomanticSurpriseDialog(
                 ) {
                     if (!isNameRevealed) {
                         Text(
-                            text = "Tap to Unhide Name",
+                            text = stringResource(R.string.ui_tap_to_unhide_name),
                             style = TinyType.Section.copy(color = TinyColors.Rose, letterSpacing = 0.5.sp)
                         )
                     } else {
@@ -320,7 +322,7 @@ internal fun RomanticSurpriseDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = "Always yours! (Tap to hide)",
+                                text = stringResource(R.string.ui_always_yours_tap_to_hide),
                                 style = TinyType.Micro.copy(color = TinyColors.Rose)
                             )
                         }
@@ -336,7 +338,7 @@ internal fun RomanticSurpriseDialog(
             }
             TinyCard(spacing = TinySpace.sm) {
                 Text(
-                    text = "To the love of my life,",
+                    text = stringResource(R.string.ui_to_the_love_of_my_life),
                     style = TinyType.BodyStrong
                 )
                 Text(
@@ -367,37 +369,37 @@ internal fun RomanticSurpriseDialog(
                 verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
                 Text(
-                    text = "A Little Guide for You (How to Play)",
+                    text = stringResource(R.string.ui_a_little_guide_for_you_how_to_play),
                     style = TinyType.Section
                 )
                 GuideItem(
                     icon = "",
-                    title = "Street Food Date (Our Food Stall)",
+                    title = stringResource(R.string.ui_street_food_date_our_food_stall),
                     desc = "Go on a street food date at our cozy stall! Watch the couple share steaming bites. Tap the steamer to puff steam, tap the sign for neon stars, and tap the spicy dip!"
                 )
                 GuideItem(
                     icon = "",
-                    title = "Double-Click Secret Whispers",
+                    title = stringResource(R.string.ui_double_click_secret_whispers),
                     desc = "Double-tap on either character to hear them jump and whisper sweet affectionate secrets to each other!"
                 )
                 GuideItem(
                     icon = "",
-                    title = "Cozy Couple Hug",
+                    title = stringResource(R.string.ui_cozy_couple_hug),
                     desc = "Tap right between both characters to make them wrap in a sweet warm hug with a fountain of floating hearts!"
                 )
                 GuideItem(
                     icon = "",
-                    title = "Interactive World Touches",
+                    title = stringResource(R.string.ui_interactive_world_touches),
                     desc = "Tap the sky for shooting stars at night, or fluffy clouds by day. Tap meadow flowers to blow swirling petals. Tap the big tree to shower drifting leaves. Tap our sleeping cat to hear him purr! Tap the streetlamp at night to toggle cozy light."
                 )
                 GuideItem(
                     icon = "",
-                    title = "Atmosphere and Relaxing Melodies",
+                    title = stringResource(R.string.ui_atmosphere_and_relaxing_melodies),
                     desc = "Switch skies anytime (Day, Sunset, Starry Night) and toggle soothing music box lullabies whenever you want to relax."
                 )
                 GuideItem(
                     icon = "",
-                    title = "Love Letters and Keepsakes",
+                    title = stringResource(R.string.ui_love_letters_and_keepsakes),
                     desc = "Write secret letters in our mailbox that stay saved forever, and view our days together and memories!"
                 )
             }
@@ -405,7 +407,7 @@ internal fun RomanticSurpriseDialog(
 
         Column(verticalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
             TinyButton(
-                text = "Take Me to Street Food Date!",
+                text = stringResource(R.string.ui_take_me_to_street_food_date),
                 onClick = {
                     onDismiss()
                     onJumpToMomoStall()
@@ -418,8 +420,8 @@ internal fun RomanticSurpriseDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TinyButton(text = "Close", onClick = onDismiss, style = TinyButtonStyle.Ghost)
-                TinyButton(text = "Rewrap Gift", onClick = onRewrap, style = TinyButtonStyle.Ghost)
+                TinyButton(text = stringResource(R.string.ui_close), onClick = onDismiss, style = TinyButtonStyle.Ghost)
+                TinyButton(text = stringResource(R.string.ui_rewrap_gift), onClick = onRewrap, style = TinyButtonStyle.Ghost)
             }
         }
     }

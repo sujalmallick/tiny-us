@@ -35,3 +35,6 @@ personal_config.json
 keystore.properties
 *.jks
 *.keystore
+
+# Full-quality music kept locally by tools/audio/reencode_bgm.py (already in git history)
+tools/audio/originals/

@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -164,6 +164,7 @@ import androidx.compose.material.icons.rounded.Favorite
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelIcons
 
 @Composable
 fun LoveNotesDialog(
@@ -184,8 +185,8 @@ fun LoveNotesDialog(
             .testTag("love_notes_dialog")
     ) {
         TinyDialogHeader(
-            title = "Secret Love Letters",
-            subtitle = "Heartfelt words left for each other",
+            title = stringResource(R.string.ui_secret_love_letters),
+            subtitle = stringResource(R.string.ui_heartfelt_words_left_for_each_other),
             icon = TinyIcons.LongDistance,
             onClose = onDismiss,
             closeTestTag = "close_love_notes"
@@ -204,11 +205,11 @@ fun LoveNotesDialog(
             }
 
             TinyButton(
-                text = "Write Secret Letter",
+                text = stringResource(R.string.ui_write_secret_letter),
                 onClick = { showWriteMode = true },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.Favorite,
+                icon = PixelIcons.Favorite,
                 testTag = "write_note_button"
             )
         } else {
@@ -220,8 +221,8 @@ fun LoveNotesDialog(
                 OutlinedTextField(
                     value = noteText,
                     onValueChange = { noteText = it },
-                    label = { Text("Your Message") },
-                    placeholder = { Text("Write something sweet that will make them smile...") },
+                    label = { Text(stringResource(R.string.ui_your_message)) },
+                    placeholder = { Text(stringResource(R.string.ui_write_something_sweet_that_will_make_the)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 3,
                     maxLines = 6,
@@ -229,7 +230,7 @@ fun LoveNotesDialog(
                     colors = tinyTextFieldColors()
                 )
 
-                Text("From:", style = TinyType.Label)
+                Text(stringResource(R.string.ui_from), style = TinyType.Label)
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     TinyChip(
                         text = "From $boyfriendName",
@@ -251,13 +252,13 @@ fun LoveNotesDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TinyButton(
-                        text = "Cancel",
+                        text = stringResource(R.string.ui_cancel),
                         onClick = { showWriteMode = false },
                         style = TinyButtonStyle.Ghost
                     )
                     Spacer(modifier = Modifier.width(TinySpace.sm))
                     TinyButton(
-                        text = "Send to Mailbox",
+                        text = stringResource(R.string.ui_send_to_mailbox),
                         onClick = {
                             if (noteText.isNotBlank()) {
                                 onAddNote(noteText, noteAuthor)

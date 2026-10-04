@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.rounded.AutoAwesome
 import androidx.compose.material.icons.rounded.AutoStories
@@ -79,6 +78,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
 
 /*
  * Shared UI chrome. Every dialog, sheet and button builds on these so the app keeps one look.
@@ -190,7 +191,7 @@ fun TinyCloseButton(onClick: () -> Unit, modifier: Modifier = Modifier, testTag:
         onClick = onClick,
         modifier = modifier.size(48.dp).then(if (testTag != null) Modifier.testTag(testTag) else Modifier)
     ) {
-        Icon(Icons.Rounded.Close, contentDescription = contentDescription, tint = TinyColors.InkMuted, modifier = Modifier.size(22.dp))
+        Icon(PixelIcons.Close, contentDescription = contentDescription, tint = TinyColors.InkMuted, modifier = Modifier.size(22.dp))
     }
 }
 
@@ -203,7 +204,7 @@ fun TinyIconBadge(
     background: Color = TinyColors.RoseSoft,
     size: Dp = 40.dp,
     iconSize: Dp = 20.dp,
-    shape: Shape = CircleShape
+    shape: Shape = PixelCircleShape
 ) {
     Box(modifier = modifier.size(size).background(background, shape), contentAlignment = Alignment.Center) {
         Icon(icon, contentDescription = null, tint = tint, modifier = Modifier.size(iconSize))
@@ -390,51 +391,51 @@ val TinyFieldShape = TinyRadius.Medium
 
 /** Vector icons that replace the old emoji glyphs. Keep the mapping here so every screen agrees. */
 object TinyIcons {
-    val DateAdventures = Icons.Rounded.Explore
-    val DailyMoment = Icons.Rounded.EditNote
-    val MiniGames = Icons.Rounded.Casino
-    val SharedMood = Icons.Rounded.Mood
-    val LongDistance = Icons.Rounded.Mail
-    val OurStory = Icons.Rounded.AutoStories
-    val Gift = Icons.Rounded.CardGiftcard
-    val Sparkle = Icons.Rounded.AutoAwesome
-    val Heart = Icons.Rounded.Favorite
-    val HeartOutline = Icons.Rounded.FavoriteBorder
-    val Birthday = Icons.Rounded.Cake
-    val Flower = Icons.Rounded.LocalFlorist
+    val DateAdventures = PixelIcons.Explore
+    val DailyMoment = PixelIcons.EditNote
+    val MiniGames = PixelIcons.Casino
+    val SharedMood = PixelIcons.Mood
+    val LongDistance = PixelIcons.Mail
+    val OurStory = PixelIcons.AutoStories
+    val Gift = PixelIcons.CardGiftcard
+    val Sparkle = PixelIcons.AutoAwesome
+    val Heart = PixelIcons.Favorite
+    val HeartOutline = PixelIcons.FavoriteBorder
+    val Birthday = PixelIcons.Cake
+    val Flower = PixelIcons.LocalFlorist
 
     fun mood(type: SharedMoodType): ImageVector = when (type) {
-        SharedMoodType.GREAT -> Icons.Rounded.AutoAwesome
-        SharedMoodType.GOOD -> Icons.Rounded.LocalFlorist
-        SharedMoodType.TIRED -> Icons.Rounded.LocalCafe
-        SharedMoodType.LOW -> Icons.Rounded.Cloud
-        SharedMoodType.MISSING_YOU -> Icons.Rounded.Mail
+        SharedMoodType.GREAT -> PixelIcons.AutoAwesome
+        SharedMoodType.GOOD -> PixelIcons.LocalFlorist
+        SharedMoodType.TIRED -> PixelIcons.LocalCafe
+        SharedMoodType.LOW -> PixelIcons.Cloud
+        SharedMoodType.MISSING_YOU -> PixelIcons.Mail
     }
 
     fun signal(type: LongDistanceSignalType): ImageVector = when (type) {
-        LongDistanceSignalType.THINKING_OF_YOU -> Icons.Rounded.ChatBubble
-        LongDistanceSignalType.GOOD_MORNING -> Icons.Rounded.WbSunny
-        LongDistanceSignalType.GOOD_NIGHT -> Icons.Rounded.Bedtime
-        LongDistanceSignalType.SEND_HEART -> Icons.Rounded.Favorite
-        LongDistanceSignalType.NEED_A_HUG -> Icons.Rounded.VolunteerActivism
-        LongDistanceSignalType.TINY_GIFT -> Icons.Rounded.CardGiftcard
+        LongDistanceSignalType.THINKING_OF_YOU -> PixelIcons.ChatBubble
+        LongDistanceSignalType.GOOD_MORNING -> PixelIcons.WbSunny
+        LongDistanceSignalType.GOOD_NIGHT -> PixelIcons.Bedtime
+        LongDistanceSignalType.SEND_HEART -> PixelIcons.Favorite
+        LongDistanceSignalType.NEED_A_HUG -> PixelIcons.VolunteerActivism
+        LongDistanceSignalType.TINY_GIFT -> PixelIcons.CardGiftcard
     }
 
     /** Maps StoryEntry.iconKey (and memory icon types) to an icon. */
     fun story(key: String): ImageVector = when (key) {
-        "flower", "garden" -> Icons.Rounded.LocalFlorist
-        "tree" -> Icons.Rounded.Park
-        "cooking" -> Icons.Rounded.Restaurant
-        "couch" -> Icons.Rounded.Weekend
-        "stars" -> Icons.Rounded.Nightlight
-        "letter" -> Icons.Rounded.Mail
-        "photo" -> Icons.Rounded.PhotoCamera
-        "dream" -> Icons.Rounded.Bedtime
-        "adventure" -> Icons.Rounded.Explore
-        "moment" -> Icons.Rounded.LocalCafe
-        "golden" -> Icons.Rounded.AutoAwesome
-        "milestone" -> Icons.Rounded.Celebration
-        "upcoming" -> Icons.Rounded.HourglassTop
-        else -> Icons.Rounded.Favorite
+        "flower", "garden" -> PixelIcons.LocalFlorist
+        "tree" -> PixelIcons.Park
+        "cooking" -> PixelIcons.Restaurant
+        "couch" -> PixelIcons.Weekend
+        "stars" -> PixelIcons.Nightlight
+        "letter" -> PixelIcons.Mail
+        "photo" -> PixelIcons.PhotoCamera
+        "dream" -> PixelIcons.Bedtime
+        "adventure" -> PixelIcons.Explore
+        "moment" -> PixelIcons.LocalCafe
+        "golden" -> PixelIcons.AutoAwesome
+        "milestone" -> PixelIcons.Celebration
+        "upcoming" -> PixelIcons.HourglassTop
+        else -> PixelIcons.Favorite
     }
 }

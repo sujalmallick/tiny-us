@@ -163,4 +163,20 @@ class GroundWeatherTest {
         run(ParticleSystem.PUDDLE_DRY_SECONDS + 1f)
         assertEquals(0f, spot.size, 0f)
     }
+
+    @Test
+    fun `each outdoor scene puts its puddles on its own ground`() {
+        val outdoor = listOf(
+            SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING, SceneType.WALK, SceneType.MOMO_STALL,
+            SceneType.EVENING_RIDE, SceneType.CAMPFIRE, SceneType.SEASIDE_PIER
+        )
+        for (scene in outdoor) {
+            val spots = WeatherLayout.puddleSpotsFor(scene)
+            assertEquals(scene.name, 3, spots.size)
+            assertTrue(scene.name, spots.all { (x, y) -> x in 0.05f..0.95f && y in 0.66f..0.97f })
+            assertEquals(scene.name, 3, spots.toSet().size)
+        }
+        engine.loadScene(SceneType.WALK)
+        assertEquals(WeatherLayout.puddleSpotsFor(SceneType.WALK).first().second, engine.particles.puddles.first().normY)
+    }
 }

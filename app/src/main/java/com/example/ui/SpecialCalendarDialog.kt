@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -160,6 +160,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.example.ui.theme.PixelIcons
 
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -188,7 +189,7 @@ fun SpecialCalendarDialog(
         verticalSpacing = 0.dp
     ) {
         TinyDialogHeader(
-            title = "Our Special Calendar",
+            title = stringResource(R.string.ui_our_special_calendar),
             subtitle = "$boyfriendName & $girlfriendName • Precious Moments",
             icon = TinyIcons.Heart,
             onClose = onDismiss,
@@ -235,7 +236,7 @@ fun SpecialCalendarDialog(
                                 style = TinyType.Label.copy(color = TinyColors.Rose)
                             )
                             Text(
-                                text = "Tap to view today's memory",
+                                text = stringResource(R.string.ui_tap_to_view_today_s_memory),
                                 style = TinyType.Caption
                             )
                         }
@@ -259,8 +260,8 @@ fun SpecialCalendarDialog(
                     modifier = Modifier.testTag("calendar_prev_month")
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowBack,
-                        contentDescription = "Previous Month",
+                        imageVector = PixelIcons.ArrowBack,
+                        contentDescription = stringResource(R.string.ui_previous_month),
                         tint = TinyColors.Rose,
                         modifier = Modifier.size(20.dp)
                     )
@@ -280,7 +281,7 @@ fun SpecialCalendarDialog(
                     )
                     if (displayedYearMonth != YearMonth.from(today)) {
                         TinyButton(
-                            text = "Jump to Today",
+                            text = stringResource(R.string.ui_jump_to_today),
                             onClick = {
                                 audio?.playBubblePop()
                                 displayedYearMonth = YearMonth.from(today)
@@ -299,8 +300,8 @@ fun SpecialCalendarDialog(
                     modifier = Modifier.testTag("calendar_next_month")
                 ) {
                     Icon(
-                        imageVector = Icons.AutoMirrored.Rounded.ArrowForward,
-                        contentDescription = "Next Month",
+                        imageVector = PixelIcons.ArrowForward,
+                        contentDescription = stringResource(R.string.ui_next_month),
                         tint = TinyColors.Rose,
                         modifier = Modifier.size(20.dp)
                     )
@@ -416,16 +417,16 @@ fun SpecialCalendarDialog(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LegendItem(icon = TinyIcons.Heart, label = "Moments")
-                LegendItem(icon = TinyIcons.Birthday, label = "Birthdays")
-                LegendItem(icon = TinyIcons.Sparkle, label = "Next Meet")
-                LegendItem(icon = TinyIcons.Flower, label = "Special")
+                LegendItem(icon = TinyIcons.Heart, label = stringResource(R.string.ui_moments))
+                LegendItem(icon = TinyIcons.Birthday, label = stringResource(R.string.ui_birthdays))
+                LegendItem(icon = TinyIcons.Sparkle, label = stringResource(R.string.ui_next_meet))
+                LegendItem(icon = TinyIcons.Flower, label = stringResource(R.string.ui_special))
             }
 
             Spacer(modifier = Modifier.height(TinySpace.lg))
 
             TinyButton(
-                text = "Close Scrapbook",
+                text = stringResource(R.string.ui_close_scrapbook),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Secondary,
@@ -502,12 +503,12 @@ fun CalendarMemoryDetailCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = "TODAY",
+                            text = stringResource(R.string.ui_today),
                             style = TinyType.Title.copy(color = TinyColors.Rose)
                         )
                         Spacer(modifier = Modifier.height(TinySpace.xs))
                         Text(
-                            text = "You're finally together again.",
+                            text = stringResource(R.string.ui_you_re_finally_together_again),
                             style = TinyType.Body.copy(fontFamily = FontFamily.Serif),
                             textAlign = TextAlign.Center
                         )
@@ -522,7 +523,7 @@ fun CalendarMemoryDetailCard(
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = "Coming in...",
+                        text = stringResource(R.string.ui_coming_in),
                         style = TinyType.Caption
                     )
                     Spacer(modifier = Modifier.height(TinySpace.sm))
@@ -564,7 +565,7 @@ fun CalendarMemoryDetailCard(
         }
 
         TinyButton(
-            text = "Close",
+            text = stringResource(R.string.ui_close),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(),
             style = TinyButtonStyle.Secondary,

@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -231,7 +231,7 @@ fun SecretKeepsakeDialog(
         Spacer(modifier = Modifier.height(TinySpace.xxl))
 
         TinyButton(
-            text = "Close",
+            text = stringResource(R.string.ui_close),
             onClick = onDismiss,
             style = TinyButtonStyle.Secondary
         )

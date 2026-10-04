@@ -334,11 +334,10 @@ class TinyUsOfflineTest {
         assertTrue(engine.girl.wearsEarphone)
 
         val songTitles = audio.playlist.map { it.title }
-        assertTrue(songTitles.contains("(I Just) Died In Your Arms"))
-        assertTrue(songTitles.contains("Can't Take My Eyes Off You"))
-        assertTrue(songTitles.contains("Wicked Game"))
-        assertTrue(songTitles.contains("Golden Brown"))
         assertTrue(songTitles.contains("Heartbeat"))
+        assertTrue(audio.playlist.size >= 2)
+        // No commercial recordings are bundled (they can't be published without a licence).
+        assertTrue(audio.playlist.all { it.rawResId == null || it.rawResId == 0 })
 
         val secondSong = audio.playlist[1]
         audio.playSong(secondSong)

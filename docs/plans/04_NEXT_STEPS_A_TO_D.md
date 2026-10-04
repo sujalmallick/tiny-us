@@ -62,8 +62,8 @@ The user wants the UI restyle finished before anything else starts.
 ### A4. Full checkpoint, push and pull request
 - [x] One full run: `./gradlew :shared:testAndroidHostTest :app:testDebugUnitTest :app:assembleRelease verifyPrivacySafeguards`. *(Green on `3d1c451`: 190 app tests, 24 shared tests; release APK 27.4 MB, see D3.)*
 - [x] `git push -u origin android-public-release`.
-- [ ] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
-- [ ] Merge the pull request once CI is green (ask the user before merging into `master`).
+- [x] Open a pull request into `master` describing all the commits. Let CI run, and trigger the iOS workflow by hand.
+- [x] Merge the pull request once CI is green (ask the user before merging into `master`). *(sujalmallick/tiny-us#1, merged 2026-10-04 as `68706cd`.)*
 
 ### A5. Clean up
 - [x] `git worktree remove .claude/worktrees/ui-chrome-pass`. *(The empty folder stays until the UI session closes.)*
@@ -74,6 +74,10 @@ The user wants the UI restyle finished before anything else starts.
 ---
 
 ## B. Real-device check (about half a day)
+
+**Dropped by the user (2026-10-04): no device check.** Scenes are reviewed with offscreen renders (`ScenePreviewTest`) instead. The checklist below is kept for reference only.
+
+**Not done yet.** The user has no Android phone, so this runs on the emulator, with everything else closed (Android Studio, other Claude sessions, the browser) and the emulator's RAM lowered to about 2 GB. Also measure the pixel renderer's frame time in each scene.
 
 Install the merged release build, uninstalling the old one first if the signatures differ. Open scenes directly with `adb shell am start -n com.tinyus.app/com.example.MainActivity --es scene <SCENE>`.
 
@@ -98,33 +102,53 @@ Install the merged release build, uninstalling the old one first if the signatur
 
 Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 
+**Progress (2026-10-04)**, on the local branch `pixel/phase-0-1-campfire` (not yet merged or pushed):
+- `e71f0f6` C1 campfire test; the user approved the look and the couple's size (2 game pixels per sprite pixel).
+- `e7e00ef` pixel renderer for all 13 scenes: `HardEdgeCanvas` (no anti-aliasing; rectangles snap to whole pixels, never thinner than one), `PixelFont` for the momo sign, whole-pixel NPC and loft sizes.
+- `4f87cfb` barista and Grandpa Bao a bit smaller (1.5 game pixels), as the user asked.
+- `gridP` patch removed (the renderer snaps every shape now).
+- Still open: the device frame-time check (see B), then merging into `android-public-release`.
+
 ### C1. Test on the campfire scene (phases 0–1, 2–3 days)
-- [ ] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
-- [ ] Phase 1 on the campfire only:
+- [x] Phase 0: add `WorldViewport` (one whole-number scale and the game-pixel size) and replace the 27 local `pixelScale` computations. Commit the Robolectric scene-preview renderer as a picture-comparison test.
+- [x] Phase 1 on the campfire only:
   - draw the world into a small offscreen image and enlarge it by a whole number with `FilterQuality.None`,
-  - characters drop the 1.38× scale,
-  - taps are divided by the scale before hit-testing,
-  - particles and overlays move to game pixels.
-- [ ] Show the user a before/after of the campfire. **Decide: continue or stop.**
+  - characters drop the 1.38× scale *(done differently: characters use exactly 2 game pixels, so their details survive)*,
+  - taps are divided by the scale before hit-testing *(not needed: the world still draws in screen coordinates and the canvas shrinks it, so taps and overlays work unchanged)*,
+  - particles and overlays move to game pixels *(same reason)*.
+- [x] Show the user a before/after of the campfire. **Decide: continue or stop.** *(Continue.)*
 
 ### C2. Roll out (if approved)
-- [ ] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`.
-- [ ] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
-- [ ] Phase 3: per-scene framing so the couple are 10–12% of screen height; layered backgrounds with slight parallax; review all 13 scenes at 16:9, 19.5:9 and 20:9.
-- [ ] Phase 4: `SpriteClock` at 10 fps, whole-pixel positions, walk cycles, readable particles, pixel-dissolve scene change, haptics.
-- [ ] Phase 5: bundled OFL pixel font, framed pixel buttons and dialogs, a 16×16 pixel icon set (built on the UI restyle's components), with accessibility fallbacks.
+- [x] Phase 1 for every scene, then remove the `gridP` patch from `WorldSpecialScenes.kt`. *(Done; only the device frame-time check (see B) is left.)*
+- [x] Phase 2: the 48-colour `TinyPalette` in `shared`; a palette-and-alpha pass on the finished frame (AGSL shader on Android 13+, CPU fallback); Bayer dithering; night and sunset as palette swaps with lamp light pools; `PixelPurityTest`.
+  *(Tried and not adopted, 2026-10-04. A palette was built from renders of every scene, light and weather (weighted k-means in OKLab, with the 40 Make Us skin and hair colours kept exact), and frames were snapped to it. At 96 colours the momo awning's red turned brown, the night sky's navy went black and the boy's sweater went grey. At 128 the sky still darkened and lamp glows became flat discs. Bayer dithering covered everything in a screen-door pattern. The pixel renderer already makes every shape crisp and opaque (`HardEdgeCanvas`, and the staged-frame test checks no pixel is left transparent), which was the point of this phase. So the drawn colours stay. Comparison and scripts are in `build/pixel-test/phase2/`.)*
+- [x] **Phase 3 (do this first after Phase 1; the user flagged it): the same close-up scene on every screen size.** *(`33e08b9`; comparisons in `build/pixel-test/phase3/`.)*
+  - **What the user saw** (tablet-emulator screenshots, 2026-10-04): on a wide, nearly square tablet each scene reads as a close-up. Props sit around the couple and the detail shows. But the short height cuts parts off: the momo sign is missing, the lighthouse overlaps the moon, and the kitchen table is chopped at the bottom. On a tall phone the same scene spreads out. Props drift apart, there's a lot of empty sky and floor, and the couple look far away and the scene disorganised.
+  - **Why:** positions are fractions of the screen (`cw * x`, `ch * y`), and the game-pixel size is set by width alone. A tall screen stretches the layout; a short one crops it.
+  - **Goal:** every phone and tablet shows the whole scene with the tablet's close-up feel, nothing cut off, and the couple about the same size relative to the scene.
+  - [x] Give each scene a fixed design stage in game pixels (for example about 160 × 200) and lay its props, characters, Mochi and tap targets out inside it, instead of using screen fractions (`SceneLayouts`, the engine's character and cat positions, the hit tests). *(Done with `WorldCamera`: the stage is about 144 game pixels wide and 4:3 to 3:2 tall. The layout code is unchanged; it now gets the stage's size instead of the screen's.)*
+  - [x] Pick the largest whole-number zoom at which the whole stage fits the screen's width **and** height. On phones this makes everything bigger than now. *(7× on a 1080 × 2400 phone.)*
+  - [x] Fill leftover screen space by extending the background (more sky or ceiling above, more ground or floor below, more scenery at the sides), never by spreading props apart. *(`StageExtension`; each scene sets where the spare height goes.)*
+  - [x] Nicer extensions where they're plain: the kitchen's tall wall and the sunroom's floor are flat. Consider per-scene extra props there (shelves, more pots). *(`WorldStageDecor.kt`: sage upper cabinets and a jar shelf on the kitchen wall; potted plants and a woven basket on the sunroom floor. Floors with props on them now keep their pattern when it repeats, and the kitchen's floor runs to the bottom edge.)* Scene review (2026-10-04): the cafe gets a plank ceiling with rafters and hanging plants, the bedroom wall a heart garland, shelf and framed photo, and the sunroom's glass roof runs under the top buttons (it can't be continued upward).
+  - [x] Weather in the extension: rain, snow, petals and leaves fall only over the stage. Draw the falling layer over the whole screen. *(The falling layer is drawn again above and below the stage, shifted by one stage height.)*
+  - [x] Keep the HUD (top buttons, heart button, message box) clear of the stage, or reserve room for it. *(The camera reserves the status bar plus 58 dp at the top and the navigation bar plus 70 dp at the bottom when the screen is tall enough; short screens share what's left.)*
+  - [x] `ScenePreviewTest` renders every scene at phone 20:9, 19.5:9 and 16:9, at tablet 4:3, and nearly square. Check that nothing is cut off and the composition matches. *(`SCENE_PREVIEW_SIZE`; phone and square checked, and `WorldCameraTest` covers seven screen sizes.)*
+  - [x] Layered backgrounds with slight parallax (the original Phase 3 idea), once the stage works. *(Not done, on purpose: every scene draws its layers in one pass, so parallax would mean splitting all 13 scenes into layers; the extended sky's drifting clouds give some depth instead. Revisit only if scenes get redrawn as layered sprites.)*
+- [x] Phase 4: `SpriteClock` at 10 fps, whole-pixel positions, walk cycles, readable particles, pixel-dissolve scene change, haptics. *(`SpriteClock` steps sprite animation at 12 fps while movement updates every frame; positions snap to whole pixels; the 4-frame walk cycle and tap haptics were already there; particles became solid sprites in `1fc5e9f`; scene changes dissolve in 2x2 Bayer blocks (`PixelDissolve`).)*
+- [x] Phase 5: bundled OFL pixel font, framed pixel buttons and dialogs, a 16×16 pixel icon set (built on the UI restyle's components), with accessibility fallbacks. *(Our own font instead of an OFL one: `res/font/tiny_pixel.ttf`, built by `tools/pixelfont/build_tiny_pixel_font.py` (all printable ASCII plus quotes, dashes, bullet, ellipsis), used for Display/Title/Section/Label; body text and captions stay in the default sans as the accessibility fallback. `PixelCornerShape` replaces every rounded corner and circle with whole-pixel stair steps. `PixelIcons`: 61 icons on a 12×12 grid (2 dp per pixel at 24 dp), generated by `tools/pixelfont/build_pixel_icons.py`, replacing all 147 Material icon uses. `ChromePreviewTest` renders the chrome; pictures in `build/pixel-test/phase5/`.)*
 - **Checks for each phase:** picture tests reviewed, every pixel opaque and from the palette (from phase 2 on), tap tests green, frame time 8 ms or less.
 
 ---
 
 ## D. Leftovers from the first plan (about 2–3 days)
 
-- [ ] **D1. Translatable text:** move the remaining hard-coded strings in older screens (Settings sheet, dialogs, scene messages) into `strings.xml`. Scene messages built in `SceneEngine` need string resources with arguments.
-- [ ] **D2. Old "Him"/"Her" names:** when the saved names are the old placeholders, show a one-time gentle prompt ("Want to set your names?") instead of renaming silently. Add a test.
-- [ ] **D3. App size:** re-encode the bundled music at a lower bitrate (for example 96–128 kbps), or stream nothing and keep fewer tracks. Target a release APK under about 12 MB. Make sure the audio still sounds clean.
-- [ ] **D4. Loft bookshelf figures:** pass each partner's Make Us look into `LoftSprites` (the mini figures currently use the default skin and hair).
-- [ ] **D5. Per-scene puddle spots** for rain (FEATURES' open item): puddles placed to fit each scene's ground instead of generic positions.
-- [ ] **D6. Deferred plan-01 performance items** (FEATURES' open item): cache static background layers instead of redrawing them every frame, and remove allocations made each frame. This dovetails with C Phase 1 (offscreen rendering), so it may be cheapest to do there.
+- [x] **D1a. Translatable UI text:** 211 hard-coded strings in the Settings sheet and dialogs moved into `strings.xml` (189 distinct `ui_*` keys) by `tools/i18n/extract_ui_strings.py`; 4 stay in code where they're used outside the UI tree (photo sharing). Strings built from variables were left for D1b. Lint is clean (the splash-screen attributes moved to `values-v31`).
+- [x] **D1b. Translatable scene messages and built strings:** the ~160 messages in `SceneEngine` (and strings built from variables in the dialogs) need string resources with arguments. The engine has no Android context and its tests run without resources, so it needs a small text-lookup interface the app provides (with English fallbacks for tests). *(Done for the scene engine: 157 messages and speech lines moved into 149 `scene_*` strings by `tools/i18n/extract_scene_strings.py`, with names passed as `%1$s` arguments; `GameText` looks them up with the resources `TinyUsApp` hands over at start-up. About 31 short dialog strings built from variables (counts, dates, names) are still in code.)*
+- [x] **D2. Old "Him"/"Her" names:** when the saved names are the old placeholders, show a one-time gentle prompt ("Want to set your names?") instead of renaming silently. Add a test. *(`NamePromptDialog`: asked once (`namePromptAnswered`) when a saved name is still "Him"/"Her"; "Set our names" reopens the setup with empty name fields, "Keep them" keeps them. Rule in `PersonalProfile.shouldOfferNamePrompt`, tested in `NamePromptTest`.)*
+- [x] **D3. App size:** re-encode the bundled music at a lower bitrate (for example 96–128 kbps), or stream nothing and keep fewer tracks. Target a release APK under about 12 MB. Make sure the audio still sounds clean. *(Release APK 27.4 MB → 13.0 MB. The five background tracks are re-encoded from 192 to 96 kbps with `tools/audio/reencode_bgm.py` (originals kept locally in `tools/audio/originals/`, git-ignored); 80 kbps would reach about 11.2 MB at a quality cost. At the user's choice the four commercial recordings (Golden Brown, Can't Take My Eyes Off You, (I Just) Died in Your Arms, Wicked Game) and the transcribed "Until I Found You" melody were removed from Android and iOS, since they can't be published without a licence; the iOS song list is empty until original or royalty-free songs are added. Still to do: listen to the re-encoded tracks on a device.)*
+- [x] **D4. Loft bookshelf figures:** pass each partner's Make Us look into `LoftSprites` (the mini figures currently use the default skin and hair). *(The framed couple picture on the loft bookshelf now uses both partners' Make Us hair and skin, with long-hair strands.)*
+- [x] **D5. Per-scene puddle spots** for rain (FEATURES' open item): puddles placed to fit each scene's ground instead of generic positions. *(`WeatherLayout.puddleSpotsFor`: on the cobbled path (walk, momo stall), the road (ride), the deck away from the bench (pier) and the grass clear of the fire ring (campfire); placed when a scene loads.)*
+- [x] **D6. Deferred plan-01 performance items** (FEATURES' open item): cache static background layers instead of redrawing them every frame, and remove allocations made each frame. This dovetails with C Phase 1 (offscreen rendering), so it may be cheapest to do there. *(Measured with `FrameCostTest` (FRAME_COST=1): drawing a scene at game resolution takes 1–3 ms on the JVM; nearly all of a JVM frame is the final 7x enlargement, which a phone does on the GPU. The continued sky and ground are now worked out once per sprite frame and reused (30–50% less drawing time on the scenes with large extensions), and the camera is cached instead of rebuilt several times a frame. A separate static-layer cache was not built: the low-res renderer already draws about 53,000 game pixels per frame instead of 2.6 million screen pixels, and scenes draw static and moving parts in one pass. Real frame times still need the device check (B).)*
 - **Check:** full suite green, release APK size recorded, the D2 prompt checked on the device.
 
 ---
@@ -132,3 +156,5 @@ Work on a branch per phase (`pixel/phase-N-…`), merged after its checks pass.
 ## Order at a glance
 
 0 (finish UI, user sign-off) → A1 → A2 → A3 → A4 → A5 → B (fix and retest) → C1 (user decision) → C2 phases → D (D1–D4 can also slot in between C phases).
+
+**Done:** 0, A1–A5, C1, C2's Phase 1 rollout and Phase 3 (local branch). **Next (the user moved the emulator check to the end):** D3 (app size) → C2 Phases 2, 4 and 5 → the rest of D → B on the emulator with the frame-time check → merge the pixel branch.

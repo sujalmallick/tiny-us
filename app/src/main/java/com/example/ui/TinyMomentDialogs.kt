@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -160,6 +160,7 @@ import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.runtime.rememberCoroutineScope
 import kotlinx.coroutines.launch
+import com.example.ui.theme.PixelIcons
 
 import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.material.icons.automirrored.rounded.ArrowForward
@@ -212,7 +213,7 @@ fun DailyTinyMomentDialog(
             Spacer(modifier = Modifier.height(TinySpace.md))
 
             Text(
-                text = "Today's Tiny Moment",
+                text = stringResource(R.string.ui_today_s_tiny_moment),
                 style = TinyType.Label.copy(color = TinyColors.Rose)
             )
 
@@ -233,7 +234,7 @@ fun DailyTinyMomentDialog(
                     animation = tween(2200, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart
                 ),
-                label = "shineSweep"
+                label = stringResource(R.string.ui_shinesweep)
             )
             val shineGlow by infiniteTransition.animateFloat(
                 initialValue = 0.5f,
@@ -242,14 +243,14 @@ fun DailyTinyMomentDialog(
                     animation = tween(1100, easing = FastOutSlowInEasing),
                     repeatMode = RepeatMode.Reverse
                 ),
-                label = "shineGlow"
+                label = stringResource(R.string.ui_shineglow)
             )
 
             var isPressed by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(
                 targetValue = if (isPressed) 0.93f else 1f,
                 animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-                label = "day_scale"
+                label = stringResource(R.string.ui_day_scale)
             )
 
             Box(
@@ -336,7 +337,7 @@ fun DailyTinyMomentDialog(
             }
 
             Text(
-                text = "Tap to view our live love clock",
+                text = stringResource(R.string.ui_tap_to_view_our_live_love_clock),
                 style = TinyType.Micro
             )
         }
@@ -362,8 +363,8 @@ fun DailyTinyMomentDialog(
                             }
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowBack,
-                                contentDescription = "Previous scene",
+                                PixelIcons.ArrowBack,
+                                contentDescription = stringResource(R.string.ui_previous_scene),
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -376,8 +377,8 @@ fun DailyTinyMomentDialog(
                             }
                         ) {
                             Icon(
-                                Icons.AutoMirrored.Rounded.ArrowForward,
-                                contentDescription = "Next scene",
+                                PixelIcons.ArrowForward,
+                                contentDescription = stringResource(R.string.ui_next_scene),
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -401,14 +402,14 @@ fun DailyTinyMomentDialog(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TinyButton(
-                text = "Close",
+                text = stringResource(R.string.ui_close),
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
                 style = TinyButtonStyle.Ghost
             )
 
             TinyButton(
-                text = "Watch Scene",
+                text = stringResource(R.string.ui_watch_scene),
                 onClick = {
                     val matchedScene = when (currentMoment.dayIndex) {
                         0 -> SceneType.FLOWER
@@ -481,7 +482,7 @@ fun RelationshipDurationDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             Text(
-                text = "OUR TIME",
+                text = stringResource(R.string.ui_our_time),
                 style = TinyType.Label.copy(color = TinyColors.Rose, letterSpacing = 1.5.sp)
             )
 
@@ -494,7 +495,7 @@ fun RelationshipDurationDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             Text(
-                text = "Together since",
+                text = stringResource(R.string.ui_together_since),
                 style = TinyType.Caption
             )
 
@@ -555,7 +556,7 @@ fun RelationshipDurationDialog(
         )
 
         TinyButton(
-            text = "Close",
+            text = stringResource(R.string.ui_close),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(0.6f),
             style = TinyButtonStyle.Secondary,

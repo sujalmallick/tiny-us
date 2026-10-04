@@ -59,5 +59,15 @@ data class PersonalProfile(
 
         fun isPlaceholderName(name: String): Boolean =
             name.isBlank() || name == DEFAULT_NAME_A || name == DEFAULT_NAME_B || name in LEGACY_DEFAULT_NAMES
+
+        /** True when a saved name is still an old "Him"/"Her" default rather than a chosen name. */
+        fun isLegacyDefaultName(name: String): Boolean = name.trim() in LEGACY_DEFAULT_NAMES
+
+        /**
+         * Whether to gently offer to set names: once, for couples who finished setup in an older
+         * build and still carry its "Him"/"Her" defaults (instead of renaming them silently).
+         */
+        fun shouldOfferNamePrompt(nameA: String, nameB: String, onboardingCompleted: Boolean, alreadyAsked: Boolean): Boolean =
+            onboardingCompleted && !alreadyAsked && (isLegacyDefaultName(nameA) || isLegacyDefaultName(nameB))
     }
 }

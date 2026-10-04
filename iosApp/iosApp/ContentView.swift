@@ -90,12 +90,9 @@ struct TinySong: Identifiable, Hashable {
     let title: String
     let artist: String
     var resource: String { id }
-    static let playlist = [
-        TinySong(id: "died_in_your_arms", title: "(I Just) Died In Your Arms", artist: "Cutting Crew"),
-        TinySong(id: "cant_take_my_eyes_off_you", title: "Can't Take My Eyes Off You", artist: "Frankie Valli"),
-        TinySong(id: "wicked_game", title: "Wicked Game", artist: "Chris Isaak"),
-        TinySong(id: "golden_brown", title: "Golden Brown", artist: "The Stranglers")
-    ]
+    // The commercial recordings that used to be listed here were removed: they can't be published
+    // without a licence. Add original or royalty-free songs (bundled as <id>.mp3) to bring it back.
+    static let playlist: [TinySong] = []
 }
 
 @MainActor final class TinyAudio: ObservableObject {

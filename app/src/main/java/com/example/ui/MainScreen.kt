@@ -1,5 +1,13 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
+import com.example.engine.WorldViewport
+import com.example.ui.theme.PixelCornerShape
+import com.example.ui.theme.PixelCircleShape
+import com.example.ui.theme.PixelIcons
+import com.example.data.PersonalProfile
+
 import com.example.engine.AvatarLook
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
@@ -27,8 +35,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Shadow
 import androidx.compose.ui.graphics.vector.ImageVector
@@ -150,6 +156,14 @@ fun MainScreen(
     var showAvatarCustomizer by remember { mutableStateOf(false) }
     var showOurStory by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
+    // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
+    var showNamePrompt by remember {
+        mutableStateOf(
+            PersonalProfile.shouldOfferNamePrompt(
+                prefs.boyfriendName, prefs.girlfriendName, prefs.isOnboardingCompleted, prefs.namePromptAnswered
+            )
+        )
+    }
 
     var showDateAdventures by remember { mutableStateOf(false) }
     var showDailyMomentPrompt by remember { mutableStateOf(false) }
@@ -171,9 +185,9 @@ fun MainScreen(
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
 
     // Hoisted glassmorphism styling tokens (dynamic based on glassIntensity, zero per-frame allocations)
-    val capsuleShape = remember { RoundedCornerShape(24.dp) }
-    val heartButtonShape = remember { CircleShape }
-    val glassyCircleShape = remember { CircleShape }
+    val capsuleShape = remember { PixelCornerShape(24.dp) }
+    val heartButtonShape = remember { PixelCircleShape }
+    val glassyCircleShape = remember { PixelCircleShape }
 
     val buttonFillBrush = remember(glassIntensity) {
         val topAlpha = (0.20f + 0.75f * glassIntensity).coerceIn(0.12f, 0.95f)
@@ -354,9 +368,11 @@ fun MainScreen(
         if (!targetBirdSurface.isNullOrBlank()) {
             val surf = try { com.example.engine.PerchSurface.valueOf(targetBirdSurface) } catch (e: Exception) { null }
             if (surf != null) {
-                val p = (screenWidthPx / 115f).coerceIn(3.0f, 5.0f)
-                val (destX, destY) = engine.birdSystem.getSurfaceCoordinates(surf, screenWidthPx, screenHeightPx, p)
-                val bird = engine.forceSpawnBirdForTest(surface = surf, cw = screenWidthPx, ch = screenHeightPx, p = p)
+                // The engine works in world units (see WorldCamera), not screen pixels.
+                val camera = com.example.engine.WorldCamera.forScreen(screenWidthPx, screenHeightPx, engine.currentScene)
+                val p = WorldViewport.pixelScale(camera.worldW)
+                val (destX, destY) = engine.birdSystem.getSurfaceCoordinates(surf, camera.worldW, camera.worldH, p)
+                val bird = engine.forceSpawnBirdForTest(surface = surf, cw = camera.worldW, ch = camera.worldH, p = p)
                 if (bird != null) {
                     bird.x = destX
                     bird.y = destY
@@ -494,7 +510,7 @@ fun MainScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Rounded.Favorite,
+                            imageVector = PixelIcons.Favorite,
                             contentDescription = null,
                             tint = activeHeartTint,
                             modifier = Modifier.size(heartSize),
@@ -503,7 +519,7 @@ fun MainScreen(
                         )
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = "Tiny Us",
+                            text = stringResource(R.string.ui_tiny_us),
                             fontWeight = FontWeight.Bold,
                             fontSize = titleFontSize,
                             fontFamily = FontFamily.Serif,
@@ -531,7 +547,7 @@ fun MainScreen(
                             modifier = Modifier
                                 .padding(horizontal = if (isCompact) 4.dp else 5.dp)
                                 .size(3.dp)
-                                .background(dotColor, CircleShape)
+                                .background(dotColor, PixelCircleShape)
                         )
                     }
 
@@ -539,7 +555,7 @@ fun MainScreen(
                     Row(
                         modifier = Modifier
                             .weight(1f, fill = false)
-                            .clip(RoundedCornerShape(8.dp))
+                            .clip(PixelCornerShape(8.dp))
                             .clickable {
                                 showSecretKeepsake = true
                                 audio.playHeartChime()
@@ -603,7 +619,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .size(buttonTouchSize)
-                        .clip(CircleShape)
+                        .clip(PixelCircleShape)
                         .clickable(
                             role = Role.Button,
                             onClick = {
@@ -630,7 +646,7 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Rounded.AutoAwesome,
+                            imageVector = PixelIcons.AutoAwesome,
                             contentDescription = "Weather: ${engine.weather.displayName}",
                             tint = weatherIconTint,
                             modifier = Modifier.size(iconSize),
@@ -644,7 +660,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .size(buttonTouchSize)
-                        .clip(CircleShape)
+                        .clip(PixelCircleShape)
                         .clickable(
                             role = Role.Button,
                             onClick = {
@@ -674,8 +690,8 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = if (isSoundOn) Icons.AutoMirrored.Rounded.VolumeUp else Icons.AutoMirrored.Rounded.VolumeOff,
-                            contentDescription = "Toggle Audio",
+                            imageVector = if (isSoundOn) PixelIcons.VolumeUp else PixelIcons.VolumeOff,
+                            contentDescription = stringResource(R.string.ui_toggle_audio),
                             tint = if (isSoundOn) activeHeartTint else mutedIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -688,7 +704,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .size(buttonTouchSize)
-                        .clip(CircleShape)
+                        .clip(PixelCircleShape)
                         .clickable(
                             role = Role.Button,
                             onClick = {
@@ -714,8 +730,8 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Rounded.Headphones,
-                            contentDescription = "Music Box & Earphones",
+                            imageVector = PixelIcons.Headphones,
+                            contentDescription = stringResource(R.string.ui_music_box_earphones),
                             tint = if (engine.earphonesActive) activeHeartTint else neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -726,7 +742,7 @@ fun MainScreen(
 
                 if (engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
                     Box(
-                        modifier = Modifier.size(buttonTouchSize).clip(CircleShape).clickable(role = Role.Button) {
+                        modifier = Modifier.size(buttonTouchSize).clip(PixelCircleShape).clickable(role = Role.Button) {
                             haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
                             showRoomCustomizer = true
                         }.testTag("room_customizer_button"),
@@ -737,7 +753,7 @@ fun MainScreen(
                                 .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContrastIcon(Icons.Rounded.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                            ContrastIcon(PixelIcons.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
                         }
                     }
                 }
@@ -746,7 +762,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .size(buttonTouchSize)
-                        .clip(CircleShape)
+                        .clip(PixelCircleShape)
                         .clickable(
                             role = Role.Button,
                             onClick = {
@@ -775,8 +791,8 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Rounded.Shuffle,
-                            contentDescription = "Random Scene",
+                            imageVector = PixelIcons.Shuffle,
+                            contentDescription = stringResource(R.string.ui_random_scene),
                             tint = shuffleIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -789,7 +805,7 @@ fun MainScreen(
                 Box(
                     modifier = Modifier
                         .size(buttonTouchSize)
-                        .clip(CircleShape)
+                        .clip(PixelCircleShape)
                         .clickable(
                             role = Role.Button,
                             onClick = {
@@ -815,8 +831,8 @@ fun MainScreen(
                         contentAlignment = Alignment.Center
                     ) {
                         ContrastIcon(
-                            imageVector = Icons.Rounded.Settings,
-                            contentDescription = "Settings",
+                            imageVector = PixelIcons.Settings,
+                            contentDescription = stringResource(R.string.ui_settings),
                             tint = neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -862,12 +878,12 @@ fun MainScreen(
                 .padding(bottom = 18.dp)
         ) {
             Surface(
-                shape = RoundedCornerShape(16.dp),
+                shape = PixelCornerShape(16.dp),
                 color = TinyColors.Scrim.copy(alpha = 0.6f),
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(
-                    text = "Tap characters, cottage, tree, sky, or mailbox to explore",
+                    text = stringResource(R.string.ui_tap_characters_cottage_tree_sky_or_mailb),
                     style = TinyType.Caption.copy(color = Color.White),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -967,8 +983,8 @@ fun MainScreen(
                 contentAlignment = Alignment.Center
             ) {
                 ContrastIcon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Capture Tiny Moment (Long press for Gallery)",
+                    imageVector = PixelIcons.Favorite,
+                    contentDescription = stringResource(R.string.ui_capture_tiny_moment_long_press_for_galle),
                     tint = activeHeartTint,
                     modifier = Modifier.size(26.dp),
                     clearFactor = clearFactor,
@@ -1135,6 +1151,20 @@ fun MainScreen(
             SecretKeepsakeDialog(
                 onDismiss = { showSecretKeepsake = false },
                 prefs = prefs
+            )
+        }
+
+        if (showNamePrompt && !showOnboarding) {
+            NamePromptDialog(
+                onSetNames = {
+                    prefs.namePromptAnswered = true
+                    showNamePrompt = false
+                    showOnboarding = true
+                },
+                onKeep = {
+                    prefs.namePromptAnswered = true
+                    showNamePrompt = false
+                }
             )
         }
 

@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -87,8 +86,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 internal fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
-    val x = cw * 0.17f
-    val y = ch * 0.535f
+    val jar = com.example.scene.KitchenLayout.treatJar(cw, ch, p)
+    val x = jar.x
+    val y = jar.y
     // Checker-glass jar with a warm gingham lid and a few visible biscuits.
     scope.drawRect(Color(0xFF8A5636), Offset(x - 10f * p, y - 15f * p), Size(20f * p, 20f * p))
     scope.drawRect(Color(0xFFD8B89A), Offset(x - 8f * p, y - 14f * p), Size(16f * p, 16f * p))
@@ -130,8 +130,8 @@ internal fun drawKitchenRoom(
     sinkRunning: Boolean = false,
     isSunset: Boolean = false
 ) {
-    val floorY = ch * 0.65f
-    val ceilingY = ch * 0.38f
+    val floorY = com.example.scene.KitchenLayout.floorY(ch)
+    val ceilingY = com.example.scene.KitchenLayout.ceilingY(ch)
 
     // 1. Upper Ceiling Plaster & Exposed Oak Rafters
     val ceilingPlaster = when {
@@ -188,9 +188,9 @@ internal fun drawKitchenRoom(
     scope.drawRect(Color(0xFF6B4226), Offset(0f, floorY - 3 * p), Size(cw, 3 * p))
 
     // 4. Checked kitchen floor tiles (warm terracotta and creamy biscuit)
-    val tile1 = Color(0xFFE6CCB2)
-    val tile2 = Color(0xFFC59B76)
-    val tileSize = 16 * p
+    val tile1 = com.example.scene.KitchenLayout.FLOOR_TILE_A
+    val tile2 = com.example.scene.KitchenLayout.FLOOR_TILE_B
+    val tileSize = com.example.scene.KitchenLayout.FLOOR_TILE * p
     var row = 0
     var y = floorY
     while (y < ch) {
@@ -221,10 +221,10 @@ internal fun drawKitchenRoom(
     scope.drawRect(chairRail, Offset(doorLeft + doorW, doorY + 7 * p), Size(2 * p, doorH - 7 * p))
 
     // 6. Cottage Kitchen Window (above left prep area, at cw * 0.28f)
-    val winW = 34 * p
-    val winH = 44 * p
+    val winW = com.example.scene.KitchenLayout.WINDOW_W * p
+    val winH = com.example.scene.KitchenLayout.WINDOW_H * p
     val winX = cw * 0.28f - winW / 2f
-    val winY = floorY - 96 * p
+    val winY = com.example.scene.KitchenLayout.windowTop(ch, p)
     scope.drawRect(Color(0xFF7F5539), Offset(winX, winY), Size(winW, winH))
     val isSnowOutside = weather == com.example.scene.WeatherType.SNOW
     val isSakuraOutside = weather == com.example.scene.WeatherType.SAKURA
@@ -337,8 +337,30 @@ internal fun drawKitchenRoom(
     }
 
     // 7. Retro Wall Clock (high and proud on center wall, cw * 0.49f)
-    val clockX = cw * 0.49f
-    val clockY = ceilingY + 16 * p
+    val clockCenter = com.example.scene.KitchenLayout.clockCenter(cw, ch, p)
+    val clockX = clockCenter.x
+    val clockY = clockCenter.y
+
+    // Sage upper cabinets on the wall to the right, matching the fridge.
+    run {
+        val sage = Color(0xFFA7C4B5)
+        val sageDark = Color(0xFF8BA899)
+        val sageLight = Color(0xFFC3DBD0)
+        val brass = Color(0xFFE0B868)
+        val cabTop = winY + 2 * p
+        val cabH = 22 * p
+        val doorW = 13 * p
+        val left = cw * 0.585f
+        val w = 2 * doorW + 3 * p
+        scope.drawRect(sageDark, Offset(left, cabTop), Size(w, cabH))
+        scope.drawRect(sageDark, Offset(left - p, cabTop + cabH), Size(w + 2 * p, 2 * p))
+        for (d in 0 until 2) {
+            val dx = left + p + d * (doorW + p)
+            scope.drawRect(sage, Offset(dx, cabTop + p), Size(doorW, cabH - 2 * p))
+            scope.drawRect(sageLight, Offset(dx + p, cabTop + 2 * p), Size(doorW - 2 * p, p))
+            scope.drawRect(brass, Offset(if (d % 2 == 0) dx + doorW - 3 * p else dx + p, cabTop + cabH - 7 * p), Size(2 * p, 2 * p))
+        }
+    }
     val clockR = 7.5f * p
     scope.drawCircle(Color(0xFF6B7F6E), clockR + 1.5f * p, Offset(clockX, clockY))
     scope.drawCircle(Color(0xFFFCF6BD), clockR, Offset(clockX, clockY))
@@ -448,12 +470,7 @@ internal fun drawKitchenRoom(
         scope.drawRect(Color.White, Offset(fridgeX - 3.5f * p, fridgeY + 40 * p), Size(7 * p, 8 * p))
         scope.drawRect(Color(0xFFFFCAD4), Offset(fridgeX - 2.5f * p, fridgeY + 41 * p), Size(5 * p, 5 * p))
     }
-    // Fruit basket on top
-    val basketY = fridgeY - 6 * p
-    scope.drawRect(Color(0xFFB08968), Offset(fridgeX - 6 * p, basketY + 2 * p), Size(12 * p, 4 * p))
-    scope.drawRect(Color(0xFFE63946), Offset(fridgeX - 4 * p, basketY), Size(3.5f * p, 3.5f * p))
-    scope.drawRect(Color(0xFFF77F00), Offset(fridgeX - 0.5f * p, basketY), Size(3.5f * p, 3.5f * p))
-    scope.drawRect(Color(0xFFE9C46A), Offset(fridgeX + 2.5f * p, basketY + 0.5f * p), Size(3 * p, 3 * p))
+    // Mochi's treat jar sits on top of the fridge (drawKitchenTreatJar).
 
     // 10. Cozy Woven Kitchen Runner Rug on the floor (where couple stands!)
     val rugX1 = cw * 0.14f

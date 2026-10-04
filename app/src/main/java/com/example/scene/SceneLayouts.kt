@@ -1,5 +1,7 @@
 package com.example.scene
 
+import com.example.engine.WorldViewport
+
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Rect
 import kotlin.math.abs
@@ -65,6 +67,9 @@ object CafeLayout {
     /** Leo's feet line, behind the counter. */
     fun barista(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) * 0.56f, barY(ch, p) + 12f * p)
 
+    /** The barista's drawn scale for scene pixel [p] (whole pixels in the pixel renderer). */
+    fun baristaScale(p: Float) = WorldViewport.spriteScale(p, 1.38f)
+
     /** Chalkboard menu hanging on the brick wall above the counter. */
     fun menuTopLeft(cw: Float, ch: Float, p: Float) = Offset(barX(cw) + barW(cw) / 2f - 16f * p, ch * 0.21f)
 
@@ -102,7 +107,7 @@ object CafeLayout {
         val leo = barista(cw, ch, p)
         val menu = menuTopLeft(cw, ch, p)
         val targets = buildList {
-            add(PropTarget(CafeProp.BARISTA, leo - Offset(0f, 15f * p), 17f * p))
+            add(PropTarget(CafeProp.BARISTA, leo - Offset(0f, 10.9f * baristaScale(p)), 12.3f * baristaScale(p)))
             add(PropTarget(CafeProp.MENU, menu + Offset(16f * p, 21f * p), 21f * p))
             add(PropTarget(CafeProp.PUP, pup(cw, ch, p), 11f * p))
             add(PropTarget(CafeProp.LATTE, latte(cw, ch, p), 11f * p))
@@ -225,6 +230,9 @@ object PierLayout {
     /** Bao's sprite scale relative to the scene's pixel size, close to the couple's. */
     const val BAO_SCALE = 1.3f
 
+    /** Bao's drawn scale for scene pixel [p] (whole pixels in the pixel renderer). */
+    fun baoScale(p: Float) = WorldViewport.spriteScale(p, BAO_SCALE)
+
     /** Where Mochi trots to collect a fish from Bao. */
     const val MOCHI_FISH_X = 0.74f
     const val MOCHI_FISH_Y = 0.73f
@@ -250,7 +258,7 @@ object PierLayout {
         val bottleBob = kotlin.math.sin(time * 1.8f) * 1.5f * p
         val targets = buildList {
             if (state.gullVisible) add(PropTarget(PierProp.PIP, Offset(cw * state.gullX, ch * state.gullY - 4f * p), 12f * p))
-            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 16f * p), 16f * p))
+            add(PropTarget(PierProp.BAO, bao(cw, ch) - Offset(0f, 12.3f * baoScale(p)), 12.3f * baoScale(p)))
             add(PropTarget(PierProp.CART, cart(cw, ch) - Offset(0f, 15f * p), 17f * p))
             if (state.bottleVisible) add(PropTarget(PierProp.BOTTLE, bottle(cw, ch) + Offset(0f, bottleBob), 10f * p))
             add(PropTarget(PierProp.LIGHTHOUSE, lighthouseBase(cw, ch) - Offset(0f, 22f * p), 20f * p))
@@ -268,7 +276,76 @@ object PierLayout {
 }
 
 /** Where the outdoor weather keepsakes sit: the rainbow after rain and the snowday snowman. */
+/**
+ * The kitchen's wall layout, shared by its drawing and its taps. The timber beam sits high so the
+ * wall is tall, with the window centred on it above the sink and the clock beside the window.
+ */
+object KitchenLayout {
+    fun floorY(ch: Float) = ch * 0.65f
+    fun ceilingY(ch: Float) = ch * 0.14f
+    fun wainscotTop(ch: Float, p: Float) = floorY(ch) - 42f * p
+    const val WINDOW_W = 34f
+    const val WINDOW_H = 44f
+    /** The window's top edge: its sill sits a little above the wainscoting, clear of the faucet. */
+    fun windowTop(ch: Float, p: Float) = wainscotTop(ch, p) - (WINDOW_H + 14f) * p
+    fun clockCenter(cw: Float, ch: Float, p: Float) = Offset(cw * 0.49f, windowTop(ch, p) + WINDOW_H * 0.35f * p)
+    /** Checkerboard floor tiles: size in scene pixels and the two colours. */
+    const val FLOOR_TILE = 16f
+    val FLOOR_TILE_A = androidx.compose.ui.graphics.Color(0xFFE6CCB2)
+    val FLOOR_TILE_B = androidx.compose.ui.graphics.Color(0xFFC59B76)
+    /** Where the windowsill is (the bottom of the window). */
+    fun windowSill(ch: Float, p: Float) = windowTop(ch, p) + WINDOW_H * p
+    /**
+     * Mochi's treat jar sits on top of the fridge, out of reach and clear of the couple (it used
+     * to hang on the wall right behind the boy). This is the jar's base centre.
+     */
+    fun treatJar(cw: Float, ch: Float, p: Float) = Offset(cw * 0.88f, floorY(ch) - 64f * p - 5f * p)
+}
+
+/**
+ * The meadow's cottage, shared by its drawing and its taps. It is drawn [COTTAGE_SCALE] times the
+ * scene's pixel so it stands taller than the couple instead of looking like a toy beside them.
+ */
+object MeadowLayout {
+    const val COTTAGE_SCALE = 1.2f
+    /** The cottage's centre: its roof (38 cottage pixels each side) starts just inside the left edge. */
+    fun cottageX(p: Float) = (38f * COTTAGE_SCALE + 2f) * p
+    fun groundY(ch: Float) = ch * 0.67f
+    /** The front door's centre (the door is 12 x 20 cottage pixels, 10 in from the left wall). */
+    fun cottageDoor(cw: Float, ch: Float, p: Float): Offset {
+        val cp = p * COTTAGE_SCALE
+        return Offset(cottageX(p) - 30f * cp + 16f * cp, groundY(ch) - 14f * cp)
+    }
+    /** Where the wind chimes hang from the eaves: left of the front door, clear of the couple. */
+    fun windChimes(cw: Float, ch: Float, p: Float): Offset {
+        val cp = p * COTTAGE_SCALE
+        return Offset(cottageX(p) - 26f * cp, groundY(ch) - 34f * cp - 6f * p)
+    }
+    /** The top of the chimney, where smoke rises from. */
+    fun chimneyTop(cw: Float, ch: Float, p: Float): Offset {
+        val cp = p * COTTAGE_SCALE
+        return Offset(cottageX(p) - 30f * cp + 11f * cp, groundY(ch) - 54f * cp)
+    }
+}
+
 object WeatherLayout {
+    /**
+     * Where rain puddles form in each outdoor scene (fractions of the scene): on the ground where
+     * water would gather, clear of the props. Scenes not listed use the meadow spots.
+     */
+    fun puddleSpotsFor(scene: SceneType): List<Pair<Float, Float>> = when (scene) {
+        // On the cobbled path in front of the stall and along the walk.
+        SceneType.MOMO_STALL -> listOf(0.18f to 0.71f, 0.55f to 0.72f, 0.86f to 0.70f)
+        SceneType.WALK -> listOf(0.22f to 0.70f, 0.58f to 0.71f, 0.86f to 0.70f)
+        // On the road the scooter rides along.
+        SceneType.EVENING_RIDE -> listOf(0.20f to 0.86f, 0.62f to 0.90f, 0.88f to 0.84f)
+        // On the deck, away from the bench, the cart and Grandpa Bao's crate.
+        SceneType.SEASIDE_PIER -> listOf(0.30f to 0.86f, 0.66f to 0.90f, 0.88f to 0.82f)
+        // In the grass, clear of the fire ring, the woodpile and the blanket.
+        SceneType.CAMPFIRE -> listOf(0.22f to 0.88f, 0.70f to 0.90f, 0.46f to 0.95f)
+        else -> com.example.engine.ParticleSystem.PUDDLE_SPOTS
+    }
+
     const val RAINBOW_SECONDS = 40f
     const val SNOWMAN_MAX_STAGE = 4
     /** Snowflakes to catch for each new snowman stage. */

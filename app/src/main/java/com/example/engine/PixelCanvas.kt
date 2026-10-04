@@ -322,7 +322,7 @@ data class PixelCharacter(
 object PixelArtRenderer {
 
     /** Uniform 10% character size increase applied to every scene automatically. */
-    private const val CHARACTER_SCALE_FACTOR = 1.10f
+    internal const val CHARACTER_SCALE_FACTOR = 1.10f
 
 
     data class GirlDressPalette(
@@ -513,15 +513,18 @@ object PixelArtRenderer {
         pixelSize: Float = 3.5f,
         isHoldingUmbrella: Boolean = false,
         isSnow: Boolean = false,
-        isSpeaking: Boolean = false
+        isSpeaking: Boolean = false,
+        snapToPixel: Boolean = false
     ) {
         // Feature 1: uniform +10% scale applied here once, covering all scenes and all poses
         val p = pixelSize * CHARACTER_SCALE_FACTOR
         val flip = char.direction == Direction.LEFT
         val w = 18
         val h = 26
-        val startX = centerX - (w * p) / 2f + char.idleSwayOffset
-        val startY = bottomY - (h * p) - char.bounceOffset
+        // With [snapToPixel] the sway and bounce move in whole pixels, so the sprite never smears.
+        fun place(v: Float) = if (snapToPixel) kotlin.math.round(v / p) * p else v
+        val startX = place(centerX - (w * p) / 2f + char.idleSwayOffset)
+        val startY = place(bottomY - (h * p) - char.bounceOffset)
 
         // Grounding contact drop-shadow beneath character's feet
         val shadowW = when (char.pose) {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Theme.MyApplication" parent="android:Theme.DeviceDefault.NoActionBar">
+        <item name="android:windowBackground">#FFF5F7</item>
+        <item name="android:windowSplashScreenBackground">#FFF5F7</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_splash_heart</item>
+    </style>
+</resources>

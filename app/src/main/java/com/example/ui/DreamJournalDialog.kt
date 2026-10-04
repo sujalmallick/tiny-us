@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -166,6 +166,7 @@ import androidx.compose.material.icons.rounded.Delete
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelIcons
 
 // -----------------------------------------------------------------------------
 // Shared Dream Journal - keyword engine + dialog
@@ -247,9 +248,9 @@ fun DreamJournalDialog(
         widthFraction = 0.94f
     ) {
         TinyDialogHeader(
-            title = "Shared Dream Journal",
-            subtitle = "Type a dream and watch it come alive",
-            icon = Icons.Rounded.Bedtime,
+            title = stringResource(R.string.ui_shared_dream_journal),
+            subtitle = stringResource(R.string.ui_type_a_dream_and_watch_it_come_alive),
+            icon = PixelIcons.Bedtime,
             accent = TinyColors.Plum,
             accentSoft = TinyColors.PlumSoft,
             onClose = onDismiss
@@ -269,8 +270,8 @@ fun DreamJournalDialog(
                     dreamText = it
                     errorText = ""
                 },
-                label = { Text("Describe your dream...") },
-                placeholder = { Text("e.g. We walked under cherry blossoms in Japan", style = TinyType.Caption) },
+                label = { Text(stringResource(R.string.ui_describe_your_dream)) },
+                placeholder = { Text(stringResource(R.string.ui_e_g_we_walked_under_cherry_blossoms_in_j), style = TinyType.Caption) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
                 minLines = 2,
@@ -285,7 +286,7 @@ fun DreamJournalDialog(
 
             // Visualize button
             TinyButton(
-                text = "Visualize Dream",
+                text = stringResource(R.string.ui_visualize_dream),
                 onClick = {
                     val trimmed = dreamText.trim()
                     if (trimmed.isEmpty()) {
@@ -307,12 +308,12 @@ fun DreamJournalDialog(
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
-                icon = Icons.Rounded.AutoAwesome
+                icon = PixelIcons.AutoAwesome
             )
 
             // Dream history
             if (dreamsList.isNotEmpty()) {
-                TinySectionHeader(title = "Past Dreams")
+                TinySectionHeader(title = stringResource(R.string.ui_past_dreams))
 
                 Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     dreamsList.take(10).forEach { entry ->
@@ -360,8 +361,8 @@ fun DreamJournalDialog(
                                         }
                                     ) {
                                         Icon(
-                                            Icons.Rounded.AutoAwesome,
-                                            contentDescription = "Relive dream",
+                                            PixelIcons.AutoAwesome,
+                                            contentDescription = stringResource(R.string.ui_relive_dream),
                                             tint = TinyColors.Plum,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -373,8 +374,8 @@ fun DreamJournalDialog(
                                         }
                                     ) {
                                         Icon(
-                                            Icons.Rounded.Delete,
-                                            contentDescription = "Delete dream",
+                                            PixelIcons.Delete,
+                                            contentDescription = stringResource(R.string.ui_delete_dream),
                                             tint = TinyColors.InkMuted,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -388,7 +389,7 @@ fun DreamJournalDialog(
 
             // Close button
             TinyButton(
-                text = "Close",
+                text = stringResource(R.string.ui_close),
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 style = TinyButtonStyle.Ghost

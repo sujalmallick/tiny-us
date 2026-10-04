@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -105,12 +104,15 @@ internal fun drawEnvironment(
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
             drawMeadowGround(scope, cw, ch, isNight, isSunset, timeSeconds, p, engine.weather)
             // Cottage house in background
-            WorldSprites.drawCottage(scope, cw * 0.22f, ch * 0.67f, p, timeSeconds, isNight, engine.weather)
+            val cottageP = p * com.example.scene.MeadowLayout.COTTAGE_SCALE
+            WorldSprites.drawCottage(scope, com.example.scene.MeadowLayout.cottageX(p), com.example.scene.MeadowLayout.groundY(ch), cottageP, timeSeconds, isNight, engine.weather)
             // Porch wind chimes hanging from cottage eaves
-            WorldSprites.drawPorchWindChimes(scope, cw * 0.22f + 24f * p, ch * 0.67f - 40f * p, p, engine.windChimeSwayTimer / 2.5f, timeSeconds)
+            val chimes = com.example.scene.MeadowLayout.windChimes(cw, ch, p)
+            WorldSprites.drawPorchWindChimes(scope, chimes.x, chimes.y, p, engine.windChimeSwayTimer / 2.5f, timeSeconds)
             // Animated chimney smoke
             if (sin(timeSeconds * 3f) > 0.7f) {
-                engine.particles.spawnChimneySmoke(cw * 0.17f, ch * 0.67f - 54 * p)
+                val chimney = com.example.scene.MeadowLayout.chimneyTop(cw, ch, p)
+                engine.particles.spawnChimneySmoke(chimney.x, chimney.y)
             }
             // Flowers with dynamic garden growth
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather, engine.gardenBlooms)
@@ -203,10 +205,10 @@ internal fun drawEnvironment(
             val tblY = juteY + 7f * p
             WorldSprites.drawSeasonalTableArtifact(scope, cw * 0.50f, tblY, p, engine.homeEvolutionState.seasonalArtifact, timeSeconds)
             if (engine.homeEvolutionState.hasWindowsillPlant || engine.plantWaterTimer > 0f) {
-                WorldSprites.drawWindowsillPlant(scope, cw * 0.28f + 9 * p, floorY - 52 * p, p)
+                WorldSprites.drawWindowsillPlant(scope, cw * 0.28f + 9 * p, com.example.scene.KitchenLayout.windowSill(ch, p), p)
             }
             if (engine.homeEvolutionState.hasOrigamiHeart) {
-                WorldSprites.drawOrigamiHeart(scope, cw * 0.28f - 7 * p, floorY - 52 * p, p)
+                WorldSprites.drawOrigamiHeart(scope, cw * 0.28f - 7 * p, com.example.scene.KitchenLayout.windowSill(ch, p), p)
             }
             if (engine.homeEvolutionState.hasAdventurePicnicBasket) {
                 WorldSprites.drawAdventurePicnicBasket(scope, cw * 0.76f, floorY, p)
@@ -220,8 +222,9 @@ internal fun drawEnvironment(
                 val elapsed = spinDur - engine.clockSpinTimer
                 val spinFrac = elapsed / spinDur
                 // Spin phase: 0..0.55 = fast spinning, 0.55..1.0 = settle to real time
-                val clockCx = cw * 0.49f
-                val clockCy = ch * 0.38f + 16f * p
+                val clockCenter = com.example.scene.KitchenLayout.clockCenter(cw, ch, p)
+                val clockCx = clockCenter.x
+                val clockCy = clockCenter.y
                 val clockR = 12f * p
                 val cal = java.util.Calendar.getInstance()
                 val realHourAngle = ((cal.get(java.util.Calendar.HOUR) % 12 + cal.get(java.util.Calendar.MINUTE) / 60f) / 12f) * (2f * Math.PI.toFloat())
@@ -600,7 +603,9 @@ internal fun drawEnvironment(
                 weather = engine.weather,
                 isNight = isNight,
                 isSunset = isSunset,
-                roomTheme = engine.roomTheme
+                roomTheme = engine.roomTheme,
+                boyLook = engine.boy.look,
+                girlLook = engine.girl.look
             )
 
             // Loft panoramic window breeze shimmer & leaves
@@ -914,6 +919,6 @@ internal fun drawEnvironment(
     }
 
     if (isNight && engine.constellationConnectTimer > 0f) {
-        drawConstellationOverlay(scope, cw, ch, p, engine.constellationConnectTimer, engine.activeConstellationIndex)
+        drawConstellationOverlay(scope, cw, ch, p, engine.constellationConnectTimer, engine.activeConstellationIndex, engine.sceneTime)
     }
 }

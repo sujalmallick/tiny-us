@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -185,6 +184,19 @@ internal fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<P
     }
 }
 
+/** Only the falling weather (rain, snow, petals, leaves, fluff), for the sky and ground beyond the stage. */
+internal fun drawFallingWeather(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+    for (i in particles.indices) {
+        val pt = particles[i]
+        if (pt.type == ParticleType.RAIN_DROP || pt.type == ParticleType.SNOWFLAKE ||
+            pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
+            pt.type == ParticleType.DANDELION_FLUFF
+        ) {
+            drawSingleParticle(scope, pt, p)
+        }
+    }
+}
+
 internal fun drawForegroundParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
@@ -260,62 +272,16 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
             scope.drawRect(color.copy(alpha = pt.alpha), Offset(pt.x + 2.4f * p, pt.y), Size(1.2f * p, 5f * p))
             scope.drawRect(color.copy(alpha = pt.alpha), Offset(pt.x + 3.2f * p, pt.y), Size(2f * p, 1.8f * p))
         }
-        ParticleType.RAIN_DROP -> {
-            // Proper authentic retro rain streak: crisp vertical slant falling towards ground
-            val rw = (0.75f * wu).coerceAtLeast(4f)
-            val rh = (pt.size * 0.95f) * (wu / 3.0f).coerceAtLeast(1f)
-            // Main streak core (bright crisp rain blue/white)
-            scope.drawRect(color, Offset(pt.x, pt.y), Size(rw, rh * 0.65f))
-            // Softer trail trailing up
-            scope.drawRect(color.copy(alpha = (pt.alpha * 0.45f).coerceIn(0f, 1f)), Offset(pt.x + 0.6f * p, pt.y - rh * 0.45f), Size(rw * 0.75f, rh * 0.45f))
-        }
+        ParticleType.RAIN_DROP -> drawRainSprite(scope, pt, p)
         ParticleType.RAIN_SPLASH -> {
             // Expanding ground splash puddle ripple
             val r = (pt.size * p * 0.85f).coerceAtLeast(8f)
             scope.drawRect(color.copy(alpha = (pt.alpha * 0.85f).coerceIn(0f, 1f)), Offset(pt.x - r, pt.y), Size(r * 2f, 1.6f * p))
             scope.drawRect(color.copy(alpha = (pt.alpha * 0.40f).coerceIn(0f, 1f)), Offset(pt.x - r * 0.5f, pt.y - 1f * p), Size(r, 1f * p))
         }
-        ParticleType.SAKURA_PETAL -> {
-            // Romantic pink drifting sakura petal with tumbling width and highlight
-            val s = (wu * (0.75f + pt.depth * 0.35f)).coerceIn(4.5f, 18f)
-            val flip = kotlin.math.cos(pt.phase * 1.4f)
-            val wFrac = kotlin.math.abs(flip).coerceIn(0.35f, 1.0f)
-            val pw = s * 2.2f * wFrac
-            val ph = s * 1.5f
-            // Petal body
-            scope.drawRect(color, Offset(pt.x - pw * 0.5f, pt.y - ph * 0.5f), Size(pw, ph))
-            // Soft highlight on upper edge
-            scope.drawRect(Color(0xFFFFF0F5).copy(alpha = (pt.alpha * 0.75f).coerceIn(0f, 1f)), Offset(pt.x - pw * 0.35f, pt.y - ph * 0.5f), Size(pw * 0.6f, ph * 0.35f))
-            // Delicate petal notch
-            scope.drawRect(color.copy(alpha = (pt.alpha * 0.80f).coerceIn(0f, 1f)), Offset(pt.x + pw * 0.1f, pt.y + ph * 0.1f), Size(pw * 0.45f, ph * 0.45f))
-        }
-        ParticleType.AUTUMN_LEAF -> {
-            // Romantic warm autumn leaf with tumbling flutter and silhouette
-            val s = (wu * (0.80f + pt.depth * 0.35f)).coerceIn(4.8f, 19f)
-            val flip = kotlin.math.cos(pt.phase * 1.2f)
-            val wFrac = kotlin.math.abs(flip).coerceIn(0.40f, 1.0f)
-            val pw = s * 2.3f * wFrac
-            val ph = s * 1.7f
-            // Leaf body
-            scope.drawRect(color, Offset(pt.x - pw * 0.5f, pt.y - ph * 0.5f), Size(pw, ph))
-            // Upper lobe / curl
-            scope.drawRect(color, Offset(pt.x - pw * 0.25f, pt.y - ph * 0.85f), Size(pw * 0.55f, ph * 0.45f))
-            // Subtle stem / shadow pixel
-            scope.drawRect(Color(0xFF5E2B0C).copy(alpha = (pt.alpha * 0.85f).coerceIn(0f, 1f)), Offset(pt.x - pw * 0.55f, pt.y + ph * 0.2f), Size(pw * 0.25f, ph * 0.25f))
-        }
-        ParticleType.SNOWFLAKE -> {
-            // Delicate crystal pixel snowflake (clearly visible 16-bit retro cross)
-            val s = (wu * (0.55f + pt.depth * 0.45f)).coerceIn(3.2f, 14f)
-            if (pt.size > 2.6f) {
-                // Classic 5-pixel cross snowflake with white/ice-blue core
-                scope.drawRect(color, Offset(pt.x - s * 1.2f, pt.y - s * 0.35f), Size(s * 2.4f, s * 0.7f))
-                scope.drawRect(color, Offset(pt.x - s * 0.35f, pt.y - s * 1.2f), Size(s * 0.7f, s * 2.4f))
-                scope.drawRect(Color.White.copy(alpha = pt.alpha), Offset(pt.x - s * 0.35f, pt.y - s * 0.35f), Size(s * 0.7f, s * 0.7f))
-            } else {
-                // Soft falling snow tuft
-                scope.drawRect(color, Offset(pt.x - s * 0.6f, pt.y - s * 0.6f), Size(s * 1.2f, s * 1.2f))
-            }
-        }
+        ParticleType.SAKURA_PETAL -> drawPetalSprite(scope, pt, p)
+        ParticleType.AUTUMN_LEAF -> drawLeafSprite(scope, pt, p)
+        ParticleType.SNOWFLAKE -> drawSnowSprite(scope, pt, p)
         ParticleType.DANDELION_FLUFF -> {
             // Soft white floating tuft with a few seed hairs
             val f = wu * 0.9f
@@ -335,3 +301,85 @@ internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
 
 /** Visual unit for weather particles: about 1/150 of the canvas width, never below the pixel scale. */
 private fun weatherUnit(scope: DrawScope, p: Float): Float = com.example.scene.WeatherLayout.weatherUnit(scope.size.width, p)
+
+// ── Falling weather as pixel sprites ────────────────────────────────────────────────────────
+// One block is [p] (a scene pixel: one game pixel in the pixel renderer). Nearer particles
+// (higher depth) are drawn with 2x2 blocks; colours are solid, so weather reads crisply on
+// any sky. A particle fading out after a weather change simply disappears once mostly faded.
+
+/** Draws [rows] ('#' main colour, 'h' highlight, 's' shade) centred on the particle. */
+private fun drawWeatherPattern(scope: DrawScope, pt: PixelParticle, p: Float, rows: Array<String>, main: Color, highlight: Color, shade: Color, block: Int) {
+    val b = p * block
+    val w = rows[0].length
+    val ox = pt.x - w * b / 2f
+    val oy = pt.y - rows.size * b / 2f
+    for ((r, row) in rows.withIndex()) {
+        for ((c, ch) in row.withIndex()) {
+            val col = when (ch) {
+                '#' -> main
+                'h' -> highlight
+                's' -> shade
+                else -> continue
+            }
+            scope.drawRect(col, Offset(ox + c * b, oy + r * b), Size(b, b))
+        }
+    }
+}
+
+private fun nearBlock(pt: PixelParticle, threshold: Float) = if (pt.depth >= threshold) 2 else 1
+
+private fun drawRainSprite(scope: DrawScope, pt: PixelParticle, p: Float) {
+    if (pt.alpha < 0.3f) return
+    val near = pt.depth >= 0.95f
+    val body = if (near) Color(0xFFD3EAFF) else Color(0xFF8DB6DC)
+    val len = if (near) 7 else 4
+    // A one-pixel streak with a brighter leading tip.
+    scope.drawRect(body, Offset(pt.x, pt.y - (len - 1) * p), Size(p, (len - 1) * p))
+    scope.drawRect(if (near) Color(0xFFF2F9FF) else Color(0xFFB4D2EC), Offset(pt.x, pt.y), Size(p, p))
+}
+
+private val PETAL_OPEN = arrayOf(".h#", "##.", "#..")
+private val PETAL_EDGE = arrayOf(".#", "#.", "#.")
+
+private fun drawPetalSprite(scope: DrawScope, pt: PixelParticle, p: Float) {
+    if (pt.alpha < 0.3f) return
+    // Tumbling: the petal shows its face, then its edge, in steps.
+    val open = kotlin.math.cos(pt.phase * 1.4f) > -0.2f
+    val main = pt.color.copy(alpha = 1f)
+    drawWeatherPattern(
+        scope, pt, p, if (open) PETAL_OPEN else PETAL_EDGE,
+        main, Color(0xFFFFEEF4), main, nearBlock(pt, 1.15f)
+    )
+}
+
+private val LEAF_OPEN = arrayOf("..#..", ".#h#.", "##s##", ".#s#.", "..s..")
+private val LEAF_EDGE = arrayOf(".#.", "#h#", ".s.", ".s.")
+
+private fun drawLeafSprite(scope: DrawScope, pt: PixelParticle, p: Float) {
+    if (pt.alpha < 0.3f) return
+    val open = kotlin.math.cos(pt.phase * 1.2f) > -0.3f
+    val main = pt.color.copy(alpha = 1f)
+    val vein = Color(0xFF6B3410)
+    val light = Color(
+        red = (main.red + 0.18f).coerceAtMost(1f),
+        green = (main.green + 0.14f).coerceAtMost(1f),
+        blue = main.blue,
+        alpha = 1f
+    )
+    drawWeatherPattern(scope, pt, p, if (open) LEAF_OPEN else LEAF_EDGE, main, light, vein, nearBlock(pt, 1.2f))
+}
+
+private val SNOW_SMALL = arrayOf("#")
+private val SNOW_PLUS = arrayOf(".#.", "#h#", ".#.")
+private val SNOW_STAR = arrayOf("..#..", ".#.#.", "##h##", ".#.#.", "..#..")
+
+private fun drawSnowSprite(scope: DrawScope, pt: PixelParticle, p: Float) {
+    if (pt.alpha < 0.3f) return
+    val rows = when {
+        pt.depth >= 1.15f -> SNOW_STAR
+        pt.depth >= 0.82f -> SNOW_PLUS
+        else -> SNOW_SMALL
+    }
+    val main = if (pt.depth >= 0.82f) Color(0xFFE6F2FF) else Color(0xFFC9DDF0)
+    drawWeatherPattern(scope, pt, p, rows, main, Color.White, main, 1)
+}

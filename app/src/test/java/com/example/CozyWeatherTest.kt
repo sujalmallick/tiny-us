@@ -50,7 +50,7 @@ class CozyWeatherTest {
     }
 
     @Test
-    fun `weather falls slowly enough to follow`() {
+    fun `weather falls at a lively but followable pace`() {
         val ps = ParticleSystem()
         repeat(40) {
             ps.spawnRainDrop(cw, ch)
@@ -59,10 +59,28 @@ class CozyWeatherTest {
             ps.spawnAutumnLeaf(cw, ch)
         }
         fun fastestTraversal(type: ParticleType) = ch / ps.particles.filter { it.type == type }.maxOf { it.vy }
-        assertTrue("Rain takes at least 2s to cross the screen", fastestTraversal(ParticleType.RAIN_DROP) >= 2.0f)
-        assertTrue("Snow drifts for well over 15s", fastestTraversal(ParticleType.SNOWFLAKE) >= 15f)
-        assertTrue("Petals drift for well over 14s", fastestTraversal(ParticleType.SAKURA_PETAL) >= 14f)
-        assertTrue("Leaves drift for well over 12s", fastestTraversal(ParticleType.AUTUMN_LEAF) >= 12f)
+        fun slowestTraversal(type: ParticleType) = ch / ps.particles.filter { it.type == type }.minOf { it.vy }
+        // Fast enough to feel like real weather...
+        assertTrue("Rain crosses the scene within about 2.5s", slowestTraversal(ParticleType.RAIN_DROP) <= 2.5f)
+        assertTrue("Snow crosses within about 25s", slowestTraversal(ParticleType.SNOWFLAKE) <= 25f)
+        assertTrue("Petals cross within about 18s", slowestTraversal(ParticleType.SAKURA_PETAL) <= 18f)
+        assertTrue("Leaves cross within about 16s", slowestTraversal(ParticleType.AUTUMN_LEAF) <= 16f)
+        // ...and slow enough to follow (and catch).
+        assertTrue("Rain takes about a second", fastestTraversal(ParticleType.RAIN_DROP) >= 0.8f)
+        assertTrue("Snow drifts for several seconds", fastestTraversal(ParticleType.SNOWFLAKE) >= 7f)
+        assertTrue("Petals drift for several seconds", fastestTraversal(ParticleType.SAKURA_PETAL) >= 6f)
+        assertTrue("Leaves drift for several seconds", fastestTraversal(ParticleType.AUTUMN_LEAF) >= 5f)
+    }
+
+    @Test
+    fun `falling weather enters from above instead of appearing mid-sky`() {
+        val ps = ParticleSystem()
+        repeat(40) {
+            ps.spawnSnowflake(cw, ch)
+            ps.spawnSakuraPetal(cw, ch)
+            ps.spawnAutumnLeaf(cw, ch)
+        }
+        assertTrue(ps.particles.all { it.y < 0f })
     }
 
     @Test

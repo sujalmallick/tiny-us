@@ -1,5 +1,7 @@
 package com.example.ui
 
+import com.example.R
+import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -46,8 +48,6 @@ import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
@@ -175,6 +175,7 @@ import androidx.compose.material.icons.rounded.Weekend
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.ui.theme.PixelIcons
 
 @Composable
 fun ScenePickerDialog(
@@ -188,21 +189,21 @@ fun ScenePickerDialog(
         modifier = Modifier.testTag("scene_picker_dialog")
     ) {
         TinyDialogHeader(
-            title = "Choose a Scene",
-            icon = Icons.Rounded.Landscape,
+            title = stringResource(R.string.ui_choose_a_scene),
+            icon = PixelIcons.Landscape,
             onClose = onDismiss,
             closeTestTag = "close_scenes"
         )
 
         TinyButton(
-            text = "Surprise Me (Random Scene)",
+            text = stringResource(R.string.ui_surprise_me_random_scene),
             onClick = {
                 onRandomScene()
                 onDismiss()
             },
             modifier = Modifier.fillMaxWidth(),
             style = TinyButtonStyle.Secondary,
-            icon = Icons.Rounded.Shuffle,
+            icon = PixelIcons.Shuffle,
             testTag = "random_scene_button"
         )
 
@@ -252,17 +253,17 @@ fun ScenePickerDialog(
 }
 
 internal fun getSceneIcon(sc: SceneType): ImageVector = when (sc) {
-    SceneType.FLOWER -> Icons.Rounded.LocalFlorist
-    SceneType.UNDER_TREE -> Icons.Rounded.Park
-    SceneType.COOKING -> Icons.Rounded.Restaurant
-    SceneType.SLEEP -> Icons.Rounded.Weekend
-    SceneType.WALK -> Icons.Rounded.Nightlight
-    SceneType.LOOKING -> Icons.Rounded.Favorite
-    SceneType.MOMO_STALL -> Icons.Rounded.Restaurant
-    SceneType.EVENING_RIDE -> Icons.Rounded.TwoWheeler
-    SceneType.COZY_LOFT -> Icons.Rounded.Weekend
-    SceneType.RAINY_CAFE -> Icons.Rounded.Restaurant
-    SceneType.SUNROOM -> Icons.Rounded.LocalFlorist
-    SceneType.CAMPFIRE -> Icons.Rounded.AutoAwesome
-    SceneType.SEASIDE_PIER -> Icons.Rounded.Sailing
+    SceneType.FLOWER -> PixelIcons.LocalFlorist
+    SceneType.UNDER_TREE -> PixelIcons.Park
+    SceneType.COOKING -> PixelIcons.Restaurant
+    SceneType.SLEEP -> PixelIcons.Weekend
+    SceneType.WALK -> PixelIcons.Nightlight
+    SceneType.LOOKING -> PixelIcons.Favorite
+    SceneType.MOMO_STALL -> PixelIcons.Restaurant
+    SceneType.EVENING_RIDE -> PixelIcons.TwoWheeler
+    SceneType.COZY_LOFT -> PixelIcons.Weekend
+    SceneType.RAINY_CAFE -> PixelIcons.Restaurant
+    SceneType.SUNROOM -> PixelIcons.LocalFlorist
+    SceneType.CAMPFIRE -> PixelIcons.AutoAwesome
+    SceneType.SEASIDE_PIER -> PixelIcons.Sailing
 }

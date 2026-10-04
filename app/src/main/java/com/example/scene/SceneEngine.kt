@@ -1,5 +1,9 @@
 package com.example.scene
 
+import com.example.engine.GameText
+import com.example.R
+import com.example.engine.WorldViewport
+
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableIntStateOf
@@ -652,6 +656,7 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
         sceneTime = 0f
         sceneMessage = null
@@ -1067,7 +1072,7 @@ class SceneEngine(
         roomTheme = theme
         if (announce) {
             audio.playBubblePop()
-            showMessage("${theme.title} is ready for a cozy evening.", duration = 2.4f)
+            showMessage(GameText.get(R.string.scene_is_ready_for_a_cozy_evening, theme.title), duration = 2.4f)
         }
     }
 
@@ -1111,7 +1116,7 @@ class SceneEngine(
 
     fun update(deltaSeconds: Float, canvasWidth: Float, canvasHeight: Float) {
         sceneTime += deltaSeconds
-        val pixelScale = (canvasWidth / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
         if (isWatchSceneActive) {
@@ -1119,7 +1124,7 @@ class SceneEngine(
             val t = watchSceneTimer
             val cw = canvasWidth
             val ch = canvasHeight
-            val pxScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+            val pxScale = WorldViewport.pixelScale(cw)
 
             when (watchSceneScene) {
 
@@ -1173,7 +1178,7 @@ class SceneEngine(
                                 girl.emoteTimer = 2.5f
                                 audio.playHeartChime()
                                 particles.spawnHeart(cw * 0.51f, ch * 0.58f)
-                                showMessage("For you, always", duration = 4.0f)
+                                showMessage(GameText.get(R.string.scene_for_you_always), duration = 4.0f)
                             }
                         }
                         t < endTime -> {
@@ -1230,7 +1235,7 @@ class SceneEngine(
                                 girl.emoteTimer = 2.0f
                                 girl.emotion = CharacterEmotion.CURIOUS
                                 audio.playHeartChime()
-                                showMessage("See that star? That is ours", duration = 4.5f)
+                                showMessage(GameText.get(R.string.scene_see_that_star_that_is_ours), duration = 4.5f)
                                 particles.spawnSparkles(cw * 0.47f, ch * 0.35f, 5)
                             }
                         }
@@ -1285,7 +1290,7 @@ class SceneEngine(
                                 boy.emoteTimer = 1.5f
                                 boy.emotion = CharacterEmotion.SURPRISED
                                 audio.playHeartChime()
-                                showMessage("Hey! That is mine!", duration = 3.0f)
+                                showMessage(GameText.get(R.string.scene_hey_that_is_mine), duration = 3.0f)
                             }
                         }
                         t < 6.0f -> {
@@ -1311,9 +1316,9 @@ class SceneEngine(
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
                             if (t > 6.5f && boySpeechText == null) {
-                                boySpeechText = "You little thief"
+                                boySpeechText = GameText.get(R.string.scene_you_little_thief)
                                 boySpeechTimer = 3.0f
-                                girlSpeechText = "So yummy though"
+                                girlSpeechText = GameText.get(R.string.scene_so_yummy_though)
                                 girlSpeechTimer = 3.0f
                             }
                             if (eventChance(0.9f, deltaSeconds)) {
@@ -1363,7 +1368,7 @@ class SceneEngine(
                             boy.worldX = (0.52f + (t - 3.2f) * 0.06f).coerceAtMost(0.42f)
                             girl.worldX = (0.60f + (t - 3.2f) * 0.06f).coerceAtMost(0.52f)
                             triggerWalkFootstep((t * 8).toInt())
-                            showMessage("Come, lets rest a while", duration = 3.0f)
+                            showMessage(GameText.get(R.string.scene_come_lets_rest_a_while), duration = 3.0f)
                         }
                         t < endTime -> {
                             // Sit and snuggle on couch
@@ -1412,8 +1417,8 @@ class SceneEngine(
                             girl.worldX = (0.40f + progress * 0.22f).coerceIn(0.40f, 0.62f)
                             triggerWalkFootstep((t * 8).toInt())
                             if (t > 2.5f && boySpeechText == null) {
-                                showMessage("The lanterns are so beautiful tonight", duration = 4.0f)
-                                boySpeechText = "Look at the lanterns"
+                                showMessage(GameText.get(R.string.scene_the_lanterns_are_so_beautiful_tonight), duration = 4.0f)
+                                boySpeechText = GameText.get(R.string.scene_look_at_the_lanterns)
                                 boySpeechTimer = 4.0f
                             }
                         }
@@ -1474,9 +1479,9 @@ class SceneEngine(
                             boy.direction = Direction.RIGHT
                             girl.pose = CharacterPose.IDLE
                             if (t > 2.5f && boySpeechText == null) {
-                                boySpeechText = "See those two stars?"
+                                boySpeechText = GameText.get(R.string.scene_see_those_two_stars)
                                 boySpeechTimer = 3.5f
-                                showMessage("The Two Hearts constellation — just like us", duration = 5.0f)
+                                showMessage(GameText.get(R.string.scene_the_two_hearts_constellation_just_like_u), duration = 5.0f)
                                 particles.spawnSparkles(cw * 0.50f, ch * 0.25f, 6)
                                 audio.playHeartChime()
                             }
@@ -1491,7 +1496,7 @@ class SceneEngine(
                             if (t > 4.0f && girl.emote == EmoteType.NONE) {
                                 girl.emote = EmoteType.HEART
                                 girl.emoteTimer = 2.0f
-                                girlSpeechText = "That is us up there!"
+                                girlSpeechText = GameText.get(R.string.scene_that_is_us_up_there)
                                 girlSpeechTimer = 3.0f
                                 particles.spawnHeart(cw * 0.53f, ch * 0.40f)
                             }
@@ -1539,9 +1544,9 @@ class SceneEngine(
                             girl.pose = CharacterPose.IDLE
                             triggerWalkFootstep((t * 8).toInt())
                             if (t > 2.5f && boySpeechText == null) {
-                                boySpeechText = "First momo for you"
+                                boySpeechText = GameText.get(R.string.scene_first_momo_for_you)
                                 boySpeechTimer = 3.0f
-                                showMessage("Fresh and hot, just for my love", duration = 4.0f)
+                                showMessage(GameText.get(R.string.scene_fresh_and_hot_just_for_my_love), duration = 4.0f)
                             }
                         }
                         t < 5.5f -> {
@@ -1555,7 +1560,7 @@ class SceneEngine(
                             if (t > 4.0f && girl.emote == EmoteType.NONE) {
                                 girl.emote = EmoteType.SPARKLE
                                 girl.emoteTimer = 2.0f
-                                girlSpeechText = "So yummy!"
+                                girlSpeechText = GameText.get(R.string.scene_so_yummy)
                                 girlSpeechTimer = 2.5f
                                 audio.playHeartChime()
                                 particles.spawnHeart(cw * 0.52f, ch * 0.52f)
@@ -1610,12 +1615,12 @@ class SceneEngine(
                             if (t > 2.5f && girl.emote == EmoteType.NONE) {
                                 girl.emote = EmoteType.HEART
                                 girl.emoteTimer = 3.0f
-                                girlSpeechText = "Not too fast!"
+                                girlSpeechText = GameText.get(R.string.scene_not_too_fast)
                                 girlSpeechTimer = 3.0f
-                                boySpeechText = "Hold on tight!"
+                                boySpeechText = GameText.get(R.string.scene_hold_on_tight)
                                 boySpeechTimer = 3.0f
                                 audio.playHeartChime()
-                                showMessage("Racing down the open road", duration = 4.0f)
+                                showMessage(GameText.get(R.string.scene_racing_down_the_open_road), duration = 4.0f)
                             }
                         }
                         t < endTime -> {
@@ -1656,9 +1661,9 @@ class SceneEngine(
                             boy.direction = Direction.RIGHT
                             girl.pose = CharacterPose.SIT_SNUGGLE
                             if (t > 2.0f && boySpeechText == null) {
-                                boySpeechText = "Dance with me?"
+                                boySpeechText = GameText.get(R.string.scene_dance_with_me)
                                 boySpeechTimer = 3.0f
-                                showMessage("The record player hums softly", duration = 4.0f)
+                                showMessage(GameText.get(R.string.scene_the_record_player_hums_softly), duration = 4.0f)
                                 audio.playHeartChime()
                                 particles.spawnSparkles(cw * 0.54f, ch * 0.45f, 1)
                             }
@@ -1730,12 +1735,12 @@ class SceneEngine(
                             girl.emotion = CharacterEmotion.LOVING
                             val kissMidX = 0.49f
                             if (boySpeechText == null) {
-                                boySpeechText = "i love u ${girl.name}"
+                                boySpeechText = GameText.get(R.string.scene_i_love_u, girl.name)
                                 boySpeechTimer = 5.5f
-                                girlSpeechText = "i love u ${boy.name}"
+                                girlSpeechText = GameText.get(R.string.scene_i_love_u, boy.name)
                                 girlSpeechTimer = 5.5f
                                 audio.playHeartChime()
-                                showMessage("${boy.name} & ${girl.name} - Forever and always", duration = 5.0f)
+                                showMessage(GameText.get(R.string.scene_forever_and_always, boy.name, girl.name), duration = 5.0f)
                                 particles.spawnHeart(canvasWidth * kissMidX, canvasHeight * boy.worldY - 32f * pxScale)
                                 particles.spawnSparkles(canvasWidth * kissMidX, canvasHeight * boy.worldY - 26f * pxScale, 4)
                             }
@@ -2295,7 +2300,7 @@ class SceneEngine(
                 boy.emotion = CharacterEmotion.HAPPY
             }
             if (sceneMessage == null && t > 6.0f) {
-                showMessage("For you", duration = 4.5f)
+                showMessage(GameText.get(R.string.scene_for_you), duration = 4.5f)
                 particles.spawnPetals(cw * 0.50f, ch * 0.60f, count = 10)
             }
         } else if (t < 11.0f) {
@@ -2343,7 +2348,7 @@ class SceneEngine(
                 girl.emotion = CharacterEmotion.LOVING
             }
             if (sceneMessage == null && t > 5.0f) {
-                showMessage("Just being here with you is my favorite place.", duration = 4.5f)
+                showMessage(GameText.get(R.string.scene_just_being_here_with_you_is_my_favorite), duration = 4.5f)
                 particles.spawnHeart(cw * 0.5f, ch * 0.58f)
             }
         } else {
@@ -2419,7 +2424,7 @@ class SceneEngine(
             boy.emote = EmoteType.SWEAT
             boy.emoteTimer = 1.8f
             if (sceneMessage == null) {
-                showMessage("Caught you! ...You can have a taste", duration = 4.0f)
+                showMessage(GameText.get(R.string.scene_caught_you_you_can_have_a_taste), duration = 4.0f)
                 particles.spawnHeart(cw * 0.48f, ch * 0.58f)
             }
         } else {
@@ -2528,7 +2533,7 @@ class SceneEngine(
                             girl.emotion = CharacterEmotion.SLEEPY
                         }
                         if (couchPhaseTimer < 1.0f && sceneMessage == null) {
-                            showMessage("Drifting off to sleep as midnight falls...", duration = 2.5f)
+                            showMessage(GameText.get(R.string.scene_drifting_off_to_sleep_as_midnight_falls), duration = 2.5f)
                         }
                     } else {
                         // Sleeping peacefully
@@ -2543,7 +2548,7 @@ class SceneEngine(
                             particles.spawnSleepZ(cw * 0.56f, ch * 0.55f)
                         }
                         if (couchPhaseTimer in 3.2f..4.0f && sceneMessage == null) {
-                            showMessage("Sweet dreams, my love.", duration = 3.5f)
+                            showMessage(GameText.get(R.string.scene_sweet_dreams_my_love), duration = 3.5f)
                         }
                     }
                 }
@@ -2586,7 +2591,7 @@ class SceneEngine(
                         if (boy.reactionTimer <= 0) boy.pose = CharacterPose.SIT
                         if (girl.reactionTimer <= 0) girl.pose = CharacterPose.SIT
                         if (couchPhaseTimer in 3.2f..4.0f && sceneMessage == null) {
-                            showMessage("Morning light brings another day with you.", duration = 3.0f)
+                            showMessage(GameText.get(R.string.scene_morning_light_brings_another_day_with_yo), duration = 3.0f)
                         }
                     }
                 }
@@ -2598,7 +2603,7 @@ class SceneEngine(
                     if (girl.reactionTimer <= 0) girl.pose = CharacterPose.SIT
                     catSleeping = false
                     if (couchPhaseTimer in 1.0f..1.8f && sceneMessage == null) {
-                        showMessage("Bright midday sunshine streams through our window.", duration = 3.0f)
+                        showMessage(GameText.get(R.string.scene_bright_midday_sunshine_streams_through_o), duration = 3.0f)
                     }
                 }
                 CouchPhase.EVENING -> {
@@ -2625,7 +2630,7 @@ class SceneEngine(
                         }
                     }
                     if (couchPhaseTimer in 1.0f..1.8f && sceneMessage == null) {
-                        showMessage("Golden hour twilight — peaceful evening together.", duration = 3.0f)
+                        showMessage(GameText.get(R.string.scene_golden_hour_twilight_peaceful_evening_to), duration = 3.0f)
                     }
                 }
             }
@@ -2673,7 +2678,7 @@ class SceneEngine(
                 girl.bounceOffset = 0f
             }
             if (sceneMessage == null) {
-                showMessage("Wherever we go, as long as it's together.", duration = 4.5f)
+                showMessage(GameText.get(R.string.scene_wherever_we_go_as_long_as_it_s_together), duration = 4.5f)
                 audio.playStarTwinkle()
                 particles.spawnShootingStar(cw * 0.2f, ch * 0.1f)
                 particles.spawnSparkles(cw * 0.65f, ch * 0.22f, 8)
@@ -2720,7 +2725,7 @@ class SceneEngine(
             if (boy.reactionTimer <= 0) boy.pose = CharacterPose.HOLD_HANDS
             if (girl.reactionTimer <= 0) girl.pose = CharacterPose.HOLD_HANDS
             if (sceneMessage == null) {
-                showMessage("I love you. Just wanted to look at you.", duration = 4.5f)
+                showMessage(GameText.get(R.string.scene_i_love_you_just_wanted_to_look_at_you), duration = 4.5f)
                 particles.spawnHeart(cw * 0.50f, ch * 0.52f, Color(0xFFFF3366))
             }
         } else {
@@ -2759,7 +2764,7 @@ class SceneEngine(
 
     private fun updateMomoScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
 
         // Continuous steam wisps rising softly from the momo steamer
         if (eventChance(1.8f, dt)) {
@@ -2779,7 +2784,7 @@ class SceneEngine(
                 girl.emotion = CharacterEmotion.HAPPY
             }
             if (sceneMessage == null && t > 0.8f) {
-                showMessage("Welcome to our cozy street food stall!", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_welcome_to_our_cozy_street_food_stall), duration = 3.5f)
             }
         } else if (t < 5.8f) {
             // Girl takes a bite with spicy red chutney!
@@ -2805,7 +2810,7 @@ class SceneEngine(
                 }
             }
             if (sceneMessage == null && t > 3.0f) {
-                showMessage("Steaming hot momos with extra spicy chutney!", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_steaming_hot_momos_with_extra_spicy_chut), duration = 3.5f)
             }
         } else if (t < 9.5f) {
             // Enjoying together sharing the delicious plate
@@ -2820,7 +2825,7 @@ class SceneEngine(
                 girl.emotion = CharacterEmotion.HAPPY
             }
             if (sceneMessage == null && t > 6.2f) {
-                showMessage("Everything tastes sweeter with you.", duration = 4.0f)
+                showMessage(GameText.get(R.string.scene_everything_tastes_sweeter_with_you), duration = 4.0f)
                 particles.spawnSparkles(cw * 0.5f, ch * 0.65f, 5)
             }
         } else {
@@ -2847,17 +2852,17 @@ class SceneEngine(
 
         if (t < 2.5f) {
             if (sceneMessage == null && t > 0.8f) {
-                showMessage("Evening scooter ride together through the glowing city", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_evening_scooter_ride_together_through_th), duration = 3.5f)
             }
         } else if (t >= 3.0f && !rideBoySpoke && boySpeechText == null && girlSpeechText == null) {
             rideBoySpoke = true
-            boySpeechText = "Holding you forever, my love."
+            boySpeechText = GameText.get(R.string.scene_holding_you_forever_my_love)
             boySpeechTimer = 3.5f
             boy.emotion = CharacterEmotion.LOVING
             particles.spawnHeart(cw * 0.44f, ch * 0.60f, Color(0xFFFF3366))
         } else if (t >= 6.8f && !rideGirlSpoke && girlSpeechText == null && boySpeechText == null) {
             rideGirlSpoke = true
-            girlSpeechText = "Hold tight ${boy.name}! The scooter is fast hehe!"
+            girlSpeechText = GameText.get(R.string.scene_hold_tight_the_scooter_is_fast_hehe, boy.name)
             girlSpeechTimer = 3.5f
             girl.emotion = CharacterEmotion.HAPPY
             particles.spawnHeart(cw * 0.52f, ch * 0.60f, Color(0xFFFF5D8F))
@@ -2866,7 +2871,7 @@ class SceneEngine(
 
     private fun updateCozyLoftScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
 
         // 1. Gentle steam wisps rising from hot mugs on coffee table
@@ -2903,7 +2908,7 @@ class SceneEngine(
                 girl.emotion = CharacterEmotion.LOVING
             }
             if (sceneMessage == null && t > 0.8f) {
-                showMessage("Midnight in our cozy loft...", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_midnight_in_our_cozy_loft), duration = 3.5f)
             }
         } else if (t < 5.5f) {
             if (girl.reactionTimer <= 0) {
@@ -2915,12 +2920,12 @@ class SceneEngine(
                 boy.emotion = CharacterEmotion.LOVING
             }
             if (t in 2.8f..3.0f && girlSpeechText == null && boySpeechText == null) {
-                girlSpeechText = "It's so peaceful up here with you."
+                girlSpeechText = GameText.get(R.string.scene_it_s_so_peaceful_up_here_with_you)
                 girlSpeechTimer = 3.2f
                 particles.spawnHeart(cw * 0.62f, ch * 0.50f, Color(0xFFFF758F))
             }
             if (t in 5.2f..5.4f && boySpeechText == null) {
-                boySpeechText = "My favorite place in the whole world."
+                boySpeechText = GameText.get(R.string.scene_my_favorite_place_in_the_whole_world)
                 boySpeechTimer = 3.2f
                 particles.spawnHeart(cw * 0.53f, ch * 0.50f, Color(0xFFFF3366))
             }
@@ -3591,7 +3596,7 @@ class SceneEngine(
                         girl.reactionTimer = walkTime + 3.0f
                         audio.playHeartChime()
                         particles.spawnHeart(cw * girl.worldX, ch * girl.worldY - 28f)
-                        showMessage("A tiny flower just for you.", duration = 3.0f)
+                        showMessage(GameText.get(R.string.scene_a_tiny_flower_just_for_you), duration = 3.0f)
                     }
                     1 -> {
                         // 2. Girl takes a few joyful steps across meadow
@@ -3867,7 +3872,7 @@ class SceneEngine(
                         boy.emoteTimer = 2.0f
                         boy.reactionTimer = 2.2f
                         audio.playBubblePop()
-                        showMessage("Extra spicy red chutney! ${boy.name} laughs happily.", duration = 3.0f)
+                        showMessage(GameText.get(R.string.scene_extra_spicy_red_chutney_laughs_happily, boy.name), duration = 3.0f)
                     }
                     2 -> {
                         // 3. Girl feeds momo to boy
@@ -4254,7 +4259,7 @@ class SceneEngine(
             groundInteractionCharacter != null
         ) return false
 
-        val px = (cw / 115f).coerceIn(3f, 5f)
+        val px = WorldViewport.pixelScale(cw)
         val minY: Float
         val maxY: Float
         val minX: Float
@@ -4385,7 +4390,7 @@ class SceneEngine(
             boy.emoteTimer = 2.5f
             audio.playHeartChime()
             particles.spawnHeart(cw * boy.worldX, ch * boy.worldY - 30f)
-            boySpeechText = "Coming closer to you!"
+            boySpeechText = GameText.get(R.string.scene_coming_closer_to_you)
             boySpeechTimer = 3.0f
             return
         }
@@ -4399,7 +4404,7 @@ class SceneEngine(
                 boy.bounceOffset = 9f
                 audio.playBubblePop()
                 particles.spawnHeart(cw * boy.worldX, ch * boy.worldY - 30f)
-                boySpeechText = "Hey gorgeous!"
+                boySpeechText = GameText.get(R.string.scene_hey_gorgeous)
                 boySpeechTimer = 3.2f
             }
             1 -> {
@@ -4408,7 +4413,7 @@ class SceneEngine(
                 boy.emoteTimer = 2.0f
                 audio.playHeartChime()
                 particles.spawnSparkles(cw * boy.worldX, ch * boy.worldY - 30f, 6)
-                boySpeechText = "My favorite person in the world."
+                boySpeechText = GameText.get(R.string.scene_my_favorite_person_in_the_world)
                 boySpeechTimer = 3.2f
             }
             2 -> {
@@ -4418,7 +4423,7 @@ class SceneEngine(
                 boy.emoteTimer = 2.0f
                 audio.playHeartChime()
                 particles.spawnHeart(cw * boy.worldX, ch * boy.worldY - 30f, Color(0xFFFF758F))
-                boySpeechText = "You make my whole world brighter."
+                boySpeechText = GameText.get(R.string.scene_you_make_my_whole_world_brighter)
                 boySpeechTimer = 3.2f
             }
             3 -> {
@@ -4437,7 +4442,7 @@ class SceneEngine(
                 boy.emote = EmoteType.HEART
                 boy.emoteTimer = 2.0f
                 audio.playHeartChime()
-                boySpeechText = "Still completely head over heels for you."
+                boySpeechText = GameText.get(R.string.scene_still_completely_head_over_heels_for_you)
                 boySpeechTimer = 3.2f
             }
         }
@@ -4456,7 +4461,7 @@ class SceneEngine(
             girl.emoteTimer = 2.5f
             audio.playHeartChime()
             particles.spawnHeart(cw * girl.worldX, ch * girl.worldY - 30f)
-            girlSpeechText = "Getting closer to you!"
+            girlSpeechText = GameText.get(R.string.scene_getting_closer_to_you)
             girlSpeechTimer = 3.0f
             return
         }
@@ -4479,7 +4484,7 @@ class SceneEngine(
                 girl.emoteTimer = 2.0f
                 audio.playStarTwinkle()
                 particles.spawnSparkles(cw * girl.worldX, ch * girl.worldY - 30f, 6)
-                girlSpeechText = "My heart feels so full with you."
+                girlSpeechText = GameText.get(R.string.scene_my_heart_feels_so_full_with_you)
                 girlSpeechTimer = 3.2f
             }
             2 -> {
@@ -4498,7 +4503,7 @@ class SceneEngine(
                 girl.emoteTimer = 2.0f
                 girl.bounceOffset = 6f
                 audio.playBubblePop()
-                girlSpeechText = "Warmest cuddles only with you."
+                girlSpeechText = GameText.get(R.string.scene_warmest_cuddles_only_with_you)
                 girlSpeechTimer = 3.2f
             }
             4 -> {
@@ -4508,7 +4513,7 @@ class SceneEngine(
                 girl.emoteTimer = 2.0f
                 audio.playHeartChime()
                 particles.spawnHeart(cw * girl.worldX, ch * girl.worldY - 30f, Color(0xFFFF85A1))
-                girlSpeechText = "Forever by your side."
+                girlSpeechText = GameText.get(R.string.scene_forever_by_your_side)
                 girlSpeechTimer = 3.2f
             }
         }
@@ -4595,7 +4600,7 @@ class SceneEngine(
                 repeat(8) {
                     particles.spawnHeart(cw * midX + (Random.nextFloat() - 0.5f) * 32f, ch * boy.worldY - 28f)
                 }
-                showMessage("Always safe in your arms.", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_always_safe_in_your_arms), duration = 3.5f)
             }
             1 -> {
                 // Lift & Spin Hug
@@ -4615,7 +4620,7 @@ class SceneEngine(
                     particles.spawnHeart(cw * midX + (Random.nextFloat() - 0.5f) * 36f, ch * boy.worldY - 32f)
                     particles.spawnSparkles(cw * midX + (Random.nextFloat() - 0.5f) * 36f, ch * boy.worldY - 26f, 1)
                 }
-                showMessage("Spinning around with my whole world.", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_spinning_around_with_my_whole_world), duration = 3.5f)
             }
             2 -> {
                 // Gentle Forehead Touch / Soft Cuddle
@@ -4631,7 +4636,7 @@ class SceneEngine(
                 repeat(6) {
                     particles.spawnHeart(cw * midX + (Random.nextFloat() - 0.5f) * 20f, ch * boy.worldY - 25f, Color(0xFFFFCAD4))
                 }
-                showMessage("Listening to your heartbeat...", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_listening_to_your_heartbeat), duration = 3.5f)
             }
             3 -> {
                 // Sweet Forehead Kiss
@@ -4647,7 +4652,7 @@ class SceneEngine(
                 repeat(8) {
                     particles.spawnHeart(cw * midX + (Random.nextFloat() - 0.5f) * 28f, ch * boy.worldY - 32f, Color(0xFFFF5D8F))
                 }
-                showMessage("My whole world right here.", duration = 3.5f)
+                showMessage(GameText.get(R.string.scene_my_whole_world_right_here), duration = 3.5f)
             }
         }
     }
@@ -4673,7 +4678,7 @@ class SceneEngine(
         repeat(8) {
             particles.spawnHeart(cw * midX + (Random.nextFloat() - 0.5f) * 32f, ch * boy.worldY - 28f)
         }
-        showMessage("Holding you close.", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_holding_you_close), duration = 3.5f)
     }
 
     fun onTouchTree(cw: Float, ch: Float) {
@@ -4732,7 +4737,7 @@ class SceneEngine(
                 boy.pose = CharacterPose.EAT_SNEAK
                 boy.emotion = CharacterEmotion.LOVING
                 boy.reactionTimer = 3.5f
-                showMessage("Cooking with love — ${boy.name} sneaks a taste!", duration = 3.0f)
+                showMessage(GameText.get(R.string.scene_cooking_with_love_sneaks_a_taste, boy.name), duration = 3.0f)
             }
             1 -> {
                 // Offer food to other character
@@ -4748,7 +4753,7 @@ class SceneEngine(
                 boy.pose = CharacterPose.EAT_MOMO
                 boy.emotion = CharacterEmotion.HAPPY
                 boy.reactionTimer = 3.5f
-                showMessage("${girl.name} offers a warm spoonful to ${boy.name}.", duration = 3.0f)
+                showMessage(GameText.get(R.string.scene_offers_a_warm_spoonful_to, girl.name, boy.name), duration = 3.0f)
             }
             else -> {
                 // Playful food-stealing
@@ -4764,7 +4769,7 @@ class SceneEngine(
                 girl.emotion = CharacterEmotion.PLAYFUL
                 boy.reactionTimer = 3.5f
                 girl.reactionTimer = 3.5f
-                showMessage("${boy.name} playfully steals a taste before it's ready!", duration = 3.0f)
+                showMessage(GameText.get(R.string.scene_playfully_steals_a_taste_before_it_s_rea, boy.name), duration = 3.0f)
             }
         }
     }
@@ -4837,7 +4842,7 @@ class SceneEngine(
         boy.emote = EmoteType.SWEAT
         boy.emoteTimer = 2.5f
         boy.reactionTimer = cabinetOpenTimer + 0.5f
-        showMessage("Warm cookies baking golden inside the oven!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_warm_cookies_baking_golden_inside_the_ov), duration = 3.0f)
     }
 
     fun onTouchSink(cw: Float, ch: Float) {
@@ -4860,7 +4865,7 @@ class SceneEngine(
         boy.emote = EmoteType.HEART
         boy.emoteTimer = 2.5f
         boy.reactionTimer = 3.5f
-        showMessage("Splashing fresh water — washing veggies and tea cups!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_splashing_fresh_water_washing_veggies_an), duration = 3.0f)
     }
 
     fun onTouchKitchenTable(cw: Float, ch: Float) {
@@ -4881,7 +4886,7 @@ class SceneEngine(
         girl.reactionTimer = 4.0f
         boy.emoteTimer = 3.0f
         girl.emoteTimer = 3.0f
-        showMessage("Pulling up two chairs for warm tea and honest talks.", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_pulling_up_two_chairs_for_warm_tea_and_h), duration = 3.5f)
     }
 
     fun onTouchFlower(cw: Float, ch: Float) {
@@ -4924,7 +4929,7 @@ class SceneEngine(
             audio.playCatPurr()
             particles.spawnMusicNote(cw * catWorldX, ch * catWorldY - 24f)
             particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF8FA3))
-            showMessage("Mochi stopped to get your love!", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_mochi_stopped_to_get_your_love), duration = 2.5f)
             return
         }
         catState = when (catState) {
@@ -4941,29 +4946,29 @@ class SceneEngine(
             CatState.SITTING_PURR -> {
                 particles.spawnMusicNote(cw * catWorldX, ch * catWorldY - 24f)
                 particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF8FA3))
-                showMessage("Mochi is purring happily!", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_is_purring_happily), duration = 2.5f)
             }
             CatState.BELLY_ROLL -> {
                 repeat(4) {
                     particles.spawnHeart(cw * catWorldX + (Random.nextFloat() - 0.5f) * 20f, ch * catWorldY - 22f, Color(0xFFFF5D8F))
                 }
-                showMessage("Mochi wants gentle belly rubs!", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_wants_gentle_belly_rubs), duration = 2.5f)
             }
             CatState.PLAYFUL_POUNCE -> {
                 audio.playBubblePop()
                 particles.spawnSparkles(cw * catWorldX, ch * catWorldY - 20f, 6)
-                showMessage("Mochi pounces playfully!", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_pounces_playfully), duration = 2.5f)
             }
             CatState.WALK_FOLLOW -> {
                 val target = if (boy.worldX < girl.worldX) (boy.worldX - 0.08f).coerceAtLeast(0.12f) else (girl.worldX + 0.08f).coerceAtMost(0.88f)
                 catTargetX = target
                 catFacingLeft = catTargetX < catWorldX
                 particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF5D8F))
-                showMessage("Mochi is trotting right beside you!", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_is_trotting_right_beside_you), duration = 2.5f)
             }
             CatState.SLEEPING -> {
                 particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF8FA3))
-                showMessage("Mochi curled up for a warm snooze.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_curled_up_for_a_warm_snooze), duration = 2.5f)
             }
         }
     }
@@ -5033,7 +5038,7 @@ class SceneEngine(
         girl.bounceOffset = 8f
         audio.playHeartChime()
         val name = outfitDisplayName(girl, index)
-        showMessage("${girl.name} is now wearing the $name! Looking lovely!", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_is_now_wearing_the_looking_lovely, girl.name, name), duration = 3.5f)
     }
 
     fun selectGirlAccessory(index: Int) {
@@ -5047,9 +5052,9 @@ class SceneEngine(
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
-            showMessage("${girl.name} took off the accessory.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_took_off_the_accessory, girl.name), duration = 2.5f)
         } else {
-            showMessage("${girl.name} is now wearing the $name!", duration = 3.0f)
+            showMessage(GameText.get(R.string.scene_is_now_wearing_the, girl.name, name), duration = 3.0f)
         }
     }
 
@@ -5060,7 +5065,7 @@ class SceneEngine(
         boy.bounceOffset = 8f
         audio.playHeartChime()
         val name = outfitDisplayName(boy, index)
-        showMessage("${boy.name} is now wearing the $name! Looking wonderful!", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_is_now_wearing_the_looking_wonderful, boy.name, name), duration = 3.5f)
     }
 
     fun selectBoyAccessory(index: Int) {
@@ -5074,9 +5079,9 @@ class SceneEngine(
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
-            showMessage("${boy.name} took off the accessory.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_took_off_the_accessory, boy.name), duration = 2.5f)
         } else {
-            showMessage("${boy.name} is now wearing the $name!", duration = 3.0f)
+            showMessage(GameText.get(R.string.scene_is_now_wearing_the, boy.name, name), duration = 3.0f)
         }
     }
 
@@ -5120,7 +5125,7 @@ class SceneEngine(
 
     fun onTouchKitchenTreatJar() {
         if (catTreatInProgress) {
-            showMessage("Mochi is still enjoying the last little treat.", duration = 1.8f)
+            showMessage(GameText.get(R.string.scene_mochi_is_still_enjoying_the_last_little), duration = 1.8f)
             return
         }
         catTreatInProgress = true
@@ -5129,7 +5134,7 @@ class SceneEngine(
         catTreatDropTimer = 0.48f
         catTreatMunchTimer = 0f
         audio.playBubblePop()
-        showMessage("A crunchy little treat drops for Mochi!", duration = 2.2f)
+        showMessage(GameText.get(R.string.scene_a_crunchy_little_treat_drops_for_mochi), duration = 2.2f)
     }
 
     private fun updateKitchenTreat(dt: Float, cw: Float, ch: Float) {
@@ -5165,8 +5170,8 @@ class SceneEngine(
             catState = CatState.SITTING_PURR
             catTreatMunchTimer = 2.6f
             audio.playCatPurr()
-            particles.spawnHeart(cw * catWorldX, ch * catWorldY - 14f * (cw / 115f).coerceIn(3f, 5f), Color(0xFFFF6B8A))
-            showMessage("Mochi munches happily with a swishy tail!", duration = 2.5f)
+            particles.spawnHeart(cw * catWorldX, ch * catWorldY - 14f * WorldViewport.pixelScale(cw), Color(0xFFFF6B8A))
+            showMessage(GameText.get(R.string.scene_mochi_munches_happily_with_a_swishy_tail), duration = 2.5f)
         }
     }
 
@@ -5179,19 +5184,19 @@ class SceneEngine(
     fun onTouchCafeLatte(cw: Float, ch: Float) {
         cafeLatteTimer = 2.2f
         audio.playHeartChime()
-        val latte = CafeLayout.latte(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val latte = CafeLayout.latte(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnHeart(latte.x, latte.y - 8f, Color(0xFFFF729F))
-        showMessage("A tiny heart in the latte foam, made just for you.", duration = 2.4f)
+        showMessage(GameText.get(R.string.scene_a_tiny_heart_in_the_latte_foam_made_just), duration = 2.4f)
     }
 
     fun onTouchCafePastry(cw: Float, ch: Float) {
-        val plate = CafeLayout.plate(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val plate = CafeLayout.plate(cw, ch, WorldViewport.pixelScale(cw))
         if (cafePastryBites >= CafeLayout.MAX_PASTRY_BITES) {
             cafePastryBites = 0
             cafeBaristaBrewTimer = 1.2f
             audio.playHeartChime()
             particles.spawnSparkles(plate.x, plate.y, 4, Color(0xFFFFD166))
-            showMessage("Barista Leo brings a fresh warm croissant", duration = 2.2f)
+            showMessage(GameText.get(R.string.scene_barista_leo_brings_a_fresh_warm_croissan), duration = 2.2f)
             return
         }
         cafePastryBites += 1
@@ -5202,21 +5207,21 @@ class SceneEngine(
 
     fun onTouchCafeWindow(touchX: Float, touchY: Float, cw: Float, ch: Float) {
         // Keep the whole fog heart on the glass (it spans -3..+4 heart pixels around the tap).
-        val p = (cw / 115f).coerceIn(3f, 5f)
+        val p = WorldViewport.pixelScale(cw)
         val glass = CafeLayout.glass(cw, ch, p)
         cafeWindowHeartTimer = 2.8f
         cafeWindowHeartX = touchX.coerceIn(glass.left + 5f * p, glass.right - 7f * p) / cw
         cafeWindowHeartY = touchY.coerceIn(glass.top + p, glass.bottom - 8f * p) / ch
         audio.playWaterDrip()
         particles.spawnHeart(touchX, touchY, Color(0xFFFFB6C9))
-        showMessage("A little heart fogs the rainy window.", duration = 2.2f)
+        showMessage(GameText.get(R.string.scene_a_little_heart_fogs_the_rainy_window), duration = 2.2f)
     }
 
     fun onTouchCafeBarista(cw: Float, ch: Float) {
         cafeBaristaBrewTimer = 2.5f
         audio.playSteamHiss()
         audio.playHeartChime()
-        val leo = CafeLayout.barista(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val leo = CafeLayout.barista(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(leo.x, leo.y - 30f, 6, Color(0xFFFFD166))
         particles.spawnHeart(leo.x, leo.y - 50f, Color(0xFFFF729F))
         boy.emotion = CharacterEmotion.HAPPY
@@ -5227,35 +5232,35 @@ class SceneEngine(
         girl.emoteTimer = 2.5f
         boy.reactionTimer = 2.5f
         girl.reactionTimer = 2.5f
-        showMessage("Barista Leo: 'Fresh espresso brewing! Extra warm love for you two.'", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_barista_leo_fresh_espresso_brewing_extra), duration = 3.0f)
     }
 
     fun onTouchCafeMenu() {
         audio.playPaperFlip()
-        showMessage("Today's Specials: 1. Caramel Cloud Latte 2. Warm Croissant 3. Strawberry Macaron", duration = 3.2f)
+        showMessage(GameText.get(R.string.scene_today_s_specials_1_caramel_cloud_latte_2), duration = 3.2f)
     }
 
     fun onTouchCafePup(cw: Float, ch: Float) {
         cafePupPetTimer = 2.0f
         audio.playBubblePop()
-        val pup = CafeLayout.pup(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val pup = CafeLayout.pup(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnHeart(pup.x, pup.y - 30f, Color(0xFFFFCAD4))
         particles.spawnSparkles(pup.x, pup.y - 10f, 4, Color(0xFFFFD166))
-        showMessage("Boba the cafe pup wags his tail and naps happily beside Mochi", duration = 2.8f)
+        showMessage(GameText.get(R.string.scene_boba_the_cafe_pup_wags_his_tail_and_naps), duration = 2.8f)
     }
 
     fun onTouchCafePasserby(touchX: Float, touchY: Float) {
         audio.playBubblePop()
         particles.spawnSparkles(touchX, touchY, 5, Color(0xFFFFE066))
         particles.spawnHeart(touchX, touchY - 14f, Color(0xFFFF9AA2))
-        showMessage("A friendly neighbor strolls by with an umbrella through the rain", duration = 2.5f)
+        showMessage(GameText.get(R.string.scene_a_friendly_neighbor_strolls_by_with_an_u), duration = 2.5f)
     }
 
     fun onTouchSunroomSkylight(touchX: Float, touchY: Float) {
         sunroomSkylightTimer = 1.8f
         audio.playWaterDrip()
         particles.spawnRainSplash(touchX, touchY)
-        showMessage("Raindrops patter softly on the glass roof.", duration = 2.0f)
+        showMessage(GameText.get(R.string.scene_raindrops_patter_softly_on_the_glass_roo), duration = 2.0f)
     }
 
     fun onTouchSunroomPlants(cw: Float, ch: Float) {
@@ -5270,7 +5275,7 @@ class SceneEngine(
         sunroomMistTimer = 1.8f
         audio.playWaterDrip()
         particles.spawnSparkles(cw * 0.24f, ch * 0.69f, 6, Color(0xFFBFE9F7))
-        showMessage("A cool morning mist curls through the greenhouse.", duration = 2.3f)
+        showMessage(GameText.get(R.string.scene_a_cool_morning_mist_curls_through_the_gr), duration = 2.3f)
     }
 
     fun onTouchCampfire(cw: Float, ch: Float, touchX: Float, touchY: Float) {
@@ -5291,13 +5296,13 @@ class SceneEngine(
         girl.emoteTimer = 3.0f
         boy.reactionTimer = 3.5f
         girl.reactionTimer = 3.5f
-        showMessage("Roasting sweet golden marshmallows over the crackling campfire embers", duration = 3.2f)
+        showMessage(GameText.get(R.string.scene_roasting_sweet_golden_marshmallows_over), duration = 3.2f)
     }
 
     fun onTouchCampGuitar(cw: Float, ch: Float) {
         campGuitarStrumTimer = 2.6f
         audio.playStarArpeggio()
-        val guitar = CampfireLayout.guitar(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val guitar = CampfireLayout.guitar(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(guitar.x, guitar.y, 5, Color(0xFFFFD166))
         boy.emotion = CharacterEmotion.LOVING
         boy.emote = EmoteType.MUSIC_NOTE
@@ -5307,13 +5312,13 @@ class SceneEngine(
         girl.emoteTimer = 2.6f
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("Strumming a quiet acoustic melody beneath the pine trees and starlight", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_strumming_a_quiet_acoustic_melody_beneat), duration = 3.0f)
     }
 
     fun onTouchCampLantern(cw: Float, ch: Float) {
         campLanternLit = !campLanternLit
         audio.playWoodKnock()
-        val lantern = CampfireLayout.lantern(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val lantern = CampfireLayout.lantern(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(lantern.x, lantern.y + 10f, 4, if (campLanternLit) Color(0xFFFFE066) else Color(0xFF888888))
         val dimmedMessage = if (timeOfDayPhase.isNight) "Dimmed the lantern for better stargazing" else "Lantern off until the stars come out"
         showMessage(if (campLanternLit) "The warm camp lantern glows bright beside our tent" else dimmedMessage, duration = 2.5f)
@@ -5324,7 +5329,7 @@ class SceneEngine(
         val wasNappingOnBlanket = catState == CatState.SLEEPING && CampfireLayout.isOnBlanket(catWorldX, catWorldY)
         onTouchCat(cw, ch)
         if (wasNappingOnBlanket) {
-            showMessage("Mochi stretches and purrs on the cozy plaid camp blanket", duration = 2.8f)
+            showMessage(GameText.get(R.string.scene_mochi_stretches_and_purrs_on_the_cozy_pl), duration = 2.8f)
         }
     }
 
@@ -5332,7 +5337,7 @@ class SceneEngine(
 
     fun onTouchPierIceCream(cw: Float, ch: Float) {
         if (pierIceCreamTimer > 0f) {
-            showMessage("Still working on these cones!", duration = 1.8f)
+            showMessage(GameText.get(R.string.scene_still_working_on_these_cones), duration = 1.8f)
             return
         }
         pierIceCreamTimer = PIER_ICE_CREAM_SECONDS
@@ -5348,7 +5353,7 @@ class SceneEngine(
         // Bao approves; Pip has noticed.
         pierBaoWaveTimer = 1.6f
         if (pierGullState == GullState.PERCHED) pierGullTimer = pierGullTimer.coerceAtMost(1.5f)
-        showMessage("Two strawberry cones from the cart, one for each of you", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_two_strawberry_cones_from_the_cart_one_f), duration = 3.0f)
     }
 
     fun onTouchGrandpaBao(cw: Float, ch: Float) {
@@ -5356,16 +5361,16 @@ class SceneEngine(
             pierBaoQuietTime = 0f
             pierBaoWaveTimer = 1.4f
             audio.playBubblePop()
-            showMessage("Grandpa Bao: 'Hm? Oh! I was only resting my eyes.'", duration = 2.6f)
+            showMessage(GameText.get(R.string.scene_grandpa_bao_hm_oh_i_was_only_resting_my), duration = 2.6f)
             return
         }
         pierBaoQuietTime = 0f
         when (pierFishingPhase) {
             PierFishingPhase.IDLE, PierFishingPhase.SHOWING -> startBaoCast(announce = true)
             PierFishingPhase.CASTING, PierFishingPhase.WAITING ->
-                showMessage("Grandpa Bao: 'Shh… something's nibbling.'", duration = 2.2f)
+                showMessage(GameText.get(R.string.scene_grandpa_bao_shh_something_s_nibbling), duration = 2.2f)
             PierFishingPhase.REELING ->
-                showMessage("Grandpa Bao: 'Easy now, easy…'", duration = 1.8f)
+                showMessage(GameText.get(R.string.scene_grandpa_bao_easy_now_easy), duration = 1.8f)
         }
     }
 
@@ -5398,20 +5403,20 @@ class SceneEngine(
         audio.playPaperFlip()
         val bottle = PierLayout.bottle(cw, ch)
         particles.spawnSparkles(bottle.x, bottle.y, 5, Color(0xFFBDE0FE))
-        showMessage("A message in a bottle: \"${dailyPromptProvider()}\"", duration = 5.0f)
+        showMessage(GameText.get(R.string.scene_a_message_in_a_bottle, dailyPromptProvider()), duration = 5.0f)
     }
 
     fun onTouchLighthouse(cw: Float, ch: Float) {
         pierLighthouseTimer = 4f
         audio.playFoghorn()
-        val lamp = PierLayout.lighthouseLamp(cw, ch, (cw / 115f).coerceIn(3f, 5f))
+        val lamp = PierLayout.lighthouseLamp(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnSparkles(lamp.x, lamp.y, 6, Color(0xFFFFF3B0))
         if (timeOfDayPhase.isNight) {
-            showMessage("The lighthouse sweeps its beam across the dark water", duration = 2.8f)
+            showMessage(GameText.get(R.string.scene_the_lighthouse_sweeps_its_beam_across_th), duration = 2.8f)
         } else {
             // The foghorn startles a little flock off the rocks.
             pierFlockTimer = PIER_FLOCK_SECONDS
-            showMessage("A low foghorn hums across the bay, and the gulls take off", duration = 2.8f)
+            showMessage(GameText.get(R.string.scene_a_low_foghorn_hums_across_the_bay_and_th), duration = 2.8f)
         }
     }
 
@@ -5435,7 +5440,7 @@ class SceneEngine(
         boy.emotion = CharacterEmotion.HAPPY
         boy.emote = EmoteType.SPARKLE
         boy.emoteTimer = 2.2f
-        showMessage("Clink! Through the telescope: dolphins, leaping in the waves!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_clink_through_the_telescope_dolphins_lea), duration = 3.0f)
     }
 
     /** The little sailboat on the horizon toots back and waves its flag. */
@@ -5446,7 +5451,7 @@ class SceneEngine(
         particles.spawnSparkles(touchX, touchY - 10f, 3, Color(0xFFFFFFFF))
         boy.emote = EmoteType.MUSIC_NOTE
         boy.emoteTimer = 1.8f
-        showMessage("Toot toot! The little sailboat waves its flag back at you", duration = 2.6f)
+        showMessage(GameText.get(R.string.scene_toot_toot_the_little_sailboat_waves_its), duration = 2.6f)
     }
 
     /** Pinchy the crab scuttles for cover, and Mochi gives chase. */
@@ -5464,7 +5469,7 @@ class SceneEngine(
             catState = CatState.WALK_FOLLOW
             catSleeping = false
         }
-        showMessage("Pinchy the crab scuttles off sideways, and Mochi gives chase!", duration = 2.6f)
+        showMessage(GameText.get(R.string.scene_pinchy_the_crab_scuttles_off_sideways_an), duration = 2.6f)
     }
 
     /** A fish flops out of Bao's bait bucket, which Mochi finds very interesting. */
@@ -5481,7 +5486,7 @@ class SceneEngine(
         catFacingLeft = catTargetX < catWorldX
         catState = CatState.WALK_FOLLOW
         catSleeping = false
-        showMessage("Grandpa Bao: 'Hey! That's my bait, Mochi!'", duration = 2.6f)
+        showMessage(GameText.get(R.string.scene_grandpa_bao_hey_that_s_my_bait_mochi), duration = 2.6f)
     }
 
     /** The railing string lights cycle through their colours. */
@@ -5522,7 +5527,7 @@ class SceneEngine(
         if (isBaoDozing) {
             if (eventChance(0.35f, dt)) {
                 val bao = PierLayout.bao(cw, ch)
-                particles.spawnSleepZ(bao.x + 10f, bao.y - 26f * (cw / 115f).coerceIn(3f, 5f))
+                particles.spawnSleepZ(bao.x + 10f, bao.y - 26f * WorldViewport.pixelScale(cw))
             }
             return
         }
@@ -5665,7 +5670,7 @@ class SceneEngine(
             c.emoteTimer = 2.2f
             c.reactionTimer = 2.2f
         }
-        showMessage("Pip stole the ice cream!!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_pip_stole_the_ice_cream), duration = 3.0f)
     }
 
     private fun updatePierFishing(dt: Float, cw: Float, ch: Float) {
@@ -5722,7 +5727,7 @@ class SceneEngine(
                 girl.direction = Direction.LEFT
                 if (pierBaoWaveTimer <= 0f && t < 0.2f) {
                     pierBaoWaveTimer = 1.6f
-                    showMessage("Grandpa Bao: 'Go on, share a cone with your sweetheart!'", duration = 3.0f)
+                    showMessage(GameText.get(R.string.scene_grandpa_bao_go_on_share_a_cone_with_your), duration = 3.0f)
                 }
             }
             t < 4.2f -> {
@@ -5730,7 +5735,7 @@ class SceneEngine(
                 if (t - dt < 1.4f) {
                     pierIceCreamTimer = PIER_ICE_CREAM_SECONDS
                     audio.playHeartChime()
-                    girlSpeechText = "One cone, two of us?"
+                    girlSpeechText = GameText.get(R.string.scene_one_cone_two_of_us)
                     girlSpeechTimer = 2.4f
                     girl.emote = EmoteType.HEART
                     girl.emoteTimer = 2.0f
@@ -5755,9 +5760,9 @@ class SceneEngine(
                 boy.emotion = CharacterEmotion.HAPPY
                 girl.emotion = CharacterEmotion.HAPPY
                 if (boySpeechText == null && t > 5.8f) {
-                    boySpeechText = "That bird!!"
+                    boySpeechText = GameText.get(R.string.scene_that_bird)
                     boySpeechTimer = 1.8f
-                    showMessage("Grandpa Bao: 'Told you. A criminal.'", duration = 2.4f)
+                    showMessage(GameText.get(R.string.scene_grandpa_bao_told_you_a_criminal), duration = 2.4f)
                 }
             }
             t < 9.2f -> {
@@ -5786,7 +5791,7 @@ class SceneEngine(
                 girl.reactionTimer = 2.2f
                 boy.direction = Direction.RIGHT
                 audio.playBubblePop()
-                showMessage("${girl.name} points out to sea: dolphins!", duration = 2.8f)
+                showMessage(GameText.get(R.string.scene_points_out_to_sea_dolphins, girl.name), duration = 2.8f)
             }
             1 -> {
                 // A quiet lean together while the waves roll in.
@@ -5797,14 +5802,14 @@ class SceneEngine(
                 pierBaoWaveTimer = 1.4f
                 particles.spawnHeart(cw * (boy.worldX + girl.worldX) / 2f, ch * boy.worldY - 70f)
                 audio.playStarTwinkle()
-                showMessage("Just the waves, the breeze, and the two of you", duration = 3.0f)
+                showMessage(GameText.get(R.string.scene_just_the_waves_the_breeze_and_the_two_of), duration = 3.0f)
             }
             else -> {
                 // Pip drops by to see what's on offer.
                 if (pierGullState == GullState.AWAY) pierGullTimer = 0f
                 boy.emote = EmoteType.QUESTION
                 boy.emoteTimer = 2.0f
-                boySpeechText = "Don't even think about it, Pip."
+                boySpeechText = GameText.get(R.string.scene_don_t_even_think_about_it_pip)
                 boySpeechTimer = 2.4f
             }
         }
@@ -5901,7 +5906,7 @@ class SceneEngine(
     fun onTouchMomoSteamer(cw: Float, ch: Float) {
         if (momoSteamerTimer > 0f) return
         momoSteamerTimer = 1.5f
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         audio.playSteamHiss()
         audio.playCookingBubbles()
         repeat(8) {
@@ -5983,7 +5988,7 @@ class SceneEngine(
         audio.playScooterHorn()
         girl.emotion = CharacterEmotion.HAPPY
         boy.emotion = CharacterEmotion.LOVING
-        showMessage("Scooter road trip with my favourite person", duration = 2.5f)
+        showMessage(GameText.get(R.string.scene_scooter_road_trip_with_my_favourite_pers), duration = 2.5f)
         repeat(6) {
             particles.spawnHeart(cw * 0.50f + (Random.nextFloat() - 0.5f) * 35f, ch * 0.65f - 25f)
         }
@@ -5991,7 +5996,7 @@ class SceneEngine(
     }
 
     fun onTouchGirlScooter(cw: Float, ch: Float) {
-        girlSpeechText = "Hold tight ${boy.name}! The scooter is fast hehe!"
+        girlSpeechText = GameText.get(R.string.scene_hold_tight_the_scooter_is_fast_hehe, boy.name)
         girlSpeechTimer = 4.0f
         girl.emotion = CharacterEmotion.HAPPY
         audio.playHeartChime()
@@ -5999,7 +6004,7 @@ class SceneEngine(
     }
 
     fun onTouchBoyScooter(cw: Float, ch: Float) {
-        boySpeechText = "Holding you forever, my love."
+        boySpeechText = GameText.get(R.string.scene_holding_you_forever_my_love)
         boySpeechTimer = 4.0f
         boy.emotion = CharacterEmotion.LOVING
         audio.playHeartChime()
@@ -6014,23 +6019,23 @@ class SceneEngine(
         girl.emoteTimer = 3.5f
         boy.emote = EmoteType.HEART
         boy.emoteTimer = 3.5f
-        girlSpeechText = "Hold on tight!"
+        girlSpeechText = GameText.get(R.string.scene_hold_on_tight)
         girlSpeechTimer = 3.5f
-        boySpeechText = "Holding you forever, my love."
+        boySpeechText = GameText.get(R.string.scene_holding_you_forever_my_love)
         boySpeechTimer = 3.5f
         audio.playHeartChime()
         repeat(8) {
             particles.spawnHeart(cw * 0.48f + (Random.nextFloat() - 0.5f) * 40f, ch * 0.65f - 20f, Color(0xFFFF3366))
         }
         particles.spawnSparkles(cw * 0.50f, ch * 0.68f, 6)
-        showMessage("Holding tight together on our evening ride", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_holding_tight_together_on_our_evening_ri), duration = 3.5f)
     }
 
     fun onTouchTempleSpire(cw: Float, ch: Float) {
         if (templeGlowTimer > 0f) return
         templeGlowTimer = 2.0f
         audio.playStarArpeggio()
-        showMessage("The temple in the distance glows in the evening light", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_the_temple_in_the_distance_glows_in_the), duration = 3.0f)
         particles.spawnSparkles(cw * 0.72f, ch * 0.45f, 10, Color(0xFFFFD166))
         particles.spawnHeart(cw * 0.72f, ch * 0.40f, Color(0xFFFFD6A5))
         boy.emote = EmoteType.SPARKLE
@@ -6042,7 +6047,7 @@ class SceneEngine(
     fun onTouchCottageDoor() {
         audio.playBubblePop()
         loadScene(SceneType.COOKING) // Enter Cottage Kitchen
-        showMessage("Entering our cozy cottage.", duration = 2.5f)
+        showMessage(GameText.get(R.string.scene_entering_our_cozy_cottage), duration = 2.5f)
     }
 
     fun onCycleCottageRoom() {
@@ -6050,19 +6055,19 @@ class SceneEngine(
         when (currentScene) {
             SceneType.COOKING -> {
                 loadScene(SceneType.SLEEP)
-                showMessage("Cottage Living Room - Warm couch and memories.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_cottage_living_room_warm_couch_and_memor), duration = 2.5f)
             }
             SceneType.SLEEP -> {
                 loadScene(SceneType.COZY_LOFT)
-                showMessage("Cottage Bedroom & Loft - Stargazing under the roof.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_cottage_bedroom_loft_stargazing_under_th), duration = 2.5f)
             }
             SceneType.COZY_LOFT -> {
                 loadScene(SceneType.FLOWER)
-                showMessage("Stepping back out into the fresh meadow.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_stepping_back_out_into_the_fresh_meadow), duration = 2.5f)
             }
             else -> {
                 loadScene(SceneType.COOKING)
-                showMessage("Entering our cozy cottage.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_entering_our_cozy_cottage), duration = 2.5f)
             }
         }
     }
@@ -6095,7 +6100,7 @@ class SceneEngine(
             if (puddleSplashCooldown[i] > 0f) puddleSplashCooldown[i] -= dt
         }
         if (!isCurrentSceneOutdoor || currentScene == SceneType.EVENING_RIDE || cw <= 0f || ch <= 0f) return
-        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val unit = WeatherLayout.weatherUnit(cw, WorldViewport.pixelScale(cw))
         val catMoving = catState == CatState.WALK_FOLLOW &&
             (abs(catTargetX - catWorldX) > 0.01f || abs(catTargetY - catWorldY) > 0.01f)
         for (i in 0..2) {
@@ -6167,7 +6172,7 @@ class SceneEngine(
     /** A finger drawing in fresh snow leaves a trail of little hollows. */
     fun onDrawInSnow(x: Float, y: Float, cw: Float, ch: Float) {
         if (weather != WeatherType.SNOW || !isCurrentSceneOutdoor) return
-        val unit = WeatherLayout.weatherUnit(cw, (cw / 115f).coerceIn(3f, 5f))
+        val unit = WeatherLayout.weatherUnit(cw, WorldViewport.pixelScale(cw))
         if (lastSnowTraceX >= 0f && kotlin.math.hypot(x - lastSnowTraceX, y - lastSnowTraceY) < unit * 1.1f) return
         lastSnowTraceX = x
         lastSnowTraceY = y
@@ -6175,7 +6180,7 @@ class SceneEngine(
         if (!groundHintShown) {
             groundHintShown = true
             audio.playStarTwinkle()
-            showMessage("You draw in the fresh snow. Maybe a little heart?", duration = 2.6f)
+            showMessage(GameText.get(R.string.scene_you_draw_in_the_fresh_snow_maybe_a_littl), duration = 2.6f)
         }
     }
 
@@ -6202,7 +6207,7 @@ class SceneEngine(
         }
         if (!groundHintShown) {
             groundHintShown = true
-            showMessage("Splash! Perfect puddle-jumping weather.", duration = 2.4f)
+            showMessage(GameText.get(R.string.scene_splash_perfect_puddle_jumping_weather), duration = 2.4f)
         }
     }
 
@@ -6245,7 +6250,7 @@ class SceneEngine(
             boy.emoteTimer = 2.2f
             girl.emoteTimer = 2.2f
             audio.playStarArpeggio()
-            showMessage("$weatherCatchCount $noun caught together", duration = 2.6f)
+            showMessage(GameText.get(R.string.scene_caught_together, weatherCatchCount, noun), duration = 2.6f)
         }
     }
 
@@ -6279,9 +6284,9 @@ class SceneEngine(
             girl.emote = EmoteType.HEART
             boy.emoteTimer = 2.0f
             girl.emoteTimer = 2.0f
-            showMessage("The snowman wobbles happily. It looks a bit like both of you.", duration = 2.8f)
+            showMessage(GameText.get(R.string.scene_the_snowman_wobbles_happily_it_looks_a_b), duration = 2.8f)
         } else {
-            showMessage("The snowman wobbles. Catch a few more snowflakes to finish it!", duration = 2.6f)
+            showMessage(GameText.get(R.string.scene_the_snowman_wobbles_catch_a_few_more_sno), duration = 2.6f)
         }
     }
 
@@ -6300,7 +6305,7 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.emoteTimer = 2.4f
         girl.emoteTimer = 2.4f
-        showMessage("A rainbow after the rain. Make a wish on it together.", duration = 3.2f)
+        showMessage(GameText.get(R.string.scene_a_rainbow_after_the_rain_make_a_wish_on), duration = 3.2f)
     }
 
     fun driftWeather() {
@@ -6318,7 +6323,7 @@ class SceneEngine(
         particles.clearSeasonalParticles()
         audio.playWindChime()
         audio.playWeatherBgm(weather, isAutomaticDrift = false)
-        showMessage("Weather: ${weather.displayName}", duration = 2.5f)
+        showMessage(GameText.get(R.string.scene_weather, weather.displayName), duration = 2.5f)
         return weather
     }
 
@@ -6344,7 +6349,7 @@ class SceneEngine(
         girl.emotion = CharacterEmotion.HAPPY
         girl.emote = EmoteType.HEART
         girl.emoteTimer = 2.2f
-        showMessage("Constellation: $name - $description", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_constellation, name, description), duration = 3.0f)
     }
 
     fun triggerThinkingOfYou(cw: Float, ch: Float) {
@@ -6360,7 +6365,7 @@ class SceneEngine(
             val ry = ch * (0.65f + Random.nextFloat() * 0.20f)
             particles.spawnHeart(rx, ry, Color(0xFFFF3366))
         }
-        showMessage("${boy.name} is thinking of ${girl.name} right now", duration = 4.0f)
+        showMessage(GameText.get(R.string.scene_is_thinking_of_right_now, boy.name, girl.name), duration = 4.0f)
     }
 
     // Cozy Loft Touch Interactions
@@ -6377,9 +6382,9 @@ class SceneEngine(
         val rand = Random.nextInt(3)
         when (rand) {
             0 -> {
-                girlSpeechText = "Stay right here with me..."
+                girlSpeechText = GameText.get(R.string.scene_stay_right_here_with_me)
                 girlSpeechTimer = 3.5f
-                boySpeechText = "Never letting go."
+                boySpeechText = GameText.get(R.string.scene_never_letting_go)
                 boySpeechTimer = 3.5f
                 repeat(4) {
                     particles.spawnHeart(cw * 0.62f + (Random.nextFloat() - 0.5f) * 30f, ch * 0.54f - 10f, Color(0xFFFF5D8F))
@@ -6390,13 +6395,13 @@ class SceneEngine(
                 boy.emoteTimer = 2.5f
                 girl.emote = EmoteType.BLUSH
                 girl.emoteTimer = 2.5f
-                showMessage("Wrapped together under our warm quilt.", duration = 3.0f)
+                showMessage(GameText.get(R.string.scene_wrapped_together_under_our_warm_quilt), duration = 3.0f)
                 particles.spawnHeart(cw * 0.62f, ch * 0.52f, Color(0xFFFF3366))
             }
             else -> {
-                boySpeechText = "You are my entire world."
+                boySpeechText = GameText.get(R.string.scene_you_are_my_entire_world)
                 boySpeechTimer = 3.5f
-                girlSpeechText = "Always and forever."
+                girlSpeechText = GameText.get(R.string.scene_always_and_forever)
                 girlSpeechTimer = 3.5f
                 repeat(5) {
                     particles.spawnHeart(cw * 0.62f + (Random.nextFloat() - 0.5f) * 40f, ch * 0.54f - 15f)
@@ -6423,9 +6428,9 @@ class SceneEngine(
         val moonY = ch * 0.11f
         particles.spawnShootingStar(moonX - 20f, moonY + 20f)
         particles.spawnSparkles(moonX, moonY, 8)
-        girlSpeechText = "Look, the moon is so luminous tonight!"
+        girlSpeechText = GameText.get(R.string.scene_look_the_moon_is_so_luminous_tonight)
         girlSpeechTimer = 3.5f
-        boySpeechText = "Not as radiant as you."
+        boySpeechText = GameText.get(R.string.scene_not_as_radiant_as_you)
         boySpeechTimer = 3.5f
     }
 
@@ -6445,27 +6450,27 @@ class SceneEngine(
     }
 
     fun onTouchLoftRecordPlayer(cw: Float, ch: Float) {
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         audio.playBubblePop()
         if (audio.musicBoxState == MusicBoxState.PLAYING) {
             audio.pauseMusic()
             recordSpinning = false
-            showMessage("Turntable paused.", duration = 2.0f)
+            showMessage(GameText.get(R.string.scene_turntable_paused), duration = 2.0f)
         } else {
             audio.togglePlayPause()
             recordSpinning = true
             repeat(4) {
                 particles.spawnMusicNote(cw * 0.88f + (Random.nextFloat() - 0.5f) * 20f, floorY - 14 * pixelScale)
             }
-            showMessage("Vinyl needle drops... warm cozy melodies play.", duration = 3.0f)
+            showMessage(GameText.get(R.string.scene_vinyl_needle_drops_warm_cozy_melodies_pl), duration = 3.0f)
         }
     }
 
     fun onTouchLoftTable(cw: Float, ch: Float) {
         if (loftTableTimer > 0f) return
         loftTableTimer = 1.4f
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         audio.playCookingBubbles()
         repeat(5) {
@@ -6490,16 +6495,16 @@ class SceneEngine(
     }
 
     fun onTouchLoftLamp(cw: Float, ch: Float) {
-        val pixelScale = (cw / 115f).coerceIn(3.0f, 5.0f)
+        val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         lampLit = !lampLit
         audio.playBubblePop()
         ambientDimming = if (lampLit) 0.08f else 0.42f
         if (lampLit) {
             particles.spawnSparkles(cw * 0.38f, floorY - 18 * pixelScale, 5)
-            showMessage("Warm amber lamp lights up the loft.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_warm_amber_lamp_lights_up_the_loft), duration = 2.5f)
         } else {
-            showMessage("Moonlight only... romantic midnight ambience.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_moonlight_only_romantic_midnight_ambienc), duration = 2.5f)
         }
     }
 
@@ -6531,17 +6536,17 @@ class SceneEngine(
             CatState.SITTING_PURR -> {
                 particles.spawnMusicNote(cw * catWorldX, ch * catWorldY - 24f)
                 particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF8FA3))
-                showMessage("Mochi purrs warmly on the sofa blanket.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_purrs_warmly_on_the_sofa_blanket), duration = 2.5f)
             }
             CatState.BELLY_ROLL -> {
                 repeat(4) {
                     particles.spawnHeart(cw * catWorldX + (Random.nextFloat() - 0.5f) * 20f, ch * catWorldY - 22f, Color(0xFFFF5D8F))
                 }
-                showMessage("Mochi stretches and rolls over on the quilt!", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_stretches_and_rolls_over_on_the_qu), duration = 2.5f)
             }
             else -> {
                 particles.spawnHeart(cw * catWorldX, ch * catWorldY - 20f, Color(0xFFFF8FA3))
-                showMessage("Mochi curled up for a warm snooze on the couch.", duration = 2.5f)
+                showMessage(GameText.get(R.string.scene_mochi_curled_up_for_a_warm_snooze_on_the), duration = 2.5f)
             }
         }
     }
@@ -6555,11 +6560,11 @@ class SceneEngine(
         if (livingRoomLampLit) {
             couchWakeTimer = 3.0f
             particles.spawnSparkles(cw * 0.20f, ch * 0.45f, 6)
-            showMessage("Lamp on — warm amber light fills the room.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_lamp_on_warm_amber_light_fills_the_room), duration = 2.5f)
         } else {
             couchPhaseTimer = 0f
             couchVisualPhase = CouchPhase.NIGHT
-            showMessage("Lamp off — time to drift away together.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_lamp_off_time_to_drift_away_together), duration = 2.5f)
         }
     }
 
@@ -6577,10 +6582,10 @@ class SceneEngine(
             girl.emote = EmoteType.SPARKLE
             boy.reactionTimer = 3.0f
             girl.reactionTimer = 3.0f
-            showMessage("Lit the lavender soy candle... warm, calming scent fills the room", duration = 3.0f)
+            showMessage(GameText.get(R.string.scene_lit_the_lavender_soy_candle_warm_calming), duration = 3.0f)
         } else {
             repeat(3) { particles.spawnSteam(touchX, touchY - 8f) }
-            showMessage("Blew out the candle with a gentle breath. Time to rest.", duration = 2.5f)
+            showMessage(GameText.get(R.string.scene_blew_out_the_candle_with_a_gentle_breath), duration = 2.5f)
         }
     }
 
@@ -6609,7 +6614,7 @@ class SceneEngine(
         boy.emoteTimer = 2.5f
         boy.reactionTimer = 3.5f
 
-        showMessage("Whistling teakettle! Fresh hot tea steeping for both of us", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_whistling_teakettle_fresh_hot_tea_steepi), duration = 3.0f)
     }
 
     fun onTouchCouchThrow(cw: Float, ch: Float) {
@@ -6636,7 +6641,7 @@ class SceneEngine(
         catState = CatState.SLEEPING
         catSleeping = true
 
-        showMessage("Snuggling warm under the chunky knit throw together", duration = 3.2f)
+        showMessage(GameText.get(R.string.scene_snuggling_warm_under_the_chunky_knit_thr), duration = 3.2f)
     }
 
     fun onTouchWindChimes(touchX: Float, touchY: Float) {
@@ -6651,7 +6656,7 @@ class SceneEngine(
         girl.emote = EmoteType.SPARKLE
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("The crystalline porch wind chime sings in the breeze", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_the_crystalline_porch_wind_chime_sings_i), duration = 3.0f)
     }
 
     fun onTouchFeatherWand(touchX: Float, touchY: Float) {
@@ -6671,7 +6676,7 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
-        showMessage("Mochi pounces on the feather wand with pure joy!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_mochi_pounces_on_the_feather_wand_with_p), duration = 3.0f)
     }
 
     fun onTouchPlantWatering(touchX: Float, touchY: Float) {
@@ -6685,7 +6690,7 @@ class SceneEngine(
         girl.emotion = CharacterEmotion.HAPPY
         girl.emote = EmoteType.SPARKLE
         girl.reactionTimer = 3.0f
-        showMessage("Watering the tender green leaves... dewdrops sparkle!", duration = 3.0f)
+        showMessage(GameText.get(R.string.scene_watering_the_tender_green_leaves_dewdrop), duration = 3.0f)
     }
 
     fun onTouchTelescope(cw: Float, ch: Float, touchX: Float, touchY: Float) {
@@ -6702,6 +6707,6 @@ class SceneEngine(
         girl.emote = EmoteType.HEART
         boy.reactionTimer = 3.5f
         girl.reactionTimer = 3.5f
-        showMessage("A shooting star crossed the night sky! Made a quiet wish for us", duration = 3.5f)
+        showMessage(GameText.get(R.string.scene_a_shooting_star_crossed_the_night_sky_ma), duration = 3.5f)
     }
 }

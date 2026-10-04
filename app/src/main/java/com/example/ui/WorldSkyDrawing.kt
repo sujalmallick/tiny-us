@@ -29,7 +29,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.ui.draw.drawBehind
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.material3.Text
@@ -140,7 +139,7 @@ internal fun generateDynamicNightStars(seed: Long = 1337L): Array<DynamicNightSt
         val yMax = 0.02f + ((r + 1).toFloat() / rows) * 0.60f
         for (c in 0 until cols) {
             // Natural occupancy with subtle jitter
-            if (random.nextFloat() < 0.82f) {
+            if (random.nextFloat() < 0.60f) {
                 val fx = (c.toFloat() + 0.12f + random.nextFloat() * 0.76f) / cols
                 val fy = yMin + random.nextFloat() * (yMax - yMin)
 
@@ -173,6 +172,89 @@ internal var dynamicNightStars: Array<DynamicNightStar> = generateDynamicNightSt
 
 fun reallocateNightStars(seed: Long = System.currentTimeMillis()) {
     dynamicNightStars = generateDynamicNightStars(seed)
+}
+
+/** Seconds for the night sky to turn once across the screen: the stars drift slowly west and wrap round. */
+internal const val SKY_TURN_SECONDS = 2700f
+
+/** How far the night sky has turned at scene time [time], as a share of the screen width. */
+internal fun skyDrift(time: Float): Float = (time / SKY_TURN_SECONDS) % 1f
+
+/** A star's (or constellation's) share across the screen after the sky has turned by [drift]. */
+internal fun driftedX(fx: Float, drift: Float): Float {
+    val x = fx - drift
+    return if (x < 0f) x + 1f else x
+}
+
+/** The current hour of the day with minutes and seconds, from the real clock. */
+private fun clockHours(): Float {
+    val c = java.util.Calendar.getInstance()
+    return c.get(java.util.Calendar.HOUR_OF_DAY) + c.get(java.util.Calendar.MINUTE) / 60f + c.get(java.util.Calendar.SECOND) / 3600f
+}
+
+/**
+ * How far the sun (5:00 to 20:00) or the moon (20:00 to 5:00) has come along its path across the
+ * sky, 0 at rising on the left to 1 at setting on the right. It follows the real clock, so it moves
+ * a little every few minutes; when the time of day is set by hand and doesn't match the clock, a
+ * fitting fixed spot is used instead.
+ */
+internal fun celestialProgress(isNight: Boolean, isSunset: Boolean, isMorning: Boolean): Float {
+    val h = clockHours()
+    val phase = com.example.engine.TimeOfDayPhase.fromHour(h.toInt())
+    return if (isNight) {
+        if (phase.isNight) (((h - 20f + 24f) % 24f) / 9f).coerceIn(0f, 1f) else 0.62f
+    } else {
+        val matches = when {
+            isSunset -> phase.isSunset
+            isMorning -> phase.isMorning
+            else -> phase == com.example.engine.TimeOfDayPhase.AFTERNOON
+        }
+        when {
+            matches -> ((h - 5f) / 15f).coerceIn(0f, 1f)
+            isSunset -> 0.9f
+            isMorning -> 0.12f
+            else -> 0.45f
+        }
+    }
+}
+
+/** A round pixel disc [d] scene pixels across with its top-left at ([x], [y]). */
+private fun drawPixelDisc(scope: DrawScope, x: Float, y: Float, d: Float, p: Float, color: Color) {
+    val inset = 2f * p
+    scope.drawRect(color, Offset(x, y), Size(d * p, d * p))
+    scope.drawRect(color, Offset(x - inset, y + inset), Size(inset, (d - 4f) * p))
+    scope.drawRect(color, Offset(x + d * p, y + inset), Size(inset, (d - 4f) * p))
+    scope.drawRect(color, Offset(x + inset, y - inset), Size((d - 4f) * p, inset))
+    scope.drawRect(color, Offset(x + inset, y + d * p), Size((d - 4f) * p, inset))
+}
+
+/**
+ * The sun on its way across the day sky: low and orange at morning and sunset, high and pale at
+ * noon. Drawn before the clouds and the ground, so it sets behind the hills. Hidden in the rain.
+ */
+private fun drawDaySun(
+    scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float,
+    isSunset: Boolean, isMorning: Boolean, weather: com.example.scene.WeatherType
+) {
+    if (weather == com.example.scene.WeatherType.RAIN) return
+    val prog = celestialProgress(false, isSunset, isMorning)
+    val arc = sin(prog * Math.PI.toFloat())
+    val d = 12f
+    val x = cw * (0.06f + 0.80f * prog)
+    val y = ch * (0.46f - 0.38f * arc)
+    val low = isSunset || isMorning
+    val body = when {
+        isSunset -> Color(0xFFFF9F43)
+        isMorning -> Color(0xFFFFC46B)
+        weather == com.example.scene.WeatherType.SNOW -> Color(0xFFFFF4D6)
+        else -> Color(0xFFFFE07A)
+    }
+    val core = if (low) Color(0xFFFFD9A0) else Color(0xFFFFF6CF)
+    val center = Offset(x + d * p / 2f, y + d * p / 2f)
+    val pulse = 0.9f + sin(time * 0.8f) * 0.1f
+    scope.drawCircle(body.copy(alpha = 0.12f * pulse), radius = 11f * p, center = center)
+    drawPixelDisc(scope, x, y, d, p, body)
+    scope.drawRect(core, Offset(x + 2f * p, y + 2f * p), Size((d - 4f) * p, (d - 4f) * p))
 }
 
 // Precomputed Sky Bands and Splits for zero allocation per frame
@@ -215,9 +297,12 @@ internal fun drawConstellationOverlay(
     ch: Float,
     p: Float,
     timer: Float,
-    constellationIdx: Int
+    constellationIdx: Int,
+    time: Float = 0f
 ) {
     if (timer <= 0f || constellationIdx !in 1..3) return
+    val drift = skyDrift(time)
+    fun at(fx: Float, fy: Float) = androidx.compose.ui.geometry.Offset(cw * driftedX(fx, drift), ch * fy)
     val dur = 2.4f
     val t = ((dur - timer) / dur).coerceIn(0f, 1f)
     val alpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
@@ -225,27 +310,27 @@ internal fun drawConstellationOverlay(
 
     val stars = when (constellationIdx) {
         1 -> listOf( // The Two Hearts
-            androidx.compose.ui.geometry.Offset(cw * 0.14f, ch * 0.11f),
-            androidx.compose.ui.geometry.Offset(cw * 0.17f, ch * 0.08f),
-            androidx.compose.ui.geometry.Offset(cw * 0.20f, ch * 0.16f),
-            androidx.compose.ui.geometry.Offset(cw * 0.23f, ch * 0.22f),
-            androidx.compose.ui.geometry.Offset(cw * 0.11f, ch * 0.18f),
-            androidx.compose.ui.geometry.Offset(cw * 0.14f, ch * 0.11f)
+            at(0.14f, 0.11f),
+            at(0.17f, 0.08f),
+            at(0.20f, 0.16f),
+            at(0.23f, 0.22f),
+            at(0.11f, 0.18f),
+            at(0.14f, 0.11f)
         )
         2 -> listOf( // The Celestial Teapot
-            androidx.compose.ui.geometry.Offset(cw * 0.36f, ch * 0.09f),
-            androidx.compose.ui.geometry.Offset(cw * 0.49f, ch * 0.12f),
-            androidx.compose.ui.geometry.Offset(cw * 0.47f, ch * 0.19f),
-            androidx.compose.ui.geometry.Offset(cw * 0.40f, ch * 0.20f),
-            androidx.compose.ui.geometry.Offset(cw * 0.34f, ch * 0.17f),
-            androidx.compose.ui.geometry.Offset(cw * 0.36f, ch * 0.09f)
+            at(0.36f, 0.09f),
+            at(0.49f, 0.12f),
+            at(0.47f, 0.19f),
+            at(0.40f, 0.20f),
+            at(0.34f, 0.17f),
+            at(0.36f, 0.09f)
         )
         3 -> listOf( // Starlight Trail
-            androidx.compose.ui.geometry.Offset(cw * 0.62f, ch * 0.10f),
-            androidx.compose.ui.geometry.Offset(cw * 0.68f, ch * 0.08f),
-            androidx.compose.ui.geometry.Offset(cw * 0.73f, ch * 0.12f),
-            androidx.compose.ui.geometry.Offset(cw * 0.82f, ch * 0.11f),
-            androidx.compose.ui.geometry.Offset(cw * 0.89f, ch * 0.14f)
+            at(0.62f, 0.10f),
+            at(0.68f, 0.08f),
+            at(0.73f, 0.12f),
+            at(0.82f, 0.11f),
+            at(0.89f, 0.14f)
         )
         else -> emptyList()
     }
@@ -280,6 +365,49 @@ internal fun drawConstellationOverlay(
             radius = 1.5f * p,
             center = pt
         )
+    }
+}
+
+/** The colour at the very top of the night sky (the sky continued above a tall screen's stage). */
+internal val NIGHT_ZENITH: Color get() = NIGHT_SPACE_BASE_BANDS[0]
+
+/**
+ * One star as pixel art: solid blocks (one, or two for the big ones), twinkling in steps between
+ * bright, softer and dim shades of its colour against [sky], with a small cross glint on the
+ * brightest anchor stars at their peak.
+ */
+internal fun drawNightStar(scope: DrawScope, x: Float, y: Float, star: DynamicNightStar, time: Float, p: Float, sky: Color) {
+    val twinkle = sin(time * star.twinkleSpeed + star.twinklePhase) * 0.35f + 0.65f
+    val level = star.baseAlpha * twinkle
+    fun toward(f: Float) = Color(
+        red = star.color.red + (sky.red - star.color.red) * f,
+        green = star.color.green + (sky.green - star.color.green) * f,
+        blue = star.color.blue + (sky.blue - star.color.blue) * f,
+        alpha = 1f
+    )
+    val col = when {
+        level > 0.70f -> star.color.copy(alpha = 1f)
+        level > 0.45f -> toward(0.35f)
+        else -> toward(0.62f)
+    }
+    val blocks = if (star.sizeP >= 1.7f) 2 else 1
+    val s = blocks * p
+    scope.drawRect(col, Offset(x, y), Size(s, s))
+    if (star.hasCrossFlare && twinkle > 0.86f) {
+        val arm = toward(0.45f)
+        scope.drawRect(arm, Offset(x - p, y), Size(p, s))
+        scope.drawRect(arm, Offset(x + s, y), Size(p, s))
+        scope.drawRect(arm, Offset(x, y - p), Size(s, p))
+        scope.drawRect(arm, Offset(x, y + s), Size(s, p))
+    }
+}
+
+/** The star field again for the sky above the stage (mirrored, so it doesn't look copied). */
+internal fun drawNightStarsAbove(scope: DrawScope, cw: Float, skyH: Float, time: Float, p: Float) {
+    for (i in dynamicNightStars.indices) {
+        val star = dynamicNightStars[i]
+        val y = -skyH + ((star.fy - 0.02f) / 0.60f).coerceIn(0f, 1f) * (skyH - 2f * p)
+        drawNightStar(scope, cw * driftedX(1f - star.fx, skyDrift(time)), y, star, time + 7.3f, p, NIGHT_ZENITH)
     }
 }
 
@@ -327,31 +455,21 @@ internal fun drawMilkyWayNightSky(
         }
     }
 
-    // 2. Dynamically Allocated Star Field (organic distribution across full night sky)
+    // 2. Dynamically Allocated Star Field (organic distribution across full night sky), turning
+    // slowly westward so the stars never sit still in one place.
+    val drift = skyDrift(time)
     for (i in dynamicNightStars.indices) {
         val star = dynamicNightStars[i]
-        val sx = cw * star.fx
         val sy = ch * star.fy
-        val twinkle = sin(time * star.twinkleSpeed + star.twinklePhase) * 0.35f + 0.65f
-        val starAlpha = (star.baseAlpha * twinkle).coerceIn(0.15f, 1.0f)
-        val sSize = star.sizeP * p
-        scope.drawRect(
-            color = star.color.copy(alpha = starAlpha),
-            topLeft = Offset(sx, sy),
-            size = Size(sSize, sSize)
-        )
-        // Delicate 4-point cross glint only on bright twinkling anchor stars
-        if (star.hasCrossFlare && twinkle > 0.86f) {
-            val flareCol = star.color.copy(alpha = (twinkle - 0.70f) * 0.75f)
-            val flareArm = sSize * 1.5f
-            scope.drawRect(flareCol, Offset(sx - flareArm, sy + sSize * 0.35f), Size(flareArm * 2f + sSize, sSize * 0.3f))
-            scope.drawRect(flareCol, Offset(sx + sSize * 0.35f, sy - flareArm), Size(sSize * 0.3f, flareArm * 2f + sSize))
-        }
+        val band = (sy / bandH).toInt().coerceIn(0, 5)
+        val sky = if (band < 5) NIGHT_SPACE_BASE_BANDS[band] else horizonAirglow
+        drawNightStar(scope, cw * driftedX(star.fx, drift), sy, star, time, p, sky)
     }
 
-    // 3. Glowing Pixel Moon with Minimal Soft Corona
-    val moonX = cw * 0.78f
-    val moonY = ch * 0.15f
+    // 3. Glowing Pixel Moon with Minimal Soft Corona, crossing the sky through the night
+    val moonProg = celestialProgress(isNight = true, isSunset = false, isMorning = false)
+    val moonX = cw * (0.06f + 0.80f * moonProg)
+    val moonY = ch * (0.30f - 0.20f * sin(moonProg * Math.PI.toFloat()))
     val moonCenter = Offset(moonX + 7f * p, moonY + 7f * p)
     scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.04f), radius = 20f * p, center = moonCenter)
     scope.drawCircle(Color(0xFFFFF8D6).copy(alpha = 0.08f), radius = 12f * p, center = moonCenter)
@@ -386,6 +504,37 @@ internal fun drawMilkyWayNightSky(
         scope.drawRect(Color(0xFFBDE0FE).copy(alpha = 0.40f), Offset(headX - tailDx * 2f, headY - tailDy * 2f), Size(p, p))
         scope.drawRect(Color(0xFF90E0EF).copy(alpha = 0.20f), Offset(headX - tailDx * 3f, headY - tailDy * 3f), Size(p, p))
     }
+}
+
+/** One drifting pixel cloud; it wraps around a world [cw] wide. */
+internal fun drawSkyCloud(
+    scope: DrawScope,
+    cw: Float,
+    baseX: Float,
+    y: Float,
+    scaleFactor: Float,
+    time: Float,
+    p: Float,
+    isSunset: Boolean,
+    isMorning: Boolean
+) {
+    val cx = (baseX + (time * 10f * scaleFactor)) % (cw + 140f) - 70f
+    val cloudColor = when {
+        isSunset -> Color(0xFFFFDDD2)
+        isMorning -> Color(0xFFFFF0F5)
+        else -> Color(0xF2FFFFFF)
+    }
+    val cloudShadow = when {
+        isSunset -> Color(0xFFE29578)
+        isMorning -> Color(0xFFF7CAD0)
+        else -> Color(0xFFD6E2E9)
+    }
+
+    scope.drawRect(cloudShadow, Offset(cx, y + 2 * p), Size(28 * p, 10 * p))
+    scope.drawRect(cloudColor, Offset(cx, y), Size(28 * p, 10 * p))
+    scope.drawRect(cloudColor, Offset(cx + 6 * p, y - 6 * p), Size(18 * p, 6 * p))
+    scope.drawRect(cloudColor, Offset(cx - 5 * p, y + 3 * p), Size(6 * p, 6 * p))
+    scope.drawRect(cloudColor, Offset(cx + 27 * p, y + 3 * p), Size(6 * p, 6 * p))
 }
 
 internal fun drawSkyAndClouds(
@@ -481,26 +630,11 @@ internal fun drawSkyAndClouds(
             }
         }
 
-        // ── Drifting fluffy pixel clouds (drawn on top of sky fill) ──────────
-        fun drawCloud(baseX: Float, y: Float, scaleFactor: Float) {
-            val cx = (baseX + (time * 10f * scaleFactor)) % (cw + 140f) - 70f
-            val cloudColor = when {
-                isSunset -> Color(0xFFFFDDD2)
-                isMorning -> Color(0xFFFFF0F5)
-                else -> Color(0xF2FFFFFF)
-            }
-            val cloudShadow = when {
-                isSunset -> Color(0xFFE29578)
-                isMorning -> Color(0xFFF7CAD0)
-                else -> Color(0xFFD6E2E9)
-            }
+        drawDaySun(scope, cw, ch, p, time, isSunset, isMorning, weather)
 
-            scope.drawRect(cloudShadow, Offset(cx, y + 2 * p), Size(28 * p, 10 * p))
-            scope.drawRect(cloudColor, Offset(cx, y), Size(28 * p, 10 * p))
-            scope.drawRect(cloudColor, Offset(cx + 6 * p, y - 6 * p), Size(18 * p, 6 * p))
-            scope.drawRect(cloudColor, Offset(cx - 5 * p, y + 3 * p), Size(6 * p, 6 * p))
-            scope.drawRect(cloudColor, Offset(cx + 27 * p, y + 3 * p), Size(6 * p, 6 * p))
-        }
+        // ── Drifting fluffy pixel clouds (drawn on top of sky fill) ──────────
+        fun drawCloud(baseX: Float, y: Float, scaleFactor: Float) =
+            drawSkyCloud(scope, cw, baseX, y, scaleFactor, time, p, isSunset, isMorning)
 
         drawCloud(cw * 0.08f, ch * 0.10f, 0.7f)
         drawCloud(cw * 0.60f, ch * 0.18f, 1.0f)

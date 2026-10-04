@@ -8,4 +8,10 @@ object FeatureFlags {
      * the data layer stays in place so nothing saved is lost.
      */
     const val PARTNER_SYNC = false
+
+    /**
+     * Plan 03 pixel-art overhaul: draw the world at game resolution and enlarge it without
+     * smoothing. Off falls back to the classic full-resolution renderer.
+     */
+    const val PIXEL_RENDERER = true
 }
