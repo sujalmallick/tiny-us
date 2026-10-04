@@ -28,6 +28,8 @@ class AutonomyAgent {
     var activitiesSinceHome: Int = 0
     /** True while this character is following the partner's lead (talk, hug, scene moment...). */
     var isFollower: Boolean = false
+    /** Seconds to hold off on new plans because the partner is walking over to them. */
+    var waitForPartner: Float = 0f
 
     fun reset(firstDecisionIn: Float) {
         phase = AgentPhase.IDLE
@@ -41,6 +43,7 @@ class AutonomyAgent {
         lastSpotId = -1
         activitiesSinceHome = 0
         isFollower = false
+        waitForPartner = 0f
         memory.clear()
     }
 

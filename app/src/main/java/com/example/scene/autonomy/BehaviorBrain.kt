@@ -21,7 +21,7 @@ enum class Behavior(val category: BehaviorCategory, val baseWeight: Float, val c
 
     // Partner
     APPROACH_PARTNER(BehaviorCategory.PARTNER, 5f, 18f),
-    TALK(BehaviorCategory.PARTNER, 5f, 14f),
+    TALK(BehaviorCategory.PARTNER, 8f, 14f),
     HUG(BehaviorCategory.PARTNER, 2f, 45f),
     HOLD_HANDS(BehaviorCategory.PARTNER, 2f, 35f),
     SIT_TOGETHER(BehaviorCategory.PARTNER, 3f, 40f),

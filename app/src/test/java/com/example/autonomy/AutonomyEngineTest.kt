@@ -2,6 +2,7 @@ package com.example.autonomy
 
 import com.example.engine.AmbientAudio
 import com.example.engine.CharacterMotionTween
+import com.example.engine.CharacterPose
 import com.example.engine.PixelCharacter
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
@@ -11,6 +12,7 @@ import com.example.scene.autonomy.Behavior
 import com.example.scene.autonomy.DiscoveryKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -114,6 +116,18 @@ class AutonomyEngineTest {
         val before = engine.autonomyLog.size
         run(15f)
         assertTrue("Life resumes after the pause", engine.autonomyLog.size > before)
+    }
+
+    @Test
+    fun `a tap's reaction pose does not linger once the routine resumes`() {
+        engine.loadScene(SceneType.CAMPFIRE)
+        run(3f)
+        engine.notifyUserInteraction()
+        engine.onTouchCampfire(cw, ch, cw * 0.48f, ch * 0.72f)
+        assertEquals(CharacterPose.EAT_SNEAK, engine.boy.pose)
+        run(SceneEngine.AUTONOMY_USER_PAUSE_SECONDS + 8f)
+        assertNotEquals(CharacterPose.EAT_SNEAK, engine.boy.pose)
+        assertNotEquals(CharacterPose.EAT_SNEAK, engine.girl.pose)
     }
 
     @Test

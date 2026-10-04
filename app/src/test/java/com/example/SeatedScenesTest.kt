@@ -35,6 +35,9 @@ class SeatedScenesTest {
             onOpenLoveNotes = {},
             onOpenMemories = {}
         )
+        // These tests check the scene's own mechanics; the couple's autonomous routine is
+        // covered by AutonomyEngineTest.
+        engine.autonomyEnabled = false
     }
 
     /** Advances in small steps, like real frames. Keep totals under the 14s autonomous-moment interval. */
