@@ -47,7 +47,7 @@ fun RoomCustomizerDialog(
     ) {
         TinyDialogHeader(
             title = stringResource(R.string.ui_room_customizer),
-            subtitle = if (isLoft) "Choose the little details in your loft." else "Choose the little details in your living room.",
+            subtitle = if (isLoft) stringResource(R.string.ui_room_details_loft) else stringResource(R.string.ui_room_details_living_room),
             icon = PixelIcons.Weekend,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
         )
@@ -89,7 +89,7 @@ fun RoomCustomizerDialog(
                 }
             }
             Text(
-                "Rugs · bedding · fairy lights · coffee mugs",
+                stringResource(R.string.ui_room_details_list),
                 style = TinyType.Caption,
                 modifier = Modifier.padding(top = TinySpace.xs)
             )

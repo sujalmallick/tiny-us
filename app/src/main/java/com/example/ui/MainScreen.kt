@@ -123,7 +123,15 @@ fun MainScreen(
     targetScene: String? = null,
     targetToken: Long = 0L,
     targetAtmosphere: String? = null,
-    targetBirdSurface: String? = null
+    targetBirdSurface: String? = null,
+    /** Pins the weather (a WeatherType name) instead of letting the season drift; for store screenshots. */
+    targetWeather: String? = null,
+    /**
+     * An engine already set up and run forward, shown instead of a new one. Store screenshots use
+     * it: stepping the engine directly is far faster than letting the whole screen recompose for
+     * every frame in a JVM test.
+     */
+    previewEngine: SceneEngine? = null
 ) {
     val context = LocalContext.current
     val prefs = remember { PreferencesManager(context) }
@@ -235,7 +243,7 @@ fun MainScreen(
 
     // Scene Engine
     val engine = remember {
-        SceneEngine(
+        previewEngine ?: SceneEngine(
             audio = audio,
             onOpenLoveNotes = { showLoveNotes = true },
             onOpenMemories = { showMemories = true },
@@ -279,6 +287,7 @@ fun MainScreen(
         com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
         com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
         com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+        com.example.engine.SpecialDays.refresh()
     }
 
     val isDark = engine.timeOfDayPhase.isNight || engine.timeOfDayPhase.isSunset
@@ -355,7 +364,11 @@ fun MainScreen(
         }
     }
 
-    LaunchedEffect(targetScene, targetToken, targetAtmosphere, targetBirdSurface) {
+    LaunchedEffect(targetScene, targetToken, targetAtmosphere, targetBirdSurface, targetWeather) {
+        com.example.scene.WeatherType.values().firstOrNull { it.name.equals(targetWeather, ignoreCase = true) }?.let {
+            engine.weatherDriftEnabled = false
+            engine.weather = it
+        }
         android.util.Log.d("TinyUs", "MainScreen LaunchedEffect targetScene: $targetScene, token: $targetToken, targetAtmosphere: $targetAtmosphere, birdSurface: $targetBirdSurface")
         atmosphere = targetAtmosphere ?: prefs.atmosphereMode
         if (!targetScene.isNullOrBlank()) {
@@ -404,15 +417,21 @@ fun MainScreen(
                 if (newBloom != null) delay(5000)
             }
             if (newBloom != null) {
-                val text = if (newBloom.isGolden) "A golden bloom sparkles in your garden."
-                else "A ${newBloom.plant.name} bloomed in your garden."
+                val text = if (newBloom.isGolden) context.getString(R.string.ui_golden_bloom)
+                else context.getString(R.string.ui_new_bloom, newBloom.plant.name)
                 engine.showMessage(text, duration = 4.5f)
+            }
+            // Special days (plan 06, G2): the couple greets the day once, on its first open.
+            com.example.engine.SpecialDays.today()?.let { day ->
+                delay(if (welcome != null || newBloom != null) 5000 else 3500)
+                val (boyLine, girlLine) = specialDayLines(context, day, prefs.boyfriendName, prefs.girlfriendName)
+                engine.greetSpecialDay(boyLine, girlLine)
             }
         }
     }
 
-    // Subtle interaction hint fade
-    var showHint by remember { mutableStateOf(true) }
+    // Subtle interaction hint fade (not on store screenshots, which show the app mid-use)
+    var showHint by remember { mutableStateOf(previewEngine == null) }
     LaunchedEffect(Unit) {
         delay(7000)
         showHint = false
@@ -485,7 +504,9 @@ fun MainScreen(
             val titleFontSize = if (isCompact) 10.sp else if (isMedium) 11.sp else 11.5.sp
             val dotFontSize = if (isCompact) 9.sp else if (isMedium) 10.sp else 10.5.sp
             val namesFontSize = if (isCompact) 9.5.sp else if (isMedium) 10.sp else 10.5.sp
-            // The room customizer adds a sixth button; drop the separator dot so the names keep their room.
+            // The room customizer adds a sixth button; then the pill shows just the heart and the names
+            // (no "Tiny Us", no separator dot), so the names never get cut off, even on small phones or
+            // in longer languages.
             val crowded = engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT
 
             Box(
@@ -517,6 +538,7 @@ fun MainScreen(
                             clearFactor = clearFactor,
                             isDark = isDark
                         )
+                        if (!crowded) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = stringResource(R.string.ui_tiny_us),
@@ -537,6 +559,7 @@ fun MainScreen(
                             },
                             maxLines = 1
                         )
+                        }
                     }
 
                     if (crowded) {
@@ -647,7 +670,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.AutoAwesome,
-                            contentDescription = "Weather: ${engine.weather.displayName}",
+                            contentDescription = stringResource(R.string.ui_weather_desc, engine.weather.displayName),
                             tint = weatherIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -753,7 +776,7 @@ fun MainScreen(
                                 .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContrastIcon(PixelIcons.Palette, "Customize room", activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                            ContrastIcon(PixelIcons.Palette, stringResource(R.string.ui_customize_room), activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
                         }
                     }
                 }
@@ -1068,6 +1091,7 @@ fun MainScreen(
                     com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
                     com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
                     com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+        com.example.engine.SpecialDays.refresh()
                 },
                 onReplayScene = {
                     engine.loadScene(engine.currentScene)
@@ -1189,6 +1213,7 @@ fun MainScreen(
 
                     engine.updateNames(bName, gName)
                     com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate
+                    com.example.engine.SpecialDays.refresh()
                     com.example.data.SpecialCalendarManager.boyName = bName
                     com.example.data.SpecialCalendarManager.girlName = gName
 
@@ -1393,5 +1418,32 @@ private fun ContrastIcon(
             tint = tint,
             modifier = modifier
         )
+    }
+}
+
+/** The couple's two lines for a special day: (boy, girl). */
+internal fun specialDayLines(
+    context: android.content.Context,
+    day: com.example.engine.SpecialDay,
+    boyName: String,
+    girlName: String
+): Pair<String, String> {
+    val r = context.resources
+    return when (day) {
+        com.example.engine.SpecialDay.BOY_BIRTHDAY ->
+            r.getString(R.string.special_boy_birthday_boy) to r.getString(R.string.special_boy_birthday_girl, boyName)
+        com.example.engine.SpecialDay.GIRL_BIRTHDAY ->
+            r.getString(R.string.special_girl_birthday_boy, girlName) to r.getString(R.string.special_girl_birthday_girl)
+        com.example.engine.SpecialDay.ANNIVERSARY -> {
+            val years = com.example.engine.SpecialDays.yearsTogether(
+                java.time.LocalDate.now(), com.example.data.RelationshipTimeManager.relationshipStartDate
+            ).coerceAtLeast(1)
+            r.getQuantityString(R.plurals.special_anniversary_boy, years, years) to r.getString(R.string.special_anniversary_girl)
+        }
+        com.example.engine.SpecialDay.NEW_YEAR -> r.getString(R.string.special_new_year_boy) to r.getString(R.string.special_new_year_girl)
+        com.example.engine.SpecialDay.VALENTINES -> r.getString(R.string.special_valentines_boy) to r.getString(R.string.special_valentines_girl)
+        com.example.engine.SpecialDay.HOLI -> r.getString(R.string.special_holi_boy) to r.getString(R.string.special_holi_girl)
+        com.example.engine.SpecialDay.DIWALI -> r.getString(R.string.special_diwali_boy) to r.getString(R.string.special_diwali_girl)
+        com.example.engine.SpecialDay.CHRISTMAS -> r.getString(R.string.special_christmas_boy) to r.getString(R.string.special_christmas_girl)
     }
 }

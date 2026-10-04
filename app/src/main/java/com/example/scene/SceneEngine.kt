@@ -72,6 +72,9 @@ class SceneEngine(
     private val onOpenDreamJournal: () -> Unit = {}
 ) {
     companion object {
+        /** How long the couple's special-day greeting stays up. */
+        const val SPECIAL_DAY_LINE_SECONDS = 6f
+
         const val MIN_CAT_WALK_THRESHOLD_PIXELS = 48f
         const val PIER_ICE_CREAM_SECONDS = 8f
         const val PIER_BOTTLE_RESPAWN_SECONDS = 30f
@@ -1170,6 +1173,7 @@ class SceneEngine(
 
     fun update(deltaSeconds: Float, canvasWidth: Float, canvasHeight: Float) {
         sceneTime += deltaSeconds
+        if (specialDayGreetingHold > 0f) specialDayGreetingHold -= deltaSeconds
         val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
@@ -4288,7 +4292,20 @@ class SceneEngine(
         }
     }
 
+    /** Seconds left in which the special-day greeting keeps its bubbles (other speech waits). */
+    private var specialDayGreetingHold = 0f
+
+    /** The couple greets a special day (plan 06, G2): both say their line at once. */
+    fun greetSpecialDay(boyLine: String, girlLine: String) {
+        specialDayGreetingHold = 0f
+        speakerSpeech(boy, boyLine, SPECIAL_DAY_LINE_SECONDS)
+        speakerSpeech(girl, girlLine, SPECIAL_DAY_LINE_SECONDS)
+        specialDayGreetingHold = SPECIAL_DAY_LINE_SECONDS
+    }
+
     private fun speakerSpeech(character: PixelCharacter, text: String, duration: Float) {
+        // Chatter (autonomy, scene moments) waits until the special-day greeting has been read.
+        if (specialDayGreetingHold > 0f) return
         if (character === boy) {
             boySpeechText = text
             boySpeechTimer = duration

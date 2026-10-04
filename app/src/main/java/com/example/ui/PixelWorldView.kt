@@ -139,6 +139,7 @@ fun PixelWorldView(
 
     // High refresh rate adaptive frame ticker loop
     LaunchedEffect(Unit) {
+        if (frameTickerPaused) return@LaunchedEffect
         var lastNanos = 0L
         while (true) {
             withFrameNanos { nanos ->
@@ -1671,6 +1672,11 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
         drawForegroundParticles(this, engine.particles.particles, pixelScale)
 
+        // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
+        com.example.engine.SpecialDays.today()?.let { day ->
+            drawSpecialDayDecor(this, day, cw, ch, pixelScale, engine.sceneTime, isNight || timePhase.isMidnight)
+        }
+
         // Atmospheric Lighting & Time-of-Day Layering
         val isTwilight = timePhase.isTwilight
         val isMidnight = timePhase.isMidnight
@@ -1779,6 +1785,14 @@ private fun DrawScope.drawLoftLight(engine: SceneEngine, topLeft: Offset, size: 
     drawIndoorLight(engine.timeOfDayPhase, topLeft, size)
     if (engine.ambientDimming > 0f) drawRect(Color(0xFF0D1117).copy(alpha = engine.ambientDimming), topLeft, size)
 }
+
+/**
+ * Keeps the frame ticker from starting, so the world stays exactly as it was set up. Only for
+ * JVM screenshot tests: there, frames arrive back to back without the clock moving and the
+ * ticker would spin.
+ */
+@androidx.annotation.VisibleForTesting
+internal var frameTickerPaused = false
 
 /** True when the current scene is drawn by the low-res pixel renderer (Plan 03, Phase 1). */
 @Suppress("UnusedReceiverParameter")

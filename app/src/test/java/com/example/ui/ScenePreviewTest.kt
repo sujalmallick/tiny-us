@@ -46,6 +46,10 @@ class ScenePreviewTest {
             loadScene(scene)
             updateAtmosphereMode(if (phase == TimeOfDayPhase.NIGHT || phase == TimeOfDayPhase.SUNSET) phase.name else "DAY")
             // SCENE_PREVIEW_WEATHER=RAIN (or SNOW, SAKURA, AUTUMN) previews weather.
+            // SCENE_PREVIEW_MOON=0.25 pins the moon's phase (0 new, 0.5 full).
+            moonPhaseOverride = System.getenv("SCENE_PREVIEW_MOON")?.toFloat()
+            // SCENE_PREVIEW_SPECIAL=DIWALI (or any SpecialDay) dresses the scene for that day.
+            com.example.engine.SpecialDays.override = System.getenv("SCENE_PREVIEW_SPECIAL")?.let { com.example.engine.SpecialDay.valueOf(it) }
             System.getenv("SCENE_PREVIEW_WEATHER")?.let { name ->
                 weatherDriftEnabled = false
                 weather = com.example.scene.WeatherType.valueOf(name)

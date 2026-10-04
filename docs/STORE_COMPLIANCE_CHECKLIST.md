@@ -1,8 +1,10 @@
 # Google Play Store Compliance Checklist for Tiny Us
 
 **Target App:** Tiny Us (`com.tinyus.app`)  
-**Document Status:** Pre-Launch Compliance Verification Guide  
+**Last checked against the code:** October 5, 2026  
 **Disclaimer:** This checklist is for developer planning and readiness. It does not constitute formal legal counsel.
+
+Tiny Us is free, fully offline, and has no in-app purchases, ads or analytics. If any of that changes, redo sections 1, 3 and the Data safety form (`PLAY_CONSOLE_DATA_SAFETY.md`) first.
 
 ---
 
@@ -10,7 +12,7 @@
 
 When filling out the International Age Rating Coalition (IARC) questionnaire in Play Console (**Policy > Content rating**):
 
-- [ ] **Category Selection:** Select **"Utility, Productivity, Communication, or Other"** or **"Lifestyle / Entertainment"**.
+- [ ] **Category Selection:** Select **"Game"** if you list Tiny Us under Games (e.g. Casual or Simulation), or **"All other app types"** if you list it as an app (e.g. Lifestyle). Pick the same as the store category.
 - [ ] **Violence:** Select **"No"** (Zero violent depictions or combat).
 - [ ] **Sexuality / Romance:**
   - *Does the app contain nudity or sexual content?* **No**.
@@ -19,71 +21,50 @@ When filling out the International Age Rating Coalition (IARC) questionnaire in 
 - [ ] **Controlled Substances:** Select **"No"** (No depictions of alcohol, tobacco, or drugs).
 - [ ] **User-to-User Interaction:** Select **"No"** (Zero public chat rooms, zero multiplayer matchmaking, zero social sharing feeds).
 - [ ] **Physical Location Sharing:** Select **"No"** (Zero GPS or location sharing).
-- [ ] **Digital Goods Purchases:** Select **"Yes"** (The app offers optional digital in-app purchases).
+- [ ] **Digital Goods Purchases:** Select **"No"** (no in-app purchases).
 
 ---
 
-## 2. In-App Purchase (IAP) & Billing Compliance
+## 2. App Content Declarations (Policy > App content)
 
-Google Play has strict enforcement regarding in-app purchases under the **Monetization and Ads** policy.
-
-- [ ] **Google Play Billing Exclusivity:** All digital goods must be sold exclusively through Google Play Billing (no external links to PayPal, Stripe, or web checkouts).
-- [ ] **No Gating Previously Free Core Features:** The core free experience must remain rich and complete:
-  - All existing 8 scenes remain free.
-  - The offline keepsake journal, love notes mailbox, and pet cat remain free.
-  - Only genuine bonus packs (e.g., bonus celestial scenes, extra seasonal wardrobe sets) are gated.
-- [ ] **Clear and Honest Pricing UI:**
-  - The purchase modal must state the exact price (dynamically fetched from Google Play, formatted with the user's local currency symbol).
-  - Explicitly label purchases as **"One-time purchase"** or **"Permanent unlock"** (no misleading subscription terminology).
-  - State clearly what items are included in the pack before the user clicks buy.
-- [ ] **Prominent "Restore Purchases" Option:**
-  - Provide a clear, easily accessible "Restore Purchases" button in the Settings overlay or shop dialog.
-  - Tapping this queries `BillingClient.queryPurchasesAsync()` and restores cached entitlements without charging the user again.
-- [ ] **Refund Policy Disclosure:**
-  - Do not claim "All sales are final with zero refunds." Google Play mandates that developers honor Google Play's standard 48-hour refund policy.
-  - State clearly in the shop UI and Terms of Service: *"Purchases are processed by Google Play and eligible for refund under standard Google Play refund policies."*
+- [ ] **Ads:** "No, my app does not contain ads".
+- [ ] **Target audience:** 13 and older, matching section 6 of the privacy policy. Don't select under-13 age groups (that would bring in the Families policy).
+- [ ] **Data safety:** "No data collected or shared" (see `PLAY_CONSOLE_DATA_SAFETY.md`).
+- [ ] **Government apps, financial features, health:** No.
 
 ---
 
 ## 3. Permissions Justifications & Declaration
 
-Google Play requires declarations for specific runtime and special permissions:
+The merged manifest asks for exactly these permissions (checked October 5, 2026):
 
 - [ ] **`POST_NOTIFICATIONS` (Android 13+):**
   - Declared in AndroidManifest.xml.
-  - Requested in context when the user first toggles on "Tiny Care Check-ins" or sets a reminder time, not immediately on first app boot.
+  - Requested only when the user turns on "Tiny Care Check-ins" in Settings, not on first launch.
+- [ ] **`RECEIVE_BOOT_COMPLETED`:** restores the Tiny Care reminder after a restart.
 - [ ] **Inexact Alarms Only (Zero `SCHEDULE_EXACT_ALARM`):**
-  - Tiny Care check-ins strictly use battery-friendly, inexact `setAndAllowWhileIdle()`.
-  - The app avoids requesting `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, completely eliminating Play Console exact-alarm declaration friction.
-- [ ] **`INTERNET` Permission:**
-  - Added automatically by the Google Play Billing Library.
-  - In your Data Safety form, explicitly clarify that internet access is used solely for Google Play transaction verification, and never for app data telemetry or ad networks.
-- [ ] **No Location or Sensitive Permissions:**
-  - Confirm the manifest has zero requests for `ACCESS_FINE_LOCATION`, `READ_CONTACTS`, `CAMERA`, or `RECORD_AUDIO`.
+  - Tiny Care check-ins use battery-friendly, inexact `setAndAllowWhileIdle()` (`TinyCareScheduler`).
+  - The app doesn't request `SCHEDULE_EXACT_ALARM` or `USE_EXACT_ALARM`, so no exact-alarm declaration is needed.
+- [ ] **`WRITE_EXTERNAL_STORAGE` (Android 9 and older only, `maxSdkVersion="28"`):** saving a polaroid to the gallery.
+- [ ] **`USE_BIOMETRIC` / `USE_FINGERPRINT`:** added by the AndroidX biometric library for the optional privacy lock. These are normal permissions with no Play declaration.
+- [ ] **No `INTERNET`:** the app has no network access at all.
+- [ ] **No Location or Sensitive Permissions:** no `ACCESS_FINE_LOCATION`, `READ_CONTACTS`, `CAMERA` or `RECORD_AUDIO`.
+- Re-check after adding any library: `app/build/intermediates/merged_manifests/release/*/AndroidManifest.xml` shows the final list.
 
 ---
 
 ## 4. Play Console Developer Setup (Prerequisites Outside Code)
 
-These actions must be performed directly in your Google Play Console account before billing can be tested end-to-end:
-
-- [ ] **Google Play Developer Account:** Account registration and developer identity verification completed.
-- [ ] **Google Payments Merchant Profile:** Set up in Play Console (**Settings > Developer account > Payment settings**) to accept payments and set payout bank details.
-- [ ] **Upload Initial Signed App Bundle (AAB):**
-  - You cannot create in-app products in Play Console until an APK/AAB containing the `com.android.billingclient` dependency and `com.android.vending.BILLING` permission has been uploaded to at least the **Internal Testing** or **Closed Testing** track.
-- [ ] **Define In-App Products (SKUs):**
-  - In Play Console under **Monetization > In-app products**, define your product IDs matching your code constants (e.g., `tinyus_pack_celestial`, `tinyus_pack_wardrobe_seasonal`, `tinyus_tip_dev`).
-  - Set status to **Active** with your chosen base pricing.
-- [ ] **Configure License Testing Accounts:**
-  - Add your test Google accounts under **Settings > License testing**.
-  - Set "License test response" to `RESPOND_NORMALLY`.
-  - Testers on this list can complete test purchases using test credit cards without being charged real money.
+- [ ] **Google Play Developer Account:** registration and identity verification completed.
+- [ ] **Upload key and app bundle:** see `docs/store/RELEASE_SIGNING.md`. Keep Play App Signing on.
+- [ ] **Testing before production:** new personal developer accounts must run a closed test (at the time of writing, at least 12 testers opted in for 14 days in a row) before they can apply for production access. Check the current rule in the Play Console.
+- [ ] **Store listing:** text in `docs/store/listing.md`, screenshots, feature graphic and icon (plan 06, section E).
 
 ---
 
 ## 5. Privacy Policy Hosting
 
 - [ ] **Public Privacy Policy URL:**
-  - Google Play mandates a publicly accessible, live URL for your Privacy Policy before you can publish to Production.
-  - Recommended: Host the drafted [PRIVACY_POLICY.md](file:///d:/workspace/Andriod%20projects/tiny-us%20-%20public/docs/PRIVACY_POLICY.md) on GitHub Pages, a project website, or a public Notion/gist link.
+  - Google Play requires a public, live URL for your privacy policy before you can publish.
+  - Fill in the contact email in `docs/PRIVACY_POLICY.md`, then host it on GitHub Pages, a project website, or a public gist.
   - Enter the live URL in Play Console under **Policy > App content > Privacy policy**.

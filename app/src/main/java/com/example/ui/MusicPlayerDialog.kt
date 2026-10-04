@@ -1,6 +1,7 @@
 package com.example.ui
 
 import com.example.R
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
@@ -246,7 +247,7 @@ fun MusicPlayerDialog(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (earphonesOn) "Shared" else "Earphones",
+                        text = if (earphonesOn) stringResource(R.string.ui_shared) else stringResource(R.string.ui_earphones),
                         style = TinyType.Label.copy(color = if (earphonesOn) TinyColors.Rose else TinyColors.Ink),
                         maxLines = 1
                     )
@@ -416,7 +417,7 @@ fun MusicPlayerDialog(
                     style = TinyType.Micro.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 )
                 Text(
-                    text = "${audio.playlist.size} songs",
+                    text = pluralStringResource(R.plurals.ui_song_count, audio.playlist.size, audio.playlist.size),
                     style = TinyType.Micro
                 )
             }
@@ -496,9 +497,9 @@ fun MusicPlayerDialog(
                                 Spacer(modifier = Modifier.width(TinySpace.sm))
                                 TinyTag(
                                     text = when (audio.musicBoxState) {
-                                        MusicBoxState.PLAYING -> "Playing"
-                                        MusicBoxState.PAUSED -> "Paused"
-                                        MusicBoxState.STOPPED -> "Selected"
+                                        MusicBoxState.PLAYING -> stringResource(R.string.ui_playing)
+                                        MusicBoxState.PAUSED -> stringResource(R.string.ui_paused)
+                                        MusicBoxState.STOPPED -> stringResource(R.string.ui_selected)
                                     },
                                     color = TinyColors.Rose,
                                     background = TinyColors.Card

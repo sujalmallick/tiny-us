@@ -174,6 +174,13 @@ fun reallocateNightStars(seed: Long = System.currentTimeMillis()) {
     dynamicNightStars = generateDynamicNightStars(seed)
 }
 
+/** Pins the moon's phase (0 new, 0.5 full) instead of tonight's; for previews and tests only. */
+@androidx.annotation.VisibleForTesting
+internal var moonPhaseOverride: Float? = null
+
+/** Tonight's moon phase, 0 new to 0.5 full and back to 1. */
+internal fun currentMoonFraction(): Float = moonPhaseOverride ?: com.example.engine.MoonPhase.fraction()
+
 /** Seconds for the night sky to turn once across the screen: the stars drift slowly west and wrap round. */
 internal const val SKY_TURN_SECONDS = 2700f
 
@@ -471,8 +478,11 @@ internal fun drawMilkyWayNightSky(
     val moonX = cw * (0.06f + 0.80f * moonProg)
     val moonY = ch * (0.30f - 0.20f * sin(moonProg * Math.PI.toFloat()))
     val moonCenter = Offset(moonX + 7f * p, moonY + 7f * p)
-    scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.04f), radius = 20f * p, center = moonCenter)
-    scope.drawCircle(Color(0xFFFFF8D6).copy(alpha = 0.08f), radius = 12f * p, center = moonCenter)
+    val moonFraction = currentMoonFraction()
+    // A thin crescent glows less than a full moon.
+    val glow = 0.25f + 0.75f * com.example.engine.MoonPhase.illumination(moonFraction)
+    scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.04f * glow), radius = 20f * p, center = moonCenter)
+    scope.drawCircle(Color(0xFFFFF8D6).copy(alpha = 0.08f * glow), radius = 12f * p, center = moonCenter)
 
     // Crisp Pixel Moon Body
     scope.drawRect(Color(0xFFFFF3B0), Offset(moonX, moonY), Size(14 * p, 14 * p))
@@ -483,6 +493,16 @@ internal fun drawMilkyWayNightSky(
     // Craters
     scope.drawRect(Color(0xFFE9D8A6), Offset(moonX + 3 * p, moonY + 4 * p), Size(3 * p, 3 * p))
     scope.drawRect(Color(0xFFE9D8A6), Offset(moonX + 8 * p, moonY + 7 * p), Size(4 * p, 3 * p))
+    // Tonight's phase: the unlit part in faint earthshine, row by row across the pixel disc
+    // (18 rows; the top and bottom two are 10 pixels wide, the rest 18).
+    val earthshine = Color(0xFF161D36)
+    for (k in 0 until 18) {
+        val half = if (k < 2 || k >= 16) 5f else 9f
+        val span = com.example.engine.MoonPhase.shadowSpan(moonFraction, half) ?: continue
+        val left = kotlin.math.round(span.first)
+        val right = kotlin.math.round(span.second)
+        if (right > left) scope.drawRect(earthshine, Offset(moonCenter.x + left * p, moonY - 2f * p + k * p), Size((right - left) * p, p))
+    }
 
     // 4. Rare shooting star; most quiet nights remain still.
     val meteorCycle = (time + 19.7f) % 78.0f

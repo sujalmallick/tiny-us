@@ -177,9 +177,9 @@ fun SecretKeepsakeDialog(
 ) {
     val profile = com.example.data.ProfileManager.getProfile()
     val title = prefs?.secretCode?.ifBlank { null } ?: profile.secretCodeTitle.ifBlank { profile.boyName }
-    val subtitle = profile.secretCodeSubtitle.ifBlank { "A keepsake from the heart" }
+    val subtitle = profile.secretCodeSubtitle.ifBlank { stringResource(R.string.ui_keepsake_subtitle_default) }
     val body = prefs?.secretCodeBody?.ifBlank { null } ?: profile.secretCodeBody.ifBlank {
-        "Not in money or gold,\nbut in endless love, quiet cuddles,\nand a heart that belongs\nentirely to you."
+        stringResource(R.string.ui_keepsake_body_default)
     }
 
     TinyDialog(

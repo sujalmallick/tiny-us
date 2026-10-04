@@ -25,14 +25,14 @@ class TinyUsWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.tiny_us_widget)
 
             // Populate data
-            views.setTextViewText(R.id.widget_day_counter, "Day ${data.daysTogether}")
+            views.setTextViewText(R.id.widget_day_counter, context.getString(R.string.ui_day_number, data.daysTogether))
             views.setTextViewText(R.id.widget_couple_names, data.coupleNames)
 
             val statusText = when {
                 !data.latestSignalText.isNullOrBlank() -> data.latestSignalText
-                !data.sharedMoodText.isNullOrBlank() -> "Mood: ${data.sharedMoodText}"
+                !data.sharedMoodText.isNullOrBlank() -> context.getString(R.string.widget_mood, data.sharedMoodText)
                 !data.dailyMomentPrompt.isNullOrBlank() -> data.dailyMomentPrompt
-                else -> "Quiet peaceful moments together."
+                else -> context.getString(R.string.widget_status_default)
             }
             views.setTextViewText(R.id.widget_status_text, statusText)
             views.setTextViewText(R.id.widget_subtext, "${data.sceneName} • ${data.weatherName}")

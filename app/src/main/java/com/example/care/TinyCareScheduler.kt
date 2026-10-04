@@ -30,8 +30,8 @@ object TinyCareScheduler {
     // Notification channel setup
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = "Tiny Care"
-            val descriptionText = "Gentle, wholesome offline reminders"
+            val name = context.getString(com.example.R.string.ui_tiny_care)
+            val descriptionText = context.getString(com.example.R.string.ui_tiny_care_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText

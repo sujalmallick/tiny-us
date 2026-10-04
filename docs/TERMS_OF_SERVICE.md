@@ -1,8 +1,7 @@
 # Terms of Service for Tiny Us
 
-**Effective Date:** October 1, 2026  
-**Last Updated:** October 1, 2026  
-**Status:** DRAFT (Subject to independent legal review before store publication)
+**Effective Date:** October 5, 2026  
+**Last Updated:** October 5, 2026
 
 ---
 
@@ -16,33 +15,14 @@ By downloading, installing, accessing, or using **Tiny Us** ("the Application"),
 
 Tiny Us is an offline-first, cozy pixel-art application designed for couples to celebrate memories, track relationship milestones, enjoy interactive animated scenes, and nurture a shared digital space.
 
-- **Offline Operation:** The core functionality of the Application operates completely on your local device without external server synchronization.
+- **Offline Operation:** The Application works entirely on your device and does not use the internet.
 - **No User Accounts:** The Application does not maintain user accounts, user profiles on remote servers, or cloud credentials.
 
 ---
 
-## 3. In-App Purchases and Payment Terms
+## 3. Price
 
-### 3.1 Digital Purchases
-Tiny Us may offer optional, paid digital products, including:
-- Optional cosmetic expansion packs (e.g., additional wardrobe items, hairstyles, room themes).
-- Optional bonus scene packs and audio soundscapes.
-- Voluntary one-time "Support the Developer" contributions.
-
-All purchases are **one-time, non-consumable unlocks**. The Application does not employ recurring subscriptions or subscription billing traps.
-
-### 3.2 Payment Processing
-All financial transactions and in-app purchases are billed and processed exclusively by **Google Play** via the Google Play Store. Your purchase is subject to the [Google Play Terms of Service](https://play.google.com/intl/en_us/about/play-terms/). We do not collect, process, or store credit card numbers, bank details, or billing addresses.
-
-### 3.3 Purchase Restoration
-Because purchases are tied to your Google Account through Google Play Services:
-- You may restore your purchases on any compatible Android device logged into the same Google Account by selecting the in-app "Restore Purchases" button.
-- Tiny Us cannot transfer entitlements across different app store platforms (e.g., between Google Play and Apple App Store).
-
-### 3.4 Refund Policy
-Because all transactions are processed directly by Google Play, **all refund requests are governed by Google Play's standard refund policies**.
-- You can request a refund within 48 hours directly through Google Play by visiting [Google Play Refund Support](https://support.google.com/googleplay/answer/2479637).
-- Tiny Us developers do not have direct access to your financial accounts to issue manual chargebacks or card refunds.
+Tiny Us is free. It has no in-app purchases, no subscriptions and no ads. If paid content is ever added, these Terms will be updated before it is offered.
 
 ---
 
@@ -82,4 +62,4 @@ We reserve the right to modify these Terms at any time. Updated Terms will be ma
 ## 9. Contact Information
 
 For inquiries regarding these Terms of Service:
-- **Developer / Support Contact:** legal@tinyus.app *(Replace with verified developer email)*
+- **Developer / Support Contact:** [CONTACT EMAIL - to be filled in before publishing]

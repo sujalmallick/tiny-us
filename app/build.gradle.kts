@@ -13,6 +13,16 @@ val releaseKeystore = Properties().apply {
   if (file.exists()) file.inputStream().use { load(it) }
 }
 
+// The app bundle is what goes to Google Play: refuse to build it with the debug key.
+val hasReleaseKey = !releaseKeystore.isEmpty
+tasks.matching { it.name == "bundleRelease" }.configureEach {
+  doFirst {
+    if (!hasReleaseKey) {
+      throw GradleException("No keystore.properties: the release bundle would be signed with the debug key. See docs/store/RELEASE_SIGNING.md.")
+    }
+  }
+}
+
 android {
   namespace = "com.example"
   compileSdk { version = release(36) { minorApiLevel = 1 } }
@@ -48,6 +58,9 @@ android {
     }
     debug {
       // Uses default Android debug signing configuration
+      // Pseudo-locales (en-XA: longer accented text, ar-XB: right to left) to check that the
+      // layouts survive longer translations. Debug builds only.
+      isPseudoLocalesEnabled = true
     }
   }
 

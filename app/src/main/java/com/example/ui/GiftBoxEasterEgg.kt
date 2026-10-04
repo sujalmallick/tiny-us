@@ -173,12 +173,12 @@ fun GiftBoxEasterEgg(
 
                 // Progress teaser text
                 val hintText = when (tapCount) {
-                    0 -> "Tied with a golden ribbon... Tap 5 times to open!"
-                    1 -> "Untying the ribbon... (1/5)"
-                    2 -> "Loosening the golden knot... (2/5)"
-                    3 -> "Something made specially for you inside! (3/5)"
-                    4 -> "Almost open! Just 1 more tap! (4/5)"
-                    else -> "Opening with love!"
+                    0 -> stringResource(R.string.ui_gift_hint_0)
+                    1 -> stringResource(R.string.ui_gift_hint_1)
+                    2 -> stringResource(R.string.ui_gift_hint_2)
+                    3 -> stringResource(R.string.ui_gift_hint_3)
+                    4 -> stringResource(R.string.ui_gift_hint_4)
+                    else -> stringResource(R.string.ui_gift_hint_5)
                 }
 
                 Text(
@@ -332,9 +332,9 @@ internal fun RomanticSurpriseDialog(
 
             // Romantic letter
             val profile = com.example.data.ProfileManager.getProfile()
-            val creatorName = if (isNameRevealed) profile.boyName else "Your Favorite Person"
+            val creatorName = if (isNameRevealed) profile.boyName else stringResource(R.string.ui_gift_your_favorite_person)
             val letterContent = profile.secretLetter.ifBlank {
-                "I built this little digital home so we can always share cozy moments together, no matter where we are. Every single pixel, every melody, and every little secret was crafted with all my love, just for you."
+                stringResource(R.string.ui_gift_letter_default)
             }
             TinyCard(spacing = TinySpace.sm) {
                 Text(
@@ -342,7 +342,7 @@ internal fun RomanticSurpriseDialog(
                     style = TinyType.BodyStrong
                 )
                 Text(
-                    text = "$letterContent\n\nForever yours,\n$creatorName",
+                    text = stringResource(R.string.ui_letter_signoff, letterContent, creatorName),
                     style = TinyType.Body
                 )
                 Column(
@@ -375,32 +375,32 @@ internal fun RomanticSurpriseDialog(
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_street_food_date_our_food_stall),
-                    desc = "Go on a street food date at our cozy stall! Watch the couple share steaming bites. Tap the steamer to puff steam, tap the sign for neon stars, and tap the spicy dip!"
+                    desc = stringResource(R.string.ui_gift_guide_0)
                 )
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_double_click_secret_whispers),
-                    desc = "Double-tap on either character to hear them jump and whisper sweet affectionate secrets to each other!"
+                    desc = stringResource(R.string.ui_gift_guide_1)
                 )
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_cozy_couple_hug),
-                    desc = "Tap right between both characters to make them wrap in a sweet warm hug with a fountain of floating hearts!"
+                    desc = stringResource(R.string.ui_gift_guide_2)
                 )
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_interactive_world_touches),
-                    desc = "Tap the sky for shooting stars at night, or fluffy clouds by day. Tap meadow flowers to blow swirling petals. Tap the big tree to shower drifting leaves. Tap our sleeping cat to hear him purr! Tap the streetlamp at night to toggle cozy light."
+                    desc = stringResource(R.string.ui_gift_guide_3)
                 )
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_atmosphere_and_relaxing_melodies),
-                    desc = "Switch skies anytime (Day, Sunset, Starry Night) and toggle soothing music box lullabies whenever you want to relax."
+                    desc = stringResource(R.string.ui_gift_guide_4)
                 )
                 GuideItem(
                     icon = "",
                     title = stringResource(R.string.ui_love_letters_and_keepsakes),
-                    desc = "Write secret letters in our mailbox that stay saved forever, and view our days together and memories!"
+                    desc = stringResource(R.string.ui_gift_guide_5)
                 )
             }
         }

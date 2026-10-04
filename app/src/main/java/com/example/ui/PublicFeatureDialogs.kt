@@ -203,10 +203,10 @@ private fun DateAdventureCard(
             )
             Spacer(modifier = Modifier.width(TinySpace.sm))
             when {
-                isCompleted -> TinyTag("Completed", color = TinyColors.Sage, background = TinyColors.Card)
-                isAccepted -> TinyTag("Active", color = TinyColors.Rose, background = TinyColors.RoseSoft)
-                adventure.status == AdventureStatus.SKIPPED -> TinyTag("Skipped")
-                else -> TinyTag("Available")
+                isCompleted -> TinyTag(stringResource(R.string.ui_completed), color = TinyColors.Sage, background = TinyColors.Card)
+                isAccepted -> TinyTag(stringResource(R.string.ui_active), color = TinyColors.Rose, background = TinyColors.RoseSoft)
+                adventure.status == AdventureStatus.SKIPPED -> TinyTag(stringResource(R.string.ui_skipped))
+                else -> TinyTag(stringResource(R.string.ui_available))
             }
         }
 
@@ -226,7 +226,7 @@ private fun DateAdventureCard(
                 )
                 Spacer(modifier = Modifier.width(6.dp))
                 Text(
-                    text = "Unlocks: ${artifact.replace("_", " ")} in Tiny Home",
+                    text = stringResource(R.string.ui_unlocks_in_tiny_home, artifact.replace("_", " ")),
                     style = TinyType.Micro.copy(color = TinyColors.Rose)
                 )
             }
@@ -424,7 +424,7 @@ fun DailyMomentPromptDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
         ) {
             Text(
-                text = "${prefs.boyfriendName}'s reflection:",
+                text = stringResource(R.string.ui_partner_reflection, prefs.boyfriendName),
                 style = TinyType.Label
             )
             OutlinedTextField(
@@ -444,7 +444,7 @@ fun DailyMomentPromptDialog(
             verticalArrangement = Arrangement.spacedBy(TinySpace.xs)
         ) {
             Text(
-                text = "${prefs.girlfriendName}'s reflection:",
+                text = stringResource(R.string.ui_partner_reflection, prefs.girlfriendName),
                 style = TinyType.Label
             )
             OutlinedTextField(
@@ -488,7 +488,7 @@ fun DailyMomentPromptDialog(
 
             if (savedResponse.isAnsweredByBoy || savedResponse.isAnsweredByGirl) {
                 Text(
-                    text = if (revealPartnerAnswers) "Both reflections shared & unlocked on Bedside Notepad" else "Reflections preserved privately until both share",
+                    text = if (revealPartnerAnswers) stringResource(R.string.ui_reflections_shared) else stringResource(R.string.ui_reflections_private),
                     style = TinyType.Caption.copy(color = if (revealPartnerAnswers) TinyColors.Sage else TinyColors.InkMuted),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth()
@@ -570,7 +570,7 @@ fun TwoPersonMiniGameDialog(
 
                 // Choices Section for Partner A (Boy)
                 Text(
-                    text = "${prefs.boyfriendName}'s choice:",
+                    text = stringResource(R.string.ui_partner_choice, prefs.boyfriendName),
                     style = TinyType.Label.copy(color = TinyColors.InkMuted)
                 )
                 Row(
@@ -595,7 +595,7 @@ fun TwoPersonMiniGameDialog(
 
                 // Choices Section for Partner B (Girl)
                 Text(
-                    text = "${prefs.girlfriendName}'s choice:",
+                    text = stringResource(R.string.ui_partner_choice, prefs.girlfriendName),
                     style = TinyType.Label.copy(color = TinyColors.InkMuted)
                 )
                 Row(
@@ -631,7 +631,7 @@ fun TwoPersonMiniGameDialog(
                             verticalArrangement = Arrangement.spacedBy(2.dp)
                         ) {
                             Text(
-                                text = if (isMatch) "Match Made in Heaven!" else "Playful Perspectives!",
+                                text = if (isMatch) stringResource(R.string.ui_match_made_in_heaven) else stringResource(R.string.ui_playful_perspectives),
                                 style = TinyType.Label.copy(color = if (isMatch) TinyColors.Sage else TinyColors.Ink)
                             )
                             val optA = choiceAIndex?.let { currentQuestion.options.getOrNull(it) } ?: "—"
@@ -771,7 +771,7 @@ fun SharedMoodDialog(
         )
 
         TinyButton(
-            text = if (com.example.FeatureFlags.PARTNER_SYNC) "Share With Each Other" else "Save Our Moods",
+            text = if (com.example.FeatureFlags.PARTNER_SYNC) stringResource(R.string.ui_share_with_each_other) else stringResource(R.string.ui_save_our_moods),
             onClick = {
                 prefs.setPartnerMood("boy", selectedMoodA, isSharedA)
                 prefs.setPartnerMood("girl", selectedMoodB, isSharedB)
@@ -798,13 +798,13 @@ private fun PartnerMoodSection(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                text = "$partnerName's feeling:",
+                text = stringResource(R.string.ui_partner_feeling, partnerName),
                 style = TinyType.Label,
                 modifier = Modifier.weight(1f)
             )
             if (com.example.FeatureFlags.PARTNER_SYNC) Row(verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    text = if (isShared) "Shared" else "Private",
+                    text = if (isShared) stringResource(R.string.ui_shared) else stringResource(R.string.ui_private),
                     style = TinyType.Micro.copy(color = if (isShared) TinyColors.Sage else TinyColors.InkMuted)
                 )
                 Spacer(modifier = Modifier.width(TinySpace.sm))
@@ -1061,7 +1061,7 @@ private fun SignalHistoryCard(signal: LongDistanceSignal, senderDisplayName: Str
             Spacer(modifier = Modifier.width(TinySpace.md))
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "${signal.type.title} from $senderDisplayName",
+                    text = stringResource(R.string.ui_signal_from, signal.type.title, senderDisplayName),
                     style = TinyType.Label
                 )
                 if (!signal.note.isNullOrBlank()) {
