@@ -55,14 +55,14 @@ object StageExtension {
             for (y in from downTo to) {
                 val d = first - y
                 val src = first + (period - d % period) % period
-                System.arraycopy(px, src * w, px, y * w, w)
+                px.copyInto(px, y * w, src * w, src * w + w)
             }
         } else {
             val last = first + band - 1
             for (y in from..to) {
                 val d = y - last
                 val src = last - period + 1 + (period - 1 + d) % period
-                System.arraycopy(px, src * w, px, y * w, w)
+                px.copyInto(px, y * w, src * w, src * w + w)
             }
         }
         return true
@@ -122,7 +122,7 @@ object StageExtension {
                 template[k * w + x] = best
             }
         }
-        for (y in bottom until h) System.arraycopy(template, ((y - bottom) % period) * w, px, y * w, w)
+        for (y in bottom until h) template.copyInto(px, y * w, ((y - bottom) % period) * w, ((y - bottom) % period) * w + w)
         return true
     }
 

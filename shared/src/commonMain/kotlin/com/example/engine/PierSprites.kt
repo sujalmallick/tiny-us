@@ -250,7 +250,7 @@ object PierSprites {
      */
     fun drawDolphin(scope: DrawScope, x: Float, waterY: Float, p: Float, arc: Float) {
         if (arc !in 0f..1f) return
-        val height = sin(arc * Math.PI.toFloat()) * 12f * p
+        val height = sin(arc * kotlin.math.PI.toFloat()) * 12f * p
         val cx = x + (arc - 0.5f) * 20f * p
         val cy = waterY - height
         scope.drawOval(DolphinBlue, Offset(cx - 5f * p, cy - 2f * p), Size(10f * p, 4f * p))

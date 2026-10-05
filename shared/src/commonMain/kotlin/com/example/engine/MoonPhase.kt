@@ -1,6 +1,7 @@
 package com.example.engine
 
 import kotlin.math.PI
+import kotlin.time.Clock
 import kotlin.math.cos
 
 /**
@@ -21,7 +22,7 @@ object MoonPhase {
      * Where in the cycle the moon is at [epochMs]: 0 is new, 0.25 first quarter, 0.5 full,
      * 0.75 last quarter, back to new at 1.
      */
-    fun fraction(epochMs: Long = System.currentTimeMillis()): Float {
+    fun fraction(epochMs: Long = Clock.System.now().toEpochMilliseconds()): Float {
         val days = (epochMs - REFERENCE_NEW_MOON_MS) / DAY_MS
         val f = (days / SYNODIC_DAYS) % 1.0
         return (if (f < 0) f + 1.0 else f).toFloat()

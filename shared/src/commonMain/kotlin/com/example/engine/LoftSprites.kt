@@ -1217,7 +1217,7 @@ object LoftSprites {
      * depth. Shades go by distance from the floor's edge, so the stage and the strip continued below
      * it (drawLoftBelowStage) join without a seam.
      */
-    internal fun drawLoftLowerLevel(scope: DrawScope, cw: Float, ch: Float, top: Float, bottom: Float, p: Float) {
+    fun drawLoftLowerLevel(scope: DrawScope, cw: Float, ch: Float, top: Float, bottom: Float, p: Float) {
         val edgeY = floorEdgeY(ch)
         val shades = arrayOf(Color(0xFF2B170B), Color(0xFF231309), Color(0xFF1C0F07), Color(0xFF160B05))
         val bandH = 10f * p
@@ -1337,7 +1337,7 @@ object LoftSprites {
         }
     }
 
-    internal fun drawLibraryBookshelf(
+    fun drawLibraryBookshelf(
         scope: DrawScope,
         cw: Float,
         ch: Float,

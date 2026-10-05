@@ -11,7 +11,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  * font doesn't know become spaces.
  */
 object PixelFont {
-    class Face internal constructor(val width: Int, val height: Int, internal val glyphs: Map<Char, List<String>>) {
+    class Face internal constructor(val width: Int, val height: Int, val glyphs: Map<Char, List<String>>) {
         /** Width of [text] in font pixels, with one pixel between letters. */
         fun measure(text: String): Int = if (text.isEmpty()) 0 else text.length * (width + 1) - 1
     }

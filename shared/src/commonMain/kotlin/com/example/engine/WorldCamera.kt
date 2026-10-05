@@ -128,7 +128,7 @@ class WorldCamera private constructor(
          * button strips ([top] and [bottom] rows), then the rest split by [aboveShare]. When the
          * screen is too short to clear both, the spare rows are shared in proportion.
          */
-        internal fun placeStage(spare: Int, top: Int, bottom: Int, aboveShare: Float): Int {
+        fun placeStage(spare: Int, top: Int, bottom: Int, aboveShare: Float): Int {
             if (spare <= 0) return 0
             val reserved = top + bottom
             if (reserved >= spare) return if (reserved == 0) 0 else (spare * top.toFloat() / reserved).roundToInt()
