@@ -21,6 +21,9 @@ kotlin {
 
         // Runs commonTest on the JVM too, so shared logic is tested on any dev machine (not only macOS).
         withHostTest {}
+
+        // Compose resources (shared text) are packaged as Android resources too.
+        androidResources { enable = true }
     }
 
     listOf(
@@ -45,10 +48,18 @@ kotlin {
             implementation(compose.foundation)
             implementation(compose.material3)
             implementation(compose.ui)
+            api(compose.components.resources)
         }
 
         commonTest.dependencies {
             implementation(kotlin("test"))
         }
     }
+}
+
+compose.resources {
+    // The Android app reads shared text too, so the generated Res class must be public.
+    publicResClass = true
+    packageOfResClass = "com.example.resources"
+    generateResClass = always
 }
