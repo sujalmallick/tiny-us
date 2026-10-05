@@ -69,26 +69,12 @@ jobs:
           set -o pipefail
           ./gradlew :shared:iosSimulatorArm64Test 2>&1 | tee build-logs/gradle-ios-tests.log
 
-      - name: Precompile Shared iOS Frameworks
+      # Only the device framework: a separate simulator app build repeated what the archive below
+      # checks, and the shared code is already compiled and tested for the simulator above.
+      - name: Precompile Shared iOS Framework
         run: |
           set -o pipefail
-          ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64 2>&1 | tee build-logs/gradle-frameworks.log
-
-      - name: Build iOS App (Simulator Debug)
-        run: |
-          set -o pipefail
-          xcodebuild -project iosApp/iosApp.xcodeproj \
-                     -scheme iosApp \
-                     -configuration Debug \
-                     -destination 'generic/platform=iOS Simulator' \
-                     ARCHS=arm64 \
-                     ONLY_ACTIVE_ARCH=YES \
-                     JAVA_HOME="$JAVA_HOME" \
-                     CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO \
-                     -IDEBuildingContinueBuildingAfterErrors=YES \
-                     OTHER_SWIFT_FLAGS='$(inherited) -continue-building-after-errors' \
-                     build 2>&1 | tee build-logs/xcodebuild-debug.log
+          ./gradlew :shared:linkReleaseFrameworkIosArm64 2>&1 | tee build-logs/gradle-frameworks.log
 
       - name: Archive iOS App for Device
         run: |
@@ -101,6 +87,8 @@ jobs:
                      ARCHS=arm64 \
                      ONLY_ACTIVE_ARCH=YES \
                      JAVA_HOME="$JAVA_HOME" \
+                     -IDEBuildingContinueBuildingAfterErrors=YES \
+                     OTHER_SWIFT_FLAGS='$(inherited) -continue-building-after-errors' \
                      archive \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO 2>&1 | tee build-logs/xcodebuild-archive.log
