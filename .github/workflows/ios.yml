@@ -86,6 +86,8 @@ jobs:
                      JAVA_HOME="$JAVA_HOME" \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
+                     -IDEBuildingContinueBuildingAfterErrors=YES \
+                     OTHER_SWIFT_FLAGS='$(inherited) -continue-building-after-errors' \
                      build 2>&1 | tee build-logs/xcodebuild-debug.log
 
       - name: Archive iOS App for Device

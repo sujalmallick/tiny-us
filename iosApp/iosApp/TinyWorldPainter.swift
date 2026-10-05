@@ -489,7 +489,10 @@ struct TinyWorldPainter {
         }
         for i in 0..<5 {
             let rise = CGFloat(fract(t * 0.6 + Double(i) / 5))
-            g.abs(&c, (pit.midX + CGFloat(sin(t + Double(i) * 2)) * 0.04) * g.w, (pit.maxY - 0.08 - rise * 0.22) * g.h, 2 * g.u, 2 * g.u, Color(red: 1, green: 0.68, blue: 0.3).opacity(Double(1 - rise)))
+            let drift: CGFloat = CGFloat(sin(t + Double(i) * 2)) * 0.04
+            let emberX: CGFloat = (pit.midX + drift) * g.w
+            let emberY: CGFloat = (pit.maxY - 0.08 - rise * 0.22) * g.h
+            g.abs(&c, emberX, emberY, 2 * g.u, 2 * g.u, Color(red: 1, green: 0.68, blue: 0.3).opacity(Double(1 - rise)))
         }
     }
 
