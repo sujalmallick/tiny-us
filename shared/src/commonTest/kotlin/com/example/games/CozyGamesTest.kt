@@ -190,4 +190,23 @@ class CozyGamesTest {
         g = c
         assertEquals(GardenPlots(), g)
     }
+
+    // --- Sprites ---
+
+    @Test
+    fun everyThingHasATidySprite() {
+        val all = CozySprites.INGREDIENTS.values + CozySprites.DISHES.values + CozySprites.CATCHES.values +
+            CozySprites.PLOT.values + listOf(CozySprites.BOUQUET, CozySprites.BOBBER, CozySprites.WATERING_CAN)
+        val known = CozySprites.PALETTE.keys + setOf('.', 'P', 'Q', 'R', 'C')
+        for (sprite in all) {
+            assertTrue(sprite.rows.all { it.length == sprite.width }, "ragged: ${sprite.rows}")
+            assertTrue(sprite.rows.joinToString("").all { it in known }, "unknown colour: ${sprite.rows}")
+        }
+        assertEquals(Ingredient.entries.toSet(), CozySprites.INGREDIENTS.keys)
+        assertEquals(Recipes.ALL.map { it.id }.toSet(), CozySprites.DISHES.keys)
+        assertEquals(FishingCatch.entries.toSet(), CozySprites.CATCHES.keys)
+        assertEquals(PlotStage.entries.toSet(), CozySprites.PLOT.keys)
+        // Every seed has its own colours from the meadow's plants.
+        for (seed in GardenPlots.SEEDS) assertTrue(com.example.data.GardenGrowth.keepsakePlants.any { it.id == seed }, seed)
+    }
 }
