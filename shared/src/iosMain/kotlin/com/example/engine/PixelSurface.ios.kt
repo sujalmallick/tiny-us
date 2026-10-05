@@ -9,13 +9,12 @@ import androidx.compose.ui.graphics.Paint
 import androidx.compose.ui.graphics.PaintingStyle
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.PointMode
-import androidx.compose.ui.graphics.asComposeCanvas
-import androidx.compose.ui.graphics.asComposeImageBitmap
+import androidx.compose.ui.graphics.asSkiaBitmap
+import androidx.compose.ui.graphics.nativeCanvas
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.IntSize
 import kotlin.math.abs
 import kotlin.math.floor
-import org.jetbrains.skia.Bitmap as SkiaBitmap
 import org.jetbrains.skia.BlendMode as SkiaBlendMode
 import org.jetbrains.skia.Canvas as SkiaCanvas
 import org.jetbrains.skia.ColorAlphaType
@@ -27,29 +26,18 @@ import org.jetbrains.skia.Rect as SkiaRect
 import org.jetbrains.skia.SamplingMode
 
 actual class PixelSurface actual constructor(actual val width: Int, actual val height: Int) {
-    private val bitmap = SkiaBitmap().apply {
-        allocN32Pixels(width, height, false)
-        erase(0)
-    }
-    private val skia = SkiaCanvas(bitmap)
+    /**
+     * Built the way Compose builds offscreen images on iOS (a hand-made Skia bitmap could not be
+     * turned into an image when drawn to the screen: "Failed to Image::makeFromBitmap").
+     */
+    actual val image: ImageBitmap = ImageBitmap(width, height)
+    private val composeCanvas = Canvas(image)
+    private val skia: SkiaCanvas = composeCanvas.nativeCanvas
 
-    /** Pixels are exchanged as little-endian ARGB ints, which is BGRA byte order. */
-    private val rowInfo = ImageInfo(width, height, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL)
-
-    actual val image: ImageBitmap = bitmap.asComposeImageBitmap()
-
-    actual val canvas: Canvas = HardEdgeCanvas(skia.asComposeCanvas(), skia)
+    actual val canvas: Canvas = HardEdgeCanvas(composeCanvas, skia)
 
     actual fun readPixels(dst: IntArray) {
-        val bytes = bitmap.readPixels(rowInfo, width * 4, 0, 0) ?: return
-        val count = minOf(width * height, dst.size)
-        for (i in 0 until count) {
-            val b = i * 4
-            dst[i] = (bytes[b].toInt() and 0xFF) or
-                ((bytes[b + 1].toInt() and 0xFF) shl 8) or
-                ((bytes[b + 2].toInt() and 0xFF) shl 16) or
-                ((bytes[b + 3].toInt() and 0xFF) shl 24)
-        }
+        image.readPixels(dst, 0, 0, width, height, 0, width)
     }
 
     actual fun writePixels(src: IntArray, srcOffset: Int, startRow: Int, rows: Int) {
@@ -64,6 +52,7 @@ actual class PixelSurface actual constructor(actual val width: Int, actual val h
             bytes[b + 2] = (c shr 16).toByte()
             bytes[b + 3] = (c ushr 24).toByte()
         }
+        // Pixels are little-endian ARGB ints, which is BGRA byte order.
         val rowsImage = SkiaImage.makeRaster(ImageInfo(width, rows, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL), bytes, width * 4)
         // Replace the rows exactly (no blending, no smoothing, no transform).
         val copy = SkiaPaint().apply { blendMode = SkiaBlendMode.SRC }
@@ -84,7 +73,7 @@ actual class PixelSurface actual constructor(actual val width: Int, actual val h
 
     /** Skia may cache an image of the bitmap; tell it the pixels changed this frame. */
     actual fun commit() {
-        bitmap.notifyPixelsChanged()
+        image.asSkiaBitmap().notifyPixelsChanged()
     }
 }
 
