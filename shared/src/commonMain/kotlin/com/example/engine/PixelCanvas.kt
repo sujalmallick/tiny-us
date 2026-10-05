@@ -1902,6 +1902,44 @@ object PixelArtRenderer {
                 drawRect(10, 2, 3, 1, white)
                 px(11, 2, pink)
             }
+            7 -> {
+                // Chef's Apron (a reward: five dishes cooked): a cream bib over the sweater, tied at
+                // the neck and waist, with a little heart and a pocket
+                val apron = Color(0xFFFBF5EA)
+                val apronShade = Color(0xFFE6D9C3)
+                val tie = Color(0xFFE07A5F)
+                px(7, 12, tie)
+                px(11, 12, tie)
+                drawRect(7, 13, 5, 5, apron)
+                px(6, 15, tie)
+                px(12, 15, tie)
+                px(9, 14, Color(0xFFFF6B8B))
+                drawRect(8, 16, 3, 1, apronShade)
+            }
+            8 -> {
+                // Fisher's Bucket Hat (a reward: the first fish): olive canvas, a brim all round,
+                // a band with a little orange lure
+                val canvas = Color(0xFF8A9A5B)
+                val canvasShade = Color(0xFF6B7A45)
+                val band = Color(0xFF5C4630)
+                drawRect(6, 2, 7, 2, canvas)
+                drawRect(6, 4, 7, 1, band)
+                px(11, 4, Color(0xFFFF9F1C))
+                drawRect(4, 5, 11, 1, canvasShade)
+                px(7, 2, Color(0xFFA3B474))
+            }
+            9 -> {
+                // Flower Crown (a reward: the first bouquet): three little flowers and leaves
+                // resting on the crown
+                val leaf = Color(0xFF6BBF59)
+                val flowers = listOf(Color(0xFFFF8FAB), Color(0xFFFFD166), Color(0xFFB497E7))
+                drawRect(6, 3, 7, 1, leaf)
+                for ((i, petal) in flowers.withIndex()) {
+                    val x = 6 + i * 3
+                    drawRect(x - 1, 2, 2, 2, petal)
+                    px(if (i == 1) x - 1 else x, 3, if (i == 1) Color(0xFFF4A261) else Color(0xFFFFE066))
+                }
+            }
         }
     }
 
