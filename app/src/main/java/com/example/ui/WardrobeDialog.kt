@@ -223,7 +223,10 @@ fun WardrobeDialog(
     onSelectBoyAccessory: (Int) -> Unit,
     onDismiss: () -> Unit,
     girlWearsDress: Boolean = true,
-    boyWearsDress: Boolean = false
+    boyWearsDress: Boolean = false,
+    /** The couple's looks, so each card shows them in the outfit (skin, hair) rather than a stand-in. */
+    girlLook: com.example.engine.AvatarLook = com.example.engine.AvatarLook.defaultFor(true),
+    boyLook: com.example.engine.AvatarLook = com.example.engine.AvatarLook.defaultFor(false)
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Girl, 1: Boy
     // The catalogue below is built inside remember { }, so it reads its text through resources.
@@ -601,48 +604,32 @@ fun WardrobeDialog(
                         modifier = Modifier.fillMaxWidth(),
                         verticalAlignment = Alignment.Top
                     ) {
-                        // Pixel Mini Preview Icon (outfit colours are data)
+                        // The character in this outfit, drawn by the same renderer as the scene, so a
+                        // hoodie shows as a hoodie (it used to be two colour blocks and a tag).
                         Surface(
-                            modifier = Modifier.size(48.dp),
+                            modifier = Modifier.size(width = 52.dp, height = 64.dp),
                             shape = TinyRadius.Medium,
-                            color = item.primaryColor.copy(alpha = 0.25f),
+                            color = item.primaryColor.copy(alpha = 0.22f),
                             border = BorderStroke(1.dp, item.accentColor.copy(alpha = 0.4f))
                         ) {
+                            val isGirlTab = selectedTab == 0
                             Canvas(modifier = Modifier.fillMaxSize()) {
-                                val p = size.width / 16f
-                                // Hanger
-                                drawRect(Color(0xFFFFD166), Offset(6 * p, 2 * p), Size(4 * p, p))
-                                drawRect(Color(0xFF8C6D37), Offset(7.5f * p, p), Size(p, p))
-
-                                if (selectedTab == 0) {
-                                    // Girl outfit / dress / hoodie preview
-                                    drawRect(item.primaryColor, Offset(5 * p, 3.5f * p), Size(6 * p, 4 * p))
-                                    drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
-                                    if (item.isHoodie) {
-                                        // Kangaroo pouch & drawstrings
-                                        drawRect(item.accentColor, Offset(5.5f * p, 5.5f * p), Size(5 * p, 2 * p))
-                                        drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2 * p))
-                                        drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2 * p))
-                                        // Pleated skirt below
-                                        drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
-                                    } else {
-                                        // Flared Skirt
-                                        drawRect(item.accentColor, Offset(4 * p, 7.5f * p), Size(8 * p, 6.5f * p))
-                                        drawRect(item.primaryColor, Offset(4 * p, 13 * p), Size(8 * p, 1.2f * p))
-                                    }
-                                } else {
-                                    // Boy outfit / sweater / hoodie preview
-                                    drawRect(item.primaryColor, Offset(4.5f * p, 3.5f * p), Size(7 * p, 6 * p))
-                                    drawRect(item.accentColor, Offset(6 * p, 3.5f * p), Size(4 * p, 1.2f * p))
-                                    if (item.isHoodie) {
-                                        drawRect(item.accentColor, Offset(5.5f * p, 6.5f * p), Size(5 * p, 2.5f * p))
-                                        drawRect(item.accentColor, Offset(6.2f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
-                                        drawRect(item.accentColor, Offset(9.1f * p, 4.5f * p), Size(0.7f * p, 2.5f * p))
-                                    }
-                                    // Trousers
-                                    drawRect(item.accentColor, Offset(5 * p, 9.5f * p), Size(3 * p, 5 * p))
-                                    drawRect(item.accentColor, Offset(8 * p, 9.5f * p), Size(3 * p, 5 * p))
+                                val model = com.example.engine.PixelCharacter(
+                                    isGirl = isGirlTab, name = "", worldX = 0f, worldY = 0f
+                                ).apply {
+                                    outfitIndex = item.id
+                                    look = if (isGirlTab) girlLook else boyLook
                                 }
+                                // Whole pixels that fit the sprite (18 x 26 grid) in the card.
+                                val fit = minOf(size.width / 18f, size.height * 0.92f / 26f) / com.example.engine.PixelArtRenderer.CHARACTER_SCALE_FACTOR
+                                com.example.engine.PixelArtRenderer.drawCharacter(
+                                    drawScope = this,
+                                    char = model,
+                                    centerX = size.width / 2f,
+                                    bottomY = size.height * 0.97f,
+                                    pixelSize = kotlin.math.floor(fit).coerceAtLeast(1f),
+                                    snapToPixel = true
+                                )
                             }
                         }
 
