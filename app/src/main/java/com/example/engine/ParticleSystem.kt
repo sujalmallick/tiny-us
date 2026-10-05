@@ -1171,21 +1171,21 @@ class ParticleSystem {
                 // Cherry Blossom: slow, gentle, romantic drift
                 val count = countWeatherParticles(ParticleType.SAKURA_PETAL)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 80, 7f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 110, 18f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.AUTUMN -> {
                 // Autumn: slow, gentle, romantic falling leaves
                 val count = countWeatherParticles(ParticleType.AUTUMN_LEAF)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 60, 5f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 80, 14f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.SNOW -> {
                 // Winter: slow, quiet, peaceful snowfall
                 val count = countWeatherParticles(ParticleType.SNOWFLAKE)
                 seasonalSpawnAccumulator = spawnSeasonalWeather(
-                    seasonalSpawnAccumulator, count, 140, 11f, dt, cw, ch
+                    seasonalSpawnAccumulator, count, 170, 26f, dt, cw, ch
                 )
             }
             com.example.scene.WeatherType.SUNNY -> {

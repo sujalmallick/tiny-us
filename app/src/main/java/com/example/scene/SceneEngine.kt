@@ -72,6 +72,9 @@ class SceneEngine(
     private val onOpenDreamJournal: () -> Unit = {}
 ) {
     companion object {
+        /** How long a weather picked with the weather button stays before the season moves it on. */
+        const val MANUAL_WEATHER_HOLD_SECONDS = 20f * 60f
+
         /** How long the couple's special-day greeting stays up. */
         const val SPECIAL_DAY_LINE_SECONDS = 6f
 
@@ -277,7 +280,7 @@ class SceneEngine(
     var weatherCatchCount: Int by mutableIntStateOf(0)
         private set
     var rainbowTimer: Float by mutableFloatStateOf(0f)
-        private set
+        internal set
     var snowmanStage: Int by mutableIntStateOf(0)
         private set
     var snowmanWobbleTimer: Float by mutableFloatStateOf(0f)
@@ -2020,17 +2023,14 @@ class SceneEngine(
             }
         }
 
-        // Living Dynamic Weather System (particles & soundscapes)
-        if (weatherDriftEnabled) {
+        // Living Dynamic Weather System (particles & soundscapes): the weather changes now and
+        // then, within the real season (SeasonalWeather); a weather picked by hand holds a while.
+        if (manualWeatherHold > 0f) manualWeatherHold -= deltaSeconds
+        if (weatherDriftEnabled && manualWeatherHold <= 0f) {
             weatherDriftTimer += deltaSeconds
             if (weatherDriftTimer >= weatherDriftInterval) {
                 weatherDriftTimer = 0f
-                val candidates = WeatherType.values().filter { it != weather }
-                val next = candidates.randomOrNull()
-                if (next != null) {
-                    weather = next
-                    audio.playWeatherBgm(next, isAutomaticDrift = true)
-                }
+                driftWeather()
             }
         }
         hourCheckTimer += deltaSeconds
@@ -7355,15 +7355,31 @@ class SceneEngine(
         discoverySpawnTimer = DISCOVERY_GAP_MIN + rng.nextFloat() * DISCOVERY_GAP_RANGE
     }
 
+    /** Moves on to another of the season's weathers. */
     fun driftWeather() {
-        val candidates = WeatherType.values().filter { it != weather }
-        val next = candidates.randomOrNull() ?: return
+        val next = com.example.engine.SeasonalWeather.next(
+            weather, WeatherMemory.currentMonth(), java.util.Locale.getDefault().country
+        )
+        if (next == weather) return
         weather = next
         audio.playWeatherBgm(next, isAutomaticDrift = true)
     }
 
+    /** Sets the weather quietly (no message), e.g. the one the app opens with. */
+    fun changeWeather(next: WeatherType) {
+        weatherDriftTimer = 0f
+        if (next == weather) return
+        weather = next
+        particles.clearSeasonalParticles()
+        audio.playWeatherBgm(next, isAutomaticDrift = false)
+    }
+
+    /** Seconds left in which a weather picked by hand stays put. */
+    private var manualWeatherHold = 0f
+
     fun cycleWeather(): WeatherType {
         weatherDriftTimer = 0f
+        manualWeatherHold = MANUAL_WEATHER_HOLD_SECONDS
         val all = WeatherType.values()
         val nextIdx = (weather.ordinal + 1) % all.size
         weather = all[nextIdx]

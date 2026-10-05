@@ -174,6 +174,13 @@ fun reallocateNightStars(seed: Long = System.currentTimeMillis()) {
     dynamicNightStars = generateDynamicNightStars(seed)
 }
 
+/**
+ * Drawn just after the sky's colour bands, before the clouds and everything else in the scene
+ * (set by drawWorldFrame around drawEnvironment; drawing is single-threaded). The rainbow uses it,
+ * so the clouds, hills and trees stand in front of it.
+ */
+internal var afterSkyBands: ((DrawScope) -> Unit)? = null
+
 /** Pins the moon's phase (0 new, 0.5 full) instead of tonight's; for previews and tests only. */
 @androidx.annotation.VisibleForTesting
 internal var moonPhaseOverride: Float? = null
@@ -651,6 +658,7 @@ internal fun drawSkyAndClouds(
         }
 
         drawDaySun(scope, cw, ch, p, time, isSunset, isMorning, weather)
+        afterSkyBands?.invoke(scope)
 
         // ── Drifting fluffy pixel clouds (drawn on top of sky fill) ──────────
         fun drawCloud(baseX: Float, y: Float, scaleFactor: Float) =

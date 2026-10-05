@@ -265,6 +265,8 @@ fun MainScreen(
             val chosen = nextRandomScene(initial)
             prefs.addRecentScene(chosen.name)
             loadScene(chosen)
+            // Carry on the last visit's weather, or start from today's season.
+            changeWeather(com.example.scene.WeatherMemory.startWeather(context))
         }
     }
 
@@ -434,6 +436,15 @@ fun MainScreen(
     LaunchedEffect(engine.currentScene, engine.weather) {
         if (previewEngine == null && com.example.widget.WidgetState.save(context, engine.currentScene, engine.weather)) {
             com.example.widget.TinyUsWidgetProvider.updateAllWidgets(context)
+        }
+    }
+
+    // Remember the weather while the app is open, so a quick return finds the same sky.
+    LaunchedEffect(Unit) {
+        if (previewEngine != null) return@LaunchedEffect
+        while (true) {
+            com.example.scene.WeatherMemory.save(context, engine.weather)
+            delay(60_000)
         }
     }
 

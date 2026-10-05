@@ -351,9 +351,10 @@ object WeatherLayout {
     /** Snowflakes to catch for each new snowman stage. */
     const val SNOWFLAKES_PER_STAGE = 3
 
-    fun rainbowCenter(cw: Float, ch: Float) = Offset(cw * 0.5f, ch * 0.47f)
-    fun rainbowOuterRadius(cw: Float) = cw * 0.46f
-    fun rainbowBandWidth(cw: Float) = cw * 0.10f
+    /** On the horizon, so the arc's feet go down behind the ground, hills and houses. */
+    fun rainbowCenter(cw: Float, ch: Float) = Offset(cw * 0.5f, ch * 0.66f)
+    fun rainbowOuterRadius(cw: Float) = cw * 0.50f
+    fun rainbowBandWidth(cw: Float) = cw * 0.09f
 
     fun isOnRainbow(tap: Offset, cw: Float, ch: Float): Boolean {
         val c = rainbowCenter(cw, ch)

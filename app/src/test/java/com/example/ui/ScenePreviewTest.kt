@@ -60,6 +60,8 @@ class ScenePreviewTest {
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
+            // SCENE_PREVIEW_RAINBOW=1 shows the after-rain rainbow, part way through.
+            if (System.getenv("SCENE_PREVIEW_RAINBOW") != null) rainbowTimer = com.example.scene.WeatherLayout.RAINBOW_SECONDS * 0.6f
         }
 
     private fun render(cw: Float = this.cw, ch: Float = this.ch, block: DrawScope.() -> Unit): Bitmap {
