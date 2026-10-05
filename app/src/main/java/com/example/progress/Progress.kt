@@ -23,6 +23,13 @@ sealed class ProgressEvent {
     object LoveNote : ProgressEvent()
     object DreamWritten : ProgressEvent()
     data class DaysTogether(val days: Long) : ProgressEvent()
+    /** A mini-game round finished with [score] (plan 07, C). */
+    data class GamePlayed(val game: String, val score: Int) : ProgressEvent()
+}
+
+/** Mini-game ids. */
+object Game {
+    const val CATCH = "catch"
 }
 
 /** Counter keys, so the firsts and the screens agree on names. */
@@ -85,5 +92,6 @@ data class ProgressState(
         ProgressEvent.LoveNote -> plus(Counter.LOVE_NOTES)
         ProgressEvent.DreamWritten -> plus(Counter.DREAMS)
         is ProgressEvent.DaysTogether -> atLeast(Counter.DAYS_TOGETHER, event.days.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
+        is ProgressEvent.GamePlayed -> plus("games_${event.game}").bestScore(event.game, event.score)
     }
 }

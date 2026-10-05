@@ -72,6 +72,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -457,6 +458,17 @@ fun MainScreen(
             recordProgress(com.example.progress.ProgressEvent.DaysTogether(com.example.data.RelationshipTimeManager.calculateTinyUsDay()))
         }
         onDispose { engine.onProgress = null }
+    }
+    DisposableEffect(engine) {
+        engine.onCatchGameOver = { score ->
+            // Called before the round is recorded, so the stored best is still the previous one.
+            val wasBest = score > (progress.best[com.example.progress.Game.CATCH] ?: 0)
+            engine.showMessage(
+                context.getString(if (wasBest) R.string.catch_result_best else R.string.catch_result, score),
+                duration = 4f
+            )
+        }
+        onDispose { engine.onCatchGameOver = null }
     }
     // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
     // shows two and points to Our Story for the rest.
@@ -980,6 +992,43 @@ fun MainScreen(
                     renderButtonsRow(screenWidth)
                 }
             }
+        }
+
+        // Catch together (plan 07, C1): a start button when something is falling outdoors; during
+        // a round, the whole screen moves the basket and a little counter shows the score and time.
+        if (engine.catchActive) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { o -> engine.catchGame.moveTo(o.x / size.width) }
+                        ) { change, _ -> engine.catchGame.moveTo(change.position.x / size.width) }
+                    }
+                    .pointerInput(Unit) { detectTapGestures { o -> engine.catchGame.moveTo(o.x / size.width) } }
+                    .testTag("catch_game_layer")
+            )
+            TinyCard(
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+                padding = com.example.ui.theme.TinySpace.md
+            ) {
+                Text(
+                    stringResource(R.string.catch_hud, engine.catchScore, engine.catchSecondsLeft),
+                    style = TinyType.Label
+                )
+            }
+        } else if (engine.hasCatchableWeather && !engine.isDreamMode) {
+            TinyButton(
+                text = stringResource(R.string.catch_start),
+                onClick = {
+                    engine.startCatchGame()
+                    engine.showMessage(context.getString(R.string.catch_hint), duration = 3.5f)
+                },
+                icon = PixelIcons.VolunteerActivism,
+                compact = true,
+                testTag = "catch_start_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
         }
 
         // 3. Subtle In-World Interaction Hint (Fades out automatically)

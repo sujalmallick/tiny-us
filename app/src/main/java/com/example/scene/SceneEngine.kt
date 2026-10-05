@@ -1178,6 +1178,7 @@ class SceneEngine(
     fun update(deltaSeconds: Float, canvasWidth: Float, canvasHeight: Float) {
         sceneTime += deltaSeconds
         if (specialDayGreetingHold > 0f) specialDayGreetingHold -= deltaSeconds
+        updateCatchGame(deltaSeconds, canvasWidth, canvasHeight)
         val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
@@ -4299,6 +4300,62 @@ class SceneEngine(
      * the progress and celebrates any "little first" earned.
      */
     var onProgress: ((com.example.progress.ProgressEvent) -> Unit)? = null
+
+    // ── Catch together (plan 07, C1) ──
+    val catchGame = com.example.games.CatchGame()
+    /** The round's score, time left and state, as Compose state for the screen's counter. */
+    var catchScore by mutableIntStateOf(0)
+        private set
+    var catchSecondsLeft by mutableIntStateOf(0)
+        private set
+    var catchActive by mutableStateOf(false)
+        private set
+
+    /** Weathers that drop something to catch. */
+    val hasCatchableWeather: Boolean
+        get() = isCurrentSceneOutdoor && (weather == WeatherType.SNOW || weather == WeatherType.SAKURA || weather == WeatherType.AUTUMN)
+
+    fun startCatchGame() {
+        if (!hasCatchableWeather || catchGame.active) return
+        catchGame.start()
+        catchActive = true
+        catchScore = 0
+        catchSecondsLeft = com.example.games.CatchGame.DURATION_SECONDS.toInt()
+        audio.playHeartChime()
+    }
+
+    /** Called with the round's result when it ends (the screen shows it and keeps the best). */
+    var onCatchGameOver: ((score: Int) -> Unit)? = null
+
+    private fun updateCatchGame(dt: Float, cw: Float, ch: Float) {
+        if (!catchGame.active) return
+        val halfW = com.example.games.CatchGame.HALF_WIDTH * cw
+        val rim = com.example.games.CatchGame.RIM_Y * ch
+        val x = catchGame.basketX * cw
+        val caught = particles.catchInBasket(x - halfW, x + halfW, rim, rim + com.example.games.CatchGame.RIM_DEPTH * ch)
+        if (caught > 0) {
+            catchGame.addCatches(caught)
+            audio.playStarTwinkle()
+        }
+        val before = catchGame.score
+        val ended = catchGame.update(dt)
+        if (catchGame.score - before >= com.example.games.CatchGame.GOLDEN_VALUE) {
+            particles.spawnSparkles(x, rim, 8, Color(0xFFFFD166))
+            audio.playStarArpeggio()
+        }
+        catchScore = catchGame.score
+        catchSecondsLeft = kotlin.math.ceil(catchGame.timeLeft).toInt()
+        if (ended) {
+            catchActive = false
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.2f
+            girl.emoteTimer = 2.2f
+            // The result first (it compares with the best so far), then record the round.
+            onCatchGameOver?.invoke(catchGame.score)
+            onProgress?.invoke(com.example.progress.ProgressEvent.GamePlayed(com.example.progress.Game.CATCH, catchGame.score))
+        }
+    }
 
     /** A little first was earned: both light up with a heart, a few sparkles, and the news. */
     fun celebrateLittleFirst(message: String) {

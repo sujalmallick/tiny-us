@@ -57,6 +57,8 @@ class ScenePreviewTest {
             // Let the scene-change fade finish and the characters settle (two seconds of frames;
             // ten when previewing weather, so it has filled the sky).
             // SCENE_PREVIEW_FRAMES overrides the count (for example to let the birds arrive).
+            // SCENE_PREVIEW_CATCH=1 starts a round of Catch together (with falling weather).
+            if (System.getenv("SCENE_PREVIEW_CATCH") != null) startCatchGame()
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)

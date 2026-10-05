@@ -737,6 +737,25 @@ class ParticleSystem {
         return CaughtWeather(caught.type, caught.x, caught.y, caught.color)
     }
 
+    /**
+     * Catches every falling snowflake, petal, leaf or dandelion puff inside the basket's opening
+     * ([left]..[right] across, [rimTop]..[rimBottom] down); they're removed on the next update.
+     * Returns how many, and spawns a little sparkle for each.
+     */
+    fun catchInBasket(left: Float, right: Float, rimTop: Float, rimBottom: Float): Int {
+        var count = 0
+        for (i in particles.indices) {
+            val pt = particles[i]
+            if (pt.type !in CATCHABLE_WEATHER || pt.currentLife >= pt.maxLife || pt.weatherFadeRemaining >= 0f) continue
+            if (pt.x in left..right && pt.y in rimTop..rimBottom) {
+                pt.currentLife = pt.maxLife
+                count++
+            }
+        }
+        if (count > 0) spawnSparkles((left + right) / 2f, rimTop, minOf(count * 2, 6), Color(0xFFFFF3B0))
+        return count
+    }
+
     fun spawnHeart(x: Float, y: Float, color: Color = Color(0xFFFF3366)) {
         particles.add(
             obtainParticle(

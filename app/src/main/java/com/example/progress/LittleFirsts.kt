@@ -48,7 +48,9 @@ object LittleFirsts {
         LittleFirst("days_7", R.string.days_7, R.string.days_7_hint) { it.count(Counter.DAYS_TOGETHER) >= 7 },
         LittleFirst("days_30", R.string.days_30, R.string.days_30_hint) { it.count(Counter.DAYS_TOGETHER) >= 30 },
         LittleFirst("days_100", R.string.days_100, R.string.days_100_hint, Rewards.STARRY_ROOM) { it.count(Counter.DAYS_TOGETHER) >= 100 },
-        LittleFirst("days_365", R.string.days_365, R.string.days_365_hint) { it.count(Counter.DAYS_TOGETHER) >= 365 }
+        LittleFirst("days_365", R.string.days_365, R.string.days_365_hint) { it.count(Counter.DAYS_TOGETHER) >= 365 },
+        LittleFirst("first_catch_game", R.string.first_catch_game, R.string.first_catch_game_hint) { it.count("games_${Game.CATCH}") >= 1 },
+        LittleFirst("catch_30", R.string.catch_30, R.string.catch_30_hint) { (it.best[Game.CATCH] ?: 0) >= com.example.games.CatchGame.GOOD_SCORE }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

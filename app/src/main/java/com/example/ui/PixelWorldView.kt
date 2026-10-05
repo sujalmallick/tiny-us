@@ -1684,6 +1684,9 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
         drawForegroundParticles(this, engine.particles.particles, pixelScale)
 
+        // Catch together (plan 07, C1): the basket and the golden stars.
+        drawCatchGame(this, engine.catchGame, cw, ch, pixelScale, engine.sceneTime)
+
         // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
         com.example.engine.SpecialDays.today()?.let { day ->
             drawSpecialDayDecor(this, day, cw, ch, pixelScale, engine.sceneTime, isNight || timePhase.isMidnight)

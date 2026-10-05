@@ -747,4 +747,15 @@
     <string name="days_100_hint">A long, cozy stretch.</string>
     <string name="days_365">A whole year together</string>
     <string name="days_365_hint">All the way round the sun.</string>
+    <string name="first_catch_game">Our first catch together</string>
+    <string name="first_catch_game_hint">When something falls from the sky, there\'s a basket.</string>
+    <string name="catch_30">Thirty in one go</string>
+    <string name="catch_30_hint">A really good round of catching.</string>
+
+    <!-- Catch together (plan 07, C1) -->
+    <string name="catch_start">Catch together</string>
+    <string name="catch_hud">%1$d caught \u00b7 %2$ds</string>
+    <string name="catch_hint">Slide the basket under what falls. Golden stars count three!</string>
+    <string name="catch_result">You caught %1$d together!</string>
+    <string name="catch_result_best">You caught %1$d together. A new best!</string>
 </resources>
