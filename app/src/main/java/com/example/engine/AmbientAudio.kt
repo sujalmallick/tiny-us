@@ -29,7 +29,7 @@ import kotlin.math.cos
 import kotlin.math.exp
 import kotlin.math.tanh
 
-class AmbientAudio(var context: Context? = null) {
+class AmbientAudio(var context: Context? = null) : WorldAudio {
     private val scope = CoroutineScope(Dispatchers.Default)
     private val playbackMutex = Mutex()
     private var musicJob: Job? = null
@@ -51,7 +51,7 @@ class AmbientAudio(var context: Context? = null) {
     private var indoorTransitionJob: Job? = null
     private var duckingTransitionJob: Job? = null
 
-    var currentWeather: WeatherType? by mutableStateOf(null)
+    override var currentWeather: WeatherType? by mutableStateOf(null)
         private set
 
     val isCrossfading: Boolean
@@ -69,7 +69,7 @@ class AmbientAudio(var context: Context? = null) {
     var musicBoxDuckingMultiplier: Float = 1.0f
         private set
 
-    var isIndoor: Boolean = false
+    override var isIndoor: Boolean = false
         private set
 
     val isMusicBoxDucked: Boolean
@@ -132,10 +132,10 @@ class AmbientAudio(var context: Context? = null) {
     private var footstepTrack: AudioTrack? = null
     private val activeSfxTracks = Collections.synchronizedSet(mutableSetOf<AudioTrack>())
 
-    var musicBoxState: MusicBoxState by mutableStateOf(MusicBoxState.STOPPED)
+    override var musicBoxState: MusicBoxState by mutableStateOf(MusicBoxState.STOPPED)
         private set
 
-    val isPlayingMusic: Boolean
+    override val isPlayingMusic: Boolean
         get() = musicBoxState == MusicBoxState.PLAYING
 
     private var currentNoteIndex: Int = 0
@@ -177,7 +177,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     @Volatile
-    var isEnabled: Boolean = true
+    override var isEnabled: Boolean = true
         set(value) {
             field = value
             if (!value) {
@@ -207,7 +207,7 @@ class AmbientAudio(var context: Context? = null) {
     private val sampleRate = 22050
 
     // Offline music box: original chiptune melodies (no licensed songs or melodies are bundled)
-    val playlist: List<Song> = listOf(
+    override val playlist: List<Song> = listOf(
         Song(
             id = "heartbeat",
             title = "Heartbeat",
@@ -268,10 +268,10 @@ class AmbientAudio(var context: Context? = null) {
         )
     )
 
-    var currentSong: Song by mutableStateOf(playlist[0])
+    override var currentSong: Song by mutableStateOf(playlist[0])
         private set
 
-    fun playSong(song: Song) {
+    override fun playSong(song: Song) {
         val sameSong = currentSong.id == song.id
         currentSong = song
         if (!sameSong) {
@@ -302,7 +302,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun togglePlayPause() {
+    override fun togglePlayPause() {
         when (musicBoxState) {
             MusicBoxState.PLAYING -> pauseMusic()
             MusicBoxState.PAUSED -> resumeMusic()
@@ -310,7 +310,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun pauseMusic() {
+    override fun pauseMusic() {
         if (musicBoxState != MusicBoxState.PLAYING) return
         musicBoxState = MusicBoxState.PAUSED
         setMusicBoxDucking(duck = false, smooth = true)
@@ -342,7 +342,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun resumeMusic() {
+    override fun resumeMusic() {
         if (musicBoxState == MusicBoxState.PLAYING) return
         musicBoxState = MusicBoxState.PLAYING
         setMusicBoxDucking(duck = true, smooth = true)
@@ -351,12 +351,12 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun nextSong() {
+    override fun nextSong() {
         val nextIdx = (playlist.indexOf(currentSong) + 1) % playlist.size
         playSong(playlist[nextIdx])
     }
 
-    fun previousSong() {
+    override fun previousSong() {
         val currentIdx = playlist.indexOf(currentSong)
         val prevIdx = if (currentIdx <= 0) playlist.size - 1 else currentIdx - 1
         playSong(playlist[prevIdx])
@@ -659,7 +659,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun release() {
+    override fun release() {
         stopMusic()
         stopWeatherBgm()
         stopAllSfx()
@@ -670,7 +670,7 @@ class AmbientAudio(var context: Context? = null) {
         } catch (_: Exception) {}
     }
 
-    fun setIndoor(indoor: Boolean, smooth: Boolean = true) {
+    override fun setIndoor(indoor: Boolean, smooth: Boolean) {
         isIndoor = indoor
         val targetMultiplier = if (indoor) 0.40f else 1.0f
         applyIndoorEffect(indoor)
@@ -730,7 +730,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playWeatherBgm(weather: WeatherType, isAutomaticDrift: Boolean = false) {
+    override fun playWeatherBgm(weather: WeatherType, isAutomaticDrift: Boolean) {
         val sameWeather = currentWeather == weather
         currentWeather = weather
 
@@ -997,7 +997,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun pauseAll() {
+    override fun pauseAll() {
         pauseWeatherBgm()
         synchronized(musicLock) {
             mediaPlayer?.let { mp ->
@@ -1017,7 +1017,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun resumeAll() {
+    override fun resumeAll() {
         if (!isEnabled) return
         resumeWeatherBgm()
         if (musicBoxState == MusicBoxState.PLAYING) {
@@ -1108,7 +1108,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun startRainAmbient() {
+    override fun startRainAmbient() {
         if (!isEnabled || rainTrack != null) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1228,7 +1228,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun stopRainAmbient() {
+    override fun stopRainAmbient() {
         try {
             rainTrack?.pause()
             rainTrack?.stop()
@@ -1238,7 +1238,7 @@ class AmbientAudio(var context: Context? = null) {
         rainTrack = null
     }
 
-    fun playThunder() {
+    override fun playThunder() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1275,7 +1275,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playHeartChime() {
+    override fun playHeartChime() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1294,7 +1294,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     /** Procedural mechanical instant camera shutter click with warm chime. */
-    fun playCameraShutter() {
+    override fun playCameraShutter() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1311,7 +1311,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playBubblePop() {
+    override fun playBubblePop() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1324,7 +1324,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playStarTwinkle() {
+    override fun playStarTwinkle() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1342,12 +1342,12 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playLeafRustle() {
+    override fun playLeafRustle() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) { playNoise(140, 0.22f) }
     }
 
-    fun playFootstep() {
+    override fun playFootstep() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1365,7 +1365,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playBirdChirp() {
+    override fun playBirdChirp() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1378,7 +1378,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playCookingBubbles() {
+    override fun playCookingBubbles() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1391,7 +1391,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playScooterHorn() {
+    override fun playScooterHorn() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1404,7 +1404,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playCatPurr() {
+    override fun playCatPurr() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1423,7 +1423,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playWindChime() {
+    override fun playWindChime() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1439,7 +1439,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playThinkingOfYouChime() {
+    override fun playThinkingOfYouChime() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1571,7 +1571,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Kitchen: clock tick sound — two short high sine pulses like clock hands
-    fun playTickTick() {
+    override fun playTickTick() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1589,7 +1589,7 @@ class AmbientAudio(var context: Context? = null) {
 
     // Kitchen: wooden knock — short low square-ish burst for crate rattle
     // Seaside Pier: Pip's cheeky two-note squawk, twice
-    fun playSeagullCall() {
+    override fun playSeagullCall() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1606,7 +1606,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Seaside Pier: soft, low lighthouse foghorn (root and fifth)
-    fun playFoghorn() {
+    override fun playFoghorn() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1620,7 +1620,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Seaside Pier: the little sailboat's cheerful "toot toot"
-    fun playBoatHorn() {
+    override fun playBoatHorn() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1634,7 +1634,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Seaside Pier: Grandpa Bao's fishing reel ticking
-    fun playReelClick() {
+    override fun playReelClick() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1647,7 +1647,7 @@ class AmbientAudio(var context: Context? = null) {
         }
     }
 
-    fun playWoodKnock() {
+    override fun playWoodKnock() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1661,7 +1661,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Kitchen: gentle water drip — 4 descending soft sine pings for planter watering
-    fun playWaterDrip() {
+    override fun playWaterDrip() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1676,7 +1676,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Kitchen: wood creak — pitched-down burst for step-stool wobble
-    fun playWoodCreak() {
+    override fun playWoodCreak() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1690,7 +1690,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Living Room: gentle candle flicker chime
-    fun playCandleFlicker() {
+    override fun playCandleFlicker() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1704,7 +1704,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Living Room: soft pillow thud for pouf bounce
-    fun playSoftThud() {
+    override fun playSoftThud() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1718,7 +1718,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Living Room: cute cat chirp for Mochi's box peek
-    fun playCatChirp() {
+    override fun playCatChirp() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1732,7 +1732,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Living Room: soft rolling sound for yarn ball
-    fun playSoftRoll() {
+    override fun playSoftRoll() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1747,7 +1747,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Living Room: paper flip sound for magazine/record rack
-    fun playPaperFlip() {
+    override fun playPaperFlip() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1761,7 +1761,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Lantern Stroll: pagoda crystal chime
-    fun playPagodaChime() {
+    override fun playPagodaChime() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1776,7 +1776,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Lantern Stroll: soft wind & lavender rustle
-    fun playLavenderRustle() {
+    override fun playLavenderRustle() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1791,7 +1791,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Lantern Stroll: bioluminescent mushroom chime
-    fun playMushroomChime() {
+    override fun playMushroomChime() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1806,7 +1806,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Celestial: glowing constellation connect arpeggio
-    fun playStarArpeggio() {
+    override fun playStarArpeggio() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1821,7 +1821,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: neon sign hum/buzz flicker
-    fun playNeonBuzz() {
+    override fun playNeonBuzz() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1836,7 +1836,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: escaping steam hiss
-    fun playSteamHiss() {
+    override fun playSteamHiss() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1851,7 +1851,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: spicy zing chime
-    fun playSpiceZing() {
+    override fun playSpiceZing() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1864,7 +1864,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: chalk squeak on chalkboard menu
-    fun playChalkSqueak() {
+    override fun playChalkSqueak() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1879,7 +1879,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: hollow bamboo crate knock
-    fun playBambooKnock() {
+    override fun playBambooKnock() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
@@ -1892,7 +1892,7 @@ class AmbientAudio(var context: Context? = null) {
     }
 
     // Momo Stall: milk saucer sip click
-    fun playSaucerSip() {
+    override fun playSaucerSip() {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
