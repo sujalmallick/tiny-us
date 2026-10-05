@@ -83,7 +83,9 @@ actual class PixelSurface actual constructor(actual val width: Int, actual val h
     }
 
     /** Skia may cache an image of the bitmap; tell it the pixels changed this frame. */
-    actual fun commit() = bitmap.notifyPixelsChanged()
+    actual fun commit() {
+        bitmap.notifyPixelsChanged()
+    }
 }
 
 /**
