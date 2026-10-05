@@ -12,12 +12,14 @@ object RewardItems {
     const val STAR_HOODIE_TROUSER_INDEX = 5
     const val RAINBOW_SCARF_INDEX = 4
     const val SNOWMAN_BEANIE_INDEX = 5
+    const val MOCHI_HEADBAND_INDEX = 6
 
     fun forDressOutfit(index: Int): String? = if (index == STAR_HOODIE_DRESS_INDEX) Rewards.STAR_HOODIE else null
     fun forTrouserOutfit(index: Int): String? = if (index == STAR_HOODIE_TROUSER_INDEX) Rewards.STAR_HOODIE else null
     fun forAccessory(index: Int): String? = when (index) {
         RAINBOW_SCARF_INDEX -> Rewards.RAINBOW_SCARF
         SNOWMAN_BEANIE_INDEX -> Rewards.SNOWMAN_BEANIE
+        MOCHI_HEADBAND_INDEX -> Rewards.MOCHI_HEADBAND
         else -> null
     }
     fun forTheme(theme: RoomTheme): String? = if (theme == RoomTheme.STARRY_NIGHT) Rewards.STARRY_ROOM else null

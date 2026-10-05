@@ -752,6 +752,37 @@
     <string name="catch_30">Thirty in one go</string>
     <string name="catch_30_hint">A really good round of catching.</string>
 
+    <!-- Mochi and gifts (plan 07, D2-D3) -->
+    <string name="mochi_friendly">Mochi trusts you two</string>
+    <string name="mochi_friendly_hint">Pet Mochi, now and then.</string>
+    <string name="mochi_cuddly">Mochi\'s favourite people</string>
+    <string name="mochi_cuddly_hint">Treats and pets, day after day.</string>
+    <string name="mochi_best_friend">Mochi\'s best friends</string>
+    <string name="mochi_best_friend_hint">A cat\'s trust takes time.</string>
+    <string name="mochi_slow_blink">Mochi gives you two a slow, sleepy blink. That\'s cat for I love you.</string>
+    <string name="first_gift">Our first gift</string>
+    <string name="first_gift_hint">Give something you found to each other.</string>
+    <string name="keepsakes">Keepsakes</string>
+    <string name="keepsakes_empty">Nothing kept yet. The two of them find little things while wandering.</string>
+    <string name="keepsakes_on_shelf">%1$d gifts are on the shelf in the kitchen.</string>
+    <string name="keepsake_give">%1$s gives it to %2$s</string>
+    <plurals name="keepsake_count">
+        <item quantity="one">%d kept</item>
+        <item quantity="other">%d kept</item>
+    </plurals>
+    <string name="keepsake_wildflower">A wildflower</string>
+    <string name="keepsake_red_leaf">A red leaf</string>
+    <string name="keepsake_love_note">A folded note</string>
+    <string name="keepsake_seashell">A seashell</string>
+    <string name="keepsake_star_pebble">A star pebble</string>
+    <string name="keepsake_mochi_toy">One of Mochi\'s toys</string>
+    <string name="keepsake_something">Something small</string>
+    <string name="gift_given">%1$s gave %2$s %3$s.</string>
+    <string name="gift_story_title">%1$s for %2$s</string>
+    <string name="gift_story_note">A gift from %1$s</string>
+    <string name="wardrobe_mochi_headband">Mochi-Ear Headband</string>
+    <string name="wardrobe_mochi_headband_desc">One orange ear, one white, just like Mochi.</string>
+
     <!-- Stargazing (plan 07, C2) -->
     <string name="star_puzzle_hint">Connect the stars of %1$s, one by one. The next one twinkles gold.</string>
     <string name="star_found_again">%1$s, shining for you two again.</string>

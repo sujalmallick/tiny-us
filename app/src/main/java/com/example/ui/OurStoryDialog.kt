@@ -48,6 +48,8 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.stringResource
+import androidx.compose.foundation.Canvas
+import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -121,15 +123,22 @@ internal fun loadStory(
 }
 
 @Composable
-fun OurStoryDialog(onDismiss: () -> Unit, openLittleFirsts: Boolean = false) {
+fun OurStoryDialog(
+    onDismiss: () -> Unit,
+    openLittleFirsts: Boolean = false,
+    /** Gives a keepsake from one partner to the other (plan 07, D3); null hides the giving. */
+    onGiveKeepsake: ((item: String, fromBoy: Boolean) -> Unit)? = null
+) {
     val context = LocalContext.current
     val prefs = remember { PreferencesManager(context) }
     val polaroids = remember { PolaroidManager(context) }
-    val progress = remember {
+    val progressStore = remember {
         com.example.progress.ProgressStore(
             context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
-        ).load()
+        )
     }
+    var progress by remember { mutableStateOf(progressStore.load()) }
+    var showKeepsakes by remember { mutableStateOf(false) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
         value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids, progress) { context.getString(it) } }
     }
@@ -169,15 +178,21 @@ fun OurStoryDialog(onDismiss: () -> Unit, openLittleFirsts: Boolean = false) {
                 StoryFilter.values().forEach { f ->
                     TinyChip(
                         text = stringResource(f.labelRes),
-                        selected = !showFirsts && f == filter,
-                        onClick = { showFirsts = false; filter = f; scope.launch { listState.scrollToItem(0) } }
+                        selected = !showFirsts && !showKeepsakes && f == filter,
+                        onClick = { showFirsts = false; showKeepsakes = false; filter = f; scope.launch { listState.scrollToItem(0) } }
                     )
                 }
                 TinyChip(
                     text = stringResource(R.string.little_firsts),
                     selected = showFirsts,
-                    onClick = { showFirsts = true },
+                    onClick = { showFirsts = true; showKeepsakes = false },
                     icon = PixelIcons.AutoAwesome
+                )
+                TinyChip(
+                    text = stringResource(R.string.keepsakes),
+                    selected = showKeepsakes,
+                    onClick = { showKeepsakes = true; showFirsts = false },
+                    icon = PixelIcons.CardGiftcard
                 )
             }
 
@@ -186,6 +201,12 @@ fun OurStoryDialog(onDismiss: () -> Unit, openLittleFirsts: Boolean = false) {
             val all = story
             when {
                 showFirsts -> LittleFirstsPage(progress)
+                showKeepsakes -> KeepsakesPage(progress, prefs.boyfriendName, prefs.girlfriendName, onGiveKeepsake?.let { give ->
+                    { item: String, fromBoy: Boolean ->
+                        give(item, fromBoy)
+                        progress = progressStore.load()
+                    }
+                })
                 all == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.story_loading), style = TinyType.Body.copy(color = TinyColors.InkMuted))
                 }
@@ -362,6 +383,78 @@ private fun LittleFirstRow(title: String, detail: String, earned: Boolean) {
                 Text(title, style = TinyType.BodyStrong.copy(color = if (earned) TinyColors.Ink else TinyColors.InkMuted))
                 Text(detail, style = TinyType.Caption, modifier = Modifier.padding(top = 2.dp))
             }
+        }
+    }
+}
+
+/** The name of a keepsake, for the page and the gift message. */
+@androidx.annotation.StringRes
+internal fun keepsakeName(item: String): Int = when (item.substringAfter(":")) {
+    "WILDFLOWER" -> R.string.keepsake_wildflower
+    "RED_LEAF" -> R.string.keepsake_red_leaf
+    "LOVE_NOTE" -> R.string.keepsake_love_note
+    "SEASHELL" -> R.string.keepsake_seashell
+    "STAR_PEBBLE" -> R.string.keepsake_star_pebble
+    "MOCHI_TOY" -> R.string.keepsake_mochi_toy
+    else -> R.string.keepsake_something
+}
+
+/**
+ * The keepsake box (plan 07, D3): what the two of them have found, how many, and a way for either
+ * to give one to the other. Gifts already given sit on the kitchen shelf.
+ */
+@Composable
+private fun KeepsakesPage(
+    progress: com.example.progress.ProgressState,
+    boyName: String,
+    girlName: String,
+    onGive: ((item: String, fromBoy: Boolean) -> Unit)?
+) {
+    val kept = progress.keepsakes.filter { it.key.startsWith("discovery:") && it.value > 0 }.toSortedMap()
+    LazyColumn(
+        contentPadding = PaddingValues(start = TinySpace.lg, end = TinySpace.lg, top = TinySpace.md, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(TinySpace.sm),
+        modifier = Modifier.fillMaxSize().testTag("keepsakes_page")
+    ) {
+        if (kept.isEmpty()) {
+            item { Text(stringResource(R.string.keepsakes_empty), style = TinyType.Body.copy(color = TinyColors.InkMuted)) }
+        }
+        items(kept.keys.toList(), key = { it }) { item ->
+            val count = kept[item] ?: 0
+            TinyCard(padding = TinySpace.md) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Canvas(Modifier.size(36.dp).background(TinyColors.Muted, PixelCircleShape)) {
+                        val p = size.width / 9f
+                        drawKeepsake(this, item, 2.5f * p, 7f * p, p)
+                    }
+                    Spacer(Modifier.width(TinySpace.md))
+                    Column(Modifier.weight(1f)) {
+                        Text(stringResource(keepsakeName(item)), style = TinyType.BodyStrong)
+                        Text(pluralStringResource(R.plurals.keepsake_count, count, count), style = TinyType.Caption)
+                    }
+                }
+                if (onGive != null && item in com.example.progress.Gifts.GIVEABLE) {
+                    Row(Modifier.padding(top = TinySpace.sm), horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+                        TinyButton(
+                            text = stringResource(R.string.keepsake_give, boyName, girlName),
+                            onClick = { onGive(item, true) },
+                            style = TinyButtonStyle.Outline,
+                            compact = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                        TinyButton(
+                            text = stringResource(R.string.keepsake_give, girlName, boyName),
+                            onClick = { onGive(item, false) },
+                            style = TinyButtonStyle.Outline,
+                            compact = true,
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+        if (progress.shelf.isNotEmpty()) {
+            item { Text(stringResource(R.string.keepsakes_on_shelf, progress.shelf.size), style = TinyType.Caption, modifier = Modifier.padding(top = TinySpace.sm)) }
         }
     }
 }

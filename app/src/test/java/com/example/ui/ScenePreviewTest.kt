@@ -62,6 +62,12 @@ class ScenePreviewTest {
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
+            // SCENE_PREVIEW_GIFTS=1 fills the kitchen's keepsake shelf and shows Mochi's heart meter.
+            if (System.getenv("SCENE_PREVIEW_GIFTS") != null) {
+                keepsakeShelf = com.example.progress.Gifts.GIVEABLE
+                mochiFondness = 75
+                onTouchCat(cw, ch)
+            }
             // SCENE_PREVIEW_STARS=2 shows the second constellation's puzzle with two stars connected.
             System.getenv("SCENE_PREVIEW_STARS")?.toInt()?.let { n ->
                 val c = com.example.games.Constellations.ALL[n - 1]

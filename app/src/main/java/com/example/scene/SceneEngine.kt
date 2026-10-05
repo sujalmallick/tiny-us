@@ -75,6 +75,9 @@ class SceneEngine(
         /** How long a weather picked with the weather button stays before the season moves it on. */
         const val MANUAL_WEATHER_HOLD_SECONDS = 20f * 60f
 
+        /** How long the heart meter shows over Mochi after a pet. */
+        const val MOCHI_METER_SECONDS = 2.6f
+
         /** How long the couple's special-day greeting stays up. */
         const val SPECIAL_DAY_LINE_SECONDS = 6f
 
@@ -1179,6 +1182,9 @@ class SceneEngine(
         sceneTime += deltaSeconds
         if (specialDayGreetingHold > 0f) specialDayGreetingHold -= deltaSeconds
         updateCatchGame(deltaSeconds, canvasWidth, canvasHeight)
+        if (mochiMeterTimer > 0f) mochiMeterTimer = (mochiMeterTimer - deltaSeconds).coerceAtLeast(0f)
+        lastWorldW = canvasWidth
+        lastWorldH = canvasHeight
         starPuzzle.update(deltaSeconds)
         // The stars are only there at night outdoors.
         if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
@@ -4304,6 +4310,44 @@ class SceneEngine(
      */
     var onProgress: ((com.example.progress.ProgressEvent) -> Unit)? = null
 
+    // ── Mochi's fondness and gifts (plan 07, D2-D3) ──
+    /** Mochi's fondness (set by the screen from the progress); decides the heart meter and the slow blink. */
+    var mochiFondness: Int = 0
+    /** Seconds left showing the heart meter over Mochi after a pet. */
+    var mochiMeterTimer: Float = 0f
+        private set
+    /** The gifts on the kitchen's keepsake shelf (set by the screen from the progress). */
+    var keepsakeShelf: List<String> = emptyList()
+
+    private fun careForMochi(points: Int) {
+        onProgress?.invoke(com.example.progress.ProgressEvent.MochiCare(points, java.time.LocalDate.now().toEpochDay()))
+        mochiMeterTimer = MOCHI_METER_SECONDS
+    }
+
+    /** The world size from the last update, for reactions started from outside the frame loop. */
+    private var lastWorldW = 1080f
+    private var lastWorldH = 2400f
+
+    /** One partner gives the other a keepsake called [itemName]: both react, and it goes on the shelf. */
+    fun giveGift(fromBoy: Boolean, itemName: String) {
+        val cw = lastWorldW
+        val ch = lastWorldH
+        val giver = if (fromBoy) boy else girl
+        val partner = if (fromBoy) girl else boy
+        giver.emote = EmoteType.HEART
+        giver.emoteTimer = 2.4f
+        giver.emotion = CharacterEmotion.LOVING
+        partner.emote = EmoteType.BLUSH
+        partner.emoteTimer = 2.4f
+        partner.emotion = CharacterEmotion.LOVING
+        partner.pose = CharacterPose.JOY_JUMP
+        partner.bounceOffset = 6f
+        particles.spawnSparkles(cw * partner.worldX, ch * partner.worldY - 40f, 8, Color(0xFFFFD166))
+        particles.spawnHeart(cw * partner.worldX, ch * partner.worldY - 46f, Color(0xFFFF85A1))
+        audio.playHeartChime()
+        showMessage(GameText.get(R.string.gift_given, giver.name, partner.name, itemName), duration = 4f)
+    }
+
     // ── Stargazing (plan 07, C2) ──
     val starPuzzle = com.example.games.StarPuzzle()
     /** The constellations found so far (set by the screen from the progress), so found ones just glow. */
@@ -5124,6 +5168,17 @@ class SceneEngine(
     }
 
     fun onTouchCat(cw: Float, ch: Float) {
+        careForMochi(1)
+        // A best friend sometimes answers with a slow blink: cat for "I love you".
+        if (com.example.progress.MochiFondness.level(mochiFondness) >= 3 && Random.nextFloat() < 0.3f) {
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.2f
+            girl.emoteTimer = 2.2f
+            audio.playCatPurr()
+            showMessage(GameText.get(R.string.mochi_slow_blink), duration = 3.5f)
+            return
+        }
         if (currentScene == SceneType.COOKING) {
             mochiCollarStyle = if (mochiCollarStyle >= 2) 1 else mochiCollarStyle + 1
             audio.playStarTwinkle()
@@ -5345,6 +5400,7 @@ class SceneEngine(
             return
         }
         catTreatInProgress = true
+        careForMochi(3)
         catTreatWalking = false
         catTreatJarTimer = 0.85f
         catTreatDropTimer = 0.48f
@@ -7441,6 +7497,7 @@ class SceneEngine(
     private fun startDiscovery(c: PixelCharacter, cw: Float, ch: Float) {
         if (!discovery.active) return
         onProgress?.invoke(com.example.progress.ProgressEvent.DiscoveryFound(discovery.kind.name))
+        if (discovery.kind == com.example.scene.autonomy.DiscoveryKind.MOCHI_TOY) careForMochi(4)
         val partner = if (c === boy) girl else boy
         val x = cw * discovery.x
         val y = ch * discovery.y

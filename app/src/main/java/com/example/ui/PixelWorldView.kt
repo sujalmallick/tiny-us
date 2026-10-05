@@ -1673,6 +1673,10 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
         drawForegroundParticles(this, engine.particles.particles, pixelScale)
 
+        // Mochi's heart meter and the kitchen's keepsake shelf (plan 07, D2-D3).
+        drawMochiMeter(this, engine, cw, ch, pixelScale)
+        if (engine.currentScene == com.example.scene.SceneType.COOKING) drawKeepsakeShelf(this, engine.keepsakeShelf, cw, ch, pixelScale)
+
         // Catch together (plan 07, C1): the basket and the golden stars.
         drawCatchGame(this, engine.catchGame, cw, ch, pixelScale, engine.sceneTime)
 

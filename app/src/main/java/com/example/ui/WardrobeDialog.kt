@@ -446,6 +446,13 @@ fun WardrobeDialog(
                 reward = com.example.progress.Rewards.RAINBOW_SCARF
             ),
             AccessoryItem(
+                id = com.example.progress.RewardItems.MOCHI_HEADBAND_INDEX,
+                name = res.getString(R.string.wardrobe_mochi_headband),
+                description = res.getString(R.string.wardrobe_mochi_headband_desc),
+                iconType = "beanie",
+                reward = com.example.progress.Rewards.MOCHI_HEADBAND
+            ),
+            AccessoryItem(
                 id = com.example.progress.RewardItems.SNOWMAN_BEANIE_INDEX,
                 name = res.getString(R.string.wardrobe_snowman_beanie),
                 description = res.getString(R.string.wardrobe_snowman_beanie_desc),

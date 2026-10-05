@@ -77,6 +77,40 @@ class ProgressTest {
     }
 
     @Test
+    fun mochiFondnessGrowsSlowlyAndNeverFalls() {
+        // Lots of petting in one day only counts up to the daily cap.
+        val (one, _) = run(*Array(40) { ProgressEvent.MochiCare(1, 100) })
+        assertEquals(MochiFondness.DAILY_CAP, one.count(Counter.MOCHI_FONDNESS))
+        // A new day, a little more.
+        val (two, earned) = run(ProgressEvent.MochiCare(3, 101), ProgressEvent.MochiCare(3, 101), start = one)
+        assertEquals(MochiFondness.DAILY_CAP + 6, two.count(Counter.MOCHI_FONDNESS))
+        assertTrue(earned.isEmpty())
+        // Enough days make a best friend, with the headband.
+        var s = two
+        val all = mutableListOf<String>()
+        for (d in 102L..120L) {
+            val (next, e) = run(ProgressEvent.MochiCare(12, d), start = s)
+            s = next
+            all += e
+        }
+        assertEquals(3, MochiFondness.level(s.count(Counter.MOCHI_FONDNESS)))
+        assertTrue(all.containsAll(listOf("mochi_friendly", "mochi_cuddly", "mochi_best_friend")))
+        assertTrue(Rewards.MOCHI_HEADBAND in s.unlocked)
+    }
+
+    @Test
+    fun aGiftMovesAKeepsakeToTheShelf() {
+        val (found, _) = run(ProgressEvent.DiscoveryFound("SEASHELL"), ProgressEvent.DiscoveryFound("SEASHELL"))
+        val (given, earned) = run(ProgressEvent.GiftGiven("discovery:SEASHELL", fromBoy = true), start = found)
+        assertEquals(1, given.keepsakes["discovery:SEASHELL"])
+        assertEquals(listOf("discovery:SEASHELL"), given.shelf)
+        assertEquals(listOf("first_gift"), earned)
+        // Nothing left to give: nothing happens.
+        val (none, _) = run(ProgressEvent.GiftGiven("discovery:STAR_PEBBLE", fromBoy = false), start = given)
+        assertEquals(given, none)
+    }
+
+    @Test
     fun theStoreKeepsEverythingInTheBackedUpPreferences() {
         val context = ApplicationProvider.getApplicationContext<Context>()
         val prefs = context.getSharedPreferences(ProgressStore.PREFS_FILE, Context.MODE_PRIVATE)
