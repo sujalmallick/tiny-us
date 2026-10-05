@@ -10,36 +10,51 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 private val RainbowBands = arrayOf(
-    Color(0xFFFF8A8A), Color(0xFFFFB86B), Color(0xFFFFE27A),
-    Color(0xFF9EE493), Color(0xFF8EC5FF), Color(0xFFC3A6FF)
+    Color(0xFFFF6B6B), Color(0xFFFFA94D), Color(0xFFFFE066),
+    Color(0xFF69DB7C), Color(0xFF4DABF7), Color(0xFF9775FA)
 )
 
-/** Outdoor weather keepsakes, drawn behind the couple: the rainbow after rain and the snowday snowman. */
+/**
+ * Outdoor weather keepsakes, drawn behind the couple: the snowday snowman. (The rainbow after rain
+ * is drawn with the sky, behind the scenery; see [drawRainbow].)
+ */
 internal fun drawWeatherKeepsakes(scope: DrawScope, cw: Float, ch: Float, p: Float, engine: SceneEngine) {
-    if (engine.rainbowTimer > 0f) drawRainbow(scope, cw, ch, p, engine.rainbowTimer)
     if (engine.snowmanStage > 0) drawSnowman(scope, cw, ch, p, engine.snowmanStage, engine.snowmanWobbleTimer, engine.sceneTime)
 }
 
 /** A soft pixel rainbow that fades in, lingers and fades away. */
-private fun drawRainbow(scope: DrawScope, cw: Float, ch: Float, p: Float, timer: Float) {
+/**
+ * The rainbow after rain: six clean bands drawn row by row on the pixel grid (no overlapping
+ * squares, so the colours stay even), fading in and out and growing faint toward its feet.
+ */
+internal fun drawRainbow(scope: DrawScope, cw: Float, ch: Float, p: Float, timer: Float) {
     val elapsed = WeatherLayout.RAINBOW_SECONDS - timer
-    val fade = minOf(elapsed / 2.5f, timer / 5f, 1f).coerceIn(0f, 1f) * 0.55f
+    val fade = minOf(elapsed / 2.5f, timer / 5f, 1f).coerceIn(0f, 1f) * 0.62f
     if (fade <= 0f) return
     val center = WeatherLayout.rainbowCenter(cw, ch)
     val outer = WeatherLayout.rainbowOuterRadius(cw)
     val bandW = WeatherLayout.rainbowBandWidth(cw) / RainbowBands.size
-    val block = (bandW * 0.9f).coerceAtLeast(p)
-    for (band in RainbowBands.indices) {
-        val r = outer - bandW * (band + 0.5f)
-        val color = RainbowBands[band].copy(alpha = fade)
-        // Square blocks stepped along the arc keep the rainbow in the pixel-art style.
-        val steps = (Math.PI.toFloat() * r / block).toInt().coerceAtLeast(12)
-        for (i in 0..steps) {
-            val a = Math.PI.toFloat() * i / steps
-            val x = center.x - cos(a) * r
-            val y = center.y - sin(a) * r
-            scope.drawRect(color, Offset(x - block / 2f, y - block / 2f), Size(block, block))
+    var y = center.y - outer
+    while (y < center.y) {
+        val dy = center.y - (y + p / 2f)
+        // Fainter toward the feet, as real rainbows are.
+        val rowAlpha = fade * (0.35f + 0.65f * (dy / outer).coerceIn(0f, 1f))
+        for (band in RainbowBands.indices) {
+            val rOut = outer - bandW * band
+            val rIn = rOut - bandW
+            if (dy > rOut) continue
+            val xOut = kotlin.math.sqrt(rOut * rOut - dy * dy)
+            val xIn = if (dy < rIn) kotlin.math.sqrt(rIn * rIn - dy * dy) else 0f
+            val color = RainbowBands[band].copy(alpha = rowAlpha)
+            // Left and right legs of the arc in this row (they meet at the top).
+            if (xIn <= 0f) {
+                scope.drawRect(color, Offset(center.x - xOut, y), Size(2f * xOut, p))
+            } else {
+                scope.drawRect(color, Offset(center.x - xOut, y), Size(xOut - xIn, p))
+                scope.drawRect(color, Offset(center.x + xIn, y), Size(xOut - xIn, p))
+            }
         }
+        y += p
     }
 }
 

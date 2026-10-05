@@ -752,7 +752,23 @@ object LoftSprites {
         val celestialX = startX + windowW * 0.74f
         val celestialY = ch * 0.12f
 
-        if (isNight) {
+        if (weather == com.example.scene.WeatherType.RAIN) {
+            // Overcast: no sun or moon, just layers of low cloud.
+            val cloud = if (isNight) Color(0xFF1A2236) else Color(0xFF7A8BA0)
+            val cloudDark = if (isNight) Color(0xFF131A2B) else Color(0xFF66778C)
+            // A band from [x] wide [w], clipped to the window.
+            fun band(color: Color, x: Float, y: Float, w: Float, h: Float) {
+                val left = maxOf(x, startX)
+                val right = minOf(x + w, cw)
+                if (right > left) scope.drawRect(color, Offset(left, y), Size(right - left, h))
+            }
+            for (k in 0 until 4) {
+                val y = windowH * (0.04f + k * 0.07f)
+                val drift = ((timeSeconds * (2f + k) * p) % (windowW * 0.5f))
+                band(if (k % 2 == 0) cloud else cloudDark, startX - windowW * 0.25f + drift, y, windowW * 0.9f, 6f * p)
+                band(if (k % 2 == 0) cloudDark else cloud, startX + windowW * 0.35f - drift * 0.6f, y + 3f * p, windowW * 0.7f, 5f * p)
+            }
+        } else if (isNight) {
             // 2. Full Luminous Moon (top right)
             val moonR = 14 * p
             scope.drawCircle(MoonGlowOuter, moonR + 9 * p, Offset(celestialX, celestialY))
@@ -961,7 +977,7 @@ object LoftSprites {
         // 7. Weather effects drifting outside the panoramic window
         when (weather) {
             com.example.scene.WeatherType.SNOW -> {
-                for (i in 0 until 24) {
+                for (i in 0 until 60) {
                     val sx = startX + ((i * 37 * p + timeSeconds * 8 * p + sin(timeSeconds + i) * 12 * p) % windowW)
                     val sy = ((i * 29 * p + timeSeconds * 22 * p) % windowH)
                     val sSize = if (i % 3 == 0) 2.2f * p else 1.4f * p
@@ -969,21 +985,28 @@ object LoftSprites {
                 }
             }
             com.example.scene.WeatherType.SAKURA -> {
-                for (i in 0 until 18) {
+                for (i in 0 until 34) {
                     val px = startX + ((i * 43 * p + timeSeconds * 12 * p + sin(timeSeconds * 1.5f + i) * 16 * p) % windowW)
                     val py = ((i * 31 * p + timeSeconds * 18 * p) % windowH)
                     scope.drawRect(Color(0xFFFFCAD4).copy(alpha = 0.8f), Offset(px, py), Size(2.5f * p, 2f * p))
                 }
             }
             com.example.scene.WeatherType.RAIN -> {
-                for (i in 0 until 28) {
+                for (i in 0 until 70) {
                     val rx = startX + ((i * 29 * p + timeSeconds * 10 * p) % windowW)
-                    val ry = ((i * 23 * p + timeSeconds * 65 * p) % windowH)
-                    scope.drawRect(Color(0x99B0C4DE), Offset(rx, ry), Size(1.2f * p, 7f * p))
+                    val ry = ((i * 23 * p + timeSeconds * (65 + i % 3 * 12) * p) % windowH)
+                    scope.drawRect(Color(0xCCC6D6EA), Offset(rx, ry), Size(p, 6f * p))
+                }
+                // Drops running slowly down the glass.
+                for (i in 0 until 7) {
+                    val gx = startX + windowW * ((i * 0.137f + 0.05f) % 1f)
+                    val gy = ((i * 41 * p + timeSeconds * 9 * p) % (windowH * 0.9f))
+                    scope.drawRect(Color(0xB3E3EDF7), Offset(gx, gy), Size(1.5f * p, 1.5f * p))
+                    scope.drawRect(Color(0x66E3EDF7), Offset(gx + 0.25f * p, gy - 4f * p), Size(p, 4f * p))
                 }
             }
             com.example.scene.WeatherType.AUTUMN -> {
-                for (i in 0 until 16) {
+                for (i in 0 until 28) {
                     val ax = startX + ((i * 47 * p + timeSeconds * 14 * p + cos(timeSeconds + i) * 14 * p) % windowW)
                     val ay = ((i * 33 * p + timeSeconds * 16 * p) % windowH)
                     val leafCol = if (i % 2 == 0) Color(0xFFE76F51) else Color(0xFFF4A261)

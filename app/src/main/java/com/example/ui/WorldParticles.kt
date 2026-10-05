@@ -381,5 +381,6 @@ private fun drawSnowSprite(scope: DrawScope, pt: PixelParticle, p: Float) {
         else -> SNOW_SMALL
     }
     val main = if (pt.depth >= 0.82f) Color(0xFFE6F2FF) else Color(0xFFC9DDF0)
-    drawWeatherPattern(scope, pt, p, rows, main, Color.White, main, 1)
+    // A soft blue-grey edge keeps the flakes visible against a pale winter sky.
+    drawWeatherPattern(scope, pt, p, rows, main, Color.White, Color(0xFF9DB6CF), 1)
 }

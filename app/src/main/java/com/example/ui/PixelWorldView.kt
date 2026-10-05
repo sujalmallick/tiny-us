@@ -1304,7 +1304,10 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         // Dynamic Weather outdoor check
         val isOutdoor = engine.isCurrentSceneOutdoor
 
-        // 1. Environmental Background
+        // 1. Environmental Background (the after-rain rainbow goes in just after the sky)
+        afterSkyBands = if (engine.rainbowTimer > 0f && engine.isCurrentSceneOutdoor) {
+            { s -> drawRainbow(s, cw, ch, pixelScale, engine.rainbowTimer) }
+        } else null
         drawEnvironment(
             scope = this,
             cw = cw,
@@ -1317,6 +1320,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
             pixelScale = pixelScale,
             engine = engine
         )
+        afterSkyBands = null
 
         // 1b. Ground fallen particles (leaves, sakura petals, snow on grass)
         if (isOutdoor) {
