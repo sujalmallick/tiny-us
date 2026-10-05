@@ -183,10 +183,12 @@ internal var afterSkyBands: ((DrawScope) -> Unit)? = null
 
 /** Pins the moon's phase (0 new, 0.5 full) instead of tonight's; for previews and tests only. */
 @androidx.annotation.VisibleForTesting
-internal var moonPhaseOverride: Float? = null
+internal var moonPhaseOverride: Float?
+    get() = com.example.engine.MoonPhase.override
+    set(value) { com.example.engine.MoonPhase.override = value }
 
-/** Tonight's moon phase, 0 new to 0.5 full and back to 1. */
-internal fun currentMoonFraction(): Float = moonPhaseOverride ?: com.example.engine.MoonPhase.fraction()
+/** Tonight's moon phase, 0 new to 0.5 full and back to 1 (shared with the loft, which lives in :shared). */
+internal fun currentMoonFraction(): Float = com.example.engine.MoonPhase.current()
 
 /** Seconds for the night sky to turn once across the screen: the stars drift slowly west and wrap round. */
 internal const val SKY_TURN_SECONDS = 2700f

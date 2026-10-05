@@ -781,7 +781,7 @@ object LoftSprites {
             scope.drawCircle(MoonShadow, 2.8f * p, Offset(celestialX - 2 * p, celestialY + 5 * p))
 
             // Tonight's phase: the unlit part in faint earthshine, one pixel row at a time.
-            val fraction = com.example.ui.currentMoonFraction()
+            val fraction = MoonPhase.current()
             for (k in 0 until 28) {
                 val dy = k + 0.5f - 14f
                 val half = kotlin.math.sqrt(196f - dy * dy)
