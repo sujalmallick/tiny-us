@@ -470,6 +470,8 @@ fun MainScreen(
         }
         onDispose { engine.onCatchGameOver = null }
     }
+    // Found constellations only glow again; the rest are puzzles.
+    LaunchedEffect(progress) { engine.foundConstellations = progress.seenSet(com.example.progress.Seen.CONSTELLATIONS) }
     // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
     // shows two and points to Our Story for the rest.
     LaunchedEffect(Unit) {

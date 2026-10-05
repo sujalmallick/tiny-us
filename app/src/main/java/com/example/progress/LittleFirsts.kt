@@ -34,7 +34,7 @@ object LittleFirsts {
         LittleFirst("first_full_moon", R.string.first_full_moon, R.string.first_full_moon_hint) { it.count(Counter.FULL_MOONS) >= 1 },
         LittleFirst("first_snowman", R.string.first_snowman, R.string.first_snowman_hint, Rewards.SNOWMAN_BEANIE) { it.count(Counter.SNOWMEN) >= 1 },
         LittleFirst("first_star", R.string.first_star, R.string.first_star_hint) { it.seenSet(Seen.CONSTELLATIONS).isNotEmpty() },
-        LittleFirst("all_stars", R.string.all_stars, R.string.all_stars_hint, Rewards.STAR_HOODIE) { it.seenSet(Seen.CONSTELLATIONS).size >= 3 },
+        LittleFirst("all_stars", R.string.all_stars, R.string.all_stars_hint, Rewards.STAR_HOODIE) { it.seenSet(Seen.CONSTELLATIONS).size >= com.example.games.Constellations.ALL.size },
         LittleFirst("every_scene", R.string.every_scene, R.string.every_scene_hint) { it.seenSet(Seen.SCENES).size >= SceneType.values().size },
         LittleFirst("four_seasons", R.string.four_seasons, R.string.four_seasons_hint) { it.seenSet(Seen.SEASONS).size >= 4 },
         LittleFirst("every_weather", R.string.every_weather, R.string.every_weather_hint) { it.seenSet(Seen.WEATHERS).size >= 5 },

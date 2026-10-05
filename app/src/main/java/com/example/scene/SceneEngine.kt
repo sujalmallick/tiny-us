@@ -1179,6 +1179,9 @@ class SceneEngine(
         sceneTime += deltaSeconds
         if (specialDayGreetingHold > 0f) specialDayGreetingHold -= deltaSeconds
         updateCatchGame(deltaSeconds, canvasWidth, canvasHeight)
+        starPuzzle.update(deltaSeconds)
+        // The stars are only there at night outdoors.
+        if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
         val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
@@ -4300,6 +4303,61 @@ class SceneEngine(
      * the progress and celebrates any "little first" earned.
      */
     var onProgress: ((com.example.progress.ProgressEvent) -> Unit)? = null
+
+    // ── Stargazing (plan 07, C2) ──
+    val starPuzzle = com.example.games.StarPuzzle()
+    /** The constellations found so far (set by the screen from the progress), so found ones just glow. */
+    var foundConstellations: Set<String> = emptySet()
+
+    /**
+     * A tap on the night sky at ([x], [y]) on a [cw] x [ch] stage, with the sky turned by [drift].
+     * Connects stars while a puzzle is going; otherwise starts one on the constellation tapped
+     * (or makes a found one glow). Returns false when the tap wasn't about constellations.
+     */
+    fun onNightSkyTap(x: Float, y: Float, cw: Float, ch: Float, drift: Float): Boolean {
+        val puzzle = starPuzzle.current
+        if (puzzle != null) {
+            when (starPuzzle.tap(x, y, cw, ch, drift)) {
+                com.example.games.StarPuzzle.Tap.CONNECTED -> {
+                    audio.playStarTwinkle()
+                    particles.spawnSparkles(x, y, 4, Color(0xFFFFF3B0))
+                }
+                com.example.games.StarPuzzle.Tap.WRONG -> audio.playBubblePop()
+                com.example.games.StarPuzzle.Tap.DONE -> finishStarPuzzle(puzzle, x, y)
+                com.example.games.StarPuzzle.Tap.MISSED -> Unit
+            }
+            return true
+        }
+        val skyX = (x / cw + drift) % 1f
+        val c = com.example.games.Constellations.at(skyX, y / ch) ?: return false
+        if (c.id in foundConstellations) {
+            starPuzzle.glow(c)
+            audio.playStarArpeggio()
+            showMessage(GameText.get(R.string.star_found_again, GameText.get(c.name)), duration = 3f)
+        } else {
+            starPuzzle.start(c)
+            audio.playStarTwinkle()
+            showMessage(GameText.get(R.string.star_puzzle_hint, GameText.get(c.name)), duration = 3.5f)
+        }
+        return true
+    }
+
+    fun stopStarPuzzle() = starPuzzle.stop()
+
+    private fun finishStarPuzzle(c: com.example.games.Constellation, x: Float, y: Float) {
+        foundConstellations = foundConstellations + c.id
+        audio.playStarArpeggio()
+        particles.spawnSparkles(x, y, 9, Color(0xFFCAF0F8))
+        particles.spawnHeart(x, y - 14f, Color(0xFFFF85A1))
+        boy.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.SPARKLE
+        boy.emoteTimer = 2.2f
+        girl.emotion = CharacterEmotion.HAPPY
+        girl.emote = EmoteType.HEART
+        girl.emoteTimer = 2.2f
+        showMessage(GameText.get(R.string.scene_constellation, GameText.get(c.name), GameText.get(c.story)), duration = 4f)
+        onProgress?.invoke(com.example.progress.ProgressEvent.ConstellationFound(c.id))
+    }
 
     // ── Catch together (plan 07, C1) ──
     val catchGame = com.example.games.CatchGame()

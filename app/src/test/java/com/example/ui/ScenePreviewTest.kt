@@ -62,6 +62,13 @@ class ScenePreviewTest {
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
+            // SCENE_PREVIEW_STARS=2 shows the second constellation's puzzle with two stars connected.
+            System.getenv("SCENE_PREVIEW_STARS")?.toInt()?.let { n ->
+                val c = com.example.games.Constellations.ALL[n - 1]
+                starPuzzle.start(c)
+                val drift = skyDrift(sceneTime)
+                repeat(2) { i -> starPuzzle.tap(starPuzzle.starX(c, i, drift) * cw, c.stars[i].second * ch, cw, ch, drift) }
+            }
             // SCENE_PREVIEW_OUTFITS=7,2 dresses the girl and the boy in those wardrobe outfits;
             // two more numbers give their accessories (7,2,4,5).
             System.getenv("SCENE_PREVIEW_OUTFITS")?.split(',')?.map { it.trim().toInt() }?.let { v ->

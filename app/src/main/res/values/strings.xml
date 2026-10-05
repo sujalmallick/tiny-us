@@ -752,6 +752,22 @@
     <string name="catch_30">Thirty in one go</string>
     <string name="catch_30_hint">A really good round of catching.</string>
 
+    <!-- Stargazing (plan 07, C2) -->
+    <string name="star_puzzle_hint">Connect the stars of %1$s, one by one. The next one twinkles gold.</string>
+    <string name="star_found_again">%1$s, shining for you two again.</string>
+    <string name="star_two_hearts">The Two Hearts</string>
+    <string name="star_two_hearts_story">Two shining stars linked across the sky</string>
+    <string name="star_teapot">The Celestial Teapot</string>
+    <string name="star_teapot_story">Pouring warmth and sweet tea over our world</string>
+    <string name="star_trail">Starlight Trail</string>
+    <string name="star_trail_story">Guiding our evening ride through gentle breezes</string>
+    <string name="star_whiskers">Mochi\'s Whiskers</string>
+    <string name="star_whiskers_story">A sleepy cat curled up among the stars</string>
+    <string name="star_scooter">The Little Scooter</string>
+    <string name="star_scooter_story">Two riders heading home under the night sky</string>
+    <string name="star_kite">The Paper Kite</string>
+    <string name="star_kite_story">Flown together on a windy afternoon, and still up there</string>
+
     <!-- Catch together (plan 07, C1) -->
     <string name="catch_start">Catch together</string>
     <string name="catch_hud">%1$d caught \u00b7 %2$ds</string>
