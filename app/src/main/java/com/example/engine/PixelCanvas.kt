@@ -356,7 +356,9 @@ object PixelArtRenderer {
         // 9: Lavender Cloud Oversized Hoodie & Denim Skirt
         GirlDressPalette(Color(0xFFD8BBFF), Color(0xFFE8D7F1), Color(0xFF3D5A80), Color(0xFF293241), Color(0xFFC77DFF), isHoodie = true),
         // 10: Buttercream Star Shimmer Hoodie & Skirt
-        GirlDressPalette(Color(0xFFFFF1C5), Color(0xFFFFD166), Color(0xFFE09F3E), Color(0xFF9E2A2B), Color(0xFFFFE3A8), isHoodie = true)
+        GirlDressPalette(Color(0xFFFFF1C5), Color(0xFFFFD166), Color(0xFFE09F3E), Color(0xFF9E2A2B), Color(0xFFFFE3A8), isHoodie = true),
+        // 11: Wishing Star Hoodie (a reward: every constellation found)
+        GirlDressPalette(Color(0xFF2A3A6B), Color(0xFFFFD166), Color(0xFF223058), Color(0xFF151E3B), Color(0xFFFFD166), isHoodie = true)
     )
 
     fun getGirlDressPalette(index: Int): GirlDressPalette {
@@ -418,6 +420,15 @@ object PixelArtRenderer {
             collar = Color(0xFF64748B),
             pants = Color(0xFF18181B),
             pantsFold = Color(0xFF09090B),
+            isHoodie = true
+        ),
+        // 5: Wishing Star Hoodie (a reward: every constellation found)
+        BoyOutfitPalette(
+            sweater = Color(0xFF2A3A6B),
+            sweaterHighlight = Color(0xFF3B4D86),
+            collar = Color(0xFFFFD166),
+            pants = Color(0xFF2B2D42),
+            pantsFold = Color(0xFF1A1B29),
             isHoodie = true
         )
     )
@@ -857,6 +868,12 @@ object PixelArtRenderer {
                 fillRect(6, 15, 7, 2, pouchShadow)
                 fillRect(7, 15, 5, 1, hoodColor)
                 fillRect(7, 16, 5, 1, pouchHighlight)
+                // The wishing-star hoodie (a reward) has little gold stars.
+                if ((isGirl && char.outfitIndex == 11) || (!isGirl && char.outfitIndex == 5)) {
+                    px(6, 13, Color(0xFFFFD166))
+                    px(12, 14, Color(0xFFFFD166))
+                    px(11, 12, Color(0xFFFFF3B0))
+                }
                 // Ribbed waist hem
                 fillRect(6, 17, 7, 1, hoodAccent)
 
@@ -1833,6 +1850,28 @@ object PixelArtRenderer {
                 // Curved forward visor / brim extending forward
                 drawRect(6, 5, 8, 1, capColor)
                 drawRect(11, 5, 4, 1, capBrimColor)
+            }
+            4 -> {
+                // Rainbow Scarf (a reward: the first rainbow wish): the wool scarf in rainbow stripes
+                val bands = listOf(Color(0xFFFF6B6B), Color(0xFFFFA94D), Color(0xFFFFE066), Color(0xFF69DB7C), Color(0xFF4DABF7), Color(0xFF9775FA))
+                for (i in 0 until 7) px(6 + i, 11, bands[i % bands.size])
+                for (i in 0 until 7) px(6 + i, 12, bands[(i + 3) % bands.size])
+                drawRect(10, 13, 2, 3, bands[4])
+                px(10, 14, bands[5])
+                px(11, 13, bands[3])
+                px(10, 15, Color(0xFFFFF0F3))
+                px(11, 15, Color(0xFFFFF0F3))
+            }
+            5 -> {
+                // Snowman Beanie (a reward: the first snowman): snow-white knit, carrot-orange pom-pom
+                val knit = Color(0xFFF7FBFF)
+                val knitShade = Color(0xFFD6E4F0)
+                drawRect(8, 0, 2, 2, Color(0xFFFF8C42))
+                drawRect(6, 2, 7, 3, knit)
+                px(7, 3, knitShade)
+                px(10, 3, Color(0xFF2B2D42)) // a coal button
+                px(12, 3, knitShade)
+                drawRect(5, 4, 9, 2, knitShade)
             }
         }
     }

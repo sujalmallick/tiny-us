@@ -918,6 +918,9 @@ internal fun drawEnvironment(
         }
     }
 
+    // Stargazing (plan 07, C2)
+    if (isNight) drawStarPuzzle(scope, engine.starPuzzle, cw, ch, p, engine.sceneTime, skyDrift(engine.sceneTime))
+
     if (isNight && engine.constellationConnectTimer > 0f) {
         drawConstellationOverlay(scope, cw, ch, p, engine.constellationConnectTimer, engine.activeConstellationIndex, engine.sceneTime)
     }

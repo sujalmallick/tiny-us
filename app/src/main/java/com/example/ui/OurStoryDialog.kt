@@ -68,6 +68,7 @@ import com.example.data.StoryKind
 import com.example.data.StorySection
 import com.example.data.StoryTimeline
 import com.example.ui.theme.DeepRose
+import com.example.ui.theme.PixelIcons
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
@@ -90,7 +91,12 @@ private enum class StoryFilter(val labelRes: Int, val kinds: Set<StoryKind>?) {
 }
 
 /** Reads everything the app has stored and builds the story. Runs off the main thread. */
-internal fun loadStory(prefs: PreferencesManager, polaroids: PolaroidManager): List<StoryEntry> {
+internal fun loadStory(
+    prefs: PreferencesManager,
+    polaroids: PolaroidManager,
+    progress: com.example.progress.ProgressState = com.example.progress.ProgressState(),
+    titleOf: (Int) -> String = { "" }
+): List<StoryEntry> {
     val today = kotlinx.datetime.LocalDate.parse(java.time.LocalDate.now().toString())
     val anniversary = runCatching { kotlinx.datetime.LocalDate.parse(prefs.anniversaryDate) }.getOrNull()
     val prompts = DailyPromptCatalog.defaultPrompts.associateBy { it.id }
@@ -105,20 +111,31 @@ internal fun loadStory(prefs: PreferencesManager, polaroids: PolaroidManager): L
         promptText = { id -> prompts[id]?.question },
         gardenBloomDates = prefs.getGardenBloomDates().mapNotNull { (i, d) ->
             runCatching { kotlinx.datetime.LocalDate.parse(d) }.getOrNull()?.let { i to it }
-        }.toMap()
+        }.toMap(),
+        littleFirsts = progress.firsts.mapNotNull { (id, day) ->
+            val first = com.example.progress.LittleFirsts.byId(id) ?: return@mapNotNull null
+            Triple(id, kotlinx.datetime.LocalDate.parse(java.time.LocalDate.ofEpochDay(day).toString()), titleOf(first.title))
+        }
     )
     return StoryTimeline.build(input, today)
 }
 
 @Composable
-fun OurStoryDialog(onDismiss: () -> Unit) {
+fun OurStoryDialog(onDismiss: () -> Unit, openLittleFirsts: Boolean = false) {
     val context = LocalContext.current
     val prefs = remember { PreferencesManager(context) }
     val polaroids = remember { PolaroidManager(context) }
+    val progress = remember {
+        com.example.progress.ProgressStore(
+            context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
+        ).load()
+    }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids) }
+        value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids, progress) { context.getString(it) } }
     }
     var filter by remember { mutableStateOf(StoryFilter.ALL) }
+    // The "Little firsts" page (plan 07, B3), shown in place of the timeline.
+    var showFirsts by remember { mutableStateOf(openLittleFirsts) }
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
@@ -152,16 +169,23 @@ fun OurStoryDialog(onDismiss: () -> Unit) {
                 StoryFilter.values().forEach { f ->
                     TinyChip(
                         text = stringResource(f.labelRes),
-                        selected = f == filter,
-                        onClick = { filter = f; scope.launch { listState.scrollToItem(0) } }
+                        selected = !showFirsts && f == filter,
+                        onClick = { showFirsts = false; filter = f; scope.launch { listState.scrollToItem(0) } }
                     )
                 }
+                TinyChip(
+                    text = stringResource(R.string.little_firsts),
+                    selected = showFirsts,
+                    onClick = { showFirsts = true },
+                    icon = PixelIcons.AutoAwesome
+                )
             }
 
             TinyDivider()
 
             val all = story
             when {
+                showFirsts -> LittleFirstsPage(progress)
                 all == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                     Text(stringResource(R.string.story_loading), style = TinyType.Body.copy(color = TinyColors.InkMuted))
                 }
@@ -282,5 +306,62 @@ private fun EmptyStory() {
         Text(stringResource(R.string.story_empty_title), style = TinyType.Title, textAlign = TextAlign.Center)
         Spacer(Modifier.height(6.dp))
         Text(stringResource(R.string.story_empty_body), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
+    }
+}
+
+/**
+ * The "Little firsts" page (plan 07, B3): the ones earned, newest first, with their dates; then the
+ * rest as gentle hints, so there's something to look for without a checklist feel.
+ */
+@Composable
+internal fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
+    val all = com.example.progress.LittleFirsts.ALL
+    val earned = all.filter { it.id in progress.firsts }.sortedByDescending { progress.firsts[it.id] }
+    val ahead = all.filter { it.id !in progress.firsts }
+    LazyColumn(
+        contentPadding = PaddingValues(start = TinySpace.lg, end = TinySpace.lg, top = TinySpace.md, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(TinySpace.sm),
+        modifier = Modifier.fillMaxSize().testTag("little_firsts_page")
+    ) {
+        item {
+            Text(
+                stringResource(R.string.little_firsts_count, earned.size, all.size),
+                style = TinyType.Caption,
+                modifier = Modifier.padding(bottom = TinySpace.xs)
+            )
+        }
+        items(earned, key = { it.id }) { first ->
+            val date = java.time.LocalDate.ofEpochDay(progress.firsts[first.id] ?: 0L)
+                .format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
+            LittleFirstRow(
+                title = stringResource(first.title),
+                detail = stringResource(R.string.little_first_earned_on, date) +
+                    (if (first.reward != null) " \u00b7 " + stringResource(R.string.little_first_reward_short) else ""),
+                earned = true
+            )
+        }
+        items(ahead, key = { it.id }) { first ->
+            LittleFirstRow(title = stringResource(R.string.little_first_not_yet), detail = stringResource(first.hint), earned = false)
+        }
+    }
+}
+
+@Composable
+private fun LittleFirstRow(title: String, detail: String, earned: Boolean) {
+    TinyCard(padding = TinySpace.md) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            TinyIconBadge(
+                icon = PixelIcons.AutoAwesome,
+                size = 36.dp,
+                iconSize = 20.dp,
+                tint = if (earned) TinyColors.Rose else TinyColors.InkMuted,
+                background = if (earned) TinyColors.RoseSoft else TinyColors.Muted
+            )
+            Spacer(Modifier.width(TinySpace.md))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = TinyType.BodyStrong.copy(color = if (earned) TinyColors.Ink else TinyColors.InkMuted))
+                Text(detail, style = TinyType.Caption, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
     }
 }

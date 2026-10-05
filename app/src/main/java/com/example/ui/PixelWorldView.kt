@@ -1013,6 +1013,8 @@ fun PixelWorldView(
                         }
 
                         // 6. Sky / Stars & Constellations
+                        // A tap on the ground puts a stargazing puzzle away.
+                        if (ny >= 0.48f && engine.starPuzzle.current != null) engine.stopStarPuzzle()
                         if (ny < 0.48f) {
                             val hasStarfield = isNight && engine.currentScene.environment in listOf(
                                 EnvironmentType.MEADOW,
@@ -1024,21 +1026,8 @@ fun PixelWorldView(
                                 EnvironmentType.SEASIDE_PIER
                             )
                             if (hasStarfield) {
-                                // The constellations turn with the sky; find where this tap was before the turn.
-                                val skyX = (tapNormX + skyDrift(engine.sceneTime)) % 1f
-                                // Constellation 1: The Two Hearts (Binary Stars)
-                                if (skyX in 0.08f..0.32f && ny in 0.05f..0.28f) {
-                                    engine.onTouchConstellation("The Two Hearts", "Two shining stars linked across the sky", tapOffset.x, tapOffset.y)
-                                    return@detectTapGestures
-                                }
-                                // Constellation 2: The Celestial Teapot (Center sky warmth)
-                                if (skyX in 0.33f..0.52f && ny in 0.05f..0.34f) {
-                                    engine.onTouchConstellation("The Celestial Teapot", "Pouring warmth and sweet tea over our world", tapOffset.x, tapOffset.y)
-                                    return@detectTapGestures
-                                }
-                                // Constellation 3: Starlight Trail (Guiding starry road)
-                                if (skyX in 0.58f..0.92f && ny in 0.06f..0.28f) {
-                                    engine.onTouchConstellation("Starlight Trail", "Guiding our evening ride through gentle breezes", tapOffset.x, tapOffset.y)
+                                // Stargazing (plan 07, C2): tap a constellation to connect its stars.
+                                if (engine.onNightSkyTap(tapOffset.x, tapOffset.y, w, h, skyDrift(engine.sceneTime))) {
                                     return@detectTapGestures
                                 }
                                 // Other sky taps spawn shooting star & fireflies
@@ -1683,6 +1672,9 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
 
         // 3. Foreground particles (hearts, sparkles, steam, smoke, rain drops & splashes, sleep Zs)
         drawForegroundParticles(this, engine.particles.particles, pixelScale)
+
+        // Catch together (plan 07, C1): the basket and the golden stars.
+        drawCatchGame(this, engine.catchGame, cw, ch, pixelScale, engine.sceneTime)
 
         // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
         com.example.engine.SpecialDays.today()?.let { day ->

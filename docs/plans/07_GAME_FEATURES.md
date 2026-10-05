@@ -31,31 +31,31 @@ Written 2026-10-05. The user picked: little firsts with rewards (2), the five mi
 ## A. Foundation: progress and the keepsake box
 
 One small, testable progress store that everything else writes to.
-- [ ] A1. `Progress` (pure Kotlin model plus a store in `tiny_us_prefs`): counters (rainbows wished, full moons seen, snowmen built, recipes cooked...), the set of scenes visited and seasons seen, best scores, the "little firsts" earned (with dates), and unlocked rewards.
-- [ ] A2. **Keepsake box:** things the couple finds or catches are kept (discoveries, seashells and fish, bouquets, dishes), with counts. Gifts (D3) come from here.
-- [ ] A3. Events from the existing interactions feed it: rainbow wish, constellation, snowman finished, discovery picked up, Tiny Moment taken, scene visited, weather seen, and the day count.
-- [ ] A4. Included in Backup & Restore (it's in `tiny_us_prefs`); a restore test.
+- [x] A1. `Progress` (pure Kotlin model plus a store in `tiny_us_prefs`): counters (rainbows wished, full moons seen, snowmen built, recipes cooked...), the set of scenes visited and seasons seen, best scores, the "little firsts" earned (with dates), and unlocked rewards.
+- [x] A2. **Keepsake box:** things the couple finds or catches are kept (discoveries, seashells and fish, bouquets, dishes), with counts. Gifts (D3) come from here.
+- [x] A3. Events from the existing interactions feed it: rainbow wish, constellation, snowman finished, discovery picked up, Tiny Moment taken, scene visited, weather seen, and the day count.
+- [x] A4. Included in Backup & Restore (it's in `tiny_us_prefs`); a restore test.
 
 ## B. "Little firsts" milestones and rewards
 
-- [ ] B1. The list (about 25 to start), for example:
+- [x] B1. The list (19 to start; the mini-game ones come with their games), for example:
   - first rainbow wish, first full moon together, first snowman, first star connected;
   - visited every scene, saw all four seasons, every kind of weather;
   - 10 / 50 Tiny Moments, first love note, first dream written;
   - 7 / 30 / 100 / 365 days together;
   - first dish cooked, first fish caught, first bouquet, first gift;
   - Mochi's first slow blink, a request granted.
-- [ ] B2. When one is earned, a soft toast plus both characters' heart emote, then an entry in Our Story (`StoryKind.MILESTONE`, from the stored dates).
-- [ ] B3. A "Little firsts" page (from the heart menu or Our Story): earned ones in colour with their date; unearned ones as a gentle hint ("Somewhere, after rain...").
-- [ ] B4. **Rewards:** about 10 new items that some firsts unlock. For example: a rainbow scarf (first rainbow), a star-pattern hoodie (all constellations), a snowman beanie (first snowman), a chef apron (5 dishes), a fisher's cap (first fish), a flower crown (first bouquet), a Mochi-ear headband (Mochi's fondness), a "starry night" room theme (100 days). Each needs new pixel art. Locked items show in the wardrobe as a silhouette with how to earn them.
-- [ ] B5. Tests: each first fires once; rewards unlock; nothing ever re-locks.
+- [x] B2. When one is earned, a soft toast plus both characters' heart emote, then an entry in Our Story (`StoryKind.MILESTONE`, from the stored dates).
+- [x] B3. A "Little firsts" page (a chip in Our Story) (from the heart menu or Our Story): earned ones in colour with their date; unearned ones as a gentle hint ("Somewhere, after rain...").
+- [x] B4. **Rewards:** *(first four done: rainbow scarf, snowman beanie, star hoodie, starry-night theme; the rest come with their mini-games)* about 10 new items that some firsts unlock. For example: a rainbow scarf (first rainbow), a star-pattern hoodie (all constellations), a snowman beanie (first snowman), a chef apron (5 dishes), a fisher's cap (first fish), a flower crown (first bouquet), a Mochi-ear headband (Mochi's fondness), a "starry night" room theme (100 days). Each needs new pixel art. Locked items show in the wardrobe as a silhouette with how to earn them.
+- [x] B5. Tests: each first fires once; rewards unlock; nothing ever re-locks.
 
 ## C. Mini-games
 
 Each is short, optional, can't be lost, and ends with a cozy result that goes into the keepsake box and the firsts. Started by tapping the obvious prop in its scene.
 
-- [ ] C1. **Catch together** (outdoor, any falling weather): tap the basket to start a 30-second round. Drag the basket under falling petals, snow or leaves; rare golden ones count extra; your best score is kept. *Reuses the weather particles.*
-- [ ] C2. **Stargazing puzzle** (night, outdoor): tap a constellation to start; its stars show dimly, and you tap them in order (a line draws between each). Done: the constellation glows and is named. All three, then new ones (5 to 8 total, data-driven). *Reuses the star field and overlay.*
+- [x] C1. **Catch together** (outdoor, any falling weather): tap the basket to start a 30-second round. Drag the basket under falling petals, snow or leaves; rare golden ones count extra; your best score is kept. *Reuses the weather particles.*
+- [x] C2. **Stargazing puzzle** *(6 constellations: the 3 old ones plus Mochi's Whiskers, the Little Scooter, the Paper Kite)* (night, outdoor): tap a constellation to start; its stars show dimly, and you tap them in order (a line draws between each). Done: the constellation glows and is named. All three, then new ones (5 to 8 total, data-driven). *Reuses the star field and overlay.*
 - [ ] C3. **Cooking** (kitchen): a recipe card (e.g. pancakes, soup, dumplings, cookies, tea) shows 3 to 5 ingredients; tap them in order on the counter and fridge. The dish appears on the table and goes into a **recipe book**. Mistakes just wiggle; no failing.
 - [ ] C4. **Fishing** (pier): the couple takes a rod next to Grandpa Bao. Tap when the bobber dips, with a forgiving timing window. Catches are fish, seashells, an old boot, or a message in a bottle, each kept with a count. *Reuses `PierFishingPhase` and the bobber art.*
 - [ ] C5. **Garden care** (meadow or sunroom): plant a seed (pick a flower), water it once a day, and it grows over a few days into a flower. Pick flowers to make a **bouquet** (a keepsake, and it can be given as a gift). *Grows alongside `GardenGrowth`; skipping days only slows it, never kills it.*
@@ -82,6 +82,6 @@ Each is short, optional, can't be lost, and ends with a cozy result that goes in
 
 ## Decisions for the user
 
-- [ ] Where the "Little firsts" page lives: in Our Story, or its own button?
-- [ ] Rewards: approve the list in B4 (or suggest others).
-- [ ] Mini-games: do they play automatically when the couple is idle (they'd "play" by themselves), or only when you start them?
+- [x] Where the "Little firsts" page lives: in Our Story.
+- [x] Rewards: the list in B4.
+- [x] Mini-games: only when you start them.

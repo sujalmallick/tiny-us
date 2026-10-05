@@ -72,6 +72,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
@@ -429,6 +430,90 @@ fun MainScreen(
                 val (boyLine, girlLine) = specialDayLines(context, day, prefs.boyfriendName, prefs.girlfriendName)
                 engine.greetSpecialDay(boyLine, girlLine)
             }
+        }
+    }
+
+    // ── Progress and little firsts (plan 07, A-B) ──
+    val progressStore = remember {
+        com.example.progress.ProgressStore(
+            context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
+        )
+    }
+    var progress by remember { mutableStateOf(progressStore.load()) }
+    val firstsToCelebrate = remember { androidx.compose.runtime.mutableStateListOf<com.example.progress.LittleFirst>() }
+    val recordProgress: (com.example.progress.ProgressEvent) -> Unit = remember {
+        { event ->
+            val (next, earned) = com.example.progress.LittleFirsts.apply(progress, event, java.time.LocalDate.now().toEpochDay())
+            if (next != progress) {
+                progress = next
+                progressStore.save(next)
+            }
+            firstsToCelebrate.addAll(earned)
+        }
+    }
+    DisposableEffect(engine) {
+        if (previewEngine == null) {
+            engine.onProgress = recordProgress
+            recordProgress(com.example.progress.ProgressEvent.SceneVisited(engine.currentScene.name))
+            recordProgress(com.example.progress.ProgressEvent.DaysTogether(com.example.data.RelationshipTimeManager.calculateTinyUsDay()))
+        }
+        onDispose { engine.onProgress = null }
+    }
+    DisposableEffect(engine) {
+        engine.onCatchGameOver = { score ->
+            // Called before the round is recorded, so the stored best is still the previous one.
+            val wasBest = score > (progress.best[com.example.progress.Game.CATCH] ?: 0)
+            engine.showMessage(
+                context.getString(if (wasBest) R.string.catch_result_best else R.string.catch_result, score),
+                duration = 4f
+            )
+        }
+        onDispose { engine.onCatchGameOver = null }
+    }
+    // Found constellations only glow again; the rest are puzzles.
+    LaunchedEffect(progress) { engine.foundConstellations = progress.seenSet(com.example.progress.Seen.CONSTELLATIONS) }
+    // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
+    // shows two and points to Our Story for the rest.
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (firstsToCelebrate.isNotEmpty()) {
+                delay(1200)
+                val burst = firstsToCelebrate.size > 2
+                repeat(minOf(2, firstsToCelebrate.size)) {
+                    val first = firstsToCelebrate.removeAt(0)
+                    engine.celebrateLittleFirst(context.getString(R.string.little_first_earned, context.getString(first.title)))
+                    delay(4200)
+                    if (first.reward != null) {
+                        engine.showMessage(context.getString(R.string.little_first_reward), duration = 3.5f)
+                        delay(3800)
+                    }
+                }
+                if (burst && firstsToCelebrate.isNotEmpty()) {
+                    val more = firstsToCelebrate.size
+                    firstsToCelebrate.clear()
+                    engine.showMessage(context.resources.getQuantityString(R.plurals.little_firsts_more, more, more), duration = 4f)
+                    delay(4200)
+                }
+            }
+            delay(500)
+        }
+    }
+    // The weather and season seen, and full moons on clear outdoor nights.
+    LaunchedEffect(engine.weather) {
+        if (previewEngine == null) {
+            val season = com.example.engine.SeasonalWeather.seasonOf(
+                com.example.scene.WeatherMemory.currentMonth(), java.util.Locale.getDefault().country
+            )
+            recordProgress(com.example.progress.ProgressEvent.WeatherSeen(engine.weather.name, season))
+        }
+    }
+    LaunchedEffect(engine.timeOfDayPhase, engine.currentScene) {
+        val fullMoon = com.example.engine.MoonPhase.illumination(currentMoonFraction()) > 0.93f
+        if (previewEngine == null && engine.timeOfDayPhase.isNight && engine.isCurrentSceneOutdoor && fullMoon) {
+            // A night after midnight still belongs to the evening before.
+            val now = java.time.LocalDateTime.now()
+            val night = if (now.hour < 12) now.toLocalDate().minusDays(1) else now.toLocalDate()
+            recordProgress(com.example.progress.ProgressEvent.FullMoonSeen(night.toEpochDay()))
         }
     }
 
@@ -911,6 +996,43 @@ fun MainScreen(
             }
         }
 
+        // Catch together (plan 07, C1): a start button when something is falling outdoors; during
+        // a round, the whole screen moves the basket and a little counter shows the score and time.
+        if (engine.catchActive) {
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) {
+                        detectDragGestures(
+                            onDragStart = { o -> engine.catchGame.moveTo(o.x / size.width) }
+                        ) { change, _ -> engine.catchGame.moveTo(change.position.x / size.width) }
+                    }
+                    .pointerInput(Unit) { detectTapGestures { o -> engine.catchGame.moveTo(o.x / size.width) } }
+                    .testTag("catch_game_layer")
+            )
+            TinyCard(
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+                padding = com.example.ui.theme.TinySpace.md
+            ) {
+                Text(
+                    stringResource(R.string.catch_hud, engine.catchScore, engine.catchSecondsLeft),
+                    style = TinyType.Label
+                )
+            }
+        } else if (engine.hasCatchableWeather && !engine.isDreamMode) {
+            TinyButton(
+                text = stringResource(R.string.catch_start),
+                onClick = {
+                    engine.startCatchGame()
+                    engine.showMessage(context.getString(R.string.catch_hint), duration = 3.5f)
+                },
+                icon = PixelIcons.VolunteerActivism,
+                compact = true,
+                testTag = "catch_start_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
+        }
+
         // 3. Subtle In-World Interaction Hint (Fades out automatically)
         AnimatedVisibility(
             visible = showHint && !engine.isDreamMode,
@@ -1013,6 +1135,7 @@ fun MainScreen(
                                         imagePath = imagePath
                                     )
                                     polaroidManager.savePolaroid(memory)
+                                    recordProgress(com.example.progress.ProgressEvent.TinyMoment)
                                     polaroidCaptureBitmap = polaroidCardBmp
                                     polaroidCaptureMemory = memory
                                     showPolaroidOverlay = true
@@ -1059,6 +1182,7 @@ fun MainScreen(
                 onDismiss = { showLoveNotes = false },
                 onAddNote = { text, author ->
                     prefs.addLoveNote(text, author)
+                    recordProgress(com.example.progress.ProgressEvent.LoveNote)
                     notesList = prefs.getLoveNotes()
                 }
             )
@@ -1185,6 +1309,7 @@ fun MainScreen(
         if (showDreamJournal) {
             DreamJournalDialog(
                 prefs = prefs,
+                onDreamSaved = { recordProgress(com.example.progress.ProgressEvent.DreamWritten) },
                 onDismiss = { showDreamJournal = false },
                 onVisualizeDream = { theme, text ->
                     showDreamJournal = false
@@ -1299,6 +1424,7 @@ fun MainScreen(
                 boyWearsDress = engine.boy.look.wearsDress,
                 girlLook = engine.girl.look,
                 boyLook = engine.boy.look,
+                unlocked = progress.unlocked,
                 onSelectGirlOutfit = { index ->
                     girlOutfitIndex = index
                     engine.selectGirlDress(index)
@@ -1331,6 +1457,7 @@ fun MainScreen(
                     engine.setRoomTheme(theme)
                     prefs.roomThemeId = theme.name
                 },
+                unlocked = progress.unlocked,
                 onDismiss = { showRoomCustomizer = false }
             )
         }

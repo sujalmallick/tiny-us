@@ -715,6 +715,7 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        onProgress?.invoke(com.example.progress.ProgressEvent.SceneVisited(type.name))
         particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
         sceneTime = 0f
@@ -1177,6 +1178,10 @@ class SceneEngine(
     fun update(deltaSeconds: Float, canvasWidth: Float, canvasHeight: Float) {
         sceneTime += deltaSeconds
         if (specialDayGreetingHold > 0f) specialDayGreetingHold -= deltaSeconds
+        updateCatchGame(deltaSeconds, canvasWidth, canvasHeight)
+        starPuzzle.update(deltaSeconds)
+        // The stars are only there at night outdoors.
+        if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
         val pixelScale = WorldViewport.pixelScale(canvasWidth)
 
         // Per-Scene Cinematic Watch Sequences
@@ -4292,6 +4297,134 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Told about things that count toward the couple's progress (plan 07): rainbow wishes,
+     * constellations, snowmen, discoveries, catches, scene visits. Set by the screen, which keeps
+     * the progress and celebrates any "little first" earned.
+     */
+    var onProgress: ((com.example.progress.ProgressEvent) -> Unit)? = null
+
+    // ── Stargazing (plan 07, C2) ──
+    val starPuzzle = com.example.games.StarPuzzle()
+    /** The constellations found so far (set by the screen from the progress), so found ones just glow. */
+    var foundConstellations: Set<String> = emptySet()
+
+    /**
+     * A tap on the night sky at ([x], [y]) on a [cw] x [ch] stage, with the sky turned by [drift].
+     * Connects stars while a puzzle is going; otherwise starts one on the constellation tapped
+     * (or makes a found one glow). Returns false when the tap wasn't about constellations.
+     */
+    fun onNightSkyTap(x: Float, y: Float, cw: Float, ch: Float, drift: Float): Boolean {
+        val puzzle = starPuzzle.current
+        if (puzzle != null) {
+            when (starPuzzle.tap(x, y, cw, ch, drift)) {
+                com.example.games.StarPuzzle.Tap.CONNECTED -> {
+                    audio.playStarTwinkle()
+                    particles.spawnSparkles(x, y, 4, Color(0xFFFFF3B0))
+                }
+                com.example.games.StarPuzzle.Tap.WRONG -> audio.playBubblePop()
+                com.example.games.StarPuzzle.Tap.DONE -> finishStarPuzzle(puzzle, x, y)
+                com.example.games.StarPuzzle.Tap.MISSED -> Unit
+            }
+            return true
+        }
+        val skyX = (x / cw + drift) % 1f
+        val c = com.example.games.Constellations.at(skyX, y / ch) ?: return false
+        if (c.id in foundConstellations) {
+            starPuzzle.glow(c)
+            audio.playStarArpeggio()
+            showMessage(GameText.get(R.string.star_found_again, GameText.get(c.name)), duration = 3f)
+        } else {
+            starPuzzle.start(c)
+            audio.playStarTwinkle()
+            showMessage(GameText.get(R.string.star_puzzle_hint, GameText.get(c.name)), duration = 3.5f)
+        }
+        return true
+    }
+
+    fun stopStarPuzzle() = starPuzzle.stop()
+
+    private fun finishStarPuzzle(c: com.example.games.Constellation, x: Float, y: Float) {
+        foundConstellations = foundConstellations + c.id
+        audio.playStarArpeggio()
+        particles.spawnSparkles(x, y, 9, Color(0xFFCAF0F8))
+        particles.spawnHeart(x, y - 14f, Color(0xFFFF85A1))
+        boy.emotion = CharacterEmotion.LOVING
+        boy.emote = EmoteType.SPARKLE
+        boy.emoteTimer = 2.2f
+        girl.emotion = CharacterEmotion.HAPPY
+        girl.emote = EmoteType.HEART
+        girl.emoteTimer = 2.2f
+        showMessage(GameText.get(R.string.scene_constellation, GameText.get(c.name), GameText.get(c.story)), duration = 4f)
+        onProgress?.invoke(com.example.progress.ProgressEvent.ConstellationFound(c.id))
+    }
+
+    // ── Catch together (plan 07, C1) ──
+    val catchGame = com.example.games.CatchGame()
+    /** The round's score, time left and state, as Compose state for the screen's counter. */
+    var catchScore by mutableIntStateOf(0)
+        private set
+    var catchSecondsLeft by mutableIntStateOf(0)
+        private set
+    var catchActive by mutableStateOf(false)
+        private set
+
+    /** Weathers that drop something to catch. */
+    val hasCatchableWeather: Boolean
+        get() = isCurrentSceneOutdoor && (weather == WeatherType.SNOW || weather == WeatherType.SAKURA || weather == WeatherType.AUTUMN)
+
+    fun startCatchGame() {
+        if (!hasCatchableWeather || catchGame.active) return
+        catchGame.start()
+        catchActive = true
+        catchScore = 0
+        catchSecondsLeft = com.example.games.CatchGame.DURATION_SECONDS.toInt()
+        audio.playHeartChime()
+    }
+
+    /** Called with the round's result when it ends (the screen shows it and keeps the best). */
+    var onCatchGameOver: ((score: Int) -> Unit)? = null
+
+    private fun updateCatchGame(dt: Float, cw: Float, ch: Float) {
+        if (!catchGame.active) return
+        val halfW = com.example.games.CatchGame.HALF_WIDTH * cw
+        val rim = com.example.games.CatchGame.RIM_Y * ch
+        val x = catchGame.basketX * cw
+        val caught = particles.catchInBasket(x - halfW, x + halfW, rim, rim + com.example.games.CatchGame.RIM_DEPTH * ch)
+        if (caught > 0) {
+            catchGame.addCatches(caught)
+            audio.playStarTwinkle()
+        }
+        val before = catchGame.score
+        val ended = catchGame.update(dt)
+        if (catchGame.score - before >= com.example.games.CatchGame.GOLDEN_VALUE) {
+            particles.spawnSparkles(x, rim, 8, Color(0xFFFFD166))
+            audio.playStarArpeggio()
+        }
+        catchScore = catchGame.score
+        catchSecondsLeft = kotlin.math.ceil(catchGame.timeLeft).toInt()
+        if (ended) {
+            catchActive = false
+            boy.emote = EmoteType.HEART
+            girl.emote = EmoteType.HEART
+            boy.emoteTimer = 2.2f
+            girl.emoteTimer = 2.2f
+            // The result first (it compares with the best so far), then record the round.
+            onCatchGameOver?.invoke(catchGame.score)
+            onProgress?.invoke(com.example.progress.ProgressEvent.GamePlayed(com.example.progress.Game.CATCH, catchGame.score))
+        }
+    }
+
+    /** A little first was earned: both light up with a heart, a few sparkles, and the news. */
+    fun celebrateLittleFirst(message: String) {
+        boy.emote = EmoteType.HEART
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.6f
+        girl.emoteTimer = 2.6f
+        audio.playStarArpeggio()
+        showMessage(message, duration = 4.0f)
+    }
+
     /** Seconds left in which the special-day greeting keeps its bubbles (other speech waits). */
     private var specialDayGreetingHold = 0f
 
@@ -5127,7 +5260,9 @@ class SceneEngine(
             "Natural look",
             "Cozy Ribbed Beanie",
             "Warm Wool Fringe Scarf",
-            "Casual Streetwear Baseball Cap"
+            "Casual Streetwear Baseball Cap",
+            "Rainbow Scarf",
+            "Snowman Beanie"
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
@@ -5154,7 +5289,9 @@ class SceneEngine(
             "Natural look",
             "Cozy Ribbed Beanie",
             "Warm Wool Fringe Scarf",
-            "Casual Streetwear Baseball Cap"
+            "Casual Streetwear Baseball Cap",
+            "Rainbow Scarf",
+            "Snowman Beanie"
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
@@ -6293,6 +6430,7 @@ class SceneEngine(
     /** A tap caught a falling snowflake, petal, leaf or dandelion puff. */
     fun onCatchWeather(caught: ParticleSystem.CaughtWeather) {
         weatherCatchCount++
+        onProgress?.invoke(com.example.progress.ProgressEvent.Caught(caught.type.name))
         val firstCatch = weatherCatchCount == 1
         when (caught.type) {
             ParticleType.SNOWFLAKE -> {
@@ -6339,6 +6477,7 @@ class SceneEngine(
         val target = (weatherCatchCount / WeatherLayout.SNOWFLAKES_PER_STAGE).coerceAtMost(WeatherLayout.SNOWMAN_MAX_STAGE)
         if (target <= snowmanStage) return
         snowmanStage = target
+        if (snowmanStage == WeatherLayout.SNOWMAN_MAX_STAGE) onProgress?.invoke(com.example.progress.ProgressEvent.SnowmanBuilt)
         snowmanWobbleTimer = 0.8f
         audio.playBubblePop()
         showMessage(
@@ -6371,6 +6510,7 @@ class SceneEngine(
 
     fun onTouchRainbow(cw: Float, ch: Float) {
         if (rainbowTimer <= 0f) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.RainbowWish)
         audio.playStarArpeggio()
         val c = WeatherLayout.rainbowCenter(cw, ch)
         val r = WeatherLayout.rainbowOuterRadius(cw) - WeatherLayout.rainbowBandWidth(cw) / 2f
@@ -7300,6 +7440,7 @@ class SceneEngine(
     /** They've reached it: pick it up and react. */
     private fun startDiscovery(c: PixelCharacter, cw: Float, ch: Float) {
         if (!discovery.active) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.DiscoveryFound(discovery.kind.name))
         val partner = if (c === boy) girl else boy
         val x = cw * discovery.x
         val y = ch * discovery.y
@@ -7398,6 +7539,7 @@ class SceneEngine(
             else -> 1
         }
         if (constellationConnectTimer > 0f && activeConstellationIndex == targetIdx) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.ConstellationFound("constellation_$targetIdx"))
 
         activeConstellationIndex = targetIdx
         constellationConnectTimer = 2.4f
