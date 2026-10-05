@@ -64,7 +64,7 @@ Each is short, optional, can't be lost, and ends with a cozy result that goes in
 ## D. Deeper interaction
 
 - [ ] D1. **Requests from the couple** *(agree with FEATURES first)*: now and then one of them asks for something that fits the moment: a blanket when it's cold or snowing, tea in the loft, the umbrella in rain, a snack in the kitchen, a song by the record player. A small speech bubble with an icon; tap the thing to grant it. They react warmly, and it counts toward "a request granted". At most one at a time, rare, and it fades if ignored (no penalty).
-- [x] D2. **Mochi's fondness:** *(done; the Mochi-ear headband's drawing waits for plan 08 S1, which moves PixelCanvas)* feeding (treat jar), petting, playing (a yarn ball or feather toy) and Mochi-toy discoveries slowly raise fondness, which never goes down. At thresholds: Mochi follows you more, sleeps by the couple, a slow blink (a first), and unlocks the Mochi-ear headband. A small heart meter on Mochi's tap.
+- [x] D2. **Mochi's fondness:** *(done, including the Mochi-ear headband)* feeding (treat jar), petting, playing (a yarn ball or feather toy) and Mochi-toy discoveries slowly raise fondness, which never goes down. At thresholds: Mochi follows you more, sleeps by the couple, a slow blink (a first), and unlocks the Mochi-ear headband. A small heart meter on Mochi's tap.
 - [x] D3. **Gifts:** *(the Keepsakes page in Our Story; gifts stand on a shelf under the kitchen clock)* open the keepsake box and give a found thing (a bouquet, seashell, star pebble, dish) from one partner to the other. A small give-and-receive animation; the gift then appears in the home (a shelf in the loft or living room, or the windowsill) and is remembered in Our Story.
 - [ ] D4. Tests and renders.
 

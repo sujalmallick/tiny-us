@@ -1873,6 +1873,24 @@ object PixelArtRenderer {
                 px(12, 3, knitShade)
                 drawRect(5, 4, 9, 2, knitShade)
             }
+            6 -> {
+                // Mochi-Ear Headband (a reward: Mochi's best friends): one orange ear and one white,
+                // like Mochi, with pink insides, on a thin brown band across the crown
+                val band = Color(0xFF8C6D5A)
+                val orange = Color(0xFFF4A261)
+                val white = Color(0xFFF7F3EC)
+                val pink = Color(0xFFFFB5C2)
+                // The band rests on the crown (gy 3, as wide as the beanie's crown)
+                drawRect(6, 3, 7, 1, band)
+                // Left ear (orange)
+                px(7, 1, orange)
+                drawRect(6, 2, 3, 1, orange)
+                px(7, 2, pink)
+                // Right ear (white)
+                px(11, 1, white)
+                drawRect(10, 2, 3, 1, white)
+                px(11, 2, pink)
+            }
         }
     }
 
