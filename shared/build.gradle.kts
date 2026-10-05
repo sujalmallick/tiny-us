@@ -63,3 +63,13 @@ compose.resources {
     packageOfResClass = "com.example.resources"
     generateResClass = always
 }
+
+// Full messages and stack traces for failing tests in the console, so CI logs show where it broke.
+tasks.withType<AbstractTestTask>().configureEach {
+    testLogging {
+        events("failed")
+        exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
+        showStackTraces = true
+        showCauses = true
+    }
+}

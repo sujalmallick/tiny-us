@@ -32,11 +32,18 @@ class WorldSmokeTest {
         val drawScope = CanvasDrawScope()
         val buffer = LowResWorldBuffer()
         for (scene in SceneType.entries) {
-            engine.loadScene(scene)
-            repeat(90) { engine.update(1f / 30f, width, height) }
-            val camera = WorldCamera.forScreen(width, height, scene)
-            drawScope.draw(Density(1f), LayoutDirection.Ltr, Canvas(image), Size(width, height)) {
-                drawWorld(engine, buffer, camera)
+            var step = "loading"
+            try {
+                engine.loadScene(scene)
+                step = "updating"
+                repeat(90) { engine.update(1f / 30f, width, height) }
+                step = "drawing"
+                val camera = WorldCamera.forScreen(width, height, scene)
+                drawScope.draw(Density(1f), LayoutDirection.Ltr, Canvas(image), Size(width, height)) {
+                    drawWorld(engine, buffer, camera)
+                }
+            } catch (e: Throwable) {
+                throw AssertionError("$scene failed while $step: $e\n${e.stackTraceToString()}", e)
             }
             val frame = buffer.frame
             assertTrue(frame != null && frame.width > 0 && frame.height > 0, "no frame drawn for $scene")
