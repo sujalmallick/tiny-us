@@ -666,6 +666,15 @@ object PixelArtRenderer {
             }
         }
 
+        // --- 0. Hoodie hood, resting behind the head: it shows beside the jaw and the neck ---
+        val wearsHoodie = !isSnow && ((!isGirl && boyOutfit.isHoodie) || (isGirl && (girlDress.isHoodie || char.outfitIndex >= 7)))
+        if (wearsHoodie) {
+            val hood = if (isGirl) girlDress.sweater else boyOutfit.sweater
+            val hoodDark = if (isGirl) girlDress.skirtShadow else boyOutfit.pantsFold
+            fillRect(3, 8, 12, 4, hoodDark)
+            fillRect(4, 8, 10, 3, hood)
+        }
+
         // --- 1. Head & Hair Base ---
         if (isSnow && !longHair) {
             // Boy Winter Beanie with pom-pom on top
@@ -831,23 +840,23 @@ object PixelArtRenderer {
                 }
                 val cordTipColor = if (isGirl) girlDress.ribbon else (if (char.outfitIndex == 1) boyOutfit.pants else Color(0xFFFFD166))
 
-                // 1. Cozy rolled hood fabric draped around neck and over shoulders
+                // 1. The hood's rolled edge around the neck, its lining showing (in contrast, so it
+                // reads as a hood and not a plain sweater even at small sizes)
                 px(5, 11, hoodShadow)
-                px(6, 11, hoodColor)
-                px(11, 11, hoodColor)
-                px(12, 11, hoodShadow)
+                px(6, 11, hoodAccent)
+                px(12, 11, hoodAccent)
+                px(13, 11, hoodShadow)
 
                 // Dropped-shoulder hood roll seam
                 px(4, 12, hoodShadow)
-                fillRect(5, 12, 8, 1, hoodColor)
-                fillRect(6, 12, 6, 1, hoodAccent)
-                px(13, 12, hoodShadow)
+                fillRect(5, 12, 9, 1, hoodShadow)
+                fillRect(6, 12, 7, 1, hoodAccent)
+                px(14, 12, hoodShadow)
 
-                // 2. Front kangaroo pouch pocket across lower belly
-                fillRect(6, 15, 6, 2, hoodColor)
-                fillRect(7, 15, 4, 1, pouchHighlight)
-                px(6, 15, pouchShadow)
-                px(11, 15, pouchShadow)
+                // 2. Front kangaroo pouch pocket across lower belly, outlined
+                fillRect(6, 15, 7, 2, pouchShadow)
+                fillRect(7, 15, 5, 1, hoodColor)
+                fillRect(7, 16, 5, 1, pouchHighlight)
                 // Ribbed waist hem
                 fillRect(6, 17, 7, 1, hoodAccent)
 
@@ -1233,6 +1242,12 @@ object PixelArtRenderer {
                 drawPixelRect(gx, gy, gw, topH, color, breath)
                 drawPixelRect(gx, 17, gw, bottomH, color, 0f)
             }
+        }
+
+        // Hoodie hood behind the head (one row lower than standing): shows beside the jaw and neck
+        if (!isSnow && ((!isGirl && boyOutfit.isHoodie) || (isGirl && (girlDress.isHoodie || char.outfitIndex >= 7)))) {
+            fillRect(3, 9, 12, 4, if (isGirl) girlDress.skirtShadow else boyOutfit.pantsFold)
+            fillRect(4, 9, 10, 3, if (isGirl) girlDress.sweater else boyOutfit.sweater)
         }
 
         // Head and hair

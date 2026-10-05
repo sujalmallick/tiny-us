@@ -1297,6 +1297,8 @@ fun MainScreen(
                 boyfriendName = prefs.boyfriendName,
                 girlWearsDress = engine.girl.look.wearsDress,
                 boyWearsDress = engine.boy.look.wearsDress,
+                girlLook = engine.girl.look,
+                boyLook = engine.boy.look,
                 onSelectGirlOutfit = { index ->
                     girlOutfitIndex = index
                     engine.selectGirlDress(index)
