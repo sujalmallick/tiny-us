@@ -1009,6 +1009,7 @@ private struct SettingsSheet: View {
     @State private var nameOne = ""
     @State private var nameTwo = ""
     @State private var date = Date()
+    @State private var showSharedPreview = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
@@ -1030,7 +1031,15 @@ private struct SettingsSheet: View {
                     Toggle("Daily tiny moment reminder",isOn:Binding(get:{world.save.notificationsOn},set:{ value in Task { await setReminders(value) } }))
                     Text("Optional, once a day at 7 pm. Notifications stay on this device.").font(.footnote).foregroundStyle(.secondary)
                 }
+                Section("Coming to iPhone") {
+                    Button { showSharedPreview = true } label: { Label("Preview the shared Android engine", systemImage: "sparkles") }
+                    Text("A first look at the code that will make Tiny Us on iPhone match Android.").font(.footnote).foregroundStyle(.secondary)
+                }
                 Section { Text("Your world, notes, and memories are stored on this device. The core experience works offline.").font(.footnote).foregroundStyle(.secondary) }
+            }
+            .fullScreenCover(isPresented: $showSharedPreview) {
+                SharedComposeView().ignoresSafeArea()
+                    .overlay(alignment: .topTrailing) { Button("Done") { showSharedPreview = false }.padding().foregroundStyle(.white) }
             }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement:.topBarLeading) { Button("Cancel") { dismiss() } }; ToolbarItem(placement:.topBarTrailing) { Button("Save") { save(); dismiss() } } }
