@@ -471,13 +471,13 @@ struct TinySave: Codable {
             coupleNames: "\(save.nameOne) & \(save.nameTwo)", daysTogether: days,
             sceneName: save.scene.title, weatherName: save.weather.label, timePhase: phase,
             dailyMomentPrompt: save.dailyPrompt, dailyMomentAnswered: answeredToday,
-            latestSignalText: signal, sharedMoodEmoji: save.mood,
+            latestSignalText: signal,
             sharedMoodText: "Your shared mood", lastUpdatedTimestamp: Int64(Date().timeIntervalSince1970 * 1000))
         let payload = TinyWidgetPayload(
             coupleNames: model.coupleNames, daysTogether: model.daysTogether, anniversaryDate: save.anniversary,
             sceneName: model.sceneName, weatherName: model.weatherName, timePhase: model.timePhase,
             dailyMomentPrompt: model.dailyMomentPrompt ?? "A little moment together",
-            sharedMoodEmoji: model.sharedMoodEmoji ?? "heart.fill",
+            sharedMoodEmoji: save.mood,
             latestSignalText: model.latestSignalText ?? "A little hello from your world.", updatedAt: Date())
         guard let encoded = try? JSONEncoder().encode(payload) else { return }
         TinyAppGroup.defaults.set(encoded, forKey: TinyAppGroup.payloadKey)
@@ -963,7 +963,7 @@ private struct FeatureSheet: View {
                         ForEach(sharedAdventures, id:\.id) { adventure in
                             VStack(alignment:.leading,spacing:9) {
                                 Text(adventure.title).font(.system(.body,design:.rounded,weight:.bold))
-                                Text(adventure.description).font(.system(.subheadline,design:.rounded)).foregroundStyle(.secondary)
+                                Text(adventure.description_).font(.system(.subheadline,design:.rounded)).foregroundStyle(.secondary)
                                 Button(world.save.completedAdventureIDs.contains(adventure.id) ? "A little date completed" : "We did this together") {
                                     world.save.completedAdventureIDs.insert(adventure.id)
                                     world.save.gardenSeeds += 1
@@ -1009,6 +1009,7 @@ private struct SettingsSheet: View {
     @State private var nameOne = ""
     @State private var nameTwo = ""
     @State private var date = Date()
+    @State private var showSharedPreview = false
     @Environment(\.dismiss) private var dismiss
     var body: some View {
         NavigationStack {
@@ -1030,7 +1031,15 @@ private struct SettingsSheet: View {
                     Toggle("Daily tiny moment reminder",isOn:Binding(get:{world.save.notificationsOn},set:{ value in Task { await setReminders(value) } }))
                     Text("Optional, once a day at 7 pm. Notifications stay on this device.").font(.footnote).foregroundStyle(.secondary)
                 }
+                Section("Coming to iPhone") {
+                    Button { showSharedPreview = true } label: { Label("Preview the shared Android engine", systemImage: "sparkles") }
+                    Text("A first look at the code that will make Tiny Us on iPhone match Android.").font(.footnote).foregroundStyle(.secondary)
+                }
                 Section { Text("Your world, notes, and memories are stored on this device. The core experience works offline.").font(.footnote).foregroundStyle(.secondary) }
+            }
+            .fullScreenCover(isPresented: $showSharedPreview) {
+                SharedComposeView().ignoresSafeArea()
+                    .overlay(alignment: .topTrailing) { Button("Done") { showSharedPreview = false }.padding().foregroundStyle(.white) }
             }
             .navigationTitle("Settings").navigationBarTitleDisplayMode(.inline)
             .toolbar { ToolbarItem(placement:.topBarLeading) { Button("Cancel") { dismiss() } }; ToolbarItem(placement:.topBarTrailing) { Button("Save") { save(); dismiss() } } }

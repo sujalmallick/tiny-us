@@ -41,6 +41,11 @@ private struct TinyNoise {
 /// Procedural 8-bit chiptune synthesizer. Recipes are intentionally short and soft so they sit under the weather music.
 enum TinySynth {
     private static let rate = Float(TinyWav.sampleRate)
+
+    // Float-only math: one signature each, so long synthesis expressions type-check quickly.
+    private static func fsin(_ x: Float) -> Float { sinf(x) }
+    private static func fexp(_ x: Float) -> Float { expf(x) }
+    private static func rise1(_ x: Float) -> Float { Swift.min(1, x) }
     private static let tau = Float.pi * 2
 
     static func render(_ effect: TinySFX) -> [Float] {
@@ -70,11 +75,11 @@ enum TinySynth {
 
     private static func osc(_ wave: Wave, _ phase: Float) -> Float {
         switch wave {
-        case .sine: return sin(phase)
-        case .triangle: return 2 / .pi * asin(sin(phase))
+        case .sine: return fsin(phase)
+        case .triangle: return 2 / .pi * asin(fsin(phase))
         // A tanh-rounded square keeps the 8-bit character without harsh aliasing.
-        case .softSquare: return tanh(sin(phase) * 4) * 0.8
-        case .musicBox: return sin(phase) + sin(phase * 2) * 0.24
+        case .softSquare: return tanh(fsin(phase) * 4) * 0.8
+        case .musicBox: return fsin(phase) + fsin(phase * 2) * 0.24
         }
     }
 
@@ -88,7 +93,7 @@ enum TinySynth {
             let from = Int(start * rate), count = Int(length * rate)
             for i in 0..<count where from + i < out.count {
                 let t = Float(i) / rate
-                let env = min(1, t * 200) * exp(-t * decay)
+                let env = rise1(t * 200) * fexp(-t * decay)
                 out[from + i] += osc(wave, tau * freq * t) * env * gain
             }
         }
@@ -102,8 +107,8 @@ enum TinySynth {
             for i in 0..<Int(ring * rate) where from + i < out.count {
                 let t = Float(i) / rate
                 // A 2.76× inharmonic partial gives the metallic chime colour.
-                let tone = sin(tau * freq * t) + sin(tau * freq * 2.76 * t) * 0.3 * exp(-t * 6)
-                out[from + i] += tone * min(1, t * 300) * exp(-t * 3.2) * 0.2
+                let tone = fsin(tau * freq * t) + fsin(tau * freq * 2.76 * t) * 0.3 * fexp(-t * 6)
+                out[from + i] += tone * rise1(t * 300) * fexp(-t * 3.2) * 0.2
             }
         }
         return out
@@ -114,7 +119,7 @@ enum TinySynth {
         for i in out.indices {
             let t = Float(i) / rate
             phase += tau * (380 + 1100 * (t / 0.12)) / rate
-            out[i] = sin(phase) * exp(-t * 30) * 0.45
+            out[i] = fsin(phase) * fexp(-t * 30) * 0.45
         }
         return out
     }
@@ -125,7 +130,7 @@ enum TinySynth {
             let t = Float(i) / rate
             let white = noise.next()
             let bright = white - previous; previous = white // first-difference high-pass
-            out[i] = bright * min(1, t / 0.06) * exp(-t * 3.4) * 0.16
+            out[i] = bright * rise1(t / 0.06) * fexp(-t * 3.4) * 0.16
         }
         return out
     }
@@ -136,7 +141,7 @@ enum TinySynth {
             let from = Int(Float(beep) * 0.19 * rate)
             for i in 0..<Int(0.13 * rate) where from + i < out.count {
                 let t = Float(i) / rate
-                let env = min(1, t * 120) * min(1, (0.13 - t) * 120)
+                let env = rise1(t * 120) * rise1((0.13 - t) * 120)
                 out[from + i] += (osc(.softSquare, tau * 440 * t) + osc(.softSquare, tau * 554.4 * t)) * env * 0.17
             }
         }
@@ -148,9 +153,10 @@ enum TinySynth {
         for i in out.indices {
             let t = Float(i) / rate
             low += (noise.next() - low) * 0.04 // one-pole low-pass rumble
-            let flutter = 0.5 + 0.5 * sin(tau * 24 * t)
-            let body = sin(tau * 52 * t) * 0.6 + low * 3
-            out[i] = body * flutter * min(1, t * 6) * min(1, (1.0 - t) * 5) * 0.32
+            let flutter = 0.5 + 0.5 * fsin(tau * 24 * t)
+            let body = fsin(tau * 52 * t) * 0.6 + low * 3
+            let env: Float = rise1(t * 6) * rise1((1.0 - t) * 5)
+            out[i] = body * flutter * env * 0.32
         }
         return out
     }
@@ -161,7 +167,7 @@ enum TinySynth {
             let t = Float(i) / rate
             let freq: Float = t < 0.06 ? 1600 - 1000 * (t / 0.06) : 900
             phase += tau * freq / rate
-            out[i] = sin(phase) * exp(-t * (t < 0.06 ? 8 : 26)) * 0.38
+            out[i] = fsin(phase) * fexp(-t * (t < 0.06 ? 8 : 26)) * 0.38
         }
         return out
     }
@@ -171,7 +177,9 @@ enum TinySynth {
         for i in out.indices {
             let t = Float(i) / rate
             phase += tau * (2400 - 1500 * (t / 0.6)) / rate
-            out[i] = sin(phase) * (0.7 + 0.3 * sin(tau * 30 * t)) * min(1, t * 40) * exp(-t * 4.2) * 0.22
+            let shimmer: Float = 0.7 + 0.3 * fsin(tau * 30 * t)
+            let env: Float = rise1(t * 40) * fexp(-t * 4.2)
+            out[i] = fsin(phase) * shimmer * env * 0.22
         }
         return out
     }
@@ -182,7 +190,7 @@ enum TinySynth {
         for (index, start) in pops.enumerated() {
             let from = Int(start * rate), length = Int(Float(0.012 + Float(index % 3) * 0.008) * rate)
             for i in 0..<length where from + i < out.count {
-                out[from + i] += noise.next() * exp(-Float(i) / Float(length) * 4) * 0.42
+                out[from + i] += noise.next() * fexp(-Float(i) / Float(length) * 4) * 0.42
             }
         }
         var previous: Float = 0 // soft low warmth under the pops
@@ -214,9 +222,10 @@ enum TinySynth {
         var out = buffer(1.1); var noise = TinyNoise(seed: 71); var phase: Float = 0
         for i in out.indices {
             let t = Float(i) / rate
-            phase += tau * (1750 + 40 * sin(tau * 6 * t) + 120 * t) / rate
-            let swell = min(1, t / 0.45) * min(1, (1.1 - t) * 6)
-            out[i] = (sin(phase) * 0.8 + noise.next() * 0.12) * swell * 0.16
+            let pitch: Float = 1750 + 40 * fsin(tau * 6 * t) + 120 * t
+            phase += tau * pitch / rate
+            let swell = rise1(t / 0.45) * rise1((1.1 - t) * 6)
+            out[i] = (fsin(phase) * 0.8 + noise.next() * 0.12) * swell * 0.16
         }
         return out
     }
@@ -225,7 +234,7 @@ enum TinySynth {
         var out = buffer(0.07); var noise = TinyNoise(seed: 89)
         for i in out.indices {
             let t = Float(i) / rate
-            out[i] = (noise.next() * 0.6 + sin(tau * 2100 * t) * 0.4) * exp(-t * 90) * 0.45
+            out[i] = (noise.next() * 0.6 + fsin(tau * 2100 * t) * 0.4) * fexp(-t * 90) * 0.45
         }
         return out
     }
@@ -242,7 +251,9 @@ enum TinySynth {
         var out = buffer(0.09); var noise = TinyNoise(seed: 101)
         for i in out.indices {
             let t = Float(i) / rate
-            out[i] = (noise.next() * 0.5 * exp(-t * 60) + sin(tau * 700 * t) * exp(-t * 40) * 0.5) * 0.4
+            let swish: Float = noise.next() * 0.5 * fexp(-t * 60)
+            let blip: Float = fsin(tau * 700 * t) * fexp(-t * 40) * 0.5
+            out[i] = (swish + blip) * 0.4
         }
         return out
     }
@@ -255,9 +266,9 @@ enum TinySynth {
             let t = Float(i) / rate
             low += (noise.next() - low) * (rain ? 0.35 : 0.015)
             // Seamless loop: every modulator completes whole cycles over `seconds`.
-            let breath = 0.6 + 0.4 * sin(tau * t / seconds)
+            let breath = 0.6 + 0.4 * fsin(tau * t / seconds)
             var pad: Float = 0
-            for (index, freq) in chord.enumerated() { pad += sin(tau * freq * t) * (0.5 + 0.5 * sin(tau * Float(index + 1) * t / seconds)) }
+            for (index, freq) in chord.enumerated() { pad += fsin(tau * freq * t) * (0.5 + 0.5 * fsin(tau * Float(index + 1) * t / seconds)) }
             out[i] = low * (rain ? 0.22 : 0.5) * breath + pad * 0.018
         }
         return out

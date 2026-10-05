@@ -352,12 +352,23 @@ struct TinyStageSnapshot {
 
     private func hitsCat(_ p: CGPoint, now: Double) -> Bool {
         let cat = catPosition(at: now)
-        return abs(p.x - cat.x) < 0.07 && p.y > cat.y - 0.07 && p.y < cat.y + 0.04
+        let dx: CGFloat = abs(p.x - cat.x)
+        let top: CGFloat = cat.y - 0.07
+        let bottom: CGFloat = cat.y + 0.04
+        return dx < 0.07 && p.y > top && p.y < bottom
     }
 
     private func hitsCharacters(_ p: CGPoint, scene: TinyScene) -> Bool {
         let (a, b) = scene.characterAnchors
-        return [a, b].contains { abs(p.x - $0.x) < 0.07 && p.y > $0.y - 0.17 && p.y < $0.y + 0.02 }
+        return isNear(p, feet: a) || isNear(p, feet: b)
+    }
+
+    /// Kept as separate typed statements: the one-line form timed out Swift's type checker.
+    private func isNear(_ p: CGPoint, feet: CGPoint) -> Bool {
+        let dx: CGFloat = abs(p.x - feet.x)
+        let top: CGFloat = feet.y - 0.17
+        let bottom: CGFloat = feet.y + 0.02
+        return dx < 0.07 && p.y > top && p.y < bottom
     }
 
     // MARK: - Interactions

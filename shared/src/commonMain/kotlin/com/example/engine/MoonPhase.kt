@@ -2,6 +2,7 @@ package com.example.engine
 
 import kotlin.math.PI
 import kotlin.math.cos
+import kotlin.time.Clock
 
 /**
  * Tonight's moon, worked out from the date alone (no internet): the moon goes round its phases
@@ -17,11 +18,17 @@ object MoonPhase {
 
     private const val DAY_MS = 86_400_000.0
 
+    /** Pins the phase (0 new, 0.5 full) instead of tonight's; for previews and tests only. */
+    var override: Float? = null
+
+    /** Tonight's phase, or [override] when a preview pins it. */
+    fun current(): Float = override ?: fraction()
+
     /**
      * Where in the cycle the moon is at [epochMs]: 0 is new, 0.25 first quarter, 0.5 full,
      * 0.75 last quarter, back to new at 1.
      */
-    fun fraction(epochMs: Long = System.currentTimeMillis()): Float {
+    fun fraction(epochMs: Long = Clock.System.now().toEpochMilliseconds()): Float {
         val days = (epochMs - REFERENCE_NEW_MOON_MS) / DAY_MS
         val f = (days / SYNODIC_DAYS) % 1.0
         return (if (f < 0) f + 1.0 else f).toFloat()

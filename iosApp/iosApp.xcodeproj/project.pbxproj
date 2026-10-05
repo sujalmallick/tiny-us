@@ -24,6 +24,7 @@
 		A10000000000000000000062 /* TinyWorldStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000063 /* TinyWorldStage.swift */; };
 		A10000000000000000000064 /* TinyWorldPainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000065 /* TinyWorldPainter.swift */; };
 		A10000000000000000000066 /* TinyOverlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000067 /* TinyOverlays.swift */; };
+		A10000000000000000000068 /* SharedComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000069 /* SharedComposeView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +48,7 @@
 		A10000000000000000000063 /* TinyWorldStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWorldStage.swift; sourceTree = "<group>"; };
 		A10000000000000000000065 /* TinyWorldPainter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWorldPainter.swift; sourceTree = "<group>"; };
 		A10000000000000000000067 /* TinyOverlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyOverlays.swift; sourceTree = "<group>"; };
+		A10000000000000000000069 /* SharedComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +78,7 @@
 			children = (
 				A1000000000000000000000D /* iOSApp.swift */,
 				A1000000000000000000000F /* ContentView.swift */,
+				A10000000000000000000069 /* SharedComposeView.swift */,
 				A10000000000000000000061 /* TinySoundFX.swift */,
 				A10000000000000000000063 /* TinyWorldStage.swift */,
 				A10000000000000000000065 /* TinyWorldPainter.swift */,
@@ -231,6 +234,7 @@
 			files = (
 				A1000000000000000000000E /* iOSApp.swift in Sources */,
 				A10000000000000000000010 /* ContentView.swift in Sources */,
+				A10000000000000000000068 /* SharedComposeView.swift in Sources */,
 				A10000000000000000000060 /* TinySoundFX.swift in Sources */,
 				A10000000000000000000062 /* TinyWorldStage.swift in Sources */,
 				A10000000000000000000064 /* TinyWorldPainter.swift in Sources */,

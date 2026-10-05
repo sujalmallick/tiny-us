@@ -322,7 +322,7 @@ data class PixelCharacter(
 object PixelArtRenderer {
 
     /** Uniform 10% character size increase applied to every scene automatically. */
-    internal const val CHARACTER_SCALE_FACTOR = 1.10f
+    const val CHARACTER_SCALE_FACTOR = 1.10f
 
 
     data class GirlDressPalette(
