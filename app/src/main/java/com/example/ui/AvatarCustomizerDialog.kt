@@ -31,7 +31,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -50,6 +49,8 @@ import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * "Make Us": each partner picks skin tone, hair colour, hair length and outfit style.
@@ -85,8 +86,8 @@ fun AvatarCustomizerDialog(
         verticalSpacing = 0.dp
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.avatar_title),
-            subtitle = stringResource(R.string.avatar_subtitle),
+            title = stringResource(Res.string.avatar_title),
+            subtitle = stringResource(Res.string.avatar_subtitle),
             icon = PixelIcons.Face,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
         )
@@ -105,36 +106,36 @@ fun AvatarCustomizerDialog(
                 ToggleChip(nameB, selected = editingB, modifier = Modifier.testTag("avatar_tab_b")) { tab = 1 }
             }
 
-            SectionLabel(stringResource(R.string.avatar_skin))
+            SectionLabel(stringResource(Res.string.avatar_skin))
             SwatchRow(AvatarPalette.skinTones, current.skinTone, "avatar_skin") {
                 update(editingB, current.copy(skinTone = it))
             }
 
-            SectionLabel(stringResource(R.string.avatar_hair_color))
+            SectionLabel(stringResource(Res.string.avatar_hair_color))
             SwatchRow(AvatarPalette.hairColors, current.hairColor, "avatar_hair") {
                 update(editingB, current.copy(hairColor = it))
             }
 
-            SectionLabel(stringResource(R.string.avatar_hair_length))
+            SectionLabel(stringResource(Res.string.avatar_hair_length))
             Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
-                ToggleChip(stringResource(R.string.avatar_hair_short), !current.longHair) {
+                ToggleChip(stringResource(Res.string.avatar_hair_short), !current.longHair) {
                     update(editingB, current.copy(longHair = false))
                 }
-                ToggleChip(stringResource(R.string.avatar_hair_long), current.longHair) {
+                ToggleChip(stringResource(Res.string.avatar_hair_long), current.longHair) {
                     update(editingB, current.copy(longHair = true))
                 }
             }
 
-            SectionLabel(stringResource(R.string.avatar_outfit_style))
+            SectionLabel(stringResource(Res.string.avatar_outfit_style))
             Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
-                ToggleChip(stringResource(R.string.avatar_outfit_trousers), !current.wearsDress) {
+                ToggleChip(stringResource(Res.string.avatar_outfit_trousers), !current.wearsDress) {
                     update(editingB, current.copy(wearsDress = false))
                 }
-                ToggleChip(stringResource(R.string.avatar_outfit_dress), current.wearsDress) {
+                ToggleChip(stringResource(Res.string.avatar_outfit_dress), current.wearsDress) {
                     update(editingB, current.copy(wearsDress = true))
                 }
             }
-            Text(stringResource(R.string.avatar_wardrobe_hint), style = TinyType.Caption)
+            Text(stringResource(Res.string.avatar_wardrobe_hint), style = TinyType.Caption)
         }
 
         TinyDivider()
@@ -147,12 +148,12 @@ fun AvatarCustomizerDialog(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TinyButton(
-                text = stringResource(R.string.avatar_reset),
+                text = stringResource(Res.string.avatar_reset),
                 onClick = { update(editingB, AvatarAppearance.defaultFor(editingB)) },
                 style = TinyButtonStyle.Ghost
             )
             TinyButton(
-                text = stringResource(R.string.action_done),
+                text = stringResource(Res.string.action_done),
                 onClick = onDismiss,
                 style = TinyButtonStyle.Ghost,
                 testTag = "avatar_done"
@@ -182,7 +183,7 @@ private fun CouplePreview(
             .clip(TinyRadius.Large)
             .background(Color(0xFFFDE8E4), TinyRadius.Large)
             .border(1.dp, TinyColors.Line, TinyRadius.Large)
-            .describedAs(R.string.ui_preview_of_both_characters)
+            .describedAs(Res.string.ui_preview_of_both_characters)
     ) {
         Canvas(Modifier.fillMaxWidth().height(150.dp)) {
             val ground = size.height * 0.88f

@@ -2,7 +2,6 @@ package com.example.ui
 
 import androidx.compose.animation.AnimatedVisibility
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.MutableTransitionState
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeIn
@@ -83,6 +82,9 @@ import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.StringResource
 
 /*
  * Shared UI chrome. Every dialog, sheet and button builds on these so the app keeps one look.
@@ -160,7 +162,7 @@ fun TinyEnterTransition(content: @Composable () -> Unit) {
 
 /** A screen-reader label from strings.xml (semantics blocks can't look strings up themselves). */
 @Composable
-fun Modifier.describedAs(@androidx.annotation.StringRes label: Int): Modifier {
+fun Modifier.describedAs(label: StringResource): Modifier {
     val text = stringResource(label)
     return this.semantics { contentDescription = text }
 }
@@ -176,7 +178,7 @@ fun TinyDialogHeader(
     accentSoft: Color = TinyColors.RoseSoft,
     onClose: (() -> Unit)? = null,
     closeTestTag: String? = null,
-    closeDescription: String = stringResource(R.string.ui_close)
+    closeDescription: String = stringResource(Res.string.ui_close)
 ) {
     Row(modifier = modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (icon != null) {

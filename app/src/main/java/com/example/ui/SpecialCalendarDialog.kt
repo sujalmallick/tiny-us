@@ -1,8 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -169,6 +167,9 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun SpecialCalendarDialog(
@@ -190,8 +191,8 @@ fun SpecialCalendarDialog(
         verticalSpacing = 0.dp
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_our_special_calendar),
-            subtitle = stringResource(R.string.ui_calendar_subtitle, boyfriendName, girlfriendName),
+            title = stringResource(Res.string.ui_our_special_calendar),
+            subtitle = stringResource(Res.string.ui_calendar_subtitle, boyfriendName, girlfriendName),
             icon = TinyIcons.Heart,
             onClose = onDismiss,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.sm, top = TinySpace.lg, bottom = TinySpace.sm)
@@ -233,11 +234,11 @@ fun SpecialCalendarDialog(
                         Spacer(modifier = Modifier.width(TinySpace.sm))
                         Column {
                             Text(
-                                text = stringResource(R.string.ui_today_prefix, firstToday.title.uppercase()),
+                                text = stringResource(Res.string.ui_today_prefix, firstToday.title.uppercase()),
                                 style = TinyType.Label.copy(color = TinyColors.Rose)
                             )
                             Text(
-                                text = stringResource(R.string.ui_tap_to_view_today_s_memory),
+                                text = stringResource(Res.string.ui_tap_to_view_today_s_memory),
                                 style = TinyType.Caption
                             )
                         }
@@ -262,7 +263,7 @@ fun SpecialCalendarDialog(
                 ) {
                     Icon(
                         imageVector = PixelIcons.ArrowBack,
-                        contentDescription = stringResource(R.string.ui_previous_month),
+                        contentDescription = stringResource(Res.string.ui_previous_month),
                         tint = TinyColors.Rose,
                         modifier = Modifier.size(20.dp)
                     )
@@ -282,7 +283,7 @@ fun SpecialCalendarDialog(
                     )
                     if (displayedYearMonth != YearMonth.from(today)) {
                         TinyButton(
-                            text = stringResource(R.string.ui_jump_to_today),
+                            text = stringResource(Res.string.ui_jump_to_today),
                             onClick = {
                                 audio?.playBubblePop()
                                 displayedYearMonth = YearMonth.from(today)
@@ -302,7 +303,7 @@ fun SpecialCalendarDialog(
                 ) {
                     Icon(
                         imageVector = PixelIcons.ArrowForward,
-                        contentDescription = stringResource(R.string.ui_next_month),
+                        contentDescription = stringResource(Res.string.ui_next_month),
                         tint = TinyColors.Rose,
                         modifier = Modifier.size(20.dp)
                     )
@@ -419,16 +420,16 @@ fun SpecialCalendarDialog(
                 horizontalArrangement = Arrangement.SpaceEvenly,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LegendItem(icon = TinyIcons.Heart, label = stringResource(R.string.ui_moments))
-                LegendItem(icon = TinyIcons.Birthday, label = stringResource(R.string.ui_birthdays))
-                LegendItem(icon = TinyIcons.Sparkle, label = stringResource(R.string.ui_next_meet))
-                LegendItem(icon = TinyIcons.Flower, label = stringResource(R.string.ui_special))
+                LegendItem(icon = TinyIcons.Heart, label = stringResource(Res.string.ui_moments))
+                LegendItem(icon = TinyIcons.Birthday, label = stringResource(Res.string.ui_birthdays))
+                LegendItem(icon = TinyIcons.Sparkle, label = stringResource(Res.string.ui_next_meet))
+                LegendItem(icon = TinyIcons.Flower, label = stringResource(Res.string.ui_special))
             }
 
             Spacer(modifier = Modifier.height(TinySpace.lg))
 
             TinyButton(
-                text = stringResource(R.string.ui_close_scrapbook),
+                text = stringResource(Res.string.ui_close_scrapbook),
                 onClick = onDismiss,
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Secondary,
@@ -505,12 +506,12 @@ fun CalendarMemoryDetailCard(
                         horizontalAlignment = Alignment.CenterHorizontally
                     ) {
                         Text(
-                            text = stringResource(R.string.ui_today),
+                            text = stringResource(Res.string.ui_today),
                             style = TinyType.Title.copy(color = TinyColors.Rose)
                         )
                         Spacer(modifier = Modifier.height(TinySpace.xs))
                         Text(
-                            text = stringResource(R.string.ui_you_re_finally_together_again),
+                            text = stringResource(Res.string.ui_you_re_finally_together_again),
                             style = TinyType.Body.copy(fontFamily = FontFamily.Serif),
                             textAlign = TextAlign.Center
                         )
@@ -525,7 +526,7 @@ fun CalendarMemoryDetailCard(
             } else {
                 Column(horizontalAlignment = Alignment.CenterHorizontally) {
                     Text(
-                        text = stringResource(R.string.ui_coming_in),
+                        text = stringResource(Res.string.ui_coming_in),
                         style = TinyType.Caption
                     )
                     Spacer(modifier = Modifier.height(TinySpace.sm))
@@ -535,7 +536,7 @@ fun CalendarMemoryDetailCard(
                             horizontalAlignment = Alignment.CenterHorizontally
                         ) {
                             Text(
-                                text = pluralStringResource(R.plurals.ui_countdown_days, countdown.days.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), countdown.days),
+                                text = pluralStringResource(Res.plurals.ui_countdown_days, countdown.days.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), countdown.days),
                                 style = TinyType.Title.copy(color = TinyColors.Rose)
                             )
                             Spacer(modifier = Modifier.height(TinySpace.xs))
@@ -567,7 +568,7 @@ fun CalendarMemoryDetailCard(
         }
 
         TinyButton(
-            text = stringResource(R.string.ui_close),
+            text = stringResource(Res.string.ui_close),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(),
             style = TinyButtonStyle.Secondary,
@@ -592,10 +593,10 @@ internal fun CalendarPixelMarker(type: SpecialMemoryType) {
         imageVector = calendarTypeIcon(type),
         contentDescription = stringResource(
             when (type) {
-                SpecialMemoryType.BIRTHDAY -> R.string.ui_birthdays
-                SpecialMemoryType.FUTURE_MEETING -> R.string.ui_next_meet
-                SpecialMemoryType.PRIVATE -> R.string.ui_special
-                else -> R.string.ui_moments
+                SpecialMemoryType.BIRTHDAY -> Res.string.ui_birthdays
+                SpecialMemoryType.FUTURE_MEETING -> Res.string.ui_next_meet
+                SpecialMemoryType.PRIVATE -> Res.string.ui_special
+                else -> Res.string.ui_moments
             }
         ),
         tint = TinyColors.Rose,

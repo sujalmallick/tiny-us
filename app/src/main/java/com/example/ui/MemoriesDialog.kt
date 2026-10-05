@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -172,6 +171,8 @@ import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun MemoriesDialog(
@@ -192,8 +193,8 @@ fun MemoriesDialog(
             .testTag("memories_dialog")
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_our_keepsakes),
-            subtitle = stringResource(R.string.ui_memories_captured_in_our_tiny_world),
+            title = stringResource(Res.string.ui_our_keepsakes),
+            subtitle = stringResource(Res.string.ui_memories_captured_in_our_tiny_world),
             icon = TinyIcons.Heart,
             onClose = onDismiss,
             closeTestTag = "close_memories"
@@ -212,7 +213,7 @@ fun MemoriesDialog(
             }
 
             TinyButton(
-                text = stringResource(R.string.ui_add_our_memory),
+                text = stringResource(Res.string.ui_add_our_memory),
                 onClick = { showAddSheet = true },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
@@ -228,8 +229,8 @@ fun MemoriesDialog(
                 OutlinedTextField(
                     value = newTitle,
                     onValueChange = { newTitle = it },
-                    label = { Text(stringResource(R.string.ui_memory_title)) },
-                    placeholder = { Text(stringResource(R.string.ui_e_g_rainy_day_cocoa)) },
+                    label = { Text(stringResource(Res.string.ui_memory_title)) },
+                    placeholder = { Text(stringResource(Res.string.ui_e_g_rainy_day_cocoa)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = TinyFieldShape,
@@ -238,8 +239,8 @@ fun MemoriesDialog(
                 OutlinedTextField(
                     value = newDate,
                     onValueChange = { newDate = it },
-                    label = { Text(stringResource(R.string.ui_date_season)) },
-                    placeholder = { Text(stringResource(R.string.ui_e_g_autumn_afternoon)) },
+                    label = { Text(stringResource(Res.string.ui_date_season)) },
+                    placeholder = { Text(stringResource(Res.string.ui_e_g_autumn_afternoon)) },
                     modifier = Modifier.fillMaxWidth(),
                     singleLine = true,
                     shape = TinyFieldShape,
@@ -248,8 +249,8 @@ fun MemoriesDialog(
                 OutlinedTextField(
                     value = newNote,
                     onValueChange = { newNote = it },
-                    label = { Text(stringResource(R.string.ui_sweet_note)) },
-                    placeholder = { Text(stringResource(R.string.ui_what_made_this_moment_special)) },
+                    label = { Text(stringResource(Res.string.ui_sweet_note)) },
+                    placeholder = { Text(stringResource(Res.string.ui_what_made_this_moment_special)) },
                     modifier = Modifier.fillMaxWidth(),
                     minLines = 2,
                     maxLines = 4,
@@ -257,7 +258,7 @@ fun MemoriesDialog(
                     colors = tinyTextFieldColors()
                 )
 
-                Text(stringResource(R.string.ui_select_icon), style = TinyType.Label)
+                Text(stringResource(Res.string.ui_select_icon), style = TinyType.Label)
                 Row(modifier = Modifier.fillMaxWidth()) {
                     val icons = listOf("heart", "flower", "tree", "cooking", "couch", "stars")
                     icons.forEach { ic ->
@@ -296,13 +297,13 @@ fun MemoriesDialog(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     TinyButton(
-                        text = stringResource(R.string.ui_cancel),
+                        text = stringResource(Res.string.ui_cancel),
                         onClick = { showAddSheet = false },
                         style = TinyButtonStyle.Ghost
                     )
                     Spacer(modifier = Modifier.width(TinySpace.sm))
                     TinyButton(
-                        text = stringResource(R.string.ui_save),
+                        text = stringResource(Res.string.ui_save),
                         onClick = {
                             if (newTitle.isNotBlank()) {
                                 onAddMemory(newTitle, newNote, newDate, selectedIcon)

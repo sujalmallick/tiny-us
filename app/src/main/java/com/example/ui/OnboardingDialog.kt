@@ -1,6 +1,5 @@
 package com.example.ui
 
-import androidx.compose.ui.res.stringResource
 import com.example.R
 import com.example.data.PersonalProfile
 import androidx.compose.animation.AnimatedVisibility
@@ -61,6 +60,8 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 private const val MAX_NAME_LENGTH = 10
 
@@ -123,7 +124,7 @@ fun OnboardingDialog(
                         // Header icon
                         TinyIconBadge(
                             icon = TinyIcons.Heart,
-                            modifier = Modifier.describedAs(R.string.ui_heart),
+                            modifier = Modifier.describedAs(Res.string.ui_heart),
                             size = 56.dp,
                             iconSize = 28.dp
                         )
@@ -131,7 +132,7 @@ fun OnboardingDialog(
                         Spacer(modifier = Modifier.height(TinySpace.lg))
 
                         Text(
-                            text = stringResource(R.string.ui_welcome_to_tiny_us),
+                            text = stringResource(Res.string.ui_welcome_to_tiny_us),
                             style = TinyType.Display,
                             textAlign = TextAlign.Center,
                             modifier = Modifier.semantics { heading() }
@@ -140,7 +141,7 @@ fun OnboardingDialog(
                         Spacer(modifier = Modifier.height(TinySpace.xs))
 
                         Text(
-                            text = stringResource(R.string.ui_a_cozy_quiet_world_made_just_for_the_two),
+                            text = stringResource(Res.string.ui_a_cozy_quiet_world_made_just_for_the_two),
                             style = TinyType.Body.copy(color = TinyColors.InkMuted),
                             textAlign = TextAlign.Center
                         )
@@ -155,7 +156,7 @@ fun OnboardingDialog(
                             OutlinedTextField(
                                 value = boyName,
                                 onValueChange = { if (it.length <= MAX_NAME_LENGTH) boyName = it },
-                                label = { Text(stringResource(R.string.label_your_name)) },
+                                label = { Text(stringResource(Res.string.label_your_name)) },
                                 placeholder = { Text(PersonalProfile.DEFAULT_NAME_A) },
                                 leadingIcon = {
                                     Icon(PixelIcons.Person, contentDescription = null, tint = TinyColors.Rose)
@@ -171,7 +172,7 @@ fun OnboardingDialog(
                             OutlinedTextField(
                                 value = girlName,
                                 onValueChange = { if (it.length <= MAX_NAME_LENGTH) girlName = it },
-                                label = { Text(stringResource(R.string.label_partner_name)) },
+                                label = { Text(stringResource(Res.string.label_partner_name)) },
                                 placeholder = { Text(PersonalProfile.DEFAULT_NAME_B) },
                                 leadingIcon = {
                                     Icon(PixelIcons.Person, contentDescription = null, tint = TinyColors.Rose)
@@ -190,7 +191,7 @@ fun OnboardingDialog(
                         // Anniversary date selector
                         Column(modifier = Modifier.fillMaxWidth()) {
                             Text(
-                                text = stringResource(R.string.ui_special_anniversary_date),
+                                text = stringResource(Res.string.ui_special_anniversary_date),
                                 style = TinyType.Label
                             )
                             Spacer(modifier = Modifier.height(TinySpace.sm))
@@ -239,7 +240,7 @@ fun OnboardingDialog(
                             )
                             Spacer(modifier = Modifier.width(TinySpace.sm))
                             Text(
-                                text = if (showSecretFields) stringResource(R.string.ui_hide_secret_note) else stringResource(R.string.ui_add_secret_note),
+                                text = if (showSecretFields) stringResource(Res.string.ui_hide_secret_note) else stringResource(Res.string.ui_add_secret_note),
                                 style = TinyType.Label.copy(color = TinyColors.Rose)
                             )
                         }
@@ -258,7 +259,7 @@ fun OnboardingDialog(
                                 OutlinedTextField(
                                     value = secretCode,
                                     onValueChange = { secretCode = it.take(8).uppercase() },
-                                    label = { Text(stringResource(R.string.ui_passcode_e_g_love)) },
+                                    label = { Text(stringResource(Res.string.ui_passcode_e_g_love)) },
                                     singleLine = true,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -270,7 +271,7 @@ fun OnboardingDialog(
                                 OutlinedTextField(
                                     value = secretNote,
                                     onValueChange = { secretNote = it.take(180) },
-                                    label = { Text(stringResource(R.string.ui_private_message_for_your_love)) },
+                                    label = { Text(stringResource(Res.string.ui_private_message_for_your_love)) },
                                     maxLines = 3,
                                     modifier = Modifier
                                         .fillMaxWidth()
@@ -285,7 +286,7 @@ fun OnboardingDialog(
 
                         // Complete button
                         TinyButton(
-                            text = stringResource(R.string.ui_begin_our_journey),
+                            text = stringResource(Res.string.ui_begin_our_journey),
                             onClick = {
                                 val finalBoy = boyName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_A }.take(MAX_NAME_LENGTH)
                                 val finalGirl = girlName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_B }.take(MAX_NAME_LENGTH)
@@ -345,12 +346,12 @@ fun OnboardingDialog(
                         showDatePicker = false
                     }
                 ) {
-                    Text(stringResource(R.string.ui_confirm), style = TinyType.Label.copy(color = TinyColors.Rose))
+                    Text(stringResource(Res.string.ui_confirm), style = TinyType.Label.copy(color = TinyColors.Rose))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text(stringResource(R.string.ui_cancel), style = TinyType.Label.copy(color = TinyColors.InkMuted))
+                    Text(stringResource(Res.string.ui_cancel), style = TinyType.Label.copy(color = TinyColors.InkMuted))
                 }
             }
         ) {
@@ -367,14 +368,14 @@ fun OnboardingDialog(
 fun NamePromptDialog(onSetNames: () -> Unit, onKeep: () -> Unit) {
     TinyDialog(onDismissRequest = onKeep) {
         TinyDialogHeader(
-            title = stringResource(R.string.name_prompt_title),
+            title = stringResource(Res.string.name_prompt_title),
             icon = com.example.ui.theme.PixelIcons.Favorite
         )
-        Text(stringResource(R.string.name_prompt_body), style = com.example.ui.theme.TinyType.Body)
+        Text(stringResource(Res.string.name_prompt_body), style = com.example.ui.theme.TinyType.Body)
         Row(horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.TinySpace.sm)) {
             // Equal halves, so large fonts wrap the labels instead of squeezing one button.
-            TinyButton(text = stringResource(R.string.name_prompt_keep), onClick = onKeep, modifier = Modifier.weight(1f), style = TinyButtonStyle.Outline)
-            TinyButton(text = stringResource(R.string.name_prompt_set), onClick = onSetNames, modifier = Modifier.weight(1f))
+            TinyButton(text = stringResource(Res.string.name_prompt_keep), onClick = onKeep, modifier = Modifier.weight(1f), style = TinyButtonStyle.Outline)
+            TinyButton(text = stringResource(Res.string.name_prompt_set), onClick = onSetNames, modifier = Modifier.weight(1f))
         }
     }
 }

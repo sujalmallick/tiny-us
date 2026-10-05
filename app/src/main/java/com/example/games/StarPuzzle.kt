@@ -1,7 +1,8 @@
 package com.example.games
 
-import androidx.annotation.StringRes
 import com.example.R
+import com.example.resources.*
+import org.jetbrains.compose.resources.StringResource
 
 /**
  * A constellation to connect (plan 07, C2). [stars] are positions as shares of the stage (x across,
@@ -9,8 +10,8 @@ import com.example.R
  */
 class Constellation(
     val id: String,
-    @StringRes val name: Int,
-    @StringRes val story: Int,
+    val name: StringResource,
+    val story: StringResource,
     val stars: List<Pair<Float, Float>>,
     val closed: Boolean
 )
@@ -18,18 +19,18 @@ class Constellation(
 object Constellations {
     val ALL = listOf(
         // The three the night sky always had (the bright stars are part of the star field).
-        Constellation("constellation_1", R.string.star_two_hearts, R.string.star_two_hearts_story,
+        Constellation("constellation_1", Res.string.star_two_hearts, Res.string.star_two_hearts_story,
             listOf(0.14f to 0.11f, 0.17f to 0.08f, 0.20f to 0.16f, 0.23f to 0.22f, 0.11f to 0.18f), closed = true),
-        Constellation("constellation_2", R.string.star_teapot, R.string.star_teapot_story,
+        Constellation("constellation_2", Res.string.star_teapot, Res.string.star_teapot_story,
             listOf(0.36f to 0.09f, 0.49f to 0.12f, 0.47f to 0.19f, 0.40f to 0.20f, 0.34f to 0.17f), closed = true),
-        Constellation("constellation_3", R.string.star_trail, R.string.star_trail_story,
+        Constellation("constellation_3", Res.string.star_trail, Res.string.star_trail_story,
             listOf(0.62f to 0.10f, 0.68f to 0.08f, 0.73f to 0.12f, 0.82f to 0.11f, 0.89f to 0.14f), closed = false),
         // Three more, lower in the sky.
-        Constellation("constellation_4", R.string.star_whiskers, R.string.star_whiskers_story,
+        Constellation("constellation_4", Res.string.star_whiskers, Res.string.star_whiskers_story,
             listOf(0.10f to 0.30f, 0.14f to 0.26f, 0.18f to 0.30f, 0.17f to 0.34f, 0.11f to 0.34f), closed = true),
-        Constellation("constellation_5", R.string.star_scooter, R.string.star_scooter_story,
+        Constellation("constellation_5", Res.string.star_scooter, Res.string.star_scooter_story,
             listOf(0.40f to 0.31f, 0.46f to 0.27f, 0.52f to 0.27f, 0.56f to 0.32f, 0.45f to 0.34f), closed = false),
-        Constellation("constellation_6", R.string.star_kite, R.string.star_kite_story,
+        Constellation("constellation_6", Res.string.star_kite, Res.string.star_kite_story,
             listOf(0.74f to 0.24f, 0.80f to 0.29f, 0.74f to 0.35f, 0.68f to 0.29f), closed = true)
     )
 

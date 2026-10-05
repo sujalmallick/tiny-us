@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -164,6 +163,8 @@ import androidx.compose.ui.text.font.FontStyle
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun TbSecretDialog(
@@ -177,9 +178,9 @@ fun SecretKeepsakeDialog(
 ) {
     val profile = com.example.data.ProfileManager.getProfile()
     val title = prefs?.secretCode?.ifBlank { null } ?: profile.secretCodeTitle.ifBlank { profile.boyName }
-    val subtitle = profile.secretCodeSubtitle.ifBlank { stringResource(R.string.ui_keepsake_subtitle_default) }
+    val subtitle = profile.secretCodeSubtitle.ifBlank { stringResource(Res.string.ui_keepsake_subtitle_default) }
     val body = prefs?.secretCodeBody?.ifBlank { null } ?: profile.secretCodeBody.ifBlank {
-        stringResource(R.string.ui_keepsake_body_default)
+        stringResource(Res.string.ui_keepsake_body_default)
     }
 
     TinyDialog(
@@ -231,7 +232,7 @@ fun SecretKeepsakeDialog(
         Spacer(modifier = Modifier.height(TinySpace.xxl))
 
         TinyButton(
-            text = stringResource(R.string.ui_close),
+            text = stringResource(Res.string.ui_close),
             onClick = onDismiss,
             style = TinyButtonStyle.Secondary
         )

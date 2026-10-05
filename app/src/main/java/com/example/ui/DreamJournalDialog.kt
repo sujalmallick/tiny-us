@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -167,6 +166,8 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 // -----------------------------------------------------------------------------
 // Shared Dream Journal - keyword engine + dialog
@@ -243,7 +244,7 @@ fun DreamJournalDialog(
     var dreamText by remember { mutableStateOf("") }
     var dreamsList by remember { mutableStateOf(prefs.getDreamEntries()) }
     var errorText by remember { mutableStateOf("") }
-    val emptyDreamError = stringResource(R.string.ui_dream_empty_error)
+    val emptyDreamError = stringResource(Res.string.ui_dream_empty_error)
 
     TinyDialog(
         onDismissRequest = onDismiss,
@@ -251,8 +252,8 @@ fun DreamJournalDialog(
         widthFraction = 0.94f
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_shared_dream_journal),
-            subtitle = stringResource(R.string.ui_type_a_dream_and_watch_it_come_alive),
+            title = stringResource(Res.string.ui_shared_dream_journal),
+            subtitle = stringResource(Res.string.ui_type_a_dream_and_watch_it_come_alive),
             icon = PixelIcons.Bedtime,
             accent = TinyColors.Plum,
             accentSoft = TinyColors.PlumSoft,
@@ -273,8 +274,8 @@ fun DreamJournalDialog(
                     dreamText = it
                     errorText = ""
                 },
-                label = { Text(stringResource(R.string.ui_describe_your_dream)) },
-                placeholder = { Text(stringResource(R.string.ui_e_g_we_walked_under_cherry_blossoms_in_j), style = TinyType.Caption) },
+                label = { Text(stringResource(Res.string.ui_describe_your_dream)) },
+                placeholder = { Text(stringResource(Res.string.ui_e_g_we_walked_under_cherry_blossoms_in_j), style = TinyType.Caption) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = false,
                 minLines = 2,
@@ -289,7 +290,7 @@ fun DreamJournalDialog(
 
             // Visualize button
             TinyButton(
-                text = stringResource(R.string.ui_visualize_dream),
+                text = stringResource(Res.string.ui_visualize_dream),
                 onClick = {
                     val trimmed = dreamText.trim()
                     if (trimmed.isEmpty()) {
@@ -317,7 +318,7 @@ fun DreamJournalDialog(
 
             // Dream history
             if (dreamsList.isNotEmpty()) {
-                TinySectionHeader(title = stringResource(R.string.ui_past_dreams))
+                TinySectionHeader(title = stringResource(Res.string.ui_past_dreams))
 
                 Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     dreamsList.take(10).forEach { entry ->
@@ -337,17 +338,17 @@ fun DreamJournalDialog(
                                     Spacer(modifier = Modifier.height(6.dp))
                                     Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
                                         val themeLabel = when (entry.dreamTheme) {
-                                            "JAPAN" -> stringResource(R.string.ui_dream_theme_japan)
-                                            "NORWAY" -> stringResource(R.string.ui_dream_theme_aurora)
-                                            "OCEAN" -> stringResource(R.string.ui_dream_theme_ocean)
-                                            "FLYING" -> stringResource(R.string.ui_dream_theme_flying)
-                                            "STARS" -> stringResource(R.string.ui_dream_theme_stars)
-                                            "FOREST" -> stringResource(R.string.ui_dream_theme_forest)
-                                            "HOME" -> stringResource(R.string.ui_dream_theme_cozy)
-                                            "RAIN" -> stringResource(R.string.ui_dream_theme_rain)
-                                            "CITY" -> stringResource(R.string.ui_dream_theme_city)
-                                            "SWEET" -> stringResource(R.string.ui_dream_theme_sweet)
-                                            else -> stringResource(R.string.ui_dream_theme_dream)
+                                            "JAPAN" -> stringResource(Res.string.ui_dream_theme_japan)
+                                            "NORWAY" -> stringResource(Res.string.ui_dream_theme_aurora)
+                                            "OCEAN" -> stringResource(Res.string.ui_dream_theme_ocean)
+                                            "FLYING" -> stringResource(Res.string.ui_dream_theme_flying)
+                                            "STARS" -> stringResource(Res.string.ui_dream_theme_stars)
+                                            "FOREST" -> stringResource(Res.string.ui_dream_theme_forest)
+                                            "HOME" -> stringResource(Res.string.ui_dream_theme_cozy)
+                                            "RAIN" -> stringResource(Res.string.ui_dream_theme_rain)
+                                            "CITY" -> stringResource(Res.string.ui_dream_theme_city)
+                                            "SWEET" -> stringResource(Res.string.ui_dream_theme_sweet)
+                                            else -> stringResource(Res.string.ui_dream_theme_dream)
                                         }
                                         TinyTag(
                                             text = themeLabel,
@@ -366,7 +367,7 @@ fun DreamJournalDialog(
                                     ) {
                                         Icon(
                                             PixelIcons.AutoAwesome,
-                                            contentDescription = stringResource(R.string.ui_relive_dream),
+                                            contentDescription = stringResource(Res.string.ui_relive_dream),
                                             tint = TinyColors.Plum,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -379,7 +380,7 @@ fun DreamJournalDialog(
                                     ) {
                                         Icon(
                                             PixelIcons.Delete,
-                                            contentDescription = stringResource(R.string.ui_delete_dream),
+                                            contentDescription = stringResource(Res.string.ui_delete_dream),
                                             tint = TinyColors.InkMuted,
                                             modifier = Modifier.size(20.dp)
                                         )
@@ -393,7 +394,7 @@ fun DreamJournalDialog(
 
             // Close button
             TinyButton(
-                text = stringResource(R.string.ui_close),
+                text = stringResource(Res.string.ui_close),
                 onClick = onDismiss,
                 modifier = Modifier.align(Alignment.CenterHorizontally),
                 style = TinyButtonStyle.Ghost

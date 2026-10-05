@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -62,6 +61,8 @@ import kotlinx.coroutines.delay
 import kotlin.random.Random
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun SplashScreen(
@@ -114,7 +115,7 @@ fun SplashScreen(
             animation = tween(durationMillis = 650, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = stringResource(R.string.ui_heartscale)
+        label = stringResource(Res.string.ui_heartscale)
     )
 
     // Gentle vertical bob for characters
@@ -125,7 +126,7 @@ fun SplashScreen(
             animation = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = stringResource(R.string.ui_charbob)
+        label = stringResource(Res.string.ui_charbob)
     )
 
     // Sound chime and auto-advance timer
@@ -240,7 +241,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(18.dp))
 
             Text(
-                text = stringResource(R.string.ui_tiny_us),
+                text = stringResource(Res.string.ui_tiny_us),
                 fontSize = 34.sp,
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.SansSerif,
@@ -251,7 +252,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(6.dp))
 
             Text(
-                text = stringResource(R.string.ui_a_little_place_for_you_and_me),
+                text = stringResource(Res.string.ui_a_little_place_for_you_and_me),
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Serif,
@@ -261,7 +262,7 @@ fun SplashScreen(
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = stringResource(R.string.ui_splash_for_you, prefs.girlfriendName),
+                text = stringResource(Res.string.ui_splash_for_you, prefs.girlfriendName),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = TinyColors.Rose
@@ -276,14 +277,14 @@ fun SplashScreen(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = stringResource(R.string.ui_entering_our_cozy_world),
+                text = stringResource(Res.string.ui_entering_our_cozy_world),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = Color.White.copy(alpha = 0.95f)
             )
             Spacer(modifier = Modifier.height(6.dp))
             Text(
-                text = stringResource(R.string.ui_tap_anywhere_to_skip),
+                text = stringResource(Res.string.ui_tap_anywhere_to_skip),
                 fontSize = 11.sp,
                 color = Color.White.copy(alpha = 0.65f)
             )

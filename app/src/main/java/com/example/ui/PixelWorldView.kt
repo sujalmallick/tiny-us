@@ -103,6 +103,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import com.example.resources.*
 
 internal enum class TapTargetKind {
     BOY,
@@ -174,8 +175,8 @@ fun PixelWorldView(
     val isMorning = timePhase.isMorning
 
     // The world is drawn, not laid out, so screen readers get a description of it (plan 06, I4).
-    val worldDescription = androidx.compose.ui.res.stringResource(
-        R.string.ui_world_description, engine.boy.name, engine.girl.name, engine.currentScene.title
+    val worldDescription = org.jetbrains.compose.resources.stringResource(
+        Res.string.ui_world_description, engine.boy.name, engine.girl.name, engine.currentScene.title
     )
 
     Box(
@@ -1156,7 +1157,7 @@ fun PixelWorldView(
                             val w = camera.worldW
                             val h = camera.worldH
                             engine.particles.spawnHeart(w * engine.catWorldX, h * engine.catWorldY - 20f, Color(0xFFFF8FA3))
-                            engine.showMessage(GameText.get(R.string.scene_mochi_settled_cozily_right_here), duration = 2.0f)
+                            engine.showMessage(GameText.get(Res.string.scene_mochi_settled_cozily_right_here), duration = 2.0f)
                             isMochiBeingDragged = false
                         }
                     },
