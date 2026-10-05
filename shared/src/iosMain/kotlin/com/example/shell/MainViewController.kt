@@ -7,13 +7,21 @@ import platform.UIKit.UIViewController
 
 /** Entry point for SwiftUI: `MainViewControllerKt.SharedComposeViewController()` hosts shared Compose UI. */
 fun SharedComposeViewController(): UIViewController {
-    // Shared text for the engine and other non-Compose code, loaded once (Android does this at app start).
-    if (!GameText.isLoaded) runBlocking { GameText.load() }
+    loadSharedText()
     return ComposeUIViewController { SharedComposeProbe() }
 }
 
 /** The shared pixel world for SwiftUI: `MainViewControllerKt.SharedWorldViewController()`. */
 fun SharedWorldViewController(): UIViewController {
-    if (!GameText.isLoaded) runBlocking { GameText.load() }
-    return ComposeUIViewController { SharedWorldScreen() }
+    LaunchDiagnostics.install()
+    loadSharedText()
+    LaunchDiagnostics.stage("starting the world")
+    return ComposeUIViewController { SharedWorldScreen(onFirstFrame = LaunchDiagnostics::markRunning) }
+}
+
+/** Shared text for the engine and other non-Compose code, loaded once (Android does this at app start). */
+private fun loadSharedText() {
+    if (GameText.isLoaded) return
+    LaunchDiagnostics.stage("loading text")
+    runBlocking { GameText.load() }
 }

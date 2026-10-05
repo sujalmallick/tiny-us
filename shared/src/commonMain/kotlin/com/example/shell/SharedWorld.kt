@@ -7,6 +7,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.Modifier
 import com.example.engine.QuietWorldAudio
 import com.example.engine.WorldAudio
@@ -34,7 +35,11 @@ object SharedWorldBridge {
 
 /** The living pixel world, exactly as Android draws it: scenes, the couple, Mochi, weather, taps. */
 @Composable
-fun SharedWorldScreen(audio: WorldAudio = remember { QuietWorldAudio() }, modifier: Modifier = Modifier.fillMaxSize()) {
+fun SharedWorldScreen(
+    audio: WorldAudio = remember { QuietWorldAudio() },
+    modifier: Modifier = Modifier.fillMaxSize(),
+    onFirstFrame: () -> Unit = {}
+) {
     val engine = remember {
         SceneEngine(audio = audio, onOpenLoveNotes = {}, onOpenMemories = {}).apply {
             val (first, second) = SharedWorldBridge.names
@@ -48,6 +53,10 @@ fun SharedWorldScreen(audio: WorldAudio = remember { QuietWorldAudio() }, modifi
     val requested = SharedWorldBridge.requestedScene
     LaunchedEffect(requested) {
         if (requested != null && requested != engine.currentScene) engine.loadScene(requested)
+    }
+    LaunchedEffect(Unit) {
+        withFrameNanos { }
+        onFirstFrame()
     }
     PixelWorldView(engine = engine, atmosphereMode = "AUTO", modifier = modifier)
 }
