@@ -372,8 +372,9 @@ fun NamePromptDialog(onSetNames: () -> Unit, onKeep: () -> Unit) {
         )
         Text(stringResource(R.string.name_prompt_body), style = com.example.ui.theme.TinyType.Body)
         Row(horizontalArrangement = Arrangement.spacedBy(com.example.ui.theme.TinySpace.sm)) {
-            TinyButton(text = stringResource(R.string.name_prompt_keep), onClick = onKeep, style = TinyButtonStyle.Outline)
-            TinyButton(text = stringResource(R.string.name_prompt_set), onClick = onSetNames)
+            // Equal halves, so large fonts wrap the labels instead of squeezing one button.
+            TinyButton(text = stringResource(R.string.name_prompt_keep), onClick = onKeep, modifier = Modifier.weight(1f), style = TinyButtonStyle.Outline)
+            TinyButton(text = stringResource(R.string.name_prompt_set), onClick = onSetNames, modifier = Modifier.weight(1f))
         }
     }
 }

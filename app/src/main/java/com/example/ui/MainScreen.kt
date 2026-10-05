@@ -430,6 +430,13 @@ fun MainScreen(
         }
     }
 
+    // Keep the home-screen widget on the scene and weather the couple is in (plan 06, H2).
+    LaunchedEffect(engine.currentScene, engine.weather) {
+        if (previewEngine == null && com.example.widget.WidgetState.save(context, engine.currentScene, engine.weather)) {
+            com.example.widget.TinyUsWidgetProvider.updateAllWidgets(context)
+        }
+    }
+
     // Subtle interaction hint fade (not on store screenshots, which show the app mid-use)
     var showHint by remember { mutableStateOf(previewEngine == null) }
     LaunchedEffect(Unit) {
@@ -508,6 +515,8 @@ fun MainScreen(
             // (no "Tiny Us", no separator dot), so the names never get cut off, even on small phones or
             // in longer languages.
             val crowded = engine.currentScene.environment == EnvironmentType.LIVING_ROOM || engine.currentScene.environment == EnvironmentType.COZY_LOFT
+            // Large phone fonts leave no room for both either (plan 06, I2).
+            val showTitle = !crowded && LocalDensity.current.fontScale <= 1.15f
 
             Box(
                 modifier = pillModifier
@@ -532,13 +541,14 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Favorite,
-                            contentDescription = null,
+                            // Without the title the heart is all there is to tap here, so it carries the name.
+                            contentDescription = if (!showTitle) stringResource(R.string.ui_tiny_us) else null,
                             tint = activeHeartTint,
                             modifier = Modifier.size(heartSize),
                             clearFactor = clearFactor,
                             isDark = isDark
                         )
-                        if (!crowded) {
+                        if (showTitle) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
                             text = stringResource(R.string.ui_tiny_us),
@@ -562,7 +572,7 @@ fun MainScreen(
                         }
                     }
 
-                    if (crowded) {
+                    if (!showTitle) {
                         Spacer(modifier = Modifier.width(4.dp))
                     } else {
                         // Small drawn separator dot (was a bullet glyph sized by dotFontSize)
@@ -902,7 +912,8 @@ fun MainScreen(
         ) {
             Surface(
                 shape = PixelCornerShape(16.dp),
-                color = TinyColors.Scrim.copy(alpha = 0.6f),
+                // 70%: white text keeps 4.5:1 contrast even over a bright sky (plan 06, I3).
+                color = TinyColors.Scrim.copy(alpha = 0.7f),
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(

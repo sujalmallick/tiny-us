@@ -585,12 +585,19 @@ private fun calendarTypeIcon(type: SpecialMemoryType): ImageVector = when (type)
     else -> TinyIcons.Heart
 }
 
-/** Tiny day-cell marker showing the memory type. */
+/** Tiny day-cell marker showing the memory type, named like the legend below the calendar. */
 @Composable
 internal fun CalendarPixelMarker(type: SpecialMemoryType) {
     Icon(
         imageVector = calendarTypeIcon(type),
-        contentDescription = null,
+        contentDescription = stringResource(
+            when (type) {
+                SpecialMemoryType.BIRTHDAY -> R.string.ui_birthdays
+                SpecialMemoryType.FUTURE_MEETING -> R.string.ui_next_meet
+                SpecialMemoryType.PRIVATE -> R.string.ui_special
+                else -> R.string.ui_moments
+            }
+        ),
         tint = TinyColors.Rose,
         modifier = Modifier.size(11.dp)
     )

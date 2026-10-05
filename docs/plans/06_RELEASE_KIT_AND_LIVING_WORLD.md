@@ -84,17 +84,17 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 ## H. Home-screen widget upgrade
 
 Already there: text info, tap to open the app, 30-minute refresh, `updateAllWidgets`.
-- [ ] H1. A small pixel picture of the couple's current scene, drawn offscreen with the low-res renderer and set as the widget image.
-- [ ] H2. The picture follows the time of day and the weather; call `updateAllWidgets` when the scene changes.
-- [ ] H3. Check the small and large widget sizes; the text uses the pixel font where RemoteViews allows.
-- [ ] H4. Renders of the widget at each size, and a test that the picture is made without errors.
+- [x] H1. A small pixel picture of the couple's current scene, drawn offscreen with the low-res renderer and set as the widget image (`WidgetSceneRenderer`: whole-number zoom near the widget's width, cropped around the couple; drawn on a background thread with `goAsync`).
+- [x] H2. The picture follows the time of day and the weather; the app saves its scene and weather (`WidgetState`) and calls `updateAllWidgets` when they change. *(This also fixed the widget always saying "Living Room • Sunny".)*
+- [x] H3. Small, default and large sizes checked; the text sits on a strip over the sky so the couple stays in view; resizing redraws the picture. The widget picker shows a rendered preview. *(Text stays in the system font: RemoteViews can't load app fonts on older Android.)*
+- [x] H4. `WidgetRenderTest`: the picture's size and no gaps, and the whole widget laid out at three sizes (`WIDGET_PREVIEW_DIR` saves them).
 
 ## I. Accessibility
 
-- [ ] I1. Review the 37 `contentDescription = null` across 12 UI files: label the icon buttons, leave the purely decorative ones.
-- [ ] I2. Large font sizes (1.3x and 2x): render the main screens and dialogs and fix any clipping.
-- [ ] I3. Re-check the 48dp touch targets and colour contrast after the pixel UI changes.
-- [ ] I4. *(Optional)* Labels for the main things you can tap in a scene, so screen-reader users can find them.
+- [x] I1. Reviewed the 37 `contentDescription = null`: almost all sit beside a text label and rightly stay silent. Labelled: the title-pill heart when it's the pill's only tappable content, and the calendar's day markers (named like the legend). Pickers and toggles (chips, moods, signals, earphones, accessories, done) now announce "selected".
+- [x] I2. Large font sizes (1.3x and 2x): `LargeFontPreviewTest` renders the main screen and the dialog building blocks (`A11Y_PREVIEW_DIR`). Fixed: the title pill drops "Tiny Us" when the font is enlarged so the names fit; the name prompt's two buttons share the row so their labels wrap instead of squeezing.
+- [x] I3. `AccessibilityTest`: every tappable thing on the main screen has a label and a 48 dp target (meadow and loft). `ContrastTest`: the palette's text pairs meet WCAG AA; it caught the hint toast at 4.2:1 over a bright sky, now 70% scrim.
+- [x] I4. The scene canvas has a description (who, where, and that the couple, things and sky can be tapped). *(Individual objects in the drawn world aren't separate screen-reader targets.)*
 
 ---
 

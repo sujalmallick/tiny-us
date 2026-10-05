@@ -489,6 +489,7 @@ fun WardrobeDialog(
                     val isAccWearing = (currentAccessory == acc.id)
                     // TinyChip styling, with the pixel accessory preview (content) in a small Card-coloured disc
                     Surface(
+                        selected = isAccWearing,
                         onClick = {
                             if (selectedTab == 0) {
                                 selectedGirlAccessory = acc.id
