@@ -10,7 +10,7 @@ from pathlib import Path
 
 WORKSPACE = os.environ.get("GITHUB_WORKSPACE", os.getcwd()).rstrip("/") + "/"
 MAX_LOCATED = 9          # GitHub shows at most 10 error annotations per step
-MAX_SUMMARY_LINES = 80
+MAX_SUMMARY_LINES = 120
 
 PATTERNS = [
     # Swift / clang / Xcode: /path/File.swift:12:5: error: message
@@ -18,7 +18,11 @@ PATTERNS = [
     # Kotlin: e: file:///path/File.kt:12:5 message
     re.compile(r"^e: file://(?P<file>/[^ \n]+?):(?P<line>\d+):(?P<col>\d+) (?P<msg>.+)$"),
 ]
-GENERIC = re.compile(r"(^error: .+|^ld: .+|^clang: error: .+|: error: .+|^e: .+|FAILED$|^\* What went wrong:.*|^> .+|BUILD FAILED.*|\*\* (BUILD|ARCHIVE) FAILED \*\*)")
+GENERIC = re.compile(
+    r"(^error: .+|^ld: .+|^clang: error: .+|: error: .+|^e: .+|FAILED$|^\* What went wrong:.*|BUILD FAILED.*"
+    r"|\*\* (BUILD|ARCHIVE) FAILED \*\*|Exception|Error\b|Crash|SIGSEGV|SIGABRT|Uncaught|terminat|Assertion|expected:|^at |^\s*at "
+    r"|^> (?!Task |Configure ).+)"
+)
 
 
 def escape(text: str) -> str:
