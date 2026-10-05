@@ -511,6 +511,7 @@
     <string name="ui_day_number">Day %1$d</string>
     <string name="widget_mood">Mood: %1$s</string>
     <string name="widget_status_default">Quiet peaceful moments together.</string>
+    <string name="widget_scene_description">%1$s and %2$s: %3$s</string>
     <plurals name="ui_pin_digits_entered">
         <item quantity="one">%d digit entered</item>
         <item quantity="other">%d digits entered</item>

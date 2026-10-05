@@ -84,10 +84,10 @@ The heart button's Tiny Moment polaroids are for players and need a running app.
 ## H. Home-screen widget upgrade
 
 Already there: text info, tap to open the app, 30-minute refresh, `updateAllWidgets`.
-- [ ] H1. A small pixel picture of the couple's current scene, drawn offscreen with the low-res renderer and set as the widget image.
-- [ ] H2. The picture follows the time of day and the weather; call `updateAllWidgets` when the scene changes.
-- [ ] H3. Check the small and large widget sizes; the text uses the pixel font where RemoteViews allows.
-- [ ] H4. Renders of the widget at each size, and a test that the picture is made without errors.
+- [x] H1. A small pixel picture of the couple's current scene, drawn offscreen with the low-res renderer and set as the widget image (`WidgetSceneRenderer`: whole-number zoom near the widget's width, cropped around the couple; drawn on a background thread with `goAsync`).
+- [x] H2. The picture follows the time of day and the weather; the app saves its scene and weather (`WidgetState`) and calls `updateAllWidgets` when they change. *(This also fixed the widget always saying "Living Room • Sunny".)*
+- [x] H3. Small, default and large sizes checked; the text sits on a strip over the sky so the couple stays in view; resizing redraws the picture. The widget picker shows a rendered preview. *(Text stays in the system font: RemoteViews can't load app fonts on older Android.)*
+- [x] H4. `WidgetRenderTest`: the picture's size and no gaps, and the whole widget laid out at three sizes (`WIDGET_PREVIEW_DIR` saves them).
 
 ## I. Accessibility
 

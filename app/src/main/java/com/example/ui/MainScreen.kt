@@ -430,6 +430,13 @@ fun MainScreen(
         }
     }
 
+    // Keep the home-screen widget on the scene and weather the couple is in (plan 06, H2).
+    LaunchedEffect(engine.currentScene, engine.weather) {
+        if (previewEngine == null && com.example.widget.WidgetState.save(context, engine.currentScene, engine.weather)) {
+            com.example.widget.TinyUsWidgetProvider.updateAllWidgets(context)
+        }
+    }
+
     // Subtle interaction hint fade (not on store screenshots, which show the app mid-use)
     var showHint by remember { mutableStateOf(previewEngine == null) }
     LaunchedEffect(Unit) {
