@@ -10,3 +10,12 @@ struct SharedComposeView: UIViewControllerRepresentable {
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
 }
+
+/// The shared pixel world (SceneEngine + PixelWorldView from the Kotlin module), as on Android.
+struct SharedWorldView: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> UIViewController {
+        MainViewControllerKt.SharedWorldViewController()
+    }
+
+    func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+}

@@ -639,30 +639,11 @@ struct ContentView: View {
                 Color(red: 0.10, green: 0.105, blue: 0.16).ignoresSafeArea()
                 VStack(spacing: 0) {
                     topBar
-                    WorldCanvas(world: world, stage: stage, reducedMotion: reduceMotion)
+                    // The real pixel world, shared with Android (plan 08, S3): same scenes, couple and Mochi.
+                    SharedWorldView()
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                         .padding(.horizontal, 14)
-                        .overlay(alignment: .bottom) { worldCaption.padding(.bottom, 16) }
-                        .overlay(alignment:.bottomTrailing) {
-                            Button { stage.petMochi(world: world, now: TinyStage.now) } label: {
-                                Image(systemName:"pawprint.fill").font(.system(size:14,weight:.semibold)).foregroundStyle(Color(red:1,green:0.84,blue:0.61))
-                                    .frame(width:38,height:38).background(.black.opacity(0.35),in:Circle())
-                            }.buttonStyle(.plain).accessibilityLabel("Give Mochi a gentle head pat")
-                                .padding(.trailing,25).padding(.bottom,63)
-                        }
-                        .overlay(alignment:.topTrailing) {
-                            Button { world.capturePolaroid() } label: {
-                                Image(systemName:"camera.fill").font(.system(size:13,weight:.semibold)).foregroundStyle(Color(red:1,green:0.84,blue:0.61))
-                                    .frame(width:34,height:34).background(.black.opacity(0.35),in:Circle())
-                            }.buttonStyle(.plain).accessibilityLabel("Capture this moment as a Polaroid")
-                                .padding(.trailing,24).padding(.top,10)
-                        }
-                        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
-                            if abs(value.translation.width) > abs(value.translation.height) {
-                                changeScene(step: value.translation.width < 0 ? 1 : -1)
-                            } else if value.translation.height < 0 { showScenes = true }
-                        })
                     worldStrip
                     bottomBar(safeBottom: proxy.safeAreaInsets.bottom)
                 }
@@ -688,9 +669,11 @@ struct ContentView: View {
                     world.setWeather(choices.randomElement() ?? .sunny, at: date)
                 }
             }
-            .onAppear { updateAudio(); world.resumeWeatherDriftClock() }
+            .onAppear { updateAudio(); world.resumeWeatherDriftClock(); syncSharedWorld() }
+            .onChange(of: world.save.nameOne) { _ in syncSharedWorld() }
+            .onChange(of: world.save.nameTwo) { _ in syncSharedWorld() }
             .onChange(of: world.save.weather) { _ in updateAudio() }
-            .onChange(of: world.save.scene) { _ in updateAudio() }
+            .onChange(of: world.save.scene) { _ in updateAudio(); syncSharedWorld() }
             .onChange(of: world.save.soundOn) { _ in updateAudio() }
             .onChange(of: world.save.soundVolume) { _ in updateAudio() }
             .onChange(of: scenePhase) { phase in
@@ -784,6 +767,11 @@ struct ContentView: View {
         let new = (index + step + TinyScene.allCases.count) % TinyScene.allCases.count
         world.select(TinyScene.allCases[new])
         world.showToast(world.save.scene.title)
+    }
+    /// Tells the shared world who the couple are and which place the scene picker chose.
+    private func syncSharedWorld() {
+        SharedWorldBridge.shared.setNames(first: world.save.nameOne, second: world.save.nameTwo)
+        SharedWorldBridge.shared.showScene(sceneName: world.save.scene.sharedScene.name)
     }
     private func updateAudio() {
         audio.update(weather: world.save.weather, indoor: world.save.scene.isIndoor, soundEnabled: world.save.soundOn, volume: world.save.soundVolume)

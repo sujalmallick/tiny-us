@@ -11,3 +11,9 @@ fun SharedComposeViewController(): UIViewController {
     if (!GameText.isLoaded) runBlocking { GameText.load() }
     return ComposeUIViewController { SharedComposeProbe() }
 }
+
+/** The shared pixel world for SwiftUI: `MainViewControllerKt.SharedWorldViewController()`. */
+fun SharedWorldViewController(): UIViewController {
+    if (!GameText.isLoaded) runBlocking { GameText.load() }
+    return ComposeUIViewController { SharedWorldScreen() }
+}
