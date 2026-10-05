@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,7 +83,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     val jar = com.example.scene.KitchenLayout.treatJar(cw, ch, p)
     val x = jar.x
     val y = jar.y
@@ -105,7 +103,7 @@ internal fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Floa
     if (engine.catTreatDropTimer > 0f) {
         val t = (1f - engine.catTreatDropTimer / 0.48f).coerceIn(0f, 1f)
         val treatX = x + (cw * 0.48f - x) * t
-        val treatY = y + (ch * 0.72f - y) * t + sin(t * Math.PI.toFloat()) * 9f * p
+        val treatY = y + (ch * 0.72f - y) * t + sin(t * kotlin.math.PI.toFloat()) * 9f * p
         scope.drawCircle(Color(0xFFE6AA5C), 3.5f * p, Offset(treatX, treatY))
         scope.drawCircle(Color(0xFFFFD78C), 1.8f * p, Offset(treatX - 0.8f * p, treatY - 0.7f * p))
     } else if (engine.isCatTreatOnFloor) {
@@ -118,7 +116,7 @@ internal fun drawKitchenTreatJar(scope: DrawScope, cw: Float, ch: Float, p: Floa
     }
 }
 
-internal fun drawKitchenRoom(
+fun drawKitchenRoom(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -365,8 +363,8 @@ internal fun drawKitchenRoom(
     scope.drawCircle(Color(0xFF6B7F6E), clockR + 1.5f * p, Offset(clockX, clockY))
     scope.drawCircle(Color(0xFFFCF6BD), clockR, Offset(clockX, clockY))
     scope.drawCircle(Color(0xFF333333), 1.2f * p, Offset(clockX, clockY))
-    val minuteAngle = (timeSeconds * 0.1f) % (2f * Math.PI.toFloat())
-    val hourAngle = (timeSeconds * 0.015f + 1.2f) % (2f * Math.PI.toFloat())
+    val minuteAngle = (timeSeconds * 0.1f) % (2f * kotlin.math.PI.toFloat())
+    val hourAngle = (timeSeconds * 0.015f + 1.2f) % (2f * kotlin.math.PI.toFloat())
     val mx = (clockX + sin(minuteAngle.toDouble()) * (clockR * 0.65f)).toFloat()
     val my = (clockY - cos(minuteAngle.toDouble()) * (clockR * 0.65f)).toFloat()
     scope.drawLine(
@@ -654,7 +652,7 @@ internal fun drawKitchenRoom(
     scope.drawRect(Color(0xFF74C69D), Offset(plantX - 3 * p, plantY - 20 * p), Size(7 * p, 3.5f * p))
 }
 
-internal fun drawLivingRoom(
+fun drawLivingRoom(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -881,7 +879,7 @@ internal fun drawLivingRoom(
 }
 
 
-internal fun drawCottageInteriorDoor(
+fun drawCottageInteriorDoor(
     scope: DrawScope,
     doorX: Float,
     floorY: Float,

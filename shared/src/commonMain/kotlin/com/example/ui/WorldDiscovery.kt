@@ -26,7 +26,7 @@ private val Twinkle = Color(0xFFFFF3B0)
  * The small thing currently waiting to be found, drawn as a tiny pixel sprite on the ground.
  * It fades in, and a soft twinkle now and then catches the eye.
  */
-internal fun drawDiscovery(scope: DrawScope, cw: Float, ch: Float, p: Float, d: Discovery, time: Float) {
+fun drawDiscovery(scope: DrawScope, cw: Float, ch: Float, p: Float, d: Discovery, time: Float) {
     if (!d.active) return
     val alpha = (d.age / 1.2f).coerceIn(0f, 1f)
     if (alpha <= 0f) return

@@ -9,7 +9,7 @@ import com.example.games.StarPuzzle
 import kotlin.math.sin
 
 /** Stargazing (plan 07, C2): the constellation being connected, or one glowing when found. */
-internal fun drawStarPuzzle(scope: DrawScope, puzzle: StarPuzzle, cw: Float, ch: Float, p: Float, time: Float, drift: Float) {
+fun drawStarPuzzle(scope: DrawScope, puzzle: StarPuzzle, cw: Float, ch: Float, p: Float, time: Float, drift: Float) {
     puzzle.current?.let { c ->
         // Lines between the stars connected so far.
         for (i in 1 until puzzle.connected) line(scope, puzzle, c, i - 1, i, cw, ch, p, drift, Color(0xFFFFE8A3), 1f)

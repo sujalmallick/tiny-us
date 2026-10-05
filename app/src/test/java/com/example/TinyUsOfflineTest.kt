@@ -36,6 +36,7 @@ import org.robolectric.annotation.Config
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.datetime.toKotlinLocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -1461,21 +1462,21 @@ class TinyUsOfflineTest {
             com.example.data.RelationshipTimeManager.relationshipStartDate = start
 
             // Year 0 (< 1 year elapsed): Stage 0
-            assertEquals("Day 1 must be Stage 0", 0, engine.computeTreeMossGrowthStage(start))
-            assertEquals("6 months in must be Stage 0", 0, engine.computeTreeMossGrowthStage(start.plusMonths(6)))
+            assertEquals("Day 1 must be Stage 0", 0, engine.computeTreeMossGrowthStage((start).toKotlinLocalDate()))
+            assertEquals("6 months in must be Stage 0", 0, engine.computeTreeMossGrowthStage((start.plusMonths(6)).toKotlinLocalDate()))
 
             // Year 1 (exactly 1 year elapsed): Stage 1
-            assertEquals("1 year must be Stage 1", 1, engine.computeTreeMossGrowthStage(start.plusYears(1)))
+            assertEquals("1 year must be Stage 1", 1, engine.computeTreeMossGrowthStage((start.plusYears(1)).toKotlinLocalDate()))
 
             // Year 2: Stage 2
-            assertEquals("2 years must be Stage 2", 2, engine.computeTreeMossGrowthStage(start.plusYears(2)))
+            assertEquals("2 years must be Stage 2", 2, engine.computeTreeMossGrowthStage((start.plusYears(2)).toKotlinLocalDate()))
 
             // Year 3: Stage 3
-            assertEquals("3 years must be Stage 3", 3, engine.computeTreeMossGrowthStage(start.plusYears(3)))
+            assertEquals("3 years must be Stage 3", 3, engine.computeTreeMossGrowthStage((start.plusYears(3)).toKotlinLocalDate()))
 
             // Year 4+: Stage 4 (max cap)
-            assertEquals("4 years must be Stage 4", 4, engine.computeTreeMossGrowthStage(start.plusYears(4)))
-            assertEquals("10 years must cap at Stage 4", 4, engine.computeTreeMossGrowthStage(start.plusYears(10)))
+            assertEquals("4 years must be Stage 4", 4, engine.computeTreeMossGrowthStage((start.plusYears(4)).toKotlinLocalDate()))
+            assertEquals("10 years must cap at Stage 4", 4, engine.computeTreeMossGrowthStage((start.plusYears(10)).toKotlinLocalDate()))
 
             // Debug override check: simulate without waiting
             engine.treeMossDebugYearOverride = 2

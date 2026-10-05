@@ -1,6 +1,5 @@
 package com.example.games
 
-import com.example.R
 import com.example.resources.*
 import org.jetbrains.compose.resources.StringResource
 

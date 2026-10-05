@@ -21,7 +21,7 @@ private val BULBS = listOf(Color(0xFFE63946), Color(0xFF52B788), Color(0xFFFFC94
 private val HOLI_COLOURS = listOf(Color(0xFFFF4FA3), Color(0xFF3DDC84), Color(0xFFFFD23F), Color(0xFF3FA7FF), Color(0xFFA463F2))
 private val SPARKLE = listOf(Color(0xFFFFD700), Color(0xFFE5E4E2), Color(0xFFF28482), Color(0xFF7FB3E0))
 
-internal fun drawSpecialDayDecor(scope: DrawScope, day: SpecialDay, cw: Float, ch: Float, p: Float, time: Float, isNight: Boolean) {
+fun drawSpecialDayDecor(scope: DrawScope, day: SpecialDay, cw: Float, ch: Float, p: Float, time: Float, isNight: Boolean) {
     val top = 6f * p
     val sag = 7f * p
     fun ropeY(x: Float) = top + sag * sin(PI.toFloat() * (x / cw).coerceIn(0f, 1f))

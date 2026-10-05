@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -86,16 +84,16 @@ import kotlin.math.cos
 import kotlin.math.sin
 
 // Fixed landscape arrays
-internal val RIVER_PEB_POSITIONS = floatArrayOf(0.08f, 0.28f, 0.42f, 0.62f, 0.76f, 0.92f)
-internal val RIVER_STEP_STONES_X = floatArrayOf(0.15f, 0.34f, 0.52f, 0.72f, 0.88f)
-internal val RIVER_STEP_STONES_Y = floatArrayOf(0.74f, 0.82f, 0.76f, 0.84f, 0.78f)
-internal val RIVER_CLOV_POSITIONS = floatArrayOf(0.12f, 0.35f, 0.54f, 0.70f, 0.88f)
-internal val RIVER_REED_OFFSETS = floatArrayOf(-9f, -6f, 7f, 9f)
-internal val RIVER_STALKS_X = floatArrayOf(-6f, -3f, 0f, 3f, 6f)
-internal val RIVER_STALKS_Y = floatArrayOf(0f, -2.5f, -4f, -1.5f, 1.5f)
-internal val RIVER_MUSH_OFFSETS = floatArrayOf(-8f, 0f, 8f)
+val RIVER_PEB_POSITIONS = floatArrayOf(0.08f, 0.28f, 0.42f, 0.62f, 0.76f, 0.92f)
+val RIVER_STEP_STONES_X = floatArrayOf(0.15f, 0.34f, 0.52f, 0.72f, 0.88f)
+val RIVER_STEP_STONES_Y = floatArrayOf(0.74f, 0.82f, 0.76f, 0.84f, 0.78f)
+val RIVER_CLOV_POSITIONS = floatArrayOf(0.12f, 0.35f, 0.54f, 0.70f, 0.88f)
+val RIVER_REED_OFFSETS = floatArrayOf(-9f, -6f, 7f, 9f)
+val RIVER_STALKS_X = floatArrayOf(-6f, -3f, 0f, 3f, 6f)
+val RIVER_STALKS_Y = floatArrayOf(0f, -2.5f, -4f, -1.5f, 1.5f)
+val RIVER_MUSH_OFFSETS = floatArrayOf(-8f, 0f, 8f)
 
-internal fun drawPathGround(
+fun drawPathGround(
     scope: DrawScope,
     cw: Float,
     ch: Float,

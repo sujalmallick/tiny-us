@@ -15,7 +15,7 @@ private val HeartRows = listOf(".X.X.", "XXXXX", "XXXXX", ".XXX.", "..X..")
  * Mochi's fondness (plan 07, D2): three little hearts over Mochi for a moment after a pet. Full
  * hearts are the levels reached; the next one fills from the bottom as fondness grows.
  */
-internal fun drawMochiMeter(scope: DrawScope, engine: SceneEngine, cw: Float, ch: Float, p: Float) {
+fun drawMochiMeter(scope: DrawScope, engine: SceneEngine, cw: Float, ch: Float, p: Float) {
     if (engine.mochiMeterTimer <= 0f) return
     val alpha = (engine.mochiMeterTimer / 0.6f).coerceIn(0f, 1f)
     val (mx, my) = if (engine.currentScene == SceneType.COZY_LOFT) {
@@ -49,7 +49,7 @@ internal fun drawMochiMeter(scope: DrawScope, engine: SceneEngine, cw: Float, ch
  * The keepsake shelf (plan 07, D3): a little wooden shelf on the kitchen wall under the clock,
  * holding the gifts the couple have given each other.
  */
-internal fun drawKeepsakeShelf(scope: DrawScope, shelf: List<String>, cw: Float, ch: Float, p: Float) {
+fun drawKeepsakeShelf(scope: DrawScope, shelf: List<String>, cw: Float, ch: Float, p: Float) {
     if (shelf.isEmpty()) return
     val clock = KitchenLayout.clockCenter(cw, ch, p)
     val y = clock.y + 16f * p
@@ -65,7 +65,7 @@ internal fun drawKeepsakeShelf(scope: DrawScope, shelf: List<String>, cw: Float,
 }
 
 /** A keepsake as a tiny pixel sprite, standing on [baseY] with its left edge at [x]. */
-internal fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Float) {
+fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Float) {
     fun px(cx: Int, cy: Int, w: Int, h: Int, c: Color) = scope.drawRect(c, Offset(x + cx * p, baseY - (cy + h) * p), Size(w * p, h * p))
     when (item.substringAfter(":")) {
         "WILDFLOWER" -> { px(2, 0, 1, 3, Color(0xFF3F7A4A)); px(1, 3, 3, 1, Color(0xFFE88AA8)); px(2, 4, 1, 1, Color(0xFFF6BD60)); px(1, 4, 1, 1, Color(0xFFE88AA8)); px(3, 4, 1, 1, Color(0xFFE88AA8)) }

@@ -12,7 +12,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  */
 
 /** The sunroom's larger floor: potted plants along the front and a woven basket. */
-internal fun drawSunroomFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
+fun drawSunroomFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
     if (floorH < 24f * p) return
     val terracotta = Color(0xFFC7764E)
     val terracottaDark = Color(0xFFA5603E)
@@ -61,7 +61,7 @@ internal fun drawSunroomFloorBelow(scope: DrawScope, cw: Float, stageH: Float, f
 }
 
 /** The cafe's ceiling above its brick wall: dark planks, rafters, and two hanging plants. */
-internal fun drawCafeCeilingAbove(scope: DrawScope, cw: Float, ceilingH: Float, p: Float) {
+fun drawCafeCeilingAbove(scope: DrawScope, cw: Float, ceilingH: Float, p: Float) {
     if (ceilingH < 10f * p) return
     val seam = Color(0xFF2E1F16)
     val rafter = Color(0xFF4A3426)
@@ -100,7 +100,7 @@ internal fun drawCafeCeilingAbove(scope: DrawScope, cw: Float, ceilingH: Float, 
 }
 
 /** The bedroom's taller wall: a heart garland, a framed photo, and a shelf with books and a plant. */
-internal fun drawBedroomWallAbove(scope: DrawScope, cw: Float, wallH: Float, p: Float) {
+fun drawBedroomWallAbove(scope: DrawScope, cw: Float, wallH: Float, p: Float) {
     if (wallH < 24f * p) return
     val wood = Color(0xFF8B5A2B)
     val woodDark = Color(0xFF6B4423)
@@ -164,7 +164,7 @@ internal fun drawBedroomWallAbove(scope: DrawScope, cw: Float, wallH: Float, p: 
  * The kitchen's checkerboard floor carried on below the stage: the same tiles, rows and colours as
  * the floor drawn in the room, so the pattern runs on without a seam.
  */
-internal fun drawKitchenFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
+fun drawKitchenFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
     val tile = com.example.scene.KitchenLayout.FLOOR_TILE * p
     val a = com.example.scene.KitchenLayout.FLOOR_TILE_A
     val b = com.example.scene.KitchenLayout.FLOOR_TILE_B
@@ -190,7 +190,7 @@ internal fun drawKitchenFloorBelow(scope: DrawScope, cw: Float, stageH: Float, f
  * above it the plank ceiling runs on with rafters parallel to the room's diagonal beam and a small
  * skylight between two of them. [stageH] is the stage's height (the room's `ch`).
  */
-internal fun drawLoftCeilingAbove(
+fun drawLoftCeilingAbove(
     scope: DrawScope,
     cw: Float,
     stageH: Float,

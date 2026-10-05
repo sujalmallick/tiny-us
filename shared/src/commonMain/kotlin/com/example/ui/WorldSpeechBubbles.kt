@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,10 +83,10 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal class BubblePos(var left: Float = 0f, var top: Float = 0f)
+class BubblePos(var left: Float = 0f, var top: Float = 0f)
 
 @Composable
-internal fun BoxScope.PixelSpeechBubblesOverlay(
+fun BoxScope.PixelSpeechBubblesOverlay(
     boyText: String?,
     girlText: String?,
     boyHeadX: Float,
@@ -273,7 +271,7 @@ internal fun BoxScope.PixelSpeechBubblesOverlay(
     }
 }
 
-internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPixelBubble(
+fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPixelBubble(
     isGirl: Boolean,
     charHeadX: Float,
     bubbleLeft: Float
@@ -304,7 +302,7 @@ internal fun androidx.compose.ui.graphics.drawscope.DrawScope.drawPixelBubble(
 }
 
 @Composable
-internal fun BubbleInnerRow(
+fun BubbleInnerRow(
     text: String,
     isGirl: Boolean
 ) {
@@ -342,7 +340,7 @@ internal fun BubbleInnerRow(
 }
 
 @Composable
-internal fun BoxScope.PixelMessageBox(
+fun BoxScope.PixelMessageBox(
     message: String,
     alpha: () -> Float,
     modifier: Modifier = Modifier

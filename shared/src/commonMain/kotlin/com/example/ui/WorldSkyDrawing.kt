@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -84,8 +82,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.datetime.toLocalDateTime
 
-internal data class DynamicNightStar(
+data class DynamicNightStar(
     val fx: Float,
     val fy: Float,
     val sizeP: Float,
@@ -96,7 +95,7 @@ internal data class DynamicNightStar(
     val hasCrossFlare: Boolean = false
 )
 
-internal fun generateDynamicNightStars(seed: Long = 1337L): Array<DynamicNightStar> {
+fun generateDynamicNightStars(seed: Long = 1337L): Array<DynamicNightStar> {
     val random = kotlin.random.Random(seed)
     val list = ArrayList<DynamicNightStar>(96)
 
@@ -168,9 +167,9 @@ internal fun generateDynamicNightStars(seed: Long = 1337L): Array<DynamicNightSt
     return list.toTypedArray()
 }
 
-internal var dynamicNightStars: Array<DynamicNightStar> = generateDynamicNightStars()
+var dynamicNightStars: Array<DynamicNightStar> = generateDynamicNightStars()
 
-fun reallocateNightStars(seed: Long = System.currentTimeMillis()) {
+fun reallocateNightStars(seed: Long = kotlin.time.Clock.System.now().toEpochMilliseconds()) {
     dynamicNightStars = generateDynamicNightStars(seed)
 }
 
@@ -179,33 +178,32 @@ fun reallocateNightStars(seed: Long = System.currentTimeMillis()) {
  * (set by drawWorldFrame around drawEnvironment; drawing is single-threaded). The rainbow uses it,
  * so the clouds, hills and trees stand in front of it.
  */
-internal var afterSkyBands: ((DrawScope) -> Unit)? = null
+var afterSkyBands: ((DrawScope) -> Unit)? = null
 
 /** Pins the moon's phase (0 new, 0.5 full) instead of tonight's; for previews and tests only. */
-@androidx.annotation.VisibleForTesting
-internal var moonPhaseOverride: Float?
+var moonPhaseOverride: Float?
     get() = com.example.engine.MoonPhase.override
     set(value) { com.example.engine.MoonPhase.override = value }
 
 /** Tonight's moon phase, 0 new to 0.5 full and back to 1 (shared with the loft, which lives in :shared). */
-internal fun currentMoonFraction(): Float = com.example.engine.MoonPhase.current()
+fun currentMoonFraction(): Float = com.example.engine.MoonPhase.current()
 
 /** Seconds for the night sky to turn once across the screen: the stars drift slowly west and wrap round. */
-internal const val SKY_TURN_SECONDS = 2700f
+const val SKY_TURN_SECONDS = 2700f
 
 /** How far the night sky has turned at scene time [time], as a share of the screen width. */
-internal fun skyDrift(time: Float): Float = (time / SKY_TURN_SECONDS) % 1f
+fun skyDrift(time: Float): Float = (time / SKY_TURN_SECONDS) % 1f
 
 /** A star's (or constellation's) share across the screen after the sky has turned by [drift]. */
-internal fun driftedX(fx: Float, drift: Float): Float {
+fun driftedX(fx: Float, drift: Float): Float {
     val x = fx - drift
     return if (x < 0f) x + 1f else x
 }
 
 /** The current hour of the day with minutes and seconds, from the real clock. */
 private fun clockHours(): Float {
-    val c = java.util.Calendar.getInstance()
-    return c.get(java.util.Calendar.HOUR_OF_DAY) + c.get(java.util.Calendar.MINUTE) / 60f + c.get(java.util.Calendar.SECOND) / 3600f
+    val c = kotlin.time.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+    return c.hour + c.minute / 60f + c.second / 3600f
 }
 
 /**
@@ -214,7 +212,7 @@ private fun clockHours(): Float {
  * a little every few minutes; when the time of day is set by hand and doesn't match the clock, a
  * fitting fixed spot is used instead.
  */
-internal fun celestialProgress(isNight: Boolean, isSunset: Boolean, isMorning: Boolean): Float {
+fun celestialProgress(isNight: Boolean, isSunset: Boolean, isMorning: Boolean): Float {
     val h = clockHours()
     val phase = com.example.engine.TimeOfDayPhase.fromHour(h.toInt())
     return if (isNight) {
@@ -254,7 +252,7 @@ private fun drawDaySun(
 ) {
     if (weather == com.example.scene.WeatherType.RAIN) return
     val prog = celestialProgress(false, isSunset, isMorning)
-    val arc = sin(prog * Math.PI.toFloat())
+    val arc = sin(prog * kotlin.math.PI.toFloat())
     val d = 12f
     val x = cw * (0.06f + 0.80f * prog)
     val y = ch * (0.46f - 0.38f * arc)
@@ -274,32 +272,32 @@ private fun drawDaySun(
 }
 
 // Precomputed Sky Bands and Splits for zero allocation per frame
-internal val SPLITS_4_BAND = listOf(0.35f, 0.65f, 0.85f)
-internal val SPLITS_5_BAND_PINK = listOf(0.25f, 0.50f, 0.72f, 0.88f)
-internal val SPLITS_5_BAND_AUTUMN = listOf(0.28f, 0.50f, 0.72f, 0.88f)
-internal val SPLITS_MORNING = listOf(0.45f, 0.75f)
+val SPLITS_4_BAND = listOf(0.35f, 0.65f, 0.85f)
+val SPLITS_5_BAND_PINK = listOf(0.25f, 0.50f, 0.72f, 0.88f)
+val SPLITS_5_BAND_AUTUMN = listOf(0.28f, 0.50f, 0.72f, 0.88f)
+val SPLITS_MORNING = listOf(0.45f, 0.75f)
 
-internal val BANDS_SUNSET_PINK = listOf(Color(0xFF881B4C), Color(0xFFC7366E), Color(0xFFF05D8E), Color(0xFFFF94B8), Color(0xFFFFD4E2))
-internal val BANDS_SUNSET_SAKURA = listOf(Color(0xFF38184C), Color(0xFF8B2662), Color(0xFFE05780), Color(0xFFFFB5C2))
-internal val BANDS_SUNSET_AUTUMN = listOf(Color(0xFF2B0E1E), Color(0xFF7A1C16), Color(0xFFC4451C), Color(0xFFE77F24), Color(0xFFF7BA3E))
-internal val BANDS_SUNSET_SNOW = listOf(Color(0xFF1C1A3A), Color(0xFF53416E), Color(0xFF9E6589), Color(0xFFDF9FB8))
-internal val BANDS_SUNSET_RAIN = listOf(Color(0xFF1E172B), Color(0xFF48334E), Color(0xFF7A4A58), Color(0xFFA66D60))
-internal val BANDS_SUNSET_SUMMER = listOf(Color(0xFF1F1035), Color(0xFF9E2A4B), Color(0xFFE3592B), Color(0xFFFFAA44), Color(0xFFFFD166))
+val BANDS_SUNSET_PINK = listOf(Color(0xFF881B4C), Color(0xFFC7366E), Color(0xFFF05D8E), Color(0xFFFF94B8), Color(0xFFFFD4E2))
+val BANDS_SUNSET_SAKURA = listOf(Color(0xFF38184C), Color(0xFF8B2662), Color(0xFFE05780), Color(0xFFFFB5C2))
+val BANDS_SUNSET_AUTUMN = listOf(Color(0xFF2B0E1E), Color(0xFF7A1C16), Color(0xFFC4451C), Color(0xFFE77F24), Color(0xFFF7BA3E))
+val BANDS_SUNSET_SNOW = listOf(Color(0xFF1C1A3A), Color(0xFF53416E), Color(0xFF9E6589), Color(0xFFDF9FB8))
+val BANDS_SUNSET_RAIN = listOf(Color(0xFF1E172B), Color(0xFF48334E), Color(0xFF7A4A58), Color(0xFFA66D60))
+val BANDS_SUNSET_SUMMER = listOf(Color(0xFF1F1035), Color(0xFF9E2A4B), Color(0xFFE3592B), Color(0xFFFFAA44), Color(0xFFFFD166))
 
-internal val BANDS_MORNING_SAKURA = listOf(Color(0xFF343B68), Color(0xFFFF9EAA), Color(0xFFFFE0E9))
-internal val BANDS_MORNING_AUTUMN = listOf(Color(0xFF2E334D), Color(0xFFE29578), Color(0xFFFFDDD2))
-internal val BANDS_MORNING_SNOW = listOf(Color(0xFF24324E), Color(0xFFA5B4D0), Color(0xFFE2EAFC))
-internal val BANDS_MORNING_RAIN = listOf(Color(0xFF202A3D), Color(0xFF64748B), Color(0xFF94A3B8))
-internal val BANDS_MORNING_SUMMER = listOf(Color(0xFF2C3E7A), Color(0xFFFF8C69), Color(0xFFFFD1A0))
+val BANDS_MORNING_SAKURA = listOf(Color(0xFF343B68), Color(0xFFFF9EAA), Color(0xFFFFE0E9))
+val BANDS_MORNING_AUTUMN = listOf(Color(0xFF2E334D), Color(0xFFE29578), Color(0xFFFFDDD2))
+val BANDS_MORNING_SNOW = listOf(Color(0xFF24324E), Color(0xFFA5B4D0), Color(0xFFE2EAFC))
+val BANDS_MORNING_RAIN = listOf(Color(0xFF202A3D), Color(0xFF64748B), Color(0xFF94A3B8))
+val BANDS_MORNING_SUMMER = listOf(Color(0xFF2C3E7A), Color(0xFFFF8C69), Color(0xFFFFD1A0))
 
-internal val BANDS_DAY_SAKURA = listOf(Color(0xFF6BA8D6), Color(0xFF98C5E8), Color(0xFFD2E6F5), Color(0xFFFFD6E7))
-internal val BANDS_DAY_AUTUMN = listOf(Color(0xFF4A85B8), Color(0xFF7CA6CD), Color(0xFFB5CDE1), Color(0xFFEAD5A8))
-internal val BANDS_DAY_SNOW = listOf(Color(0xFF5D99C6), Color(0xFF8EBCDE), Color(0xFFC8E0F2), Color(0xFFEBF4FA))
-internal val BANDS_DAY_RAIN = listOf(Color(0xFF334B68), Color(0xFF526E88), Color(0xFF7892A8), Color(0xFF9BB1C2))
-internal val BANDS_DAY_SUMMER = listOf(Color(0xFF3B9FE2), Color(0xFF68BCE8), Color(0xFFA5DCF4), Color(0xFFD4EFFC))
+val BANDS_DAY_SAKURA = listOf(Color(0xFF6BA8D6), Color(0xFF98C5E8), Color(0xFFD2E6F5), Color(0xFFFFD6E7))
+val BANDS_DAY_AUTUMN = listOf(Color(0xFF4A85B8), Color(0xFF7CA6CD), Color(0xFFB5CDE1), Color(0xFFEAD5A8))
+val BANDS_DAY_SNOW = listOf(Color(0xFF5D99C6), Color(0xFF8EBCDE), Color(0xFFC8E0F2), Color(0xFFEBF4FA))
+val BANDS_DAY_RAIN = listOf(Color(0xFF334B68), Color(0xFF526E88), Color(0xFF7892A8), Color(0xFF9BB1C2))
+val BANDS_DAY_SUMMER = listOf(Color(0xFF3B9FE2), Color(0xFF68BCE8), Color(0xFFA5DCF4), Color(0xFFD4EFFC))
 
 // Night Space Band Colors (5 fixed space bands)
-internal val NIGHT_SPACE_BASE_BANDS = arrayOf(
+val NIGHT_SPACE_BASE_BANDS = arrayOf(
     Color(0xFF04060E),
     Color(0xFF070B1E),
     Color(0xFF0C132C),
@@ -307,7 +305,7 @@ internal val NIGHT_SPACE_BASE_BANDS = arrayOf(
     Color(0xFF18244D)
 )
 
-internal fun drawConstellationOverlay(
+fun drawConstellationOverlay(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -321,7 +319,7 @@ internal fun drawConstellationOverlay(
     fun at(fx: Float, fy: Float) = androidx.compose.ui.geometry.Offset(cw * driftedX(fx, drift), ch * fy)
     val dur = 2.4f
     val t = ((dur - timer) / dur).coerceIn(0f, 1f)
-    val alpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
+    val alpha = sin(t * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
     if (alpha <= 0.01f) return
 
     val stars = when (constellationIdx) {
@@ -385,14 +383,14 @@ internal fun drawConstellationOverlay(
 }
 
 /** The colour at the very top of the night sky (the sky continued above a tall screen's stage). */
-internal val NIGHT_ZENITH: Color get() = NIGHT_SPACE_BASE_BANDS[0]
+val NIGHT_ZENITH: Color get() = NIGHT_SPACE_BASE_BANDS[0]
 
 /**
  * One star as pixel art: solid blocks (one, or two for the big ones), twinkling in steps between
  * bright, softer and dim shades of its colour against [sky], with a small cross glint on the
  * brightest anchor stars at their peak.
  */
-internal fun drawNightStar(scope: DrawScope, x: Float, y: Float, star: DynamicNightStar, time: Float, p: Float, sky: Color) {
+fun drawNightStar(scope: DrawScope, x: Float, y: Float, star: DynamicNightStar, time: Float, p: Float, sky: Color) {
     val twinkle = sin(time * star.twinkleSpeed + star.twinklePhase) * 0.35f + 0.65f
     val level = star.baseAlpha * twinkle
     fun toward(f: Float) = Color(
@@ -419,7 +417,7 @@ internal fun drawNightStar(scope: DrawScope, x: Float, y: Float, star: DynamicNi
 }
 
 /** The star field again for the sky above the stage (mirrored, so it doesn't look copied). */
-internal fun drawNightStarsAbove(scope: DrawScope, cw: Float, skyH: Float, time: Float, p: Float) {
+fun drawNightStarsAbove(scope: DrawScope, cw: Float, skyH: Float, time: Float, p: Float) {
     for (i in dynamicNightStars.indices) {
         val star = dynamicNightStars[i]
         val y = -skyH + ((star.fy - 0.02f) / 0.60f).coerceIn(0f, 1f) * (skyH - 2f * p)
@@ -427,7 +425,7 @@ internal fun drawNightStarsAbove(scope: DrawScope, cw: Float, skyH: Float, time:
     }
 }
 
-internal fun drawMilkyWayNightSky(
+fun drawMilkyWayNightSky(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -485,7 +483,7 @@ internal fun drawMilkyWayNightSky(
     // 3. Glowing Pixel Moon with Minimal Soft Corona, crossing the sky through the night
     val moonProg = celestialProgress(isNight = true, isSunset = false, isMorning = false)
     val moonX = cw * (0.06f + 0.80f * moonProg)
-    val moonY = ch * (0.30f - 0.20f * sin(moonProg * Math.PI.toFloat()))
+    val moonY = ch * (0.30f - 0.20f * sin(moonProg * kotlin.math.PI.toFloat()))
     val moonCenter = Offset(moonX + 7f * p, moonY + 7f * p)
     val moonFraction = currentMoonFraction()
     // A thin crescent glows less than a full moon.
@@ -536,7 +534,7 @@ internal fun drawMilkyWayNightSky(
 }
 
 /** One drifting pixel cloud; it wraps around a world [cw] wide. */
-internal fun drawSkyCloud(
+fun drawSkyCloud(
     scope: DrawScope,
     cw: Float,
     baseX: Float,
@@ -566,7 +564,7 @@ internal fun drawSkyCloud(
     scope.drawRect(cloudColor, Offset(cx + 27 * p, y + 3 * p), Size(6 * p, 6 * p))
 }
 
-internal fun drawSkyAndClouds(
+fun drawSkyAndClouds(
     scope: DrawScope,
     cw: Float,
     ch: Float,

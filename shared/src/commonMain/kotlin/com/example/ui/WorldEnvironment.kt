@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -84,8 +82,9 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.datetime.toLocalDateTime
 
-internal fun drawEnvironment(
+fun drawEnvironment(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -226,17 +225,17 @@ internal fun drawEnvironment(
                 val clockCx = clockCenter.x
                 val clockCy = clockCenter.y
                 val clockR = 12f * p
-                val cal = java.util.Calendar.getInstance()
-                val realHourAngle = ((cal.get(java.util.Calendar.HOUR) % 12 + cal.get(java.util.Calendar.MINUTE) / 60f) / 12f) * (2f * Math.PI.toFloat())
-                val realMinAngle  = (cal.get(java.util.Calendar.MINUTE) / 60f) * (2f * Math.PI.toFloat())
+                val clockNow = kotlin.time.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault())
+                val realHourAngle = ((clockNow.hour % 12 + clockNow.minute / 60f) / 12f) * (2f * kotlin.math.PI.toFloat())
+                val realMinAngle  = (clockNow.minute / 60f) * (2f * kotlin.math.PI.toFloat())
                 val spinRev = if (spinFrac < 0.55f) {
                     val t = spinFrac / 0.55f
-                    (1f - t * t) * 8f * (2f * Math.PI.toFloat())  // 8 full spins decelerating
+                    (1f - t * t) * 8f * (2f * kotlin.math.PI.toFloat())  // 8 full spins decelerating
                 } else {
                     0f
                 }
-                val hourAngle  = realHourAngle  + spinRev - Math.PI.toFloat() / 2f
-                val minuteAngle = realMinAngle  + spinRev * 1.5f - Math.PI.toFloat() / 2f
+                val hourAngle  = realHourAngle  + spinRev - kotlin.math.PI.toFloat() / 2f
+                val minuteAngle = realMinAngle  + spinRev * 1.5f - kotlin.math.PI.toFloat() / 2f
                 val handColor = Color(0xFF3E2413)
                 scope.drawLine(
                     color = handColor,
@@ -458,7 +457,7 @@ internal fun drawEnvironment(
                 val pfY = lrFloorY + 25 * p
                 val pfW = 18 * p
                 val pfH = 12 * p
-                val squish = sin(t * Math.PI.toFloat() * 3f) * (1f - t) * 3.8f * p
+                val squish = sin(t * kotlin.math.PI.toFloat() * 3f) * (1f - t) * 3.8f * p
                 val sqH = (pfH - squish).coerceAtLeast(4f * p)
                 val sqW = pfW + squish * 1.3f
                 val sqLeft = pfX - sqW / 2f
@@ -480,7 +479,7 @@ internal fun drawEnvironment(
                 val cBoxW = 20 * p
                 val cBoxH = 13 * p
                 val cbLeft = cBoxX - cBoxW / 2f
-                val peek = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
+                val peek = sin(t * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
                 val headLift = 8f * p * peek
 
                 // Cat head emerging from the yellow cushion
@@ -537,8 +536,8 @@ internal fun drawEnvironment(
                 val t = ((dur - engine.basketYarnTimer) / dur).coerceIn(0f, 1f)
                 val bskX = cw * 0.30f
                 val bskY = lrFloorY + lrFloorH * 0.75f
-                val rollDist = 22f * p * sin(t * Math.PI.toFloat() * 0.90f).coerceAtLeast(0f)
-                val bounceY = abs(sin(t * Math.PI.toFloat() * 2f)) * 4f * p * (1f - t)
+                val rollDist = 22f * p * sin(t * kotlin.math.PI.toFloat() * 0.90f).coerceAtLeast(0f)
+                val bounceY = abs(sin(t * kotlin.math.PI.toFloat() * 2f)) * 4f * p * (1f - t)
                 val yarnX = bskX + 8 * p + rollDist
                 val yarnY = bskY + 7 * p - bounceY
 
@@ -573,7 +572,7 @@ internal fun drawEnvironment(
                 val rackY = lrFloorY + lrFloorH * 0.74f
                 val rackW = 26 * p
                 val rLeft = rackX - rackW / 2f
-                val lift = sin(t * Math.PI.toFloat()) * 13f * p
+                val lift = sin(t * kotlin.math.PI.toFloat()) * 13f * p
                 val albumX = rLeft + 9 * p
                 val albumY = rackY - 6 * p - lift
 
@@ -582,7 +581,7 @@ internal fun drawEnvironment(
                 scope.drawRect(Color(0xFFFFD166), androidx.compose.ui.geometry.Offset(albumX + 1.8f * p, albumY + 2.5f * p), Size(4.4f * p, 4.4f * p))
 
                 // Vinyl disc peeking/spinning out to the right
-                val discSlide = sin(t * Math.PI.toFloat()) * 7f * p
+                val discSlide = sin(t * kotlin.math.PI.toFloat()) * 7f * p
                 val discCx = albumX + 6 * p + discSlide
                 val discCy = albumY + 6.5f * p
                 scope.drawCircle(Color(0xFF1D1E2C), radius = 5.5f * p, center = androidx.compose.ui.geometry.Offset(discCx, discCy))
@@ -614,7 +613,7 @@ internal fun drawEnvironment(
                 val t = ((dur - engine.loftWindowTimer) / dur).coerceIn(0f, 1f)
                 val windowStartX = cw * 0.32f
                 val floorY = ch * 0.55f
-                val breezePulse = sin(t * Math.PI.toFloat())
+                val breezePulse = sin(t * kotlin.math.PI.toFloat())
                 scope.drawRect(
                     Color(0x35FFFFFF).copy(alpha = breezePulse * 0.28f),
                     androidx.compose.ui.geometry.Offset(windowStartX, ch * 0.08f),
@@ -651,7 +650,7 @@ internal fun drawEnvironment(
             if (engine.pagodaGlowTimer > 0f) {
                 val dur = 1.8f
                 val t = ((dur - engine.pagodaGlowTimer) / dur).coerceIn(0f, 1f)
-                val pulse = sin(t * Math.PI.toFloat())
+                val pulse = sin(t * kotlin.math.PI.toFloat())
                 val pagX = cw * 0.20f
                 val pagY = curbY + curbH * 0.38f + 5 * p
 
@@ -678,7 +677,7 @@ internal fun drawEnvironment(
                 val t = ((dur - engine.lavenderSwayTimer) / dur).coerceIn(0f, 1f)
                 val lavX = cw * 0.80f
                 val lavY = curbY + curbH * 0.36f
-                val sway = sin(t * Math.PI.toFloat() * 4f) * (1f - t) * 3.5f * p
+                val sway = sin(t * kotlin.math.PI.toFloat() * 4f) * (1f - t) * 3.5f * p
 
                 val blooms = listOf(-6f to 0f, -3f to -2.5f, 0f to -4f, 3f to -1.5f, 6f to 1.5f)
                 for ((sxOff, syOff) in blooms) {
@@ -708,8 +707,8 @@ internal fun drawEnvironment(
                     val mx = mushCenterX + xOff * p
                     val my = mushBaseY + (idx % 2) * 3 * p
                     val capT = ((t - idx * 0.12f) * 2.5f).coerceIn(0f, 1f)
-                    val bounce = sin(capT * Math.PI.toFloat()) * 4.5f * p
-                    val glowPulse = sin(t * Math.PI.toFloat())
+                    val bounce = sin(capT * kotlin.math.PI.toFloat()) * 4.5f * p
+                    val glowPulse = sin(t * kotlin.math.PI.toFloat())
 
                     scope.drawCircle(
                         color = Color(0xFF48CAE4).copy(alpha = (glowPulse * 0.40f).coerceIn(0f, 1f)),
@@ -753,7 +752,7 @@ internal fun drawEnvironment(
                     2 -> Color(0xFF00F5D4)
                     else -> Color(0xFFFFF0F5)
                 }
-                val pulse = sin(t * Math.PI.toFloat())
+                val pulse = sin(t * kotlin.math.PI.toFloat())
                 scope.drawRect(neonCycleColor.copy(alpha = (sin(t * 16f) * 0.35f + 0.65f).coerceIn(0f, 1f)), androidx.compose.ui.geometry.Offset(signX - p, signY - p), Size(signW + 2 * p, signH + 2 * p))
                 scope.drawRect(neonCycleColor.copy(alpha = pulse * 0.28f), androidx.compose.ui.geometry.Offset(signX - 6 * p, signY - 6 * p), Size(signW + 12 * p, signH + 12 * p))
             }
@@ -766,7 +765,7 @@ internal fun drawEnvironment(
                 val steamerH = 22 * p
                 val steamerX = cx - 22 * p
                 val steamerY = counterY - steamerH + 2 * p
-                val lidLift = sin(t * Math.PI.toFloat()) * 13 * p
+                val lidLift = sin(t * kotlin.math.PI.toFloat()) * 13 * p
 
                 // Lifted domed lid
                 scope.drawRect(Color(0xFFADB5BD), androidx.compose.ui.geometry.Offset(steamerX + 2 * p, steamerY + 1 * p - lidLift), Size(steamerW - 4 * p, 3 * p))
@@ -781,7 +780,7 @@ internal fun drawEnvironment(
                 scope.drawRect(Color(0xFFFAF0CA), androidx.compose.ui.geometry.Offset(mxCenter - 2 * p, myBase - momoPop - 1.5f * p), Size(4 * p, 2 * p))
 
                 // Billowing steam clouds
-                val steamFade = sin(t * Math.PI.toFloat())
+                val steamFade = sin(t * kotlin.math.PI.toFloat())
                 scope.drawCircle(Color.White.copy(alpha = steamFade * 0.45f), 5 * p + t * 4 * p, androidx.compose.ui.geometry.Offset(mxCenter, myBase - lidLift - 4 * p))
                 scope.drawCircle(Color.White.copy(alpha = steamFade * 0.32f), 8 * p + t * 6 * p, androidx.compose.ui.geometry.Offset(mxCenter - 2 * p, myBase - lidLift - 9 * p))
             }
@@ -794,7 +793,7 @@ internal fun drawEnvironment(
                 val bowlY = counterY - 6 * p
                 val bowlW = 9 * p
                 val bowlH = 6 * p
-                val wobble = sin(t * Math.PI.toFloat() * 10f) * (1f - t) * 3f * p
+                val wobble = sin(t * kotlin.math.PI.toFloat() * 10f) * (1f - t) * 3f * p
 
                 scope.drawRect(Color(0xFF2B2D42), androidx.compose.ui.geometry.Offset(bowlX + wobble, bowlY), Size(bowlW, bowlH))
                 scope.drawRect(Color(0xFFFFFFFF), androidx.compose.ui.geometry.Offset(bowlX + 1 * p + wobble, bowlY + 1 * p), Size(bowlW - 2 * p, bowlH - 2 * p))
@@ -815,8 +814,8 @@ internal fun drawEnvironment(
                 val chkH = 17 * p
                 val chkX = cw * 0.28f - chkW / 2f
                 val chkY = pathY + 6 * p
-                val bWobble = sin(t * Math.PI.toFloat() * 6f) * (1f - t) * 1.5f * p
-                val heartAlpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
+                val bWobble = sin(t * kotlin.math.PI.toFloat() * 6f) * (1f - t) * 1.5f * p
+                val heartAlpha = sin(t * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
 
                 // Chalk heart doodle
                 val hx = chkX + chkW / 2f + bWobble
@@ -836,7 +835,7 @@ internal fun drawEnvironment(
                 val stmY = crtY - 11 * p
                 val stmW = 16 * p
                 val stmLeft = crtX - stmW / 2f
-                val topSlide = sin(t * Math.PI.toFloat() * 4f) * (1f - t) * 3f * p
+                val topSlide = sin(t * kotlin.math.PI.toFloat() * 4f) * (1f - t) * 3f * p
 
                 scope.drawRect(Color(0xFFB08968), androidx.compose.ui.geometry.Offset(stmLeft + topSlide, stmY), Size(stmW, 5f * p))
                 scope.drawRect(Color(0xFFDDB892), androidx.compose.ui.geometry.Offset(stmLeft + p + topSlide, stmY + 0.5f * p), Size(stmW - 2 * p, 4f * p))
@@ -872,7 +871,7 @@ internal fun drawEnvironment(
                 val tblY = curbY + curbH * 0.55f
                 val lanX = tblX + tblW - 6 * p
                 val lanY = tblY - 6.5f * p
-                val pulse = sin(t * Math.PI.toFloat())
+                val pulse = sin(t * kotlin.math.PI.toFloat())
 
                 scope.drawCircle(Color(0xFFFFAA00).copy(alpha = pulse * 0.35f), (10f + pulse * 10f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p))
                 scope.drawCircle(Color(0xFFFFD166).copy(alpha = pulse * 0.55f), (6f + pulse * 5f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p))
@@ -891,7 +890,7 @@ internal fun drawEnvironment(
             if (engine.templeGlowTimer > 0f) {
                 val dur = 2.0f
                 val t = ((dur - engine.templeGlowTimer) / dur).coerceIn(0f, 1f)
-                val pulse = sin(t * Math.PI.toFloat())
+                val pulse = sin(t * kotlin.math.PI.toFloat())
                 val templeBaseY = ch * 0.70f
                 val farParallaxSpeed = 22f * p
                 val templeLoopW = cw + 360f * p
@@ -904,7 +903,7 @@ internal fun drawEnvironment(
                     scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = pulse * 0.65f), (12f + pulse * 8f) * p, androidx.compose.ui.geometry.Offset(t2X, spireY))
                     scope.drawCircle(Color.White.copy(alpha = pulse * 0.85f), 4 * p, androidx.compose.ui.geometry.Offset(t2X, spireY))
                     for (ray in 0..3) {
-                        val rAngle = (ray * 45f) * (Math.PI.toFloat() / 180f)
+                        val rAngle = (ray * 45f) * (kotlin.math.PI.toFloat() / 180f)
                         val rLen = (18f + pulse * 16f) * p
                         scope.drawLine(
                             Color(0xFFFFEAA7).copy(alpha = pulse * 0.65f),

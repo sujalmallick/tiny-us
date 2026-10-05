@@ -1,6 +1,5 @@
 package com.example.progress
 
-import com.example.R
 import com.example.scene.SceneType
 import com.example.resources.*
 import org.jetbrains.compose.resources.StringResource

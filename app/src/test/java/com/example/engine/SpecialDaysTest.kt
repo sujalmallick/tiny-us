@@ -3,14 +3,14 @@ package com.example.engine
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
-import java.time.LocalDate
+import kotlinx.datetime.LocalDate
 
 class SpecialDaysTest {
-    private val anniversary = LocalDate.of(2021, 6, 12)
-    private val boy = LocalDate.of(1999, 12, 25)
-    private val girl = LocalDate.of(2000, 2, 29)
+    private val anniversary = LocalDate(2021, 6, 12)
+    private val boy = LocalDate(1999, 12, 25)
+    private val girl = LocalDate(2000, 2, 29)
 
-    private fun on(y: Int, m: Int, d: Int) = SpecialDays.on(LocalDate.of(y, m, d), anniversary, boy, girl)
+    private fun on(y: Int, m: Int, d: Int) = SpecialDays.on(LocalDate(y, m, d), anniversary, boy, girl)
 
     @Test
     fun fixedDateFestivals() {
@@ -42,12 +42,12 @@ class SpecialDaysTest {
         // The boy's birthday is on Christmas Day.
         assertEquals(SpecialDay.BOY_BIRTHDAY, on(2026, 12, 25))
         assertEquals(SpecialDay.ANNIVERSARY, on(2026, 6, 12))
-        assertEquals(5, SpecialDays.yearsTogether(LocalDate.of(2026, 6, 12), anniversary))
+        assertEquals(5, SpecialDays.yearsTogether(LocalDate(2026, 6, 12), anniversary))
     }
 
     @Test
     fun noAnniversaryOnTheDayTheyMet() {
-        assertNull(SpecialDays.on(LocalDate.of(2021, 6, 12), anniversary, null, null))
+        assertNull(SpecialDays.on(LocalDate(2021, 6, 12), anniversary, null, null))
     }
 
     @Test

@@ -1610,7 +1610,7 @@ internal fun specialDayLines(
             GameText.get(Res.string.special_girl_birthday_boy, girlName) to GameText.get(Res.string.special_girl_birthday_girl)
         com.example.engine.SpecialDay.ANNIVERSARY -> {
             val years = com.example.engine.SpecialDays.yearsTogether(
-                java.time.LocalDate.now(), com.example.data.RelationshipTimeManager.relationshipStartDate
+                com.example.data.CoupleDates.today(), com.example.data.CoupleDates.anniversary
             ).coerceAtLeast(1)
             GameText.plural(Res.plurals.special_anniversary_boy, years, years) to GameText.get(Res.string.special_anniversary_girl)
         }

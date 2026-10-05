@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.engine.GameText
-import com.example.R
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.Canvas
@@ -25,8 +24,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -105,7 +102,7 @@ import kotlin.math.cos
 import kotlin.math.sin
 import com.example.resources.*
 
-internal enum class TapTargetKind {
+enum class TapTargetKind {
     BOY,
     GIRL,
     BOTH_CHARACTERS,
@@ -165,7 +162,7 @@ fun PixelWorldView(
 
     // Dynamically reallocate stars on scene change
     LaunchedEffect(engine.currentScene) {
-        reallocateNightStars(System.currentTimeMillis())
+        reallocateNightStars(kotlin.time.Clock.System.now().toEpochMilliseconds())
     }
 
     // Determine current lighting & atmosphere from engine's unified time phase
@@ -1271,7 +1268,7 @@ fun PixelWorldView(
  * With [lowRes] the caller has set up a downscaled canvas (see [LowResWorldBuffer]), so characters
  * use one game pixel and snap to whole game pixels.
  */
-internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
+fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         val timePhase = engine.timeOfDayPhase
         val isNight = timePhase.isNight
         val isSunset = timePhase.isSunset
@@ -1358,7 +1355,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
         if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
             val hopBounce = if (engine.scooterHonkTimer > 0f) {
                 val t = ((0.8f - engine.scooterHonkTimer) / 0.8f).coerceIn(0f, 1f)
-                -sin(t * Math.PI.toFloat()) * 5f * pixelScale
+                -sin(t * kotlin.math.PI.toFloat()) * 5f * pixelScale
             } else 0f
             WorldSprites.drawScooterWithCouple(
                 scope = this,
@@ -1388,7 +1385,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                 val frontApronX = cx + 14 * p
                 val apronTopY = wheelCenterY - 28 * p
                 val beamY = apronTopY + 2 * p
-                val flashAlpha = sin(t * Math.PI.toFloat()).coerceIn(0f, 1f)
+                val flashAlpha = sin(t * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
 
                 // Brilliant LED headlight beam flash
                 drawRect(Color(0x99FFF9DB).copy(alpha = flashAlpha * 0.65f), androidx.compose.ui.geometry.Offset(frontApronX + 16 * p, beamY - 4 * p), Size(75 * p, 34 * p))
@@ -1621,10 +1618,10 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                 val stackY = nookBaseY - p
                 val lantX = cw * 0.38f
                 val lantY = nookBaseY + 2 * p
-                val pageWiggle = sin(t * Math.PI.toFloat() * 6f) * (1f - t) * 2f * p
+                val pageWiggle = sin(t * kotlin.math.PI.toFloat() * 6f) * (1f - t) * 2f * p
 
                 val openBookX = stackX - 5 * p
-                val openBookY = stackY - 4 * p - sin(t * Math.PI.toFloat()) * 3 * p
+                val openBookY = stackY - 4 * p - sin(t * kotlin.math.PI.toFloat()) * 3 * p
                 drawRect(Color(0xFFFFFDF0), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY), Size(8 * p, 3.5f * p))
                 drawRect(Color(0xFFE9ECEF), androidx.compose.ui.geometry.Offset(openBookX - 4 * p, openBookY + 1 * p), Size(8 * p, 0.8f * p))
                 drawRect(Color(0xFF495057), androidx.compose.ui.geometry.Offset(openBookX - 0.5f * p, openBookY), Size(p, 3.5f * p))
@@ -1648,7 +1645,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
                     val bx = cw * bxRel
                     val by = railTopY + 8 * p + sin(bxRel * 10f) * 2 * p
                     val bT = ((t * 2.2f - i * 0.14f)).coerceIn(0f, 1f)
-                    val bGlow = sin(bT * Math.PI.toFloat()).coerceIn(0f, 1f)
+                    val bGlow = sin(bT * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
                     if (bGlow > 0f) {
                         val col = bulbColors[i % bulbColors.size]
                         drawCircle(col.copy(alpha = bGlow * 0.55f), (5f + bGlow * 7f) * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
@@ -1775,7 +1772,7 @@ internal fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = fal
  * with soft shading in the evening. Shared by the frame and by floor or wall continued beyond the
  * stage, so both match.
  */
-internal fun DrawScope.drawIndoorLight(timePhase: com.example.engine.TimeOfDayPhase, topLeft: Offset, size: Size) {
+fun DrawScope.drawIndoorLight(timePhase: com.example.engine.TimeOfDayPhase, topLeft: Offset, size: Size) {
     val warmth = when {
         timePhase.isMidnight -> 0.14f
         timePhase.isNight -> 0.10f
@@ -1800,16 +1797,15 @@ private fun DrawScope.drawLoftLight(engine: SceneEngine, topLeft: Offset, size: 
  * JVM screenshot tests: there, frames arrive back to back without the clock moving and the
  * ticker would spin.
  */
-@androidx.annotation.VisibleForTesting
-internal var frameTickerPaused = false
+var frameTickerPaused = false
 
 /** True when the current scene is drawn by the low-res pixel renderer (Plan 03, Phase 1). */
 @Suppress("UnusedReceiverParameter")
-internal val SceneEngine.usesLowResRenderer: Boolean
+val SceneEngine.usesLowResRenderer: Boolean
     get() = WorldViewport.pixelRenderer
 
 /** Draws the world, through the low-res pixel renderer for the scenes that use it (Plan 03, Phase 1). */
-internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, camera: WorldCamera) {
+fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, camera: WorldCamera) {
     if (engine.usesLowResRenderer && camera.staged) {
         val weather: (DrawScope.() -> Unit)? = if (engine.isCurrentSceneOutdoor) {
             { drawFallingWeather(this, engine.particles.particles, WorldViewport.pixelScale(camera.worldW)) }
@@ -1877,7 +1873,7 @@ internal fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldB
 }
 
 /** Keeps the last camera until the screen, the scene or the button strips change (no per-frame allocation). */
-internal class CameraCache {
+class CameraCache {
     private var w = -1f
     private var h = -1f
     private var scene: com.example.scene.SceneType? = null

@@ -7,7 +7,7 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.games.CatchGame
 
 /** "Catch together" (plan 07, C1): the woven basket on the ground and the golden stars falling. */
-internal fun drawCatchGame(scope: DrawScope, game: CatchGame, cw: Float, ch: Float, p: Float, time: Float) {
+fun drawCatchGame(scope: DrawScope, game: CatchGame, cw: Float, ch: Float, p: Float, time: Float) {
     if (!game.active) return
     // Golden stars, twinkling as they fall.
     for (g in game.goldens) {

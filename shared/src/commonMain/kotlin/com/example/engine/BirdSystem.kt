@@ -12,9 +12,12 @@ import kotlin.math.sin
 import kotlin.math.sqrt
 import kotlin.random.Random
 
+/** Prints bird decisions to the console when true (was Android's Log.d). */
+private const val DEBUG_BIRDS = false
+
 private fun logBird(msg: String) {
     try {
-        android.util.Log.d("BirdSystem", msg)
+        if (DEBUG_BIRDS) println("BirdSystem: $msg")
     } catch (_: Throwable) {
         // Ignored in unit test environment
     }

@@ -27,6 +27,14 @@ data class RelationshipDuration(
 object RelationshipTimeManager {
     // Configurable relationship start date (defaults to profile anniversary or today)
     var relationshipStartDate: LocalDate = ProfileManager.getProfile().anniversaryDate?.toJavaLocalDate() ?: LocalDate.now()
+        set(value) {
+            field = value
+            CoupleDates.anniversary = value.toKotlinLocalDate()
+        }
+
+    init {
+        CoupleDates.anniversary = relationshipStartDate.toKotlinLocalDate()
+    }
 
     // Configurable exact start time: default 00:00 (can be updated with exact hour & minute)
     var relationshipStartTime: LocalTime = LocalTime.of(0, 0)

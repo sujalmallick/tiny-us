@@ -1,6 +1,5 @@
 package com.example.engine
 
-import android.util.Log
 import androidx.compose.ui.graphics.Color
 import kotlin.math.sin
 import kotlin.math.exp
@@ -840,7 +839,7 @@ class ParticleSystem {
     }
 
     fun spawnChimneySmoke(x: Float, y: Float) {
-        val now = System.nanoTime()
+        val now = kotlin.time.Clock.System.now().toEpochMilliseconds() * 1_000_000L
         if (now - lastChimneySmokeNanos < 1_050_000_000L) return
         lastChimneySmokeNanos = now
         particles.add(
@@ -1265,13 +1264,14 @@ class ParticleSystem {
             val min = speeds.minOrNull() ?: 0f
             val max = speeds.maxOrNull() ?: 0f
             val avg = speeds.average().toFloat()
-            val samples = speeds.take(6).joinToString(", ") { "%.1f px/s".format(it) }
-            Log.i(
-                "ParticleSpeedAudit",
-                "[$weather] Count: ${speeds.size} | Min: %.1f px/s | Max: %.1f px/s | Avg: %.1f px/s | Traversal: %.2fs | Samples: [$samples]".format(
-                    min, max, avg, ch / avg
-                )
+            val samples = speeds.take(6).joinToString(", ") { "${it.oneDecimal()} px/s" }
+            println(
+                "ParticleSpeedAudit: [$weather] Count: ${speeds.size} | Min: ${min.oneDecimal()} px/s | Max: ${max.oneDecimal()} px/s | " +
+                    "Avg: ${avg.oneDecimal()} px/s | Traversal: ${(ch / avg).oneDecimal()}s | Samples: [$samples]"
             )
         }
     }
 }
+
+/** One decimal place, for debug logs (String.format is JVM-only). */
+private fun Float.oneDecimal(): String = (kotlin.math.round(this * 10f) / 10f).toString()

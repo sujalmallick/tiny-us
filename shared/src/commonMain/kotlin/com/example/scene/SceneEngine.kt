@@ -1,7 +1,6 @@
 package com.example.scene
 
 import com.example.engine.GameText
-import com.example.R
 import com.example.engine.WorldViewport
 
 import androidx.compose.runtime.getValue
@@ -11,8 +10,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.graphics.Color
 import com.example.data.DailyPromptCatalog
-import com.example.data.RelationshipTimeManager
-import com.example.engine.AmbientAudio
+import com.example.engine.WorldAudio
 import com.example.engine.MusicBoxState
 import com.example.engine.AntiRepeatRandomPicker
 import com.example.engine.ShuffledDice
@@ -49,6 +47,9 @@ import kotlin.math.sin
 import kotlin.random.Random
 import com.example.resources.*
 import org.jetbrains.compose.resources.StringResource
+import kotlinx.datetime.number
+import kotlinx.datetime.periodUntil
+import kotlinx.datetime.toLocalDateTime
 
 private val OUTDOOR_ENVIRONMENTS = setOf(
     EnvironmentType.MEADOW,
@@ -66,7 +67,7 @@ private fun eventChance(ratePerSecond: Float, deltaSeconds: Float): Boolean =
     Random.nextFloat() < (1f - exp(-ratePerSecond * deltaSeconds.coerceAtLeast(0f)))
 
 class SceneEngine(
-    val audio: AmbientAudio,
+    val audio: WorldAudio,
     private val onOpenLoveNotes: () -> Unit,
     private val onOpenMemories: () -> Unit,
     private val onOpenCalendar: () -> Unit = {},
@@ -142,7 +143,6 @@ class SceneEngine(
     val birdSystem = BirdSystem()
 
     var sceneTime: Float = 0f
-        internal set
 
     var sceneMessage: String? by mutableStateOf(null)
         private set
@@ -235,12 +235,14 @@ class SceneEngine(
     private var pierGullTimer = 0f
     private var pierGullTargetX = 0.62f
     /** Random source for the pier's characters; tests swap in a seeded one. */
-    internal var pierRng: Random = Random.Default
+    var pierRng: Random = Random.Default
     private val pierCatchPicker = AntiRepeatRandomPicker(PierCatch.entries.toList())
     private val baoLinePicker = AntiRepeatRandomPicker(GRANDPA_BAO_LINES)
     /** Today's Daily Tiny Moments question, revealed by the message in a bottle. */
-    internal var dailyPromptProvider: () -> String = {
-        DailyPromptCatalog.getPromptForDay(RelationshipTimeManager.calculateTinyUsDay().toInt()).question
+    var dailyPromptProvider: () -> String = {
+        DailyPromptCatalog.getPromptForDay(
+            com.example.data.RelationshipTimeCalculator.calculateTinyUsDay(com.example.data.CoupleDates.anniversary, com.example.data.CoupleDates.today()).toInt()
+        ).question
     }
 
     // Grandpa Bao's own little routine between taps: tea, waves, casting on his own, dozing at night.
@@ -285,7 +287,6 @@ class SceneEngine(
     var weatherCatchCount: Int by mutableIntStateOf(0)
         private set
     var rainbowTimer: Float by mutableFloatStateOf(0f)
-        internal set
     var snowmanStage: Int by mutableIntStateOf(0)
         private set
     var snowmanWobbleTimer: Float by mutableFloatStateOf(0f)
@@ -327,7 +328,6 @@ class SceneEngine(
 
     // Feature 1: Mochi Matchmaker state
     var mochiMatchmakerActive: Boolean by mutableStateOf(false)
-        internal set
     var mochiMatchmakerCooldown: Float = 22f
     var mochiMatchmakerVariant: Int = 0
     var mochiMatchmakerStep: Int = 0
@@ -338,7 +338,6 @@ class SceneEngine(
     // Feature 2: Tree Bark Growth state
     var treeMossDebugYearOverride: Int? = null
     var treeMossGrowthStage: Int by mutableIntStateOf(0)
-        internal set
     var boyfriendInitial: Char = com.example.data.ProfileManager.getProfile().boyName.firstOrNull()?.uppercaseChar() ?: 'H'
     var girlfriendInitial: Char = com.example.data.ProfileManager.getProfile().girlName.firstOrNull()?.uppercaseChar() ?: 'H'
 
@@ -489,16 +488,12 @@ class SceneEngine(
     }
 
     var boySpeechText: String? by mutableStateOf(null)
-        internal set
     var boySpeechTimer: Float = 0f
-        internal set
 
     var girlSpeechText: String? by mutableStateOf(null)
-        internal set
     var girlSpeechTimer: Float = 0f
-        internal set
-    internal var rideBoySpoke: Boolean = false
-    internal var rideGirlSpoke: Boolean = false
+    var rideBoySpoke: Boolean = false
+    var rideGirlSpoke: Boolean = false
 
     private var _earphonesActive by mutableStateOf(false)
     var earphonesActive: Boolean
@@ -552,13 +547,11 @@ class SceneEngine(
 
     /** Smooth sitting/snuggle/kiss offset interpolation progress (0f = separated, 1f = fully cuddled) */
     var cuddleProgress: Float by mutableFloatStateOf(0f)
-        internal set
 
     // Living Room autonomous return timer (walks back to couch and sits)
     var livingRoomReturnTimer: Float = 0f
-        internal set
-    internal var livingRoomReturnTargetX: Float = 0.44f
-    internal var livingRoomReturnChar: PixelCharacter? = null
+    var livingRoomReturnTargetX: Float = 0.44f
+    var livingRoomReturnChar: PixelCharacter? = null
 
     // Scene-specific autonomous behavior pickers
     val livingRoomAutonomousPicker = AntiRepeatRandomPicker(listOf(0, 1, 2, 3, 4))
@@ -581,21 +574,21 @@ class SceneEngine(
     var autonomyEnabled: Boolean = true
 
     /** Exposed for tests: the boy's and girl's routine. */
-    internal val boyAgent = AutonomyAgent()
-    internal val girlAgent = AutonomyAgent()
-    internal val behaviorBrain = BehaviorBrain()
+    val boyAgent = AutonomyAgent()
+    val girlAgent = AutonomyAgent()
+    val behaviorBrain = BehaviorBrain()
     private val behaviorContext = BehaviorContext()
     private val walkBounds = FloatArray(4) // minX, maxX, minY, maxY
     private var autonomyUserPause = 0f
     private var autonomyHomeCaptured = false
     /** Seconds until any rare event may happen again (shared by the couple). */
-    internal var rareEventCooldown = RARE_EVENT_FIRST_DELAY
+    var rareEventCooldown = RARE_EVENT_FIRST_DELAY
     private var mochiZoomTimer = 0f
 
     /** The last few things the couple did on their own (newest last); for tests and debugging. */
-    internal val autonomyLog = ArrayDeque<Behavior>()
+    val autonomyLog = ArrayDeque<Behavior>()
 
-    internal val discovery = Discovery()
+    val discovery = Discovery()
     private var discoverySpawnTimer = DISCOVERY_FIRST_DELAY
 
     init {
@@ -1159,9 +1152,9 @@ class SceneEngine(
         girlfriendInitial = girlName.trim().firstOrNull()?.uppercaseChar() ?: 'H'
     }
 
-    fun computeTreeMossGrowthStage(currentDate: java.time.LocalDate = java.time.LocalDate.now()): Int {
+    fun computeTreeMossGrowthStage(currentDate: kotlinx.datetime.LocalDate = com.example.data.CoupleDates.today()): Int {
         treeMossDebugYearOverride?.let { return it.coerceIn(0, 4) }
-        val years = java.time.Period.between(com.example.data.RelationshipTimeManager.relationshipStartDate, currentDate).years
+        val years = com.example.data.CoupleDates.anniversary.periodUntil(currentDate).years
         return years.coerceIn(0, 4)
     }
 
@@ -4322,7 +4315,7 @@ class SceneEngine(
     var keepsakeShelf: List<String> = emptyList()
 
     private fun careForMochi(points: Int) {
-        onProgress?.invoke(com.example.progress.ProgressEvent.MochiCare(points, java.time.LocalDate.now().toEpochDay()))
+        onProgress?.invoke(com.example.progress.ProgressEvent.MochiCare(points, com.example.data.CoupleDates.today().toEpochDays().toLong()))
         mochiMeterTimer = MOCHI_METER_SECONDS
     }
 
@@ -6573,7 +6566,7 @@ class SceneEngine(
         val c = WeatherLayout.rainbowCenter(cw, ch)
         val r = WeatherLayout.rainbowOuterRadius(cw) - WeatherLayout.rainbowBandWidth(cw) / 2f
         for (i in 0..4) {
-            val a = Math.PI.toFloat() * (0.15f + i * 0.175f)
+            val a = kotlin.math.PI.toFloat() * (0.15f + i * 0.175f)
             particles.spawnSparkles(c.x - kotlin.math.cos(a) * r, c.y - kotlin.math.sin(a) * r, 2, Color(0xFFFFF3B0))
         }
         boy.emotion = CharacterEmotion.LOVING
@@ -7555,10 +7548,13 @@ class SceneEngine(
         discoverySpawnTimer = DISCOVERY_GAP_MIN + rng.nextFloat() * DISCOVERY_GAP_RANGE
     }
 
+    private fun currentMonth(): Int =
+        kotlin.time.Clock.System.now().toLocalDateTime(kotlinx.datetime.TimeZone.currentSystemDefault()).month.number
+
     /** Moves on to another of the season's weathers. */
     fun driftWeather() {
         val next = com.example.engine.SeasonalWeather.next(
-            weather, WeatherMemory.currentMonth(), java.util.Locale.getDefault().country
+            weather, currentMonth(), androidx.compose.ui.text.intl.Locale.current.region
         )
         if (next == weather) return
         weather = next

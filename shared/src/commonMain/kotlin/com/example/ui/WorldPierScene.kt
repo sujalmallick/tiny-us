@@ -20,7 +20,7 @@ import kotlin.math.sin
  * Seaside Pier backdrop: sky, sea, lighthouse, bottle, railing, boardwalk, ice-cream cart,
  * Grandpa Bao and a perched Pip. Everything airborne or in hand is drawn by [drawPierForeground].
  */
-internal fun drawSeasidePierScene(
+fun drawSeasidePierScene(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -231,7 +231,7 @@ internal fun drawSeasidePierScene(
     if (engine.pierBucketFlopTimer > 0f) {
         // A fish flips up out of the bucket and back in.
         val u = 1f - engine.pierBucketFlopTimer / 1.6f
-        val hop = sin(u * Math.PI.toFloat()) * 12f * p
+        val hop = sin(u * kotlin.math.PI.toFloat()) * 12f * p
         val fx = bucket.x - u * 4f * p
         scope.drawOval(Color(0xFFB0C4DE), Offset(fx - 3f * p, bucket.y - 9f * p - hop), Size(6f * p, 3f * p))
         scope.drawRect(Color(0xFF8DA2BD), Offset(fx + 2.5f * p, bucket.y - 9.5f * p - hop + sin(time * 30f) * 0.5f * p), Size(1.8f * p, 3.5f * p))
@@ -265,7 +265,7 @@ internal fun drawSeasidePierScene(
 }
 
 /** Things in front of the couple: their ice-cream cones and Pip in flight. */
-internal fun drawPierForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+fun drawPierForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     if (engine.pierIceCreamTimer > 0f) {
         val cps = WorldViewport.characterPixelScale(cw, WorldViewport.pixelRenderer)
         // Melting a little as the timer runs down.

@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -87,6 +85,7 @@ import kotlinx.coroutines.launch
 import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
+import kotlinx.datetime.offsetAt
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Shared helpers for the three "special" scenes (cafe, sunroom, campfire)
@@ -141,9 +140,10 @@ private var tzCheckedAt = Long.MIN_VALUE
 
 /** Seconds since local midnight; drives wall clocks and where the sun shines in from. */
 private fun localDaySeconds(): Float {
-    val now = System.currentTimeMillis()
+    val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
     if (now - tzCheckedAt > 60_000L) {
-        tzOffsetMs = java.util.TimeZone.getDefault().getOffset(now).toLong()
+        tzOffsetMs = kotlinx.datetime.TimeZone.currentSystemDefault()
+            .offsetAt(kotlin.time.Instant.fromEpochMilliseconds(now)).totalSeconds * 1000L
         tzCheckedAt = now
     }
     return (((now + tzOffsetMs) / 1000L) % 86_400L).toFloat()
@@ -179,7 +179,7 @@ private val FAIRY_COLORS = arrayOf(Color(0xFFFFD37A), Color(0xFFFFA9B8), Color(0
 // COZY RAINY CAFE
 // ─────────────────────────────────────────────────────────────────────────────
 
-internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     val phase = engine.timeOfDayPhase
     val night = phase.isNight
     val dusk = phase.isSunset
@@ -430,16 +430,16 @@ internal fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float
     scope.pCircle(Color(0xFF8C6239), clockR + 1.5f * p, clockC)
     scope.pCircle(Color(0xFFF6EEDC), clockR, clockC)
     for (h in 0 until 12) {
-        val a = h * (Math.PI.toFloat() / 6f)
+        val a = h * (kotlin.math.PI.toFloat() / 6f)
         val len = if (h % 3 == 0) 2.2f * p else 1.2f * p
         val ox = sin(a)
         val oy = -cos(a)
         scope.pLine(Color(0xFF3B2A20), Offset(clockC.x + ox * (clockR - len - 1f * p), clockC.y + oy * (clockR - len - 1f * p)), Offset(clockC.x + ox * (clockR - 1f * p), clockC.y + oy * (clockR - 1f * p)), strokeWidth = 0.8f * p)
     }
     val daySec = localDaySeconds()
-    val minuteA = (daySec % 3600f) / 3600f * 2f * Math.PI.toFloat()
-    val hourA = ((daySec / 3600f) % 12f) / 12f * 2f * Math.PI.toFloat()
-    val secondA = (daySec % 60f) / 60f * 2f * Math.PI.toFloat()
+    val minuteA = (daySec % 3600f) / 3600f * 2f * kotlin.math.PI.toFloat()
+    val hourA = ((daySec / 3600f) % 12f) / 12f * 2f * kotlin.math.PI.toFloat()
+    val secondA = (daySec % 60f) / 60f * 2f * kotlin.math.PI.toFloat()
     scope.pLine(Color(0xFF2B1D16), clockC, Offset(clockC.x + sin(hourA) * clockR * 0.5f, clockC.y - cos(hourA) * clockR * 0.5f), strokeWidth = 1.4f * p)
     scope.pLine(Color(0xFF2B1D16), clockC, Offset(clockC.x + sin(minuteA) * clockR * 0.78f, clockC.y - cos(minuteA) * clockR * 0.78f), strokeWidth = 0.9f * p)
     scope.pLine(Color(0xFFC0392B), clockC, Offset(clockC.x + sin(secondA) * clockR * 0.82f, clockC.y - cos(secondA) * clockR * 0.82f), strokeWidth = 0.45f * p)
@@ -692,7 +692,7 @@ private fun drawFiddleFig(scope: DrawScope, x: Float, baseY: Float, p: Float, ti
  * The cafe table in front of the seated couple, drawn after the characters so it hides their
  * laps like a real table: heart latte, bud vase and the croissant they share.
  */
-internal fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     val tx = CafeLayout.tableX(cw, p)
     val ty = CafeLayout.tableY(ch, p)
     val tw = CafeLayout.tableW(p)
@@ -746,7 +746,7 @@ internal fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: 
 // COTTAGE SUNROOM — a glass conservatory looking out on the garden
 // ─────────────────────────────────────────────────────────────────────────────
 
-internal fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
     val phase = engine.timeOfDayPhase
     val night = phase.isNight
     val dusk = phase.isSunset
@@ -1104,7 +1104,7 @@ private fun drawCornerLeaves(scope: DrawScope, x: Float, bottom: Float, p: Float
 // STARRY CAMPFIRE
 // ─────────────────────────────────────────────────────────────────────────────
 
-internal fun drawCampfireScene(
+fun drawCampfireScene(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -1392,7 +1392,7 @@ internal fun drawCampfireScene(
     val fireRadius = 14f * p
     // back stones, ember bed, then the burning logs
     for (stone in 0..9) {
-        val ang = stone * 36f * (Math.PI.toFloat() / 180f)
+        val ang = stone * 36f * (kotlin.math.PI.toFloat() / 180f)
         if (sin(ang) > 0.2f) continue // front stones are drawn after the flames
         val sx = pitX + cos(ang) * (fireRadius + 2f * p)
         val syy = pitY + sin(ang) * (fireRadius * 0.55f)
@@ -1427,7 +1427,7 @@ internal fun drawCampfireScene(
     }
     // front stones
     for (stone in 0..9) {
-        val ang = stone * 36f * (Math.PI.toFloat() / 180f)
+        val ang = stone * 36f * (kotlin.math.PI.toFloat() / 180f)
         if (sin(ang) <= 0.2f) continue
         val sx = pitX + cos(ang) * (fireRadius + 2f * p)
         val syy = pitY + sin(ang) * (fireRadius * 0.55f)

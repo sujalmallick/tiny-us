@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,25 +83,25 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal val PEBBLE_FRACS = floatArrayOf(
+val PEBBLE_FRACS = floatArrayOf(
     0.04f, 0.11f, 0.19f, 0.28f, 0.35f, 0.43f, 0.51f, 0.58f, 0.66f, 0.73f, 0.81f, 0.89f, 0.95f
 )
 
-internal val TUFT_ROW_FACTORS = floatArrayOf(0.18f, 0.38f, 0.60f, 0.82f)
+val TUFT_ROW_FACTORS = floatArrayOf(0.18f, 0.38f, 0.60f, 0.82f)
 
-internal val SAKURA_FLOWERS = listOf(
+val SAKURA_FLOWERS = listOf(
     Pair(Color(0xFFFFB5C2), Color(0xFFFFE66D)),
     Pair(Color(0xFFFF85A1), Color(0xFFFFF0F5)),
     Pair(Color(0xFFFFF0F5), Color(0xFFFFB5C2))
 )
 
-internal val AUTUMN_FLOWERS = listOf(
+val AUTUMN_FLOWERS = listOf(
     Pair(Color(0xFFF4A261), Color(0xFF8B1E1E)),
     Pair(Color(0xFFE9C46A), Color(0xFFD46A28)),
     Pair(Color(0xFFD62828), Color(0xFFFFD166))
 )
 
-internal val DEFAULT_FLOWERS = listOf(
+val DEFAULT_FLOWERS = listOf(
     Pair(Color(0xFFFFFFFF), Color(0xFFFFD166)),
     Pair(Color(0xFFFF4D6D), Color(0xFFFFE66D)),
     Pair(Color(0xFF48CAE4), Color(0xFFFFFFFF)),
@@ -111,7 +109,7 @@ internal val DEFAULT_FLOWERS = listOf(
     Pair(Color(0xFFB5179E), Color(0xFFFFCAD4))
 )
 
-internal val FLOWER_POSITIONS = listOf(
+val FLOWER_POSITIONS = listOf(
     Pair(0.06f, 4f),
     Pair(0.12f, 16f),
     Pair(0.19f, 8f),
@@ -130,20 +128,20 @@ internal val FLOWER_POSITIONS = listOf(
 )
 
 // Precomputed Grass Blade Height Table to eliminate trigonometry per blade
-internal val GRASS_HEIGHT_LOOKUP = FloatArray(64) { i ->
+val GRASS_HEIGHT_LOOKUP = FloatArray(64) { i ->
     val fakeBx = i * 8.8f
     2.5f + kotlin.math.abs(sin(fakeBx * 0.18f + 0.7f)) * 1.8f + kotlin.math.abs(sin(fakeBx * 0.08f)) * 1.4f
 }
-internal val GRASS_SPARSE_HEIGHT_LOOKUP = FloatArray(64) { i ->
+val GRASS_SPARSE_HEIGHT_LOOKUP = FloatArray(64) { i ->
     val fakeBx = i * 19.2f + 7.68f
     1.5f + kotlin.math.abs(sin(fakeBx * 0.14f)) * 1.2f
 }
 
-internal val MEADOW_PUDDLE_X = floatArrayOf(0.24f, 0.53f, 0.79f)
-internal val MEADOW_PUDDLE_Y = floatArrayOf(0.74f, 0.79f, 0.73f)
-internal val MEADOW_PUDDLE_SIZE = floatArrayOf(22f, 28f, 20f)
+val MEADOW_PUDDLE_X = floatArrayOf(0.24f, 0.53f, 0.79f)
+val MEADOW_PUDDLE_Y = floatArrayOf(0.74f, 0.79f, 0.73f)
+val MEADOW_PUDDLE_SIZE = floatArrayOf(22f, 28f, 20f)
 
-internal fun drawMeadowGround(
+fun drawMeadowGround(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -409,7 +407,7 @@ internal fun drawMeadowGround(
     }
 }
 
-internal fun drawWildFlowers(
+fun drawWildFlowers(
     scope: DrawScope,
     cw: Float,
     groundY: Float,

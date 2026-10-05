@@ -18,7 +18,7 @@ private val RainbowBands = arrayOf(
  * Outdoor weather keepsakes, drawn behind the couple: the snowday snowman. (The rainbow after rain
  * is drawn with the sky, behind the scenery; see [drawRainbow].)
  */
-internal fun drawWeatherKeepsakes(scope: DrawScope, cw: Float, ch: Float, p: Float, engine: SceneEngine) {
+fun drawWeatherKeepsakes(scope: DrawScope, cw: Float, ch: Float, p: Float, engine: SceneEngine) {
     if (engine.snowmanStage > 0) drawSnowman(scope, cw, ch, p, engine.snowmanStage, engine.snowmanWobbleTimer, engine.sceneTime)
 }
 
@@ -27,7 +27,7 @@ internal fun drawWeatherKeepsakes(scope: DrawScope, cw: Float, ch: Float, p: Flo
  * The rainbow after rain: six clean bands drawn row by row on the pixel grid (no overlapping
  * squares, so the colours stay even), fading in and out and growing faint toward its feet.
  */
-internal fun drawRainbow(scope: DrawScope, cw: Float, ch: Float, p: Float, timer: Float) {
+fun drawRainbow(scope: DrawScope, cw: Float, ch: Float, p: Float, timer: Float) {
     val elapsed = WeatherLayout.RAINBOW_SECONDS - timer
     val fade = minOf(elapsed / 2.5f, timer / 5f, 1f).coerceIn(0f, 1f) * 0.62f
     if (fade <= 0f) return
@@ -98,7 +98,7 @@ private fun drawSnowman(scope: DrawScope, cw: Float, ch: Float, p: Float, stage:
 }
 
 /** Rain puddles on the ground: they fill while it rains, ripple under the drops, and dry slowly. */
-internal fun drawPuddles(scope: DrawScope, cw: Float, ch: Float, p: Float, engine: SceneEngine, isNight: Boolean) {
+fun drawPuddles(scope: DrawScope, cw: Float, ch: Float, p: Float, engine: SceneEngine, isNight: Boolean) {
     val unit = WeatherLayout.weatherUnit(cw, p)
     val raining = engine.weather == com.example.scene.WeatherType.RAIN
     val time = engine.sceneTime
@@ -132,7 +132,7 @@ internal fun drawPuddles(scope: DrawScope, cw: Float, ch: Float, p: Float, engin
 private val PuddleRingStroke = androidx.compose.ui.graphics.drawscope.Stroke(width = 3f)
 
 /** Footprints, pawprints and finger traces in the snow, fading as fresh snow covers them. */
-internal fun drawSnowPrints(scope: DrawScope, cw: Float, ch: Float, p: Float, prints: List<com.example.engine.SnowPrint>) {
+fun drawSnowPrints(scope: DrawScope, cw: Float, ch: Float, p: Float, prints: List<com.example.engine.SnowPrint>) {
     if (prints.isEmpty()) return
     val unit = WeatherLayout.weatherUnit(cw, p)
     val dent = Color(0xFF9FB3C8)

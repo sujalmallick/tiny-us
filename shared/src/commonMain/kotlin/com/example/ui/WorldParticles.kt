@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -85,7 +83,7 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 
-internal fun drawGroundFallenParticles(
+fun drawGroundFallenParticles(
     scope: DrawScope,
     fallen: List<FallenParticle>,
     p: Float,
@@ -173,7 +171,7 @@ internal fun drawGroundFallenParticles(
     }
 }
 
-internal fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
         if ((pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
@@ -185,7 +183,7 @@ internal fun drawBackgroundSeasonalParticles(scope: DrawScope, particles: List<P
 }
 
 /** Only the falling weather (rain, snow, petals, leaves, fluff), for the sky and ground beyond the stage. */
-internal fun drawFallingWeather(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+fun drawFallingWeather(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
         if (pt.type == ParticleType.RAIN_DROP || pt.type == ParticleType.SNOWFLAKE ||
@@ -197,7 +195,7 @@ internal fun drawFallingWeather(scope: DrawScope, particles: List<PixelParticle>
     }
 }
 
-internal fun drawForegroundParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+fun drawForegroundParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     for (i in particles.indices) {
         val pt = particles[i]
         val isSeasonal = pt.type == ParticleType.SAKURA_PETAL || pt.type == ParticleType.AUTUMN_LEAF ||
@@ -210,11 +208,11 @@ internal fun drawForegroundParticles(scope: DrawScope, particles: List<PixelPart
     }
 }
 
-internal fun drawParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
+fun drawParticles(scope: DrawScope, particles: List<PixelParticle>, p: Float) {
     drawForegroundParticles(scope, particles, p)
 }
 
-internal fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
+fun drawSingleParticle(scope: DrawScope, pt: PixelParticle, p: Float) {
     val color = pt.color.copy(alpha = pt.alpha)
     // Weather sizes follow the canvas width (not the capped pixel scale), so rain, snow,
     // petals and leaves stay easy to see on wide, high-density phones.

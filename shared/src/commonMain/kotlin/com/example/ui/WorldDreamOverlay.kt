@@ -18,8 +18,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -88,7 +86,7 @@ import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelIcons
 
 @Composable
-internal fun BoxScope.DreamOverlay(
+fun BoxScope.DreamOverlay(
     engine: SceneEngine,
     theme: String,
     dreamText: String,
@@ -280,7 +278,7 @@ internal fun BoxScope.DreamOverlay(
     }
 }
 
-internal fun drawDreamStardust(
+fun drawDreamStardust(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -325,7 +323,7 @@ internal fun drawDreamStardust(
 // Dream Journal — Exclusive Iconic Procedural Pixel Art per Theme
 // ─────────────────────────────────────────────────────────────────────────────
 
-internal fun drawDreamArt(
+fun drawDreamArt(
     scope: DrawScope,
     cw: Float,
     ch: Float,
@@ -349,7 +347,7 @@ internal fun drawDreamArt(
     }
 }
 
-internal fun drawJapanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawJapanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Grand Japanese Torii Gate on the right
     val gateX = cw * 0.76f
     val gateY = ch * 0.38f
@@ -441,7 +439,7 @@ internal fun drawJapanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p:
     }
 }
 
-internal fun drawNorwayDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawNorwayDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     val auroraGreen = Color(0xFF06D6A0)
     val auroraTeal = Color(0xFF48CAE4)
     val auroraPurple = Color(0xFF9D4EDD)
@@ -522,7 +520,7 @@ internal fun drawNorwayDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p
     }
 }
 
-internal fun drawOceanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawOceanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Water Caustics / Sunbeams angling down
     val causticCol = Color(0xFFADE8F4).copy(alpha = 0.12f * alpha)
     for (i in 0 until 5) {
@@ -581,7 +579,7 @@ internal fun drawOceanDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p:
     }
 }
 
-internal fun drawFlyingDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawFlyingDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Puffy Layered Dream Clouds floating underneath characters
     val cloudColor1 = Color(0xEEF8F9FA).copy(alpha = 0.85f * alpha)
     val cloudColor2 = Color(0xDDE2EAFC).copy(alpha = 0.75f * alpha)
@@ -629,7 +627,7 @@ internal fun drawFlyingDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p
     }
 }
 
-internal fun drawStarsDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawStarsDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Giant Glowing Crescent Moon
     val moonX = cw * 0.78f
     val moonY = ch * 0.20f
@@ -687,7 +685,7 @@ internal fun drawStarsDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p:
     }
 }
 
-internal fun drawForestDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawForestDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     val treeCol1 = Color(0xFF081C15).copy(alpha = 0.85f * alpha)
     val treeCol2 = Color(0xFF1B4332).copy(alpha = 0.78f * alpha)
 
@@ -747,7 +745,7 @@ internal fun drawForestDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p
     scope.drawCircle(Color(0xFFFFFFFF).copy(alpha = 0.95f * alpha), radius = 1.8f * p, center = Offset(mushX, mushY - 7f * p))
 }
 
-internal fun drawHomeDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawHomeDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Draped Fairy Light Garland along top
     val garlandY = ch * 0.14f
     val bulbCount = 9
@@ -797,7 +795,7 @@ internal fun drawHomeDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: 
     }
 }
 
-internal fun drawRainDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawRainDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Heavy Angled Wind-blown Rain Streaks
     val rainCol = Color(0xAA90E0EF).copy(alpha = 0.60f * alpha)
     for (r in 0 until 40) {
@@ -841,7 +839,7 @@ internal fun drawRainDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: 
     }
 }
 
-internal fun drawCityDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawCityDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Sweeping Searchlight Beams
     for (s in 0 until 2) {
         val baseBeamX = cw * (0.35f + s * 0.30f)
@@ -909,7 +907,7 @@ internal fun drawCityDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: 
     scope.drawCircle(Color(0xFFFF0054).copy(alpha = heartPulse), radius = 5f * p, center = Offset(heartBldgX, heartBldgY))
 }
 
-internal fun drawSweetDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawSweetDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Giant Floating Strawberry Shortcake Slice
     val cakeX = cw * 0.24f + sin(t * 1.2f) * 8f * p
     val cakeY = ch * 0.38f + cos(t * 1.4f) * 10f * p
@@ -964,7 +962,7 @@ internal fun drawSweetDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p:
     }
 }
 
-internal fun drawFallbackDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
+fun drawFallbackDream(scope: DrawScope, cw: Float, ch: Float, t: Float, p: Float, alpha: Float) {
     // 1. Giant Ethereal Moon Crescent
     val moonX = cw * 0.75f
     val moonY = ch * 0.22f
