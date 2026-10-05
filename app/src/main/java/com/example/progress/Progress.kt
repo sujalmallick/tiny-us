@@ -25,6 +25,36 @@ sealed class ProgressEvent {
     data class DaysTogether(val days: Long) : ProgressEvent()
     /** A mini-game round finished with [score] (plan 07, C). */
     data class GamePlayed(val game: String, val score: Int) : ProgressEvent()
+    /** Mochi was petted, fed or played with on [epochDay] (plan 07, D2). */
+    data class MochiCare(val points: Int, val epochDay: Long) : ProgressEvent()
+    /** A keepsake given from one partner to the other (plan 07, D3); it goes on the home shelf. */
+    data class GiftGiven(val item: String, val fromBoy: Boolean) : ProgressEvent()
+}
+
+/**
+ * Mochi's fondness (plan 07, D2): it only grows, a little each day (petting, treats, toys), with a
+ * gentle daily cap so it's a slow friendship and not a tapping contest.
+ */
+object MochiFondness {
+    /** Fondness for each level: friendly, cuddly, best friend. */
+    val LEVELS = listOf(20, 60, 150)
+    const val DAILY_CAP = 12
+
+    fun level(fondness: Int): Int = LEVELS.count { fondness >= it }
+
+    /** How far toward the next level (0..1); 1 at the top level. */
+    fun towardNext(fondness: Int): Float {
+        val l = level(fondness)
+        if (l >= LEVELS.size) return 1f
+        val from = if (l == 0) 0 else LEVELS[l - 1]
+        return (fondness - from).toFloat() / (LEVELS[l] - from)
+    }
+}
+
+/** Keepsakes that can be given as gifts (Mochi's toy stays Mochi's). */
+object Gifts {
+    val GIVEABLE = listOf("discovery:WILDFLOWER", "discovery:RED_LEAF", "discovery:LOVE_NOTE", "discovery:SEASHELL", "discovery:STAR_PEBBLE")
+    const val SHELF = "shelf:"
 }
 
 /** Mini-game ids. */
@@ -43,6 +73,8 @@ object Counter {
     const val CATCHES = "catches"
     const val DISCOVERIES = "discoveries"
     const val DAYS_TOGETHER = "days_together"
+    const val MOCHI_FONDNESS = "mochi_fondness"
+    const val GIFTS = "gifts"
 }
 
 /** Set keys: things seen at least once. */
@@ -93,5 +125,22 @@ data class ProgressState(
         ProgressEvent.DreamWritten -> plus(Counter.DREAMS)
         is ProgressEvent.DaysTogether -> atLeast(Counter.DAYS_TOGETHER, event.days.coerceAtMost(Int.MAX_VALUE.toLong()).toInt())
         is ProgressEvent.GamePlayed -> plus("games_${event.game}").bestScore(event.game, event.score)
+        is ProgressEvent.MochiCare -> {
+            // Points earned today are tracked, and reset when the day changes.
+            val day = event.epochDay.coerceIn(0L, Int.MAX_VALUE.toLong()).toInt()
+            val fresh = if (count("mochi_care_day") == day) this
+            else copy(counters = counters + ("mochi_care_day" to day) + ("mochi_care_today" to 0))
+            val add = event.points.coerceAtMost((MochiFondness.DAILY_CAP - fresh.count("mochi_care_today")).coerceAtLeast(0))
+            if (add <= 0) fresh else fresh.plus("mochi_care_today", add).plus(Counter.MOCHI_FONDNESS, add)
+        }
+        is ProgressEvent.GiftGiven -> {
+            val have = keepsakes[event.item] ?: 0
+            if (have <= 0) this
+            else copy(keepsakes = keepsakes + (event.item to have - 1)).keep(Gifts.SHELF + event.item).plus(Counter.GIFTS)
+        }
     }
+
+    /** The gifts on the home shelf, as keepsake ids, each once (newest kinds last). */
+    val shelf: List<String>
+        get() = keepsakes.filter { it.key.startsWith(Gifts.SHELF) && it.value > 0 }.keys.map { it.removePrefix(Gifts.SHELF) }.sorted()
 }

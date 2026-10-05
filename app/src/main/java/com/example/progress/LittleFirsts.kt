@@ -23,6 +23,7 @@ object Rewards {
     const val SNOWMAN_BEANIE = "accessory_snowman_beanie"
     const val STAR_HOODIE = "outfit_star_hoodie"
     const val STARRY_ROOM = "theme_starry_night"
+    const val MOCHI_HEADBAND = "accessory_mochi_headband"
 }
 
 object LittleFirsts {
@@ -50,7 +51,11 @@ object LittleFirsts {
         LittleFirst("days_100", R.string.days_100, R.string.days_100_hint, Rewards.STARRY_ROOM) { it.count(Counter.DAYS_TOGETHER) >= 100 },
         LittleFirst("days_365", R.string.days_365, R.string.days_365_hint) { it.count(Counter.DAYS_TOGETHER) >= 365 },
         LittleFirst("first_catch_game", R.string.first_catch_game, R.string.first_catch_game_hint) { it.count("games_${Game.CATCH}") >= 1 },
-        LittleFirst("catch_30", R.string.catch_30, R.string.catch_30_hint) { (it.best[Game.CATCH] ?: 0) >= com.example.games.CatchGame.GOOD_SCORE }
+        LittleFirst("catch_30", R.string.catch_30, R.string.catch_30_hint) { (it.best[Game.CATCH] ?: 0) >= com.example.games.CatchGame.GOOD_SCORE },
+        LittleFirst("mochi_friendly", R.string.mochi_friendly, R.string.mochi_friendly_hint) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 1 },
+        LittleFirst("mochi_cuddly", R.string.mochi_cuddly, R.string.mochi_cuddly_hint) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 2 },
+        LittleFirst("mochi_best_friend", R.string.mochi_best_friend, R.string.mochi_best_friend_hint, Rewards.MOCHI_HEADBAND) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 3 },
+        LittleFirst("first_gift", R.string.first_gift, R.string.first_gift_hint) { it.count(Counter.GIFTS) >= 1 }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

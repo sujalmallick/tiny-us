@@ -470,8 +470,13 @@ fun MainScreen(
         }
         onDispose { engine.onCatchGameOver = null }
     }
-    // Found constellations only glow again; the rest are puzzles.
-    LaunchedEffect(progress) { engine.foundConstellations = progress.seenSet(com.example.progress.Seen.CONSTELLATIONS) }
+    // Found constellations only glow again; the rest are puzzles. Mochi's fondness and the
+    // keepsake shelf follow the progress too.
+    LaunchedEffect(progress) {
+        engine.foundConstellations = progress.seenSet(com.example.progress.Seen.CONSTELLATIONS)
+        engine.mochiFondness = progress.count(com.example.progress.Counter.MOCHI_FONDNESS)
+        engine.keepsakeShelf = progress.shelf
+    }
     // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
     // shows two and points to Our Story for the rest.
     LaunchedEffect(Unit) {
@@ -1392,7 +1397,23 @@ fun MainScreen(
         }
 
         if (showOurStory) {
-            OurStoryDialog(onDismiss = { showOurStory = false })
+            OurStoryDialog(onDismiss = { showOurStory = false },
+                onGiveKeepsake = { item, fromBoy ->
+                    recordProgress(com.example.progress.ProgressEvent.GiftGiven(item, fromBoy))
+                    val giver = if (fromBoy) prefs.boyfriendName else prefs.girlfriendName
+                    val partner = if (fromBoy) prefs.girlfriendName else prefs.boyfriendName
+                    val itemName = context.getString(keepsakeName(item))
+                    // "a seashell" in the middle of the sentence (only the first letter changes).
+                    engine.giveGift(fromBoy, itemName.replaceFirstChar { it.lowercase(java.util.Locale.getDefault()) })
+                    // Remembered in Our Story.
+                    prefs.addMemory(
+                        context.getString(R.string.gift_story_title, itemName, partner),
+                        context.getString(R.string.gift_story_note, giver),
+                        java.time.LocalDate.now().toString(),
+                        "gift"
+                    )
+                }
+            )
         }
 
         if (showAvatarCustomizer) {
