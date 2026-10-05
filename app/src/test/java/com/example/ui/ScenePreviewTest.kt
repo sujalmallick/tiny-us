@@ -60,11 +60,18 @@ class ScenePreviewTest {
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)
-            // SCENE_PREVIEW_OUTFITS=7,2 dresses the girl and the boy in those wardrobe outfits.
-            System.getenv("SCENE_PREVIEW_OUTFITS")?.split(',')?.map { it.trim().toInt() }?.let { (g, b) ->
-                girl.outfitIndex = g
-                boy.outfitIndex = b
+            // SCENE_PREVIEW_OUTFITS=7,2 dresses the girl and the boy in those wardrobe outfits;
+            // two more numbers give their accessories (7,2,4,5).
+            System.getenv("SCENE_PREVIEW_OUTFITS")?.split(',')?.map { it.trim().toInt() }?.let { v ->
+                girl.outfitIndex = v[0]
+                boy.outfitIndex = v[1]
+                if (v.size >= 4) {
+                    girl.accessoryIndex = v[2]
+                    boy.accessoryIndex = v[3]
+                }
             }
+            // SCENE_PREVIEW_THEME=STARRY_NIGHT sets the room theme.
+            System.getenv("SCENE_PREVIEW_THEME")?.let { setRoomTheme(com.example.engine.RoomTheme.valueOf(it), announce = false) }
             // SCENE_PREVIEW_RAINBOW=1 shows the after-rain rainbow, part way through.
             if (System.getenv("SCENE_PREVIEW_RAINBOW") != null) rainbowTimer = com.example.scene.WeatherLayout.RAINBOW_SECONDS * 0.6f
         }

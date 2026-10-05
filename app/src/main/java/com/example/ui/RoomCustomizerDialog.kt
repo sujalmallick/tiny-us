@@ -38,7 +38,9 @@ fun RoomCustomizerDialog(
     selectedTheme: RoomTheme,
     isLoft: Boolean,
     onSelectTheme: (RoomTheme) -> Unit,
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    /** Rewards the couple has unlocked (plan 07); a reward theme not in it shows locked. */
+    unlocked: Set<String> = emptySet()
 ) {
     TinyDialog(
         onDismissRequest = onDismiss,
@@ -62,8 +64,10 @@ fun RoomCustomizerDialog(
             RoomThemePreview(selectedTheme)
             RoomTheme.values().forEach { theme ->
                 val selected = theme == selectedTheme
+                val reward = com.example.progress.RewardItems.forTheme(theme)
+                val locked = reward != null && reward !in unlocked
                 TinyCard(
-                    onClick = { onSelectTheme(theme) },
+                    onClick = { if (!locked) onSelectTheme(theme) },
                     selected = selected,
                     padding = TinySpace.md
                 ) {
@@ -75,9 +79,24 @@ fun RoomCustomizerDialog(
                         Box(Modifier.size(34.dp).background(theme.rug, PixelCircleShape).border(2.dp, theme.rugTrim, PixelCircleShape))
                         Column(Modifier.weight(1f).padding(start = TinySpace.md)) {
                             Text(theme.title, style = TinyType.BodyStrong)
-                            Text(theme.description, style = TinyType.Caption)
+                            if (locked) {
+                                val first = com.example.progress.RewardItems.earnedBy(reward!!)
+                                Text(
+                                    stringResource(R.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
+                                    style = TinyType.Caption
+                                )
+                            } else {
+                                Text(theme.description, style = TinyType.Caption)
+                            }
                         }
-                        if (selected) {
+                        if (locked) {
+                            Icon(
+                                PixelIcons.Lock,
+                                contentDescription = stringResource(R.string.reward_locked),
+                                tint = TinyColors.InkMuted,
+                                modifier = Modifier.size(20.dp)
+                            )
+                        } else if (selected) {
                             Icon(
                                 PixelIcons.Check,
                                 contentDescription = null,

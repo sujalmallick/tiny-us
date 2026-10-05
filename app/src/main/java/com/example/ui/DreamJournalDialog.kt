@@ -236,7 +236,9 @@ internal fun String.matchingKeywords(vararg words: String): List<String> = words
 fun DreamJournalDialog(
     prefs: com.example.data.PreferencesManager,
     onDismiss: () -> Unit,
-    onVisualizeDream: (theme: String, text: String) -> Unit
+    onVisualizeDream: (theme: String, text: String) -> Unit,
+    /** A dream was written down (it counts toward the little firsts). */
+    onDreamSaved: () -> Unit = {}
 ) {
     var dreamText by remember { mutableStateOf("") }
     var dreamsList by remember { mutableStateOf(prefs.getDreamEntries()) }
@@ -302,6 +304,7 @@ fun DreamJournalDialog(
                             timestamp = System.currentTimeMillis()
                         )
                         prefs.addDreamEntry(entry)
+                        onDreamSaved()
                         dreamsList = prefs.getDreamEntries()
                         onVisualizeDream(theme, trimmed)
                         onDismiss()

@@ -28,6 +28,17 @@ object SeasonalWeather {
         listOf(WeatherType.SNOW to 0.55f, WeatherType.SUNNY to 0.30f, WeatherType.RAIN to 0.15f) // Dec
     )
 
+    /** WINTER, SPRING, SUMMER or AUTUMN for [month] (1-12), turned around south of the equator. */
+    fun seasonOf(month: Int, country: String = ""): String {
+        val m = if (country.uppercase() in SOUTHERN) (month + 5) % 12 + 1 else month
+        return when (m) {
+            12, 1, 2 -> "WINTER"
+            3, 4, 5 -> "SPRING"
+            6, 7, 8 -> "SUMMER"
+            else -> "AUTUMN"
+        }
+    }
+
     /** The weathers [month] (1-12) can have, with their weights; [country] flips it south of the equator. */
     fun choices(month: Int, country: String = ""): List<Pair<WeatherType, Float>> {
         val m = if (country.uppercase() in SOUTHERN) (month + 5) % 12 + 1 else month

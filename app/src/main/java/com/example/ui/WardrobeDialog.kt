@@ -111,6 +111,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
@@ -176,14 +177,18 @@ data class WardrobeItem(
     val description: String,
     val primaryColor: Color,
     val accentColor: Color,
-    val isHoodie: Boolean = false
+    val isHoodie: Boolean = false,
+    /** Set for a reward item (plan 07): locked until its little first is earned. */
+    val reward: String? = null
 )
 
 data class AccessoryItem(
     val id: Int,
     val name: String,
     val description: String,
-    val iconType: String
+    val iconType: String,
+    /** Set for a reward item (plan 07): locked until its little first is earned. */
+    val reward: String? = null
 )
 
 @Composable
@@ -226,7 +231,9 @@ fun WardrobeDialog(
     boyWearsDress: Boolean = false,
     /** The couple's looks, so each card shows them in the outfit (skin, hair) rather than a stand-in. */
     girlLook: com.example.engine.AvatarLook = com.example.engine.AvatarLook.defaultFor(true),
-    boyLook: com.example.engine.AvatarLook = com.example.engine.AvatarLook.defaultFor(false)
+    boyLook: com.example.engine.AvatarLook = com.example.engine.AvatarLook.defaultFor(false),
+    /** Rewards the couple has unlocked (plan 07); reward items not in it show locked. */
+    unlocked: Set<String> = emptySet()
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Girl, 1: Boy
     // The catalogue below is built inside remember { }, so it reads its text through resources.
@@ -331,6 +338,16 @@ fun WardrobeDialog(
                 primaryColor = Color(0xFFFFF1C5),
                 accentColor = Color(0xFFFFD166),
                 isHoodie = true
+            ),
+            WardrobeItem(
+                id = com.example.progress.RewardItems.STAR_HOODIE_DRESS_INDEX,
+                name = res.getString(R.string.wardrobe_star_hoodie),
+                tag = res.getString(R.string.wardrobe_star_hoodie_tag),
+                description = res.getString(R.string.wardrobe_star_hoodie_desc),
+                primaryColor = Color(0xFF2A3A6B),
+                accentColor = Color(0xFFFFD166),
+                isHoodie = true,
+                reward = com.example.progress.Rewards.STAR_HOODIE
             )
         )
     }
@@ -381,6 +398,16 @@ fun WardrobeDialog(
                 primaryColor = Color(0xFF1E293B),
                 accentColor = Color(0xFF64748B),
                 isHoodie = true
+            ),
+            WardrobeItem(
+                id = com.example.progress.RewardItems.STAR_HOODIE_TROUSER_INDEX,
+                name = res.getString(R.string.wardrobe_star_hoodie),
+                tag = res.getString(R.string.wardrobe_star_hoodie_tag),
+                description = res.getString(R.string.wardrobe_star_hoodie_desc),
+                primaryColor = Color(0xFF2A3A6B),
+                accentColor = Color(0xFFFFD166),
+                isHoodie = true,
+                reward = com.example.progress.Rewards.STAR_HOODIE
             )
         )
     }
@@ -410,6 +437,20 @@ fun WardrobeDialog(
                 name = res.getString(R.string.wardrobe_baseball_cap),
                 description = res.getString(R.string.wardrobe_casual_streetwear_twill_cap_with_f),
                 iconType = "cap"
+            ),
+            AccessoryItem(
+                id = com.example.progress.RewardItems.RAINBOW_SCARF_INDEX,
+                name = res.getString(R.string.wardrobe_rainbow_scarf),
+                description = res.getString(R.string.wardrobe_rainbow_scarf_desc),
+                iconType = "scarf",
+                reward = com.example.progress.Rewards.RAINBOW_SCARF
+            ),
+            AccessoryItem(
+                id = com.example.progress.RewardItems.SNOWMAN_BEANIE_INDEX,
+                name = res.getString(R.string.wardrobe_snowman_beanie),
+                description = res.getString(R.string.wardrobe_snowman_beanie_desc),
+                iconType = "beanie",
+                reward = com.example.progress.Rewards.SNOWMAN_BEANIE
             )
         )
     }
@@ -490,10 +531,12 @@ fun WardrobeDialog(
             ) {
                 accessories.forEach { acc ->
                     val isAccWearing = (currentAccessory == acc.id)
+                    val accLocked = acc.reward != null && acc.reward !in unlocked
                     // TinyChip styling, with the pixel accessory preview (content) in a small Card-coloured disc
                     Surface(
                         selected = isAccWearing,
                         onClick = {
+                            if (accLocked) return@Surface
                             if (selectedTab == 0) {
                                 selectedGirlAccessory = acc.id
                                 onSelectGirlAccessory(acc.id)
@@ -552,6 +595,10 @@ fun WardrobeDialog(
                                 }
                             }
                             Spacer(modifier = Modifier.width(TinySpace.sm))
+                            if (accLocked) {
+                                Icon(PixelIcons.Lock, contentDescription = stringResource(R.string.reward_locked), modifier = Modifier.size(14.dp))
+                                Spacer(modifier = Modifier.width(4.dp))
+                            }
                             Text(
                                 text = acc.name,
                                 style = TinyType.Label.copy(color = Color.Unspecified),
@@ -585,7 +632,9 @@ fun WardrobeDialog(
             // Outfits List
             outfitList.forEach { item ->
                 val isWearing = (currentOutfit == item.id)
-                val onWearThisOutfit = {
+                val locked = item.reward != null && item.reward !in unlocked
+                val onWearThisOutfit = onWear@{
+                    if (locked) return@onWear
                     if (selectedTab == 0) {
                         selectedGirlOutfit = item.id
                         onSelectGirlOutfit(item.id)
@@ -607,7 +656,8 @@ fun WardrobeDialog(
                         // The character in this outfit, drawn by the same renderer as the scene, so a
                         // hoodie shows as a hoodie (it used to be two colour blocks and a tag).
                         Surface(
-                            modifier = Modifier.size(width = 52.dp, height = 64.dp),
+                            modifier = Modifier.size(width = 52.dp, height = 64.dp)
+                                .then(if (locked) Modifier.alpha(0.35f) else Modifier),
                             shape = TinyRadius.Medium,
                             color = item.primaryColor.copy(alpha = 0.22f),
                             border = BorderStroke(1.dp, item.accentColor.copy(alpha = 0.4f))
@@ -662,10 +712,22 @@ fun WardrobeDialog(
                                 )
                             }
 
-                            Text(
-                                text = item.description,
-                                style = TinyType.Caption
-                            )
+                            if (locked) {
+                                val first = item.reward?.let { com.example.progress.RewardItems.earnedBy(it) }
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    Icon(PixelIcons.Lock, contentDescription = null, tint = TinyColors.InkMuted, modifier = Modifier.size(14.dp))
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                        text = stringResource(R.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
+                                        style = TinyType.Caption
+                                    )
+                                }
+                            } else {
+                                Text(
+                                    text = item.description,
+                                    style = TinyType.Caption
+                                )
+                            }
 
                             Spacer(modifier = Modifier.height(TinySpace.xs))
 

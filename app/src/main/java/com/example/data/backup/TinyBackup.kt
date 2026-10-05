@@ -24,7 +24,7 @@ object TinyBackup {
     const val MIN_PASSWORD_LENGTH = 6
     private const val FORMAT = "tinyus-backup"
     private const val VERSION = 1
-    private val PREF_FILES = listOf("tiny_us_prefs", "tiny_us_polaroids")
+    internal val PREF_FILES = listOf("tiny_us_prefs", "tiny_us_polaroids")
     private const val PHOTO_DIR = "polaroids"
     private const val MAX_ENTRY_BYTES = 64L * 1024 * 1024
 

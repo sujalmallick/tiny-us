@@ -40,7 +40,8 @@ class WardrobeSystemTest {
 
     @Test
     fun `verify girl dress and hoodie palettes count and fallback integrity`() {
-        assertEquals(11, PixelArtRenderer.GirlDressPalettes.size)
+        // 11 everyday outfits plus the Wishing Star Hoodie reward (plan 07).
+        assertEquals(12, PixelArtRenderer.GirlDressPalettes.size)
 
         // Palette 0: Signature Blush Strawberry
         assertEquals(Color(0xFFF5CAC3), PixelArtRenderer.GirlDressPalettes[0].sweater)
@@ -73,7 +74,8 @@ class WardrobeSystemTest {
 
     @Test
     fun `verify boy outfit and hoodie palettes count and fallback integrity`() {
-        assertEquals(5, PixelArtRenderer.BoyOutfitPalettes.size)
+        // 5 everyday outfits plus the Wishing Star Hoodie reward (plan 07).
+        assertEquals(6, PixelArtRenderer.BoyOutfitPalettes.size)
 
         // Outfit 0: Classic Spruce Knit & Navy Pants
         val classicSpruce = PixelArtRenderer.BoyOutfitPalettes[0]

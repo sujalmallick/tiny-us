@@ -35,5 +35,11 @@ enum class RoomTheme(
         "Strawberry Milk", "Blush pink and vanilla",
         Color(0xFFFFEAF0), Color(0xFFF5C6D3), Color(0xFFE786A1), Color(0xFFFFF1D6),
         Color(0xFFF3A6BD), Color(0xFFFFE7EE), Color(0xFFFFB7C9), Color(0xFFD96C91), Color(0xFFFFDCE7)
+    ),
+    /** A reward: a hundred days together. */
+    STARRY_NIGHT(
+        "Starry Night", "Deep blue and starlight gold",
+        Color(0xFF3A4570), Color(0xFF2C355A), Color(0xFF26315A), Color(0xFFE9C46A),
+        Color(0xFF4A5A8C), Color(0xFFFFE8A3), Color(0xFFFFE08A), Color(0xFF2C355A), Color(0xFFE9C46A)
     )
 }

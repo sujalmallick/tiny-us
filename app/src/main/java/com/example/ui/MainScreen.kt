@@ -432,6 +432,77 @@ fun MainScreen(
         }
     }
 
+    // ── Progress and little firsts (plan 07, A-B) ──
+    val progressStore = remember {
+        com.example.progress.ProgressStore(
+            context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
+        )
+    }
+    var progress by remember { mutableStateOf(progressStore.load()) }
+    val firstsToCelebrate = remember { androidx.compose.runtime.mutableStateListOf<com.example.progress.LittleFirst>() }
+    val recordProgress: (com.example.progress.ProgressEvent) -> Unit = remember {
+        { event ->
+            val (next, earned) = com.example.progress.LittleFirsts.apply(progress, event, java.time.LocalDate.now().toEpochDay())
+            if (next != progress) {
+                progress = next
+                progressStore.save(next)
+            }
+            firstsToCelebrate.addAll(earned)
+        }
+    }
+    DisposableEffect(engine) {
+        if (previewEngine == null) {
+            engine.onProgress = recordProgress
+            recordProgress(com.example.progress.ProgressEvent.SceneVisited(engine.currentScene.name))
+            recordProgress(com.example.progress.ProgressEvent.DaysTogether(com.example.data.RelationshipTimeManager.calculateTinyUsDay()))
+        }
+        onDispose { engine.onProgress = null }
+    }
+    // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
+    // shows two and points to Our Story for the rest.
+    LaunchedEffect(Unit) {
+        while (true) {
+            if (firstsToCelebrate.isNotEmpty()) {
+                delay(1200)
+                val burst = firstsToCelebrate.size > 2
+                repeat(minOf(2, firstsToCelebrate.size)) {
+                    val first = firstsToCelebrate.removeAt(0)
+                    engine.celebrateLittleFirst(context.getString(R.string.little_first_earned, context.getString(first.title)))
+                    delay(4200)
+                    if (first.reward != null) {
+                        engine.showMessage(context.getString(R.string.little_first_reward), duration = 3.5f)
+                        delay(3800)
+                    }
+                }
+                if (burst && firstsToCelebrate.isNotEmpty()) {
+                    val more = firstsToCelebrate.size
+                    firstsToCelebrate.clear()
+                    engine.showMessage(context.resources.getQuantityString(R.plurals.little_firsts_more, more, more), duration = 4f)
+                    delay(4200)
+                }
+            }
+            delay(500)
+        }
+    }
+    // The weather and season seen, and full moons on clear outdoor nights.
+    LaunchedEffect(engine.weather) {
+        if (previewEngine == null) {
+            val season = com.example.engine.SeasonalWeather.seasonOf(
+                com.example.scene.WeatherMemory.currentMonth(), java.util.Locale.getDefault().country
+            )
+            recordProgress(com.example.progress.ProgressEvent.WeatherSeen(engine.weather.name, season))
+        }
+    }
+    LaunchedEffect(engine.timeOfDayPhase, engine.currentScene) {
+        val fullMoon = com.example.engine.MoonPhase.illumination(currentMoonFraction()) > 0.93f
+        if (previewEngine == null && engine.timeOfDayPhase.isNight && engine.isCurrentSceneOutdoor && fullMoon) {
+            // A night after midnight still belongs to the evening before.
+            val now = java.time.LocalDateTime.now()
+            val night = if (now.hour < 12) now.toLocalDate().minusDays(1) else now.toLocalDate()
+            recordProgress(com.example.progress.ProgressEvent.FullMoonSeen(night.toEpochDay()))
+        }
+    }
+
     // Keep the home-screen widget on the scene and weather the couple is in (plan 06, H2).
     LaunchedEffect(engine.currentScene, engine.weather) {
         if (previewEngine == null && com.example.widget.WidgetState.save(context, engine.currentScene, engine.weather)) {
@@ -1013,6 +1084,7 @@ fun MainScreen(
                                         imagePath = imagePath
                                     )
                                     polaroidManager.savePolaroid(memory)
+                                    recordProgress(com.example.progress.ProgressEvent.TinyMoment)
                                     polaroidCaptureBitmap = polaroidCardBmp
                                     polaroidCaptureMemory = memory
                                     showPolaroidOverlay = true
@@ -1059,6 +1131,7 @@ fun MainScreen(
                 onDismiss = { showLoveNotes = false },
                 onAddNote = { text, author ->
                     prefs.addLoveNote(text, author)
+                    recordProgress(com.example.progress.ProgressEvent.LoveNote)
                     notesList = prefs.getLoveNotes()
                 }
             )
@@ -1185,6 +1258,7 @@ fun MainScreen(
         if (showDreamJournal) {
             DreamJournalDialog(
                 prefs = prefs,
+                onDreamSaved = { recordProgress(com.example.progress.ProgressEvent.DreamWritten) },
                 onDismiss = { showDreamJournal = false },
                 onVisualizeDream = { theme, text ->
                     showDreamJournal = false
@@ -1299,6 +1373,7 @@ fun MainScreen(
                 boyWearsDress = engine.boy.look.wearsDress,
                 girlLook = engine.girl.look,
                 boyLook = engine.boy.look,
+                unlocked = progress.unlocked,
                 onSelectGirlOutfit = { index ->
                     girlOutfitIndex = index
                     engine.selectGirlDress(index)
@@ -1331,6 +1406,7 @@ fun MainScreen(
                     engine.setRoomTheme(theme)
                     prefs.roomThemeId = theme.name
                 },
+                unlocked = progress.unlocked,
                 onDismiss = { showRoomCustomizer = false }
             )
         }

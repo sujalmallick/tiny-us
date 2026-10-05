@@ -715,6 +715,7 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        onProgress?.invoke(com.example.progress.ProgressEvent.SceneVisited(type.name))
         particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
         sceneTime = 0f
@@ -4292,6 +4293,23 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Told about things that count toward the couple's progress (plan 07): rainbow wishes,
+     * constellations, snowmen, discoveries, catches, scene visits. Set by the screen, which keeps
+     * the progress and celebrates any "little first" earned.
+     */
+    var onProgress: ((com.example.progress.ProgressEvent) -> Unit)? = null
+
+    /** A little first was earned: both light up with a heart, a few sparkles, and the news. */
+    fun celebrateLittleFirst(message: String) {
+        boy.emote = EmoteType.HEART
+        girl.emote = EmoteType.HEART
+        boy.emoteTimer = 2.6f
+        girl.emoteTimer = 2.6f
+        audio.playStarArpeggio()
+        showMessage(message, duration = 4.0f)
+    }
+
     /** Seconds left in which the special-day greeting keeps its bubbles (other speech waits). */
     private var specialDayGreetingHold = 0f
 
@@ -5127,7 +5145,9 @@ class SceneEngine(
             "Natural look",
             "Cozy Ribbed Beanie",
             "Warm Wool Fringe Scarf",
-            "Casual Streetwear Baseball Cap"
+            "Casual Streetwear Baseball Cap",
+            "Rainbow Scarf",
+            "Snowman Beanie"
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
@@ -5154,7 +5174,9 @@ class SceneEngine(
             "Natural look",
             "Cozy Ribbed Beanie",
             "Warm Wool Fringe Scarf",
-            "Casual Streetwear Baseball Cap"
+            "Casual Streetwear Baseball Cap",
+            "Rainbow Scarf",
+            "Snowman Beanie"
         )
         val name = accessoryNames.getOrElse(index) { "Accessory" }
         if (index == 0) {
@@ -6293,6 +6315,7 @@ class SceneEngine(
     /** A tap caught a falling snowflake, petal, leaf or dandelion puff. */
     fun onCatchWeather(caught: ParticleSystem.CaughtWeather) {
         weatherCatchCount++
+        onProgress?.invoke(com.example.progress.ProgressEvent.Caught(caught.type.name))
         val firstCatch = weatherCatchCount == 1
         when (caught.type) {
             ParticleType.SNOWFLAKE -> {
@@ -6339,6 +6362,7 @@ class SceneEngine(
         val target = (weatherCatchCount / WeatherLayout.SNOWFLAKES_PER_STAGE).coerceAtMost(WeatherLayout.SNOWMAN_MAX_STAGE)
         if (target <= snowmanStage) return
         snowmanStage = target
+        if (snowmanStage == WeatherLayout.SNOWMAN_MAX_STAGE) onProgress?.invoke(com.example.progress.ProgressEvent.SnowmanBuilt)
         snowmanWobbleTimer = 0.8f
         audio.playBubblePop()
         showMessage(
@@ -6371,6 +6395,7 @@ class SceneEngine(
 
     fun onTouchRainbow(cw: Float, ch: Float) {
         if (rainbowTimer <= 0f) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.RainbowWish)
         audio.playStarArpeggio()
         val c = WeatherLayout.rainbowCenter(cw, ch)
         val r = WeatherLayout.rainbowOuterRadius(cw) - WeatherLayout.rainbowBandWidth(cw) / 2f
@@ -7300,6 +7325,7 @@ class SceneEngine(
     /** They've reached it: pick it up and react. */
     private fun startDiscovery(c: PixelCharacter, cw: Float, ch: Float) {
         if (!discovery.active) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.DiscoveryFound(discovery.kind.name))
         val partner = if (c === boy) girl else boy
         val x = cw * discovery.x
         val y = ch * discovery.y
@@ -7398,6 +7424,7 @@ class SceneEngine(
             else -> 1
         }
         if (constellationConnectTimer > 0f && activeConstellationIndex == targetIdx) return
+        onProgress?.invoke(com.example.progress.ProgressEvent.ConstellationFound("constellation_$targetIdx"))
 
         activeConstellationIndex = targetIdx
         constellationConnectTimer = 2.4f

@@ -446,6 +446,7 @@ object TinyIcons {
         "moment" -> PixelIcons.LocalCafe
         "golden" -> PixelIcons.AutoAwesome
         "milestone" -> PixelIcons.Celebration
+        "first" -> PixelIcons.AutoAwesome
         "upcoming" -> PixelIcons.HourglassTop
         else -> PixelIcons.Favorite
     }

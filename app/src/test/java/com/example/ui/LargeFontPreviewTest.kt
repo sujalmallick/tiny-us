@@ -3,6 +3,7 @@ package com.example.ui
 import android.graphics.Bitmap
 import android.os.Looper
 import androidx.activity.ComponentActivity
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -93,6 +94,29 @@ class LargeFontPreviewTest {
             } finally {
                 frameTickerPaused = false
             }
+        }
+    }
+
+    /** Plan 07, B3: the "Little firsts" page, with a few earned (and at 1.3x fonts). */
+    @Test
+    fun littleFirstsPage() {
+        var progress = com.example.progress.ProgressState()
+        var day = 20360L
+        for (e in listOf(
+            com.example.progress.ProgressEvent.DaysTogether(40),
+            com.example.progress.ProgressEvent.RainbowWish,
+            com.example.progress.ProgressEvent.ConstellationFound("constellation_1"),
+            com.example.progress.ProgressEvent.LoveNote
+        )) {
+            progress = com.example.progress.LittleFirsts.apply(progress, e, day++).first
+        }
+        for (scale in listOf(1f, 1.3f)) {
+            val image = render("little_firsts_x$scale", scale) {
+                androidx.compose.foundation.layout.Box(Modifier.background(com.example.ui.theme.TinyColors.Paper)) {
+                    LittleFirstsPage(progress)
+                }
+            }
+            assertTrue(image.height > 100)
         }
     }
 
