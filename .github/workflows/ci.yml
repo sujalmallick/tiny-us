@@ -34,3 +34,8 @@ jobs:
 
       - name: Run Shared (commonTest) Tests on the JVM
         run: ./gradlew :shared:testAndroidHostTest
+
+      # Shared code must compile for every platform, not just the JVM: this catches JVM-only
+      # calls (such as toSortedMap) in commonMain here, without waiting for the macOS iOS build.
+      - name: Compile shared code for all platforms (commonMain metadata)
+        run: ./gradlew :shared:compileCommonMainKotlinMetadata
