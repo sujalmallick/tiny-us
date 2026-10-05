@@ -2,6 +2,7 @@ package com.example.engine
 
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
+import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.math.sin
@@ -136,6 +137,13 @@ data class PixelCharacter(
     /** Skin, hair and outfit style; defaults to the original look for this slot. */
     var look: AvatarLook = AvatarLook.defaultFor(isGirl)
 ) {
+    /**
+     * Where the earbud's wire leaves it, as last drawn. The shared cord starts here and takes it
+     * once ([PixelArtRenderer.getEarphoneAttachmentOffset]), so a frame without a bud (the loft's
+     * own couple sprite) draws no loose cord.
+     */
+    var earbudAnchor: Offset = Offset.Unspecified
+
     /**
      * Smoothly interpolates character to a new world position.
      * Duration is strictly derived from distance / sharedWalkingSpeed to ensure uniform velocity across all scenes.
@@ -451,6 +459,9 @@ object PixelArtRenderer {
     val GlassesFrame = Color(0xFF1E222F)        // Dark charcoal/black square frame
     val GlassesFrameLight = Color(0xFF3D4457)   // Subtle rim highlight / bridge
     val GlassesGlint = Color(0x40FFFFFF)        // Soft lens glint
+
+    // The shared earphones' soft white wire
+    val EarphoneCord = Color(0xFFFFF0F5)
 
     // Boy hair & clothes
     val HairBoy = Color(0xFF2A2829)
@@ -2017,63 +2028,53 @@ object PixelArtRenderer {
         p: Float,
         flip: Boolean
     ) {
-        val isGirl = char.isGirl
-        // Ear position on head:
-        // Boy facing right (!flip): inner ear on right side (gridX = 11)
-        // Girl facing left (flip): inner ear on left side (17 - 11 = 6)
-        val earX = if (!isGirl) {
-            if (!flip) 11 else 6
-        } else {
-            if (flip) 6 else 11
+        // The bud sits in the ear on the side they look toward (toward the partner when they face
+        // each other): just past the eyes at the edge of the face, so it never covers an eye. Each
+        // pose has its own head, so its own spot (top-left of the 2x2 bud, unflipped grid).
+        val (budX, budY) = when (char.pose) {
+            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 12 to 9
+            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 14 to 9
+            CharacterPose.HUG, CharacterPose.KISS -> 13 to 8
+            else -> 12 to 8
         }
-        val earY = 8
-        val actualX = startX + earX * p
-        val actualY = startY + earY * p
+        // The head breathes with the body, so the bud does too.
+        val breath = -char.breathingOffset
 
-        val earbudColor = Color.White
-        val accentColor = if (isGirl) Color(0xFFFF6B8B) else Color(0xFF64B5F6)
-        val shineColor = Color(0xFFFFF0F5)
+        fun px(gridX: Int, gridY: Int, color: Color) {
+            val actualX = if (flip) (17 - gridX) else gridX
+            scope.drawRect(color, Offset(startX + actualX * p, startY + gridY * p + breath), Size(p, p))
+        }
 
-        // Cute rounded 3x3 pixel earbud casing
-        scope.drawRect(earbudColor, Offset(actualX, actualY), Size(2.8f * p, 2.8f * p))
-        // Inner accent dot (soft pink for girl, soft sky blue for boy)
-        scope.drawRect(accentColor, Offset(actualX + 0.6f * p, actualY + 0.6f * p), Size(1.6f * p, 1.6f * p))
-        // Shiny catchlight
-        scope.drawRect(shineColor, Offset(actualX + 0.3f * p, actualY + 0.3f * p), Size(0.8f * p, 0.8f * p))
+        val bud = Color(0xFFFDFBF7)
+        val accent = if (char.isGirl) Color(0xFFFF6B8B) else Color(0xFF64B5F6)
+        px(budX, budY, bud)
+        px(budX + 1, budY, bud)
+        px(budX, budY + 1, accent)
+        px(budX + 1, budY + 1, bud)
+        // A short wire stem down from the bud; the shared cord carries on from its end.
+        px(budX + 1, budY + 2, EarphoneCord)
+        px(budX + 1, budY + 3, EarphoneCord)
 
-        // Cute downward wire stem (1px wide, angled softly toward center)
-        val stemOffsetX = if (!isGirl) 0.5f * p else 1.3f * p
-        scope.drawRect(earbudColor, Offset(actualX + stemOffsetX, actualY + 2.8f * p), Size(1.2f * p, 2.5f * p))
+        val stemX = if (flip) 17 - (budX + 1) else budX + 1
+        char.earbudAnchor = Offset(startX + (stemX + 0.5f) * p, startY + (budY + 4) * p + breath)
     }
 
+    /**
+     * Where the shared cord meets [char]'s earbud: the end of the stem as it was drawn this frame.
+     * The bud is drawn at the character's own (scaled, snapped) size, so it's remembered rather than
+     * worked out again here; [centerX], [bottomY] and [p] are kept for the callers. Unspecified when
+     * no bud was drawn since the last call, and then no cord is drawn.
+     */
+    @Suppress("UNUSED_PARAMETER")
     fun getEarphoneAttachmentOffset(
         char: PixelCharacter,
         centerX: Float,
         bottomY: Float,
         p: Float
     ): Offset {
-        val charWidth = 18 * p
-        val charHeight = 26 * p
-        val startX = centerX - charWidth / 2f + char.idleSwayOffset
-        val poseOffsetY = when (char.pose) {
-            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 5 * p
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 6 * p
-            else -> 0f
-        }
-        val startY = bottomY - charHeight - char.bounceOffset - char.breathingOffset + poseOffsetY
-        val flip = (char.direction == Direction.LEFT)
-        val isGirl = char.isGirl
-
-        val earX = if (!isGirl) {
-            if (!flip) 11 else 6
-        } else {
-            if (flip) 6 else 11
-        }
-        val stemOffsetX = if (!isGirl) 1.1f * p else 1.9f * p
-        val actualX = startX + earX * p + stemOffsetX
-        val actualY = startY + 13.3f * p
-
-        return Offset(actualX, actualY)
+        val anchor = char.earbudAnchor
+        char.earbudAnchor = Offset.Unspecified
+        return anchor
     }
 
     fun drawEarphoneCord(
@@ -2083,6 +2084,8 @@ object PixelArtRenderer {
         p: Float,
         timeSeconds: Float
     ) {
+        // Only between two buds that were really drawn (the loft draws its own couple, without).
+        if (startOffset.isUnspecified || endOffset.isUnspecified) return
         val bx = startOffset.x
         val by = startOffset.y
         val gx = endOffset.x
@@ -2103,7 +2106,7 @@ object PixelArtRenderer {
             val cx = (1 - t) * (1 - t) * bx + 2 * (1 - t) * t * midX + t * t * gx
             val cy = (1 - t) * (1 - t) * by + 2 * (1 - t) * t * dropY + t * t * gy
             scope.drawLine(
-                color = Color(0xFFFFF0F5),
+                color = EarphoneCord,
                 start = Offset(prevX, prevY),
                 end = Offset(cx, cy),
                 strokeWidth = 1.4f * p

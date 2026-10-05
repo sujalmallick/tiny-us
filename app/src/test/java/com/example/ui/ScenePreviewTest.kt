@@ -85,6 +85,8 @@ class ScenePreviewTest {
                     boy.accessoryIndex = v[3]
                 }
             }
+            // SCENE_PREVIEW_EARPHONES=1 puts the shared earphones on both of them.
+            if (System.getenv("SCENE_PREVIEW_EARPHONES") != null) setEarphones(true)
             // SCENE_PREVIEW_THEME=STARRY_NIGHT sets the room theme.
             System.getenv("SCENE_PREVIEW_THEME")?.let { setRoomTheme(com.example.engine.RoomTheme.valueOf(it), announce = false) }
             // SCENE_PREVIEW_RAINBOW=1 shows the after-rain rainbow, part way through.
