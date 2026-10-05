@@ -2,6 +2,8 @@ package com.example.ui
 
 import com.example.engine.GameText
 import com.example.R
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.foundation.Canvas
 import com.example.engine.SpriteClock
 import com.example.engine.WorldCamera
@@ -171,9 +173,15 @@ fun PixelWorldView(
     val isSunset = timePhase.isSunset
     val isMorning = timePhase.isMorning
 
+    // The world is drawn, not laid out, so screen readers get a description of it (plan 06, I4).
+    val worldDescription = androidx.compose.ui.res.stringResource(
+        R.string.ui_world_description, engine.boy.name, engine.girl.name, engine.currentScene.title
+    )
+
     Box(
         modifier = modifier
             .fillMaxSize()
+            .semantics { contentDescription = worldDescription }
             .onSizeChanged { size ->
                 if (size.width > 0 && size.height > 0) {
                     viewportWidth = size.width.toFloat()

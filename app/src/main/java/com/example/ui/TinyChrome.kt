@@ -341,6 +341,7 @@ fun TinyChip(
     enabled: Boolean = true
 ) {
     Surface(
+        selected = selected,
         onClick = onClick,
         enabled = enabled,
         modifier = modifier,

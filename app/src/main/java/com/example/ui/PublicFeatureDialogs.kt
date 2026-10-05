@@ -348,6 +348,7 @@ private fun PartnerProgressToggle(
     onClick: () -> Unit
 ) {
     Surface(
+        selected = done,
         onClick = onClick,
         shape = TinyRadius.Pill,
         color = if (done) TinyColors.SageSoft else TinyColors.Muted,
@@ -696,6 +697,7 @@ private fun GameOptionTile(
     modifier: Modifier = Modifier
 ) {
     Surface(
+        selected = selected,
         onClick = onClick,
         modifier = modifier,
         shape = TinyRadius.Medium,
@@ -826,6 +828,7 @@ private fun PartnerMoodSection(
             SharedMoodType.values().forEach { mood ->
                 val isSelected = selectedMood == mood
                 Surface(
+                    selected = isSelected,
                     onClick = { onSelectMood(mood) },
                     modifier = Modifier
                         .weight(1f)
@@ -1018,6 +1021,7 @@ private fun SignalTypeChip(
     modifier: Modifier = Modifier
 ) {
     Surface(
+        selected = isSelected,
         onClick = onClick,
         modifier = modifier,
         shape = TinyRadius.Medium,

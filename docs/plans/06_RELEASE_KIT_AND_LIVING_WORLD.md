@@ -91,10 +91,10 @@ Already there: text info, tap to open the app, 30-minute refresh, `updateAllWidg
 
 ## I. Accessibility
 
-- [ ] I1. Review the 37 `contentDescription = null` across 12 UI files: label the icon buttons, leave the purely decorative ones.
-- [ ] I2. Large font sizes (1.3x and 2x): render the main screens and dialogs and fix any clipping.
-- [ ] I3. Re-check the 48dp touch targets and colour contrast after the pixel UI changes.
-- [ ] I4. *(Optional)* Labels for the main things you can tap in a scene, so screen-reader users can find them.
+- [x] I1. Reviewed the 37 `contentDescription = null`: almost all sit beside a text label and rightly stay silent. Labelled: the title-pill heart when it's the pill's only tappable content, and the calendar's day markers (named like the legend). Pickers and toggles (chips, moods, signals, earphones, accessories, done) now announce "selected".
+- [x] I2. Large font sizes (1.3x and 2x): `LargeFontPreviewTest` renders the main screen and the dialog building blocks (`A11Y_PREVIEW_DIR`). Fixed: the title pill drops "Tiny Us" when the font is enlarged so the names fit; the name prompt's two buttons share the row so their labels wrap instead of squeezing.
+- [x] I3. `AccessibilityTest`: every tappable thing on the main screen has a label and a 48 dp target (meadow and loft). `ContrastTest`: the palette's text pairs meet WCAG AA; it caught the hint toast at 4.2:1 over a bright sky, now 70% scrim.
+- [x] I4. The scene canvas has a description (who, where, and that the couple, things and sky can be tapped). *(Individual objects in the drawn world aren't separate screen-reader targets.)*
 
 ---
 

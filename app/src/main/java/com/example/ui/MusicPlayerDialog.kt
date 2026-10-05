@@ -221,6 +221,7 @@ fun MusicPlayerDialog(
             // Earphones pill toggle
             val earphonesOn = engine.earphonesActive
             Surface(
+                selected = earphonesOn,
                 onClick = {
                     val next = !engine.earphonesActive
                     engine.setEarphones(next)
