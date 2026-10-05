@@ -10,6 +10,8 @@ kotlin {
 
     compilerOptions {
         freeCompilerArgs.add("-Xexpect-actual-classes")
+        // kotlinx-datetime 0.7 uses kotlin.time.Clock/Instant, still marked experimental in Kotlin 2.2.
+        optIn.add("kotlin.time.ExperimentalTime")
     }
 
     android {
