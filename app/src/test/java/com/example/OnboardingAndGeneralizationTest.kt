@@ -20,6 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import java.io.File
 import java.time.LocalDate
+import kotlinx.datetime.toKotlinLocalDate
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [34])
@@ -93,7 +94,7 @@ class OnboardingAndGeneralizationTest {
             // 3. Tree moss calculation with today / future -> Stage 0 (no moss)
             val audio = AmbientAudio().apply { isEnabled = false }
             val engine = SceneEngine(audio = audio, onOpenLoveNotes = {}, onOpenMemories = {})
-            assertEquals("Tree moss for today's anniversary must be Stage 0", 0, engine.computeTreeMossGrowthStage(today))
+            assertEquals("Tree moss for today's anniversary must be Stage 0", 0, engine.computeTreeMossGrowthStage((today).toKotlinLocalDate()))
         } finally {
             RelationshipTimeManager.relationshipStartDate = originalDate
         }

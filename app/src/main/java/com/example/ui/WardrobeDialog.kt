@@ -2,7 +2,6 @@ package com.example.ui
 
 import com.example.R
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -169,6 +168,9 @@ import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.example.engine.GameText
 
 data class WardrobeItem(
     val id: Int,
@@ -249,101 +251,101 @@ fun WardrobeDialog(
         listOf(
             WardrobeItem(
                 id = 0,
-                name = res.getString(R.string.wardrobe_strawberry_cream_sundress),
-                tag = res.getString(R.string.wardrobe_signature_classic),
-                description = res.getString(R.string.wardrobe_soft_blush_pink_sweater_and_rosy_p, boyfriendName),
+                name = GameText.get(Res.string.wardrobe_strawberry_cream_sundress),
+                tag = GameText.get(Res.string.wardrobe_signature_classic),
+                description = GameText.get(Res.string.wardrobe_soft_blush_pink_sweater_and_rosy_p, boyfriendName),
                 primaryColor = Color(0xFFF5CAC3),
                 accentColor = Color(0xFFD6587A)
             ),
             WardrobeItem(
                 id = 1,
-                name = res.getString(R.string.wardrobe_lavender_dream_wrap_dress),
-                tag = res.getString(R.string.wardrobe_garden_stroll),
-                description = res.getString(R.string.wardrobe_delicate_lilac_petals_woven_into_f),
+                name = GameText.get(Res.string.wardrobe_lavender_dream_wrap_dress),
+                tag = GameText.get(Res.string.wardrobe_garden_stroll),
+                description = GameText.get(Res.string.wardrobe_delicate_lilac_petals_woven_into_f),
                 primaryColor = Color(0xFFE8D7F1),
                 accentColor = Color(0xFF9D4EDD)
             ),
             WardrobeItem(
                 id = 2,
-                name = res.getString(R.string.wardrobe_emerald_velvet_romance),
-                tag = res.getString(R.string.wardrobe_candlelit_evening),
-                description = res.getString(R.string.wardrobe_deep_forest_emerald_velvet_with_sh),
+                name = GameText.get(Res.string.wardrobe_emerald_velvet_romance),
+                tag = GameText.get(Res.string.wardrobe_candlelit_evening),
+                description = GameText.get(Res.string.wardrobe_deep_forest_emerald_velvet_with_sh),
                 primaryColor = Color(0xFF74C69D),
                 accentColor = Color(0xFF2D6A4F)
             ),
             WardrobeItem(
                 id = 3,
-                name = res.getString(R.string.wardrobe_lemon_sunshine_picnic_dress),
-                tag = res.getString(R.string.wardrobe_meadow_picnic),
-                description = res.getString(R.string.wardrobe_cheerful_lemon_yellow_linen_with_s, girlfriendName),
+                name = GameText.get(Res.string.wardrobe_lemon_sunshine_picnic_dress),
+                tag = GameText.get(Res.string.wardrobe_meadow_picnic),
+                description = GameText.get(Res.string.wardrobe_cheerful_lemon_yellow_linen_with_s, girlfriendName),
                 primaryColor = Color(0xFFFFF3B0),
                 accentColor = Color(0xFFE9C46A)
             ),
             WardrobeItem(
                 id = 4,
-                name = res.getString(R.string.wardrobe_midnight_starlight_gown),
-                tag = res.getString(R.string.wardrobe_midnight_date),
-                description = res.getString(R.string.wardrobe_deep_midnight_blue_with_celestial),
+                name = GameText.get(Res.string.wardrobe_midnight_starlight_gown),
+                tag = GameText.get(Res.string.wardrobe_midnight_date),
+                description = GameText.get(Res.string.wardrobe_deep_midnight_blue_with_celestial),
                 primaryColor = Color(0xFF4A6FA5),
                 accentColor = Color(0xFF1E3A8A)
             ),
             WardrobeItem(
                 id = 5,
-                name = res.getString(R.string.wardrobe_mint_macaron_tea_dress),
-                tag = res.getString(R.string.wardrobe_cozy_cafe),
-                description = res.getString(R.string.wardrobe_sweet_pastel_mint_chiffon_as_light),
+                name = GameText.get(Res.string.wardrobe_mint_macaron_tea_dress),
+                tag = GameText.get(Res.string.wardrobe_cozy_cafe),
+                description = GameText.get(Res.string.wardrobe_sweet_pastel_mint_chiffon_as_light),
                 primaryColor = Color(0xFFC3DBD0),
                 accentColor = Color(0xFF6B9080)
             ),
             WardrobeItem(
                 id = 6,
-                name = res.getString(R.string.wardrobe_s_stolen_oversized_flannel, boyfriendName),
-                tag = res.getString(R.string.wardrobe_stolen_with_love),
-                description = res.getString(R.string.wardrobe_comfortable_deep_blue_flannel_shir, boyfriendName, girlfriendName),
+                name = GameText.get(Res.string.wardrobe_s_stolen_oversized_flannel, boyfriendName),
+                tag = GameText.get(Res.string.wardrobe_stolen_with_love),
+                description = GameText.get(Res.string.wardrobe_comfortable_deep_blue_flannel_shir, boyfriendName, girlfriendName),
                 primaryColor = Color(0xFF457B9D),
                 accentColor = Color(0xFF1D3557)
             ),
             WardrobeItem(
                 id = 7,
-                name = res.getString(R.string.wardrobe_blush_rose_cropped_hoodie),
-                tag = res.getString(R.string.wardrobe_cozy_streetwear),
-                description = res.getString(R.string.wardrobe_soft_blush_rose_cropped_knit_hoodi),
+                name = GameText.get(Res.string.wardrobe_blush_rose_cropped_hoodie),
+                tag = GameText.get(Res.string.wardrobe_cozy_streetwear),
+                description = GameText.get(Res.string.wardrobe_soft_blush_rose_cropped_knit_hoodi),
                 primaryColor = Color(0xFFF4ACB7),
                 accentColor = Color(0xFFFFCAD4),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 8,
-                name = res.getString(R.string.wardrobe_sage_cream_colorblock_hoodie),
-                tag = res.getString(R.string.wardrobe_forest_breeze),
-                description = res.getString(R.string.wardrobe_earthy_sage_and_fresh_cream_colorb),
+                name = GameText.get(Res.string.wardrobe_sage_cream_colorblock_hoodie),
+                tag = GameText.get(Res.string.wardrobe_forest_breeze),
+                description = GameText.get(Res.string.wardrobe_earthy_sage_and_fresh_cream_colorb),
                 primaryColor = Color(0xFF84A98C),
                 accentColor = Color(0xFF52796F),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 9,
-                name = res.getString(R.string.wardrobe_lavender_cloud_oversized_hoodie),
-                tag = res.getString(R.string.wardrobe_cloud_cozy),
-                description = res.getString(R.string.wardrobe_fluffy_lavender_fleece_oversized_h),
+                name = GameText.get(Res.string.wardrobe_lavender_cloud_oversized_hoodie),
+                tag = GameText.get(Res.string.wardrobe_cloud_cozy),
+                description = GameText.get(Res.string.wardrobe_fluffy_lavender_fleece_oversized_h),
                 primaryColor = Color(0xFFD8BBFF),
                 accentColor = Color(0xFF3D5A80),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 10,
-                name = res.getString(R.string.wardrobe_buttercream_star_shimmer_hoodie),
-                tag = res.getString(R.string.wardrobe_golden_glow),
-                description = res.getString(R.string.wardrobe_sunny_buttercream_hoodie_with_warm),
+                name = GameText.get(Res.string.wardrobe_buttercream_star_shimmer_hoodie),
+                tag = GameText.get(Res.string.wardrobe_golden_glow),
+                description = GameText.get(Res.string.wardrobe_sunny_buttercream_hoodie_with_warm),
                 primaryColor = Color(0xFFFFF1C5),
                 accentColor = Color(0xFFFFD166),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = com.example.progress.RewardItems.STAR_HOODIE_DRESS_INDEX,
-                name = res.getString(R.string.wardrobe_star_hoodie),
-                tag = res.getString(R.string.wardrobe_star_hoodie_tag),
-                description = res.getString(R.string.wardrobe_star_hoodie_desc),
+                name = GameText.get(Res.string.wardrobe_star_hoodie),
+                tag = GameText.get(Res.string.wardrobe_star_hoodie_tag),
+                description = GameText.get(Res.string.wardrobe_star_hoodie_desc),
                 primaryColor = Color(0xFF2A3A6B),
                 accentColor = Color(0xFFFFD166),
                 isHoodie = true,
@@ -356,54 +358,54 @@ fun WardrobeDialog(
         listOf(
             WardrobeItem(
                 id = 0,
-                name = res.getString(R.string.wardrobe_classic_spruce_knit_navy_pants),
-                tag = res.getString(R.string.wardrobe_signature_everyday),
-                description = res.getString(R.string.wardrobe_s_iconic_spruce_green_sweater_pair, boyfriendName),
+                name = GameText.get(Res.string.wardrobe_classic_spruce_knit_navy_pants),
+                tag = GameText.get(Res.string.wardrobe_signature_everyday),
+                description = GameText.get(Res.string.wardrobe_s_iconic_spruce_green_sweater_pair, boyfriendName),
                 primaryColor = Color(0xFF2D6A4F),
                 accentColor = Color(0xFF1B4332),
                 isHoodie = false
             ),
             WardrobeItem(
                 id = 1,
-                name = res.getString(R.string.wardrobe_white_emerald_varsity_hoodie),
-                tag = res.getString(R.string.wardrobe_varsity_campus),
-                description = res.getString(R.string.wardrobe_clean_white_hoodie_with_deep_emera),
+                name = GameText.get(Res.string.wardrobe_white_emerald_varsity_hoodie),
+                tag = GameText.get(Res.string.wardrobe_varsity_campus),
+                description = GameText.get(Res.string.wardrobe_clean_white_hoodie_with_deep_emera),
                 primaryColor = Color(0xFFF8F9FA),
                 accentColor = Color(0xFF2D6A4F),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 2,
-                name = res.getString(R.string.wardrobe_charcoal_streetwear_zip_hoodie),
-                tag = res.getString(R.string.wardrobe_urban_evening),
-                description = res.getString(R.string.wardrobe_heavy_charcoal_zip_up_hoodie_over),
+                name = GameText.get(Res.string.wardrobe_charcoal_streetwear_zip_hoodie),
+                tag = GameText.get(Res.string.wardrobe_urban_evening),
+                description = GameText.get(Res.string.wardrobe_heavy_charcoal_zip_up_hoodie_over),
                 primaryColor = Color(0xFF343A40),
                 accentColor = Color(0xFF495057),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 3,
-                name = res.getString(R.string.wardrobe_oatmeal_cloud_oversized_hoodie),
-                tag = res.getString(R.string.wardrobe_weekend_comfort),
-                description = res.getString(R.string.wardrobe_ultra_soft_oatmeal_heather_oversiz),
+                name = GameText.get(Res.string.wardrobe_oatmeal_cloud_oversized_hoodie),
+                tag = GameText.get(Res.string.wardrobe_weekend_comfort),
+                description = GameText.get(Res.string.wardrobe_ultra_soft_oatmeal_heather_oversiz),
                 primaryColor = Color(0xFFEDE0D4),
                 accentColor = Color(0xFFB08968),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = 4,
-                name = res.getString(R.string.wardrobe_midnight_starlight_graphic_hoodie),
-                tag = res.getString(R.string.wardrobe_stargazing_date),
-                description = res.getString(R.string.wardrobe_deep_starlight_navy_hoodie_with_ce, girlfriendName),
+                name = GameText.get(Res.string.wardrobe_midnight_starlight_graphic_hoodie),
+                tag = GameText.get(Res.string.wardrobe_stargazing_date),
+                description = GameText.get(Res.string.wardrobe_deep_starlight_navy_hoodie_with_ce, girlfriendName),
                 primaryColor = Color(0xFF1E293B),
                 accentColor = Color(0xFF64748B),
                 isHoodie = true
             ),
             WardrobeItem(
                 id = com.example.progress.RewardItems.STAR_HOODIE_TROUSER_INDEX,
-                name = res.getString(R.string.wardrobe_star_hoodie),
-                tag = res.getString(R.string.wardrobe_star_hoodie_tag),
-                description = res.getString(R.string.wardrobe_star_hoodie_desc),
+                name = GameText.get(Res.string.wardrobe_star_hoodie),
+                tag = GameText.get(Res.string.wardrobe_star_hoodie_tag),
+                description = GameText.get(Res.string.wardrobe_star_hoodie_desc),
                 primaryColor = Color(0xFF2A3A6B),
                 accentColor = Color(0xFFFFD166),
                 isHoodie = true,
@@ -416,46 +418,46 @@ fun WardrobeDialog(
         listOf(
             AccessoryItem(
                 id = 0,
-                name = res.getString(R.string.wardrobe_natural_look),
-                description = res.getString(R.string.wardrobe_no_headwear_or_neck_accessory),
+                name = GameText.get(Res.string.wardrobe_natural_look),
+                description = GameText.get(Res.string.wardrobe_no_headwear_or_neck_accessory),
                 iconType = "none"
             ),
             AccessoryItem(
                 id = 1,
-                name = res.getString(R.string.wardrobe_cozy_beanie),
-                description = res.getString(R.string.wardrobe_ribbed_knit_beanie_with_fluffy_pom),
+                name = GameText.get(Res.string.wardrobe_cozy_beanie),
+                description = GameText.get(Res.string.wardrobe_ribbed_knit_beanie_with_fluffy_pom),
                 iconType = "beanie"
             ),
             AccessoryItem(
                 id = 2,
-                name = res.getString(R.string.wardrobe_wool_scarf),
-                description = res.getString(R.string.wardrobe_warm_chunky_wool_scarf_with_gentle),
+                name = GameText.get(Res.string.wardrobe_wool_scarf),
+                description = GameText.get(Res.string.wardrobe_warm_chunky_wool_scarf_with_gentle),
                 iconType = "scarf"
             ),
             AccessoryItem(
                 id = 3,
-                name = res.getString(R.string.wardrobe_baseball_cap),
-                description = res.getString(R.string.wardrobe_casual_streetwear_twill_cap_with_f),
+                name = GameText.get(Res.string.wardrobe_baseball_cap),
+                description = GameText.get(Res.string.wardrobe_casual_streetwear_twill_cap_with_f),
                 iconType = "cap"
             ),
             AccessoryItem(
                 id = com.example.progress.RewardItems.RAINBOW_SCARF_INDEX,
-                name = res.getString(R.string.wardrobe_rainbow_scarf),
-                description = res.getString(R.string.wardrobe_rainbow_scarf_desc),
+                name = GameText.get(Res.string.wardrobe_rainbow_scarf),
+                description = GameText.get(Res.string.wardrobe_rainbow_scarf_desc),
                 iconType = "scarf",
                 reward = com.example.progress.Rewards.RAINBOW_SCARF
             ),
             AccessoryItem(
                 id = com.example.progress.RewardItems.MOCHI_HEADBAND_INDEX,
-                name = res.getString(R.string.wardrobe_mochi_headband),
-                description = res.getString(R.string.wardrobe_mochi_headband_desc),
+                name = GameText.get(Res.string.wardrobe_mochi_headband),
+                description = GameText.get(Res.string.wardrobe_mochi_headband_desc),
                 iconType = "beanie",
                 reward = com.example.progress.Rewards.MOCHI_HEADBAND
             ),
             AccessoryItem(
                 id = com.example.progress.RewardItems.SNOWMAN_BEANIE_INDEX,
-                name = res.getString(R.string.wardrobe_snowman_beanie),
-                description = res.getString(R.string.wardrobe_snowman_beanie_desc),
+                name = GameText.get(Res.string.wardrobe_snowman_beanie),
+                description = GameText.get(Res.string.wardrobe_snowman_beanie_desc),
                 iconType = "beanie",
                 reward = com.example.progress.Rewards.SNOWMAN_BEANIE
             )
@@ -467,8 +469,8 @@ fun WardrobeDialog(
         modifier = Modifier.testTag("wardrobe_dialog")
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_cottage_wardrobe),
-            subtitle = stringResource(R.string.ui_outfits_accessories_for_both_of_you),
+            title = stringResource(Res.string.ui_cottage_wardrobe),
+            subtitle = stringResource(Res.string.ui_outfits_accessories_for_both_of_you),
             icon = PixelIcons.Checkroom
         )
 
@@ -519,11 +521,11 @@ fun WardrobeDialog(
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Text(
-                    text = stringResource(R.string.ui_accessories),
+                    text = stringResource(Res.string.ui_accessories),
                     style = TinyType.Section
                 )
                 Text(
-                    text = if (selectedTab == 1) stringResource(R.string.wardrobe_glasses_stay_on) else stringResource(R.string.wardrobe_layers_over_outfits),
+                    text = if (selectedTab == 1) stringResource(Res.string.wardrobe_glasses_stay_on) else stringResource(Res.string.wardrobe_layers_over_outfits),
                     style = TinyType.Caption
                 )
             }
@@ -603,7 +605,7 @@ fun WardrobeDialog(
                             }
                             Spacer(modifier = Modifier.width(TinySpace.sm))
                             if (accLocked) {
-                                Icon(PixelIcons.Lock, contentDescription = stringResource(R.string.reward_locked), modifier = Modifier.size(14.dp))
+                                Icon(PixelIcons.Lock, contentDescription = stringResource(Res.string.reward_locked), modifier = Modifier.size(14.dp))
                                 Spacer(modifier = Modifier.width(4.dp))
                             }
                             Text(
@@ -619,17 +621,17 @@ fun WardrobeDialog(
             // Outfits Section Header with filter
             Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                 Text(
-                    text = if (selectedTab == 0) stringResource(R.string.wardrobe_dresses_and_hoodies) else stringResource(R.string.wardrobe_sweaters_and_hoodies),
+                    text = if (selectedTab == 0) stringResource(Res.string.wardrobe_dresses_and_hoodies) else stringResource(Res.string.wardrobe_sweaters_and_hoodies),
                     style = TinyType.Section
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                     TinyChip(
-                        text = stringResource(R.string.ui_all),
+                        text = stringResource(Res.string.ui_all),
                         selected = !filterHoodiesOnly,
                         onClick = { filterHoodiesOnly = false }
                     )
                     TinyChip(
-                        text = stringResource(R.string.ui_hoodies_only),
+                        text = stringResource(Res.string.ui_hoodies_only),
                         selected = filterHoodiesOnly,
                         onClick = { filterHoodiesOnly = true }
                     )
@@ -708,7 +710,7 @@ fun WardrobeDialog(
                             ) {
                                 if (item.isHoodie) {
                                     TinyTag(
-                                        text = stringResource(R.string.ui_hoodie),
+                                        text = stringResource(Res.string.ui_hoodie),
                                         color = TinyColors.Rose,
                                         background = if (isWearing) TinyColors.Card else TinyColors.RoseSoft
                                     )
@@ -725,7 +727,7 @@ fun WardrobeDialog(
                                     Icon(PixelIcons.Lock, contentDescription = null, tint = TinyColors.InkMuted, modifier = Modifier.size(14.dp))
                                     Spacer(modifier = Modifier.width(4.dp))
                                     Text(
-                                        text = stringResource(R.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
+                                        text = stringResource(Res.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
                                         style = TinyType.Caption
                                     )
                                 }
@@ -740,13 +742,13 @@ fun WardrobeDialog(
 
                             if (isWearing) {
                                 TinyTag(
-                                    text = stringResource(R.string.ui_wearing_now),
+                                    text = stringResource(Res.string.ui_wearing_now),
                                     color = TinyColors.Rose,
                                     background = TinyColors.Card
                                 )
                             } else {
                                 TinyButton(
-                                    text = stringResource(R.string.ui_wear_outfit),
+                                    text = stringResource(Res.string.ui_wear_outfit),
                                     onClick = onWearThisOutfit,
                                     style = TinyButtonStyle.Secondary,
                                     compact = true
@@ -759,7 +761,7 @@ fun WardrobeDialog(
         }
 
         TinyButton(
-            text = stringResource(R.string.ui_close_wardrobe),
+            text = stringResource(Res.string.ui_close_wardrobe),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(),
             style = TinyButtonStyle.Secondary,

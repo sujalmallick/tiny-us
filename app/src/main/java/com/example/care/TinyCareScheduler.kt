@@ -17,6 +17,7 @@ import com.example.R
 import com.example.data.PreferencesManager
 import java.util.Calendar
 import kotlin.random.Random
+import com.example.resources.*
 
 object TinyCareScheduler {
 
@@ -30,8 +31,8 @@ object TinyCareScheduler {
     // Notification channel setup
     fun createNotificationChannel(context: Context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val name = context.getString(com.example.R.string.ui_tiny_care)
-            val descriptionText = context.getString(com.example.R.string.ui_tiny_care_description)
+            val name = com.example.engine.GameText.get(com.example.resources.Res.string.ui_tiny_care)
+            val descriptionText = com.example.engine.GameText.get(com.example.resources.Res.string.ui_tiny_care_description)
             val importance = NotificationManager.IMPORTANCE_DEFAULT
             val channel = NotificationChannel(CHANNEL_ID, name, importance).apply {
                 description = descriptionText

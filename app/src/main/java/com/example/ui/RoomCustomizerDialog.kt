@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +31,8 @@ import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun RoomCustomizerDialog(
@@ -48,8 +49,8 @@ fun RoomCustomizerDialog(
         verticalSpacing = 0.dp
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_room_customizer),
-            subtitle = if (isLoft) stringResource(R.string.ui_room_details_loft) else stringResource(R.string.ui_room_details_living_room),
+            title = stringResource(Res.string.ui_room_customizer),
+            subtitle = if (isLoft) stringResource(Res.string.ui_room_details_loft) else stringResource(Res.string.ui_room_details_living_room),
             icon = PixelIcons.Weekend,
             modifier = Modifier.padding(start = TinySpace.xl, end = TinySpace.xl, top = TinySpace.xl, bottom = TinySpace.md)
         )
@@ -82,7 +83,7 @@ fun RoomCustomizerDialog(
                             if (locked) {
                                 val first = com.example.progress.RewardItems.earnedBy(reward!!)
                                 Text(
-                                    stringResource(R.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
+                                    stringResource(Res.string.reward_unlock_with, first?.let { stringResource(it.title) } ?: ""),
                                     style = TinyType.Caption
                                 )
                             } else {
@@ -92,7 +93,7 @@ fun RoomCustomizerDialog(
                         if (locked) {
                             Icon(
                                 PixelIcons.Lock,
-                                contentDescription = stringResource(R.string.reward_locked),
+                                contentDescription = stringResource(Res.string.reward_locked),
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -108,7 +109,7 @@ fun RoomCustomizerDialog(
                 }
             }
             Text(
-                stringResource(R.string.ui_room_details_list),
+                stringResource(Res.string.ui_room_details_list),
                 style = TinyType.Caption,
                 modifier = Modifier.padding(top = TinySpace.xs)
             )
@@ -122,7 +123,7 @@ fun RoomCustomizerDialog(
                 .padding(horizontal = TinySpace.md, vertical = TinySpace.sm),
             horizontalArrangement = Arrangement.End
         ) {
-            TinyButton(text = stringResource(R.string.ui_done), onClick = onDismiss, style = TinyButtonStyle.Ghost)
+            TinyButton(text = stringResource(Res.string.ui_done), onClick = onDismiss, style = TinyButtonStyle.Ghost)
         }
     }
 }

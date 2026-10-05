@@ -623,6 +623,9 @@ struct TinySave: Codable {
 struct ContentView: View {
     @StateObject private var world = TinyWorld()
     @StateObject private var stage = TinyStage()
+    /// What stopped the shared world last time (read once at launch), if anything.
+    @State private var sharedProblem: String? = LaunchDiagnostics.shared.lastProblem()
+    @AppStorage("tinyus.classicWorld") private var classicWorld = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var audio = TinyAudio.shared
@@ -639,30 +642,17 @@ struct ContentView: View {
                 Color(red: 0.10, green: 0.105, blue: 0.16).ignoresSafeArea()
                 VStack(spacing: 0) {
                     topBar
-                    WorldCanvas(world: world, stage: stage, reducedMotion: reduceMotion)
+                    Group {
+                        if classicWorld || sharedProblem != nil {
+                            WorldCanvas(world: world, stage: stage, reducedMotion: reduceMotion)
+                        } else {
+                            // The real pixel world, shared with Android (plan 08, S3): same scenes, couple and Mochi.
+                            SharedWorldView()
+                        }
+                    }
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
                         .padding(.horizontal, 14)
-                        .overlay(alignment: .bottom) { worldCaption.padding(.bottom, 16) }
-                        .overlay(alignment:.bottomTrailing) {
-                            Button { stage.petMochi(world: world, now: TinyStage.now) } label: {
-                                Image(systemName:"pawprint.fill").font(.system(size:14,weight:.semibold)).foregroundStyle(Color(red:1,green:0.84,blue:0.61))
-                                    .frame(width:38,height:38).background(.black.opacity(0.35),in:Circle())
-                            }.buttonStyle(.plain).accessibilityLabel("Give Mochi a gentle head pat")
-                                .padding(.trailing,25).padding(.bottom,63)
-                        }
-                        .overlay(alignment:.topTrailing) {
-                            Button { world.capturePolaroid() } label: {
-                                Image(systemName:"camera.fill").font(.system(size:13,weight:.semibold)).foregroundStyle(Color(red:1,green:0.84,blue:0.61))
-                                    .frame(width:34,height:34).background(.black.opacity(0.35),in:Circle())
-                            }.buttonStyle(.plain).accessibilityLabel("Capture this moment as a Polaroid")
-                                .padding(.trailing,24).padding(.top,10)
-                        }
-                        .simultaneousGesture(DragGesture(minimumDistance: 30).onEnded { value in
-                            if abs(value.translation.width) > abs(value.translation.height) {
-                                changeScene(step: value.translation.width < 0 ? 1 : -1)
-                            } else if value.translation.height < 0 { showScenes = true }
-                        })
                     worldStrip
                     bottomBar(safeBottom: proxy.safeAreaInsets.bottom)
                 }
@@ -681,6 +671,13 @@ struct ContentView: View {
             .sheet(isPresented: $showFeatures) { FeaturePickerSheet(world: world) }
             .sheet(item: $world.activeFeature) { feature in featureView(feature) }
             .fullScreenCover(isPresented: $world.showOnboarding) { OnboardingSheet(world: world) }
+            .sheet(isPresented: Binding(get: { sharedProblem != nil }, set: { _ in })) {
+                SharedProblemSheet(problem: sharedProblem ?? "", onRetry: {
+                    LaunchDiagnostics.shared.clear(); classicWorld = false; sharedProblem = nil
+                }, onKeepClassic: {
+                    LaunchDiagnostics.shared.clear(); classicWorld = true; sharedProblem = nil
+                })
+            }
             .onReceive(clock) { date in
                 tick = date
                 if date.timeIntervalSince(world.save.weatherDriftStartedAt) >= 360 {
@@ -688,9 +685,11 @@ struct ContentView: View {
                     world.setWeather(choices.randomElement() ?? .sunny, at: date)
                 }
             }
-            .onAppear { updateAudio(); world.resumeWeatherDriftClock() }
+            .onAppear { updateAudio(); world.resumeWeatherDriftClock(); syncSharedWorld() }
+            .onChange(of: world.save.nameOne) { _ in syncSharedWorld() }
+            .onChange(of: world.save.nameTwo) { _ in syncSharedWorld() }
             .onChange(of: world.save.weather) { _ in updateAudio() }
-            .onChange(of: world.save.scene) { _ in updateAudio() }
+            .onChange(of: world.save.scene) { _ in updateAudio(); syncSharedWorld() }
             .onChange(of: world.save.soundOn) { _ in updateAudio() }
             .onChange(of: world.save.soundVolume) { _ in updateAudio() }
             .onChange(of: scenePhase) { phase in
@@ -784,6 +783,11 @@ struct ContentView: View {
         let new = (index + step + TinyScene.allCases.count) % TinyScene.allCases.count
         world.select(TinyScene.allCases[new])
         world.showToast(world.save.scene.title)
+    }
+    /// Tells the shared world who the couple are and which place the scene picker chose.
+    private func syncSharedWorld() {
+        SharedWorldBridge.shared.setNames(first: world.save.nameOne, second: world.save.nameTwo)
+        SharedWorldBridge.shared.showScene(sceneName: world.save.scene.sharedScene.name)
     }
     private func updateAudio() {
         audio.update(weather: world.save.weather, indoor: world.save.scene.isIndoor, soundEnabled: world.save.soundOn, volume: world.save.soundVolume)
@@ -1032,6 +1036,8 @@ private struct SettingsSheet: View {
                     Text("Optional, once a day at 7 pm. Notifications stay on this device.").font(.footnote).foregroundStyle(.secondary)
                 }
                 Section("Coming to iPhone") {
+                    Toggle("Use the shared Android world", isOn: Binding(get: { !UserDefaults.standard.bool(forKey: "tinyus.classicWorld") },
+                                                                     set: { UserDefaults.standard.set(!$0, forKey: "tinyus.classicWorld") }))
                     Button { showSharedPreview = true } label: { Label("Preview the shared Android engine", systemImage: "sparkles") }
                     Text("A first look at the code that will make Tiny Us on iPhone match Android.").font(.footnote).foregroundStyle(.secondary)
                 }
@@ -1065,5 +1071,37 @@ private struct SettingsSheet: View {
             let request=UNNotificationRequest(identifier:"tiny-us.daily-moment",content:content,trigger:UNCalendarNotificationTrigger(dateMatching:components,repeats:true))
             try await UNUserNotificationCenter.current().add(request); world.save.notificationsOn=true
         } catch { world.save.notificationsOn=false; world.showToast("Couldn’t schedule the reminder") }
+    }
+}
+
+/// Shown at launch when the shared world stopped the app last time, so the error can be sent along.
+private struct SharedProblemSheet: View {
+    let problem: String
+    let onRetry: () -> Void
+    let onKeepClassic: () -> Void
+    @State private var copied = false
+
+    var body: some View {
+        NavigationStack {
+            VStack(alignment: .leading, spacing: 14) {
+                Text("The shared Android world stopped Tiny Us last time. The classic world is showing for now.")
+                    .font(.system(.subheadline, design: .rounded))
+                ScrollView {
+                    Text(problem).font(.system(.caption2, design: .monospaced)).textSelection(.enabled)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
+                .padding(10).background(.quaternary, in: RoundedRectangle(cornerRadius: 10))
+                Button { UIPasteboard.general.string = problem; copied = true } label: {
+                    Label(copied ? "Copied" : "Copy the error", systemImage: copied ? "checkmark" : "doc.on.doc")
+                }.buttonStyle(.borderedProminent)
+                HStack {
+                    Button("Try the shared world again", action: onRetry).buttonStyle(.bordered)
+                    Button("Keep the classic world", action: onKeepClassic).buttonStyle(.bordered)
+                }
+            }
+            .padding(20)
+            .navigationTitle("Something went wrong").navigationBarTitleDisplayMode(.inline)
+        }
+        .interactiveDismissDisabled()
     }
 }

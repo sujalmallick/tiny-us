@@ -35,6 +35,8 @@ import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 import java.io.File
 import java.time.Duration
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 /**
  * Plan 06, I2: the main screen and the pieces every dialog is built from, at the phone's larger
@@ -127,22 +129,22 @@ class LargeFontPreviewTest {
                 TinySurface(modifier = Modifier.width(340.dp)) {
                     Column(Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         TinyDialogHeader(
-                            title = androidx.compose.ui.res.stringResource(R.string.ui_tiny_care),
-                            subtitle = androidx.compose.ui.res.stringResource(R.string.ui_tiny_care_description),
+                            title = org.jetbrains.compose.resources.stringResource(Res.string.ui_tiny_care),
+                            subtitle = org.jetbrains.compose.resources.stringResource(Res.string.ui_tiny_care_description),
                             icon = PixelIcons.Favorite,
                             onClose = {}
                         )
                         TinySectionHeader(title = "Make Us", subtitle = "Pick your looks", icon = PixelIcons.Palette)
                         TinyCard {
-                            Text(androidx.compose.ui.res.stringResource(R.string.ui_gift_guide_1), style = TinyType.Body)
+                            Text(org.jetbrains.compose.resources.stringResource(Res.string.ui_gift_guide_1), style = TinyType.Body)
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TinyChip(text = androidx.compose.ui.res.stringResource(R.string.ui_shared), selected = true, onClick = {})
-                            TinyChip(text = androidx.compose.ui.res.stringResource(R.string.ui_private), selected = false, onClick = {})
+                            TinyChip(text = org.jetbrains.compose.resources.stringResource(Res.string.ui_shared), selected = true, onClick = {})
+                            TinyChip(text = org.jetbrains.compose.resources.stringResource(Res.string.ui_private), selected = false, onClick = {})
                         }
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                            TinyButton(text = androidx.compose.ui.res.stringResource(R.string.ui_save_to_device), onClick = {}, icon = PixelIcons.Check)
-                            TinyButton(text = androidx.compose.ui.res.stringResource(R.string.ui_back), onClick = {}, style = TinyButtonStyle.Outline)
+                            TinyButton(text = org.jetbrains.compose.resources.stringResource(Res.string.ui_save_to_device), onClick = {}, icon = PixelIcons.Check)
+                            TinyButton(text = org.jetbrains.compose.resources.stringResource(Res.string.ui_back), onClick = {}, style = TinyButtonStyle.Outline)
                         }
                     }
                 }

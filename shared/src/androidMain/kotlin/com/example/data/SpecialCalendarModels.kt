@@ -3,6 +3,7 @@ package com.example.data
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.temporal.ChronoUnit
+import kotlinx.datetime.toKotlinLocalDate
 
 data class TinyUsMemory(
     val id: String,
@@ -24,7 +25,15 @@ object SpecialCalendarManager {
     var customMemories: List<TinyUsMemory>? = null
 
     var boyBirthday: LocalDate? = null
+        set(value) {
+            field = value
+            CoupleDates.boyBirthday = value?.toKotlinLocalDate()
+        }
     var girlBirthday: LocalDate? = null
+        set(value) {
+            field = value
+            CoupleDates.girlBirthday = value?.toKotlinLocalDate()
+        }
     var boyName: String = PersonalProfile.DEFAULT_NAME_A
     var girlName: String = PersonalProfile.DEFAULT_NAME_B
 

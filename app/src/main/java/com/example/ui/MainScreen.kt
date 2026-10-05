@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import com.example.engine.WorldViewport
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
@@ -116,6 +115,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.UUID
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import com.example.engine.GameText
 
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -420,8 +422,8 @@ fun MainScreen(
                 if (newBloom != null) delay(5000)
             }
             if (newBloom != null) {
-                val text = if (newBloom.isGolden) context.getString(R.string.ui_golden_bloom)
-                else context.getString(R.string.ui_new_bloom, newBloom.plant.name)
+                val text = if (newBloom.isGolden) GameText.get(Res.string.ui_golden_bloom)
+                else GameText.get(Res.string.ui_new_bloom, newBloom.plant.name)
                 engine.showMessage(text, duration = 4.5f)
             }
             // Special days (plan 06, G2): the couple greets the day once, on its first open.
@@ -464,7 +466,7 @@ fun MainScreen(
             // Called before the round is recorded, so the stored best is still the previous one.
             val wasBest = score > (progress.best[com.example.progress.Game.CATCH] ?: 0)
             engine.showMessage(
-                context.getString(if (wasBest) R.string.catch_result_best else R.string.catch_result, score),
+                GameText.get(if (wasBest) Res.string.catch_result_best else Res.string.catch_result, score),
                 duration = 4f
             )
         }
@@ -486,17 +488,17 @@ fun MainScreen(
                 val burst = firstsToCelebrate.size > 2
                 repeat(minOf(2, firstsToCelebrate.size)) {
                     val first = firstsToCelebrate.removeAt(0)
-                    engine.celebrateLittleFirst(context.getString(R.string.little_first_earned, context.getString(first.title)))
+                    engine.celebrateLittleFirst(GameText.get(Res.string.little_first_earned, GameText.get(first.title)))
                     delay(4200)
                     if (first.reward != null) {
-                        engine.showMessage(context.getString(R.string.little_first_reward), duration = 3.5f)
+                        engine.showMessage(GameText.get(Res.string.little_first_reward), duration = 3.5f)
                         delay(3800)
                     }
                 }
                 if (burst && firstsToCelebrate.isNotEmpty()) {
                     val more = firstsToCelebrate.size
                     firstsToCelebrate.clear()
-                    engine.showMessage(context.resources.getQuantityString(R.plurals.little_firsts_more, more, more), duration = 4f)
+                    engine.showMessage(GameText.plural(Res.plurals.little_firsts_more, more, more), duration = 4f)
                     delay(4200)
                 }
             }
@@ -643,7 +645,7 @@ fun MainScreen(
                         ContrastIcon(
                             imageVector = PixelIcons.Favorite,
                             // Without the title the heart is all there is to tap here, so it carries the name.
-                            contentDescription = if (!showTitle) stringResource(R.string.ui_tiny_us) else null,
+                            contentDescription = if (!showTitle) stringResource(Res.string.ui_tiny_us) else null,
                             tint = activeHeartTint,
                             modifier = Modifier.size(heartSize),
                             clearFactor = clearFactor,
@@ -652,7 +654,7 @@ fun MainScreen(
                         if (showTitle) {
                         Spacer(modifier = Modifier.width(3.dp))
                         Text(
-                            text = stringResource(R.string.ui_tiny_us),
+                            text = stringResource(Res.string.ui_tiny_us),
                             fontWeight = FontWeight.Bold,
                             fontSize = titleFontSize,
                             fontFamily = FontFamily.Serif,
@@ -781,7 +783,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.AutoAwesome,
-                            contentDescription = stringResource(R.string.ui_weather_desc, engine.weather.displayName),
+                            contentDescription = stringResource(Res.string.ui_weather_desc, engine.weather.displayName),
                             tint = weatherIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -825,7 +827,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = if (isSoundOn) PixelIcons.VolumeUp else PixelIcons.VolumeOff,
-                            contentDescription = stringResource(R.string.ui_toggle_audio),
+                            contentDescription = stringResource(Res.string.ui_toggle_audio),
                             tint = if (isSoundOn) activeHeartTint else mutedIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -865,7 +867,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Headphones,
-                            contentDescription = stringResource(R.string.ui_music_box_earphones),
+                            contentDescription = stringResource(Res.string.ui_music_box_earphones),
                             tint = if (engine.earphonesActive) activeHeartTint else neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -887,7 +889,7 @@ fun MainScreen(
                                 .clip(glassyCircleShape).background(buttonFillBrush).border(buttonBorderStroke, glassyCircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            ContrastIcon(PixelIcons.Palette, stringResource(R.string.ui_customize_room), activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
+                            ContrastIcon(PixelIcons.Palette, stringResource(Res.string.ui_customize_room), activeHeartTint, Modifier.size(iconSize), clearFactor, isDark)
                         }
                     }
                 }
@@ -926,7 +928,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Shuffle,
-                            contentDescription = stringResource(R.string.ui_random_scene),
+                            contentDescription = stringResource(Res.string.ui_random_scene),
                             tint = shuffleIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -966,7 +968,7 @@ fun MainScreen(
                     ) {
                         ContrastIcon(
                             imageVector = PixelIcons.Settings,
-                            contentDescription = stringResource(R.string.ui_settings),
+                            contentDescription = stringResource(Res.string.ui_settings),
                             tint = neutralIconTint,
                             modifier = Modifier.size(iconSize),
                             clearFactor = clearFactor,
@@ -1020,16 +1022,16 @@ fun MainScreen(
                 padding = com.example.ui.theme.TinySpace.md
             ) {
                 Text(
-                    stringResource(R.string.catch_hud, engine.catchScore, engine.catchSecondsLeft),
+                    stringResource(Res.string.catch_hud, engine.catchScore, engine.catchSecondsLeft),
                     style = TinyType.Label
                 )
             }
         } else if (engine.hasCatchableWeather && !engine.isDreamMode) {
             TinyButton(
-                text = stringResource(R.string.catch_start),
+                text = stringResource(Res.string.catch_start),
                 onClick = {
                     engine.startCatchGame()
-                    engine.showMessage(context.getString(R.string.catch_hint), duration = 3.5f)
+                    engine.showMessage(GameText.get(Res.string.catch_hint), duration = 3.5f)
                 },
                 icon = PixelIcons.VolunteerActivism,
                 compact = true,
@@ -1055,7 +1057,7 @@ fun MainScreen(
                 modifier = Modifier.padding(horizontal = 24.dp)
             ) {
                 Text(
-                    text = stringResource(R.string.ui_tap_characters_cottage_tree_sky_or_mailb),
+                    text = stringResource(Res.string.ui_tap_characters_cottage_tree_sky_or_mailb),
                     style = TinyType.Caption.copy(color = Color.White),
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
@@ -1157,7 +1159,7 @@ fun MainScreen(
             ) {
                 ContrastIcon(
                     imageVector = PixelIcons.Favorite,
-                    contentDescription = stringResource(R.string.ui_capture_tiny_moment_long_press_for_galle),
+                    contentDescription = stringResource(Res.string.ui_capture_tiny_moment_long_press_for_galle),
                     tint = activeHeartTint,
                     modifier = Modifier.size(26.dp),
                     clearFactor = clearFactor,
@@ -1402,13 +1404,13 @@ fun MainScreen(
                     recordProgress(com.example.progress.ProgressEvent.GiftGiven(item, fromBoy))
                     val giver = if (fromBoy) prefs.boyfriendName else prefs.girlfriendName
                     val partner = if (fromBoy) prefs.girlfriendName else prefs.boyfriendName
-                    val itemName = context.getString(keepsakeName(item))
+                    val itemName = GameText.get(keepsakeName(item))
                     // "a seashell" in the middle of the sentence (only the first letter changes).
                     engine.giveGift(fromBoy, itemName.replaceFirstChar { it.lowercase(java.util.Locale.getDefault()) })
                     // Remembered in Our Story.
                     prefs.addMemory(
-                        context.getString(R.string.gift_story_title, itemName, partner),
-                        context.getString(R.string.gift_story_note, giver),
+                        GameText.get(Res.string.gift_story_title, itemName, partner),
+                        GameText.get(Res.string.gift_story_note, giver),
                         java.time.LocalDate.now().toString(),
                         "gift"
                     )
@@ -1603,19 +1605,19 @@ internal fun specialDayLines(
     val r = context.resources
     return when (day) {
         com.example.engine.SpecialDay.BOY_BIRTHDAY ->
-            r.getString(R.string.special_boy_birthday_boy) to r.getString(R.string.special_boy_birthday_girl, boyName)
+            GameText.get(Res.string.special_boy_birthday_boy) to GameText.get(Res.string.special_boy_birthday_girl, boyName)
         com.example.engine.SpecialDay.GIRL_BIRTHDAY ->
-            r.getString(R.string.special_girl_birthday_boy, girlName) to r.getString(R.string.special_girl_birthday_girl)
+            GameText.get(Res.string.special_girl_birthday_boy, girlName) to GameText.get(Res.string.special_girl_birthday_girl)
         com.example.engine.SpecialDay.ANNIVERSARY -> {
             val years = com.example.engine.SpecialDays.yearsTogether(
-                java.time.LocalDate.now(), com.example.data.RelationshipTimeManager.relationshipStartDate
+                com.example.data.CoupleDates.today(), com.example.data.CoupleDates.anniversary
             ).coerceAtLeast(1)
-            r.getQuantityString(R.plurals.special_anniversary_boy, years, years) to r.getString(R.string.special_anniversary_girl)
+            GameText.plural(Res.plurals.special_anniversary_boy, years, years) to GameText.get(Res.string.special_anniversary_girl)
         }
-        com.example.engine.SpecialDay.NEW_YEAR -> r.getString(R.string.special_new_year_boy) to r.getString(R.string.special_new_year_girl)
-        com.example.engine.SpecialDay.VALENTINES -> r.getString(R.string.special_valentines_boy) to r.getString(R.string.special_valentines_girl)
-        com.example.engine.SpecialDay.HOLI -> r.getString(R.string.special_holi_boy) to r.getString(R.string.special_holi_girl)
-        com.example.engine.SpecialDay.DIWALI -> r.getString(R.string.special_diwali_boy) to r.getString(R.string.special_diwali_girl)
-        com.example.engine.SpecialDay.CHRISTMAS -> r.getString(R.string.special_christmas_boy) to r.getString(R.string.special_christmas_girl)
+        com.example.engine.SpecialDay.NEW_YEAR -> GameText.get(Res.string.special_new_year_boy) to GameText.get(Res.string.special_new_year_girl)
+        com.example.engine.SpecialDay.VALENTINES -> GameText.get(Res.string.special_valentines_boy) to GameText.get(Res.string.special_valentines_girl)
+        com.example.engine.SpecialDay.HOLI -> GameText.get(Res.string.special_holi_boy) to GameText.get(Res.string.special_holi_girl)
+        com.example.engine.SpecialDay.DIWALI -> GameText.get(Res.string.special_diwali_boy) to GameText.get(Res.string.special_diwali_girl)
+        com.example.engine.SpecialDay.CHRISTMAS -> GameText.get(Res.string.special_christmas_boy) to GameText.get(Res.string.special_christmas_girl)
     }
 }

@@ -47,9 +47,7 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.stringResource
 import androidx.compose.foundation.Canvas
-import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
@@ -82,14 +80,19 @@ import java.time.format.DateTimeFormatter
 import java.time.format.FormatStyle
 import java.util.Locale
 import com.example.ui.theme.PixelCircleShape
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.StringResource
+import com.example.engine.GameText
 
-private enum class StoryFilter(val labelRes: Int, val kinds: Set<StoryKind>?) {
-    ALL(R.string.story_filter_all, null),
-    MILESTONES(R.string.story_filter_milestones, setOf(StoryKind.MILESTONE, StoryKind.GARDEN)),
-    MEMORIES(R.string.story_filter_memories, setOf(StoryKind.MEMORY)),
-    LETTERS(R.string.story_filter_letters, setOf(StoryKind.LETTER)),
-    PHOTOS(R.string.story_filter_photos, setOf(StoryKind.PHOTO)),
-    TOGETHER(R.string.story_filter_together, setOf(StoryKind.ADVENTURE, StoryKind.DAILY_MOMENT, StoryKind.DREAM))
+private enum class StoryFilter(val labelRes: StringResource, val kinds: Set<StoryKind>?) {
+    ALL(Res.string.story_filter_all, null),
+    MILESTONES(Res.string.story_filter_milestones, setOf(StoryKind.MILESTONE, StoryKind.GARDEN)),
+    MEMORIES(Res.string.story_filter_memories, setOf(StoryKind.MEMORY)),
+    LETTERS(Res.string.story_filter_letters, setOf(StoryKind.LETTER)),
+    PHOTOS(Res.string.story_filter_photos, setOf(StoryKind.PHOTO)),
+    TOGETHER(Res.string.story_filter_together, setOf(StoryKind.ADVENTURE, StoryKind.DAILY_MOMENT, StoryKind.DREAM))
 }
 
 /** Reads everything the app has stored and builds the story. Runs off the main thread. */
@@ -97,7 +100,7 @@ internal fun loadStory(
     prefs: PreferencesManager,
     polaroids: PolaroidManager,
     progress: com.example.progress.ProgressState = com.example.progress.ProgressState(),
-    titleOf: (Int) -> String = { "" }
+    titleOf: (StringResource) -> String = { "" }
 ): List<StoryEntry> {
     val today = kotlinx.datetime.LocalDate.parse(java.time.LocalDate.now().toString())
     val anniversary = runCatching { kotlinx.datetime.LocalDate.parse(prefs.anniversaryDate) }.getOrNull()
@@ -140,7 +143,7 @@ fun OurStoryDialog(
     var progress by remember { mutableStateOf(progressStore.load()) }
     var showKeepsakes by remember { mutableStateOf(false) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids, progress) { context.getString(it) } }
+        value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
     }
     var filter by remember { mutableStateOf(StoryFilter.ALL) }
     // The "Little firsts" page (plan 07, B3), shown in place of the timeline.
@@ -155,10 +158,10 @@ fun OurStoryDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Column(Modifier.weight(1f)) {
-                    Text(stringResource(R.string.story_title), style = TinyType.Display, modifier = Modifier.semantics { heading() })
+                    Text(stringResource(Res.string.story_title), style = TinyType.Display, modifier = Modifier.semantics { heading() })
                     val count = story?.count { !it.isUpcoming && it.kind != StoryKind.MILESTONE } ?: 0
                     Text(
-                        stringResource(R.string.story_subtitle, prefs.getDaysTogether(), count),
+                        stringResource(Res.string.story_subtitle, prefs.getDaysTogether(), count),
                         style = TinyType.Caption,
                         modifier = Modifier.padding(top = 2.dp)
                     )
@@ -166,7 +169,7 @@ fun OurStoryDialog(
                 TinyCloseButton(
                     onClick = onDismiss,
                     testTag = "our_story_close",
-                    contentDescription = stringResource(R.string.action_close)
+                    contentDescription = stringResource(Res.string.action_close)
                 )
             }
 
@@ -183,13 +186,13 @@ fun OurStoryDialog(
                     )
                 }
                 TinyChip(
-                    text = stringResource(R.string.little_firsts),
+                    text = stringResource(Res.string.little_firsts),
                     selected = showFirsts,
                     onClick = { showFirsts = true; showKeepsakes = false },
                     icon = PixelIcons.AutoAwesome
                 )
                 TinyChip(
-                    text = stringResource(R.string.keepsakes),
+                    text = stringResource(Res.string.keepsakes),
                     selected = showKeepsakes,
                     onClick = { showKeepsakes = true; showFirsts = false },
                     icon = PixelIcons.CardGiftcard
@@ -208,7 +211,7 @@ fun OurStoryDialog(
                     }
                 })
                 all == null -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text(stringResource(R.string.story_loading), style = TinyType.Body.copy(color = TinyColors.InkMuted))
+                    Text(stringResource(Res.string.story_loading), style = TinyType.Body.copy(color = TinyColors.InkMuted))
                 }
                 else -> {
                     val visible = filter.kinds?.let { kinds -> all.filter { it.kind in kinds } } ?: all
@@ -236,7 +239,7 @@ fun OurStoryDialog(
 @Composable
 private fun SectionHeader(section: StorySection) {
     val title = if (section.year == null || section.month == null) {
-        stringResource(R.string.story_undated)
+        stringResource(Res.string.story_undated)
     } else {
         java.time.YearMonth.of(section.year!!, section.month!!)
             .format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
@@ -280,7 +283,7 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
             }
             if (dateText != null) {
                 Text(
-                    if (entry.isUpcoming) stringResource(R.string.story_upcoming, dateText) else dateText,
+                    if (entry.isUpcoming) stringResource(Res.string.story_upcoming, dateText) else dateText,
                     style = TinyType.Micro
                 )
             }
@@ -324,9 +327,9 @@ private fun EmptyStory() {
     Column(Modifier.fillMaxSize().padding(32.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
         TinyIconBadge(TinyIcons.OurStory, size = 64.dp, iconSize = 30.dp)
         Spacer(Modifier.height(TinySpace.lg))
-        Text(stringResource(R.string.story_empty_title), style = TinyType.Title, textAlign = TextAlign.Center)
+        Text(stringResource(Res.string.story_empty_title), style = TinyType.Title, textAlign = TextAlign.Center)
         Spacer(Modifier.height(6.dp))
-        Text(stringResource(R.string.story_empty_body), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
+        Text(stringResource(Res.string.story_empty_body), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
     }
 }
 
@@ -346,7 +349,7 @@ internal fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
     ) {
         item {
             Text(
-                stringResource(R.string.little_firsts_count, earned.size, all.size),
+                stringResource(Res.string.little_firsts_count, earned.size, all.size),
                 style = TinyType.Caption,
                 modifier = Modifier.padding(bottom = TinySpace.xs)
             )
@@ -356,13 +359,13 @@ internal fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
                 .format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
             LittleFirstRow(
                 title = stringResource(first.title),
-                detail = stringResource(R.string.little_first_earned_on, date) +
-                    (if (first.reward != null) " \u00b7 " + stringResource(R.string.little_first_reward_short) else ""),
+                detail = stringResource(Res.string.little_first_earned_on, date) +
+                    (if (first.reward != null) " \u00b7 " + stringResource(Res.string.little_first_reward_short) else ""),
                 earned = true
             )
         }
         items(ahead, key = { it.id }) { first ->
-            LittleFirstRow(title = stringResource(R.string.little_first_not_yet), detail = stringResource(first.hint), earned = false)
+            LittleFirstRow(title = stringResource(Res.string.little_first_not_yet), detail = stringResource(first.hint), earned = false)
         }
     }
 }
@@ -388,15 +391,14 @@ private fun LittleFirstRow(title: String, detail: String, earned: Boolean) {
 }
 
 /** The name of a keepsake, for the page and the gift message. */
-@androidx.annotation.StringRes
-internal fun keepsakeName(item: String): Int = when (item.substringAfter(":")) {
-    "WILDFLOWER" -> R.string.keepsake_wildflower
-    "RED_LEAF" -> R.string.keepsake_red_leaf
-    "LOVE_NOTE" -> R.string.keepsake_love_note
-    "SEASHELL" -> R.string.keepsake_seashell
-    "STAR_PEBBLE" -> R.string.keepsake_star_pebble
-    "MOCHI_TOY" -> R.string.keepsake_mochi_toy
-    else -> R.string.keepsake_something
+internal fun keepsakeName(item: String): StringResource = when (item.substringAfter(":")) {
+    "WILDFLOWER" -> Res.string.keepsake_wildflower
+    "RED_LEAF" -> Res.string.keepsake_red_leaf
+    "LOVE_NOTE" -> Res.string.keepsake_love_note
+    "SEASHELL" -> Res.string.keepsake_seashell
+    "STAR_PEBBLE" -> Res.string.keepsake_star_pebble
+    "MOCHI_TOY" -> Res.string.keepsake_mochi_toy
+    else -> Res.string.keepsake_something
 }
 
 /**
@@ -417,7 +419,7 @@ private fun KeepsakesPage(
         modifier = Modifier.fillMaxSize().testTag("keepsakes_page")
     ) {
         if (kept.isEmpty()) {
-            item { Text(stringResource(R.string.keepsakes_empty), style = TinyType.Body.copy(color = TinyColors.InkMuted)) }
+            item { Text(stringResource(Res.string.keepsakes_empty), style = TinyType.Body.copy(color = TinyColors.InkMuted)) }
         }
         items(kept.keys.toList(), key = { it }) { item ->
             val count = kept[item] ?: 0
@@ -430,20 +432,20 @@ private fun KeepsakesPage(
                     Spacer(Modifier.width(TinySpace.md))
                     Column(Modifier.weight(1f)) {
                         Text(stringResource(keepsakeName(item)), style = TinyType.BodyStrong)
-                        Text(pluralStringResource(R.plurals.keepsake_count, count, count), style = TinyType.Caption)
+                        Text(pluralStringResource(Res.plurals.keepsake_count, count, count), style = TinyType.Caption)
                     }
                 }
                 if (onGive != null && item in com.example.progress.Gifts.GIVEABLE) {
                     Row(Modifier.padding(top = TinySpace.sm), horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                         TinyButton(
-                            text = stringResource(R.string.keepsake_give, boyName, girlName),
+                            text = stringResource(Res.string.keepsake_give, boyName, girlName),
                             onClick = { onGive(item, true) },
                             style = TinyButtonStyle.Outline,
                             compact = true,
                             modifier = Modifier.weight(1f)
                         )
                         TinyButton(
-                            text = stringResource(R.string.keepsake_give, girlName, boyName),
+                            text = stringResource(Res.string.keepsake_give, girlName, boyName),
                             onClick = { onGive(item, false) },
                             style = TinyButtonStyle.Outline,
                             compact = true,
@@ -454,7 +456,7 @@ private fun KeepsakesPage(
             }
         }
         if (progress.shelf.isNotEmpty()) {
-            item { Text(stringResource(R.string.keepsakes_on_shelf, progress.shelf.size), style = TinyType.Caption, modifier = Modifier.padding(top = TinySpace.sm)) }
+            item { Text(stringResource(Res.string.keepsakes_on_shelf, progress.shelf.size), style = TinyType.Caption, modifier = Modifier.padding(top = TinySpace.sm)) }
         }
     }
 }

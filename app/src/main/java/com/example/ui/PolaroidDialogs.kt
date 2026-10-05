@@ -1,8 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -177,6 +175,9 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
 
 // -----------------------------------------------------------------------------
 // POLAROID CAPTURE OVERLAY
@@ -207,7 +208,7 @@ fun PolaroidCaptureOverlay(
     val flashAlpha by animateFloatAsState(
         targetValue = if (!hasFlashed) 1f else 0f,
         animationSpec = tween(durationMillis = 200, easing = FastOutSlowInEasing),
-        label = stringResource(R.string.ui_flash_alpha)
+        label = stringResource(Res.string.ui_flash_alpha)
     )
 
     // Card drop offset
@@ -217,7 +218,7 @@ fun PolaroidCaptureOverlay(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessMediumLow
         ),
-        label = stringResource(R.string.ui_card_offset)
+        label = stringResource(Res.string.ui_card_offset)
     )
 
     LaunchedEffect(Unit) {
@@ -294,7 +295,7 @@ fun PolaroidCaptureOverlay(
                     ) {
                         // 1. Save to Device (primary action)
                         TinyButton(
-                            text = if (savedToDevice) stringResource(R.string.ui_saved_to_photos) else stringResource(R.string.ui_save_to_device),
+                            text = if (savedToDevice) stringResource(Res.string.ui_saved_to_photos) else stringResource(Res.string.ui_save_to_device),
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(bitmap, memory.title)
                                 if (success) {
@@ -304,18 +305,18 @@ fun PolaroidCaptureOverlay(
                             },
                             modifier = Modifier
                                 .weight(1.2f)
-                                .describedAs(R.string.ui_save_to_device),
+                                .describedAs(Res.string.ui_save_to_device),
                             style = if (savedToDevice) TinyButtonStyle.Success else TinyButtonStyle.Primary,
                             icon = if (savedToDevice) PixelIcons.Check else PixelIcons.Download
                         )
 
                         // 2. All Memories button
                         TinyButton(
-                            text = stringResource(R.string.ui_memories),
+                            text = stringResource(Res.string.ui_memories),
                             onClick = onOpenGallery,
                             modifier = Modifier
                                 .weight(1f)
-                                .describedAs(R.string.memories),
+                                .describedAs(Res.string.memories),
                             style = TinyButtonStyle.Secondary,
                             icon = TinyIcons.Heart
                         )
@@ -331,7 +332,7 @@ fun PolaroidCaptureOverlay(
                         colors = ButtonDefaults.textButtonColors(contentColor = Color.White)
                     ) {
                         Text(
-                            text = stringResource(R.string.ui_done),
+                            text = stringResource(Res.string.ui_done),
                             style = TinyType.Label.copy(color = Color.Unspecified)
                         )
                     }
@@ -474,7 +475,7 @@ fun PolaroidCard(
                 ) {
                     Icon(
                         PixelIcons.DeleteOutline,
-                        contentDescription = stringResource(R.string.ui_delete_memory),
+                        contentDescription = stringResource(Res.string.ui_delete_memory),
                         tint = Color.White,
                         modifier = Modifier.size(16.dp)
                     )
@@ -543,19 +544,19 @@ fun PolaroidGalleryDialog(
                     ) {
                         // 1. Back button
                         TinyButton(
-                            text = stringResource(R.string.ui_back),
+                            text = stringResource(Res.string.ui_back),
                             onClick = {
                                 selectedMemory = null
                                 selectedBitmap = null
                             },
-                            modifier = Modifier.describedAs(R.string.ui_back),
+                            modifier = Modifier.describedAs(Res.string.ui_back),
                             style = TinyButtonStyle.Secondary,
                             icon = PixelIcons.ArrowBack
                         )
 
                         // 2. Save to Device button
                         TinyButton(
-                            text = if (savedInInspector) stringResource(R.string.ui_saved) else stringResource(R.string.ui_save_to_device),
+                            text = if (savedInInspector) stringResource(Res.string.ui_saved) else stringResource(Res.string.ui_save_to_device),
                             onClick = {
                                 val success = polaroidManager.saveToDeviceGallery(
                                     selectedBitmap!!,
@@ -568,7 +569,7 @@ fun PolaroidGalleryDialog(
                             },
                             modifier = Modifier
                                 .weight(1f)
-                                .describedAs(R.string.ui_save_to_device),
+                                .describedAs(Res.string.ui_save_to_device),
                             style = if (savedInInspector) TinyButtonStyle.Success else TinyButtonStyle.Primary,
                             icon = if (savedInInspector) PixelIcons.Check else PixelIcons.Download
                         )
@@ -589,7 +590,7 @@ fun PolaroidGalleryDialog(
                             Box(contentAlignment = Alignment.Center) {
                                 Icon(
                                     imageVector = PixelIcons.DeleteOutline,
-                                    contentDescription = stringResource(R.string.ui_delete),
+                                    contentDescription = stringResource(Res.string.ui_delete),
                                     tint = TinyColors.Rose,
                                     modifier = Modifier.size(20.dp)
                                 )
@@ -607,8 +608,8 @@ fun PolaroidGalleryDialog(
         maxHeight = 620.dp
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_polaroid_memories),
-            subtitle = if (polaroids.isEmpty()) stringResource(R.string.ui_no_moments_captured_yet) else pluralStringResource(R.plurals.ui_moments_captured, polaroids.size, polaroids.size),
+            title = stringResource(Res.string.ui_polaroid_memories),
+            subtitle = if (polaroids.isEmpty()) stringResource(Res.string.ui_no_moments_captured_yet) else pluralStringResource(Res.plurals.ui_moments_captured, polaroids.size, polaroids.size),
             icon = PixelIcons.PhotoCamera,
             onClose = onDismiss
         )
@@ -628,13 +629,13 @@ fun PolaroidGalleryDialog(
                     )
                     Spacer(modifier = Modifier.height(TinySpace.md))
                     Text(
-                        text = stringResource(R.string.ui_your_album_is_waiting),
+                        text = stringResource(Res.string.ui_your_album_is_waiting),
                         style = TinyType.Section,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(TinySpace.xs))
                     Text(
-                        text = stringResource(R.string.ui_tap_the_heart_button_anytime_to_ncapture),
+                        text = stringResource(Res.string.ui_tap_the_heart_button_anytime_to_ncapture),
                         style = TinyType.Caption,
                         textAlign = TextAlign.Center
                     )
@@ -770,7 +771,7 @@ internal fun PolaroidGridTile(
             ) {
                 Icon(
                     PixelIcons.DeleteOutline,
-                    contentDescription = stringResource(R.string.ui_delete),
+                    contentDescription = stringResource(Res.string.ui_delete),
                     tint = Color.White,
                     modifier = Modifier.size(15.dp)
                 )

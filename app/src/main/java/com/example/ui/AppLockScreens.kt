@@ -59,6 +59,7 @@ import com.example.ui.theme.TinyType
 import kotlinx.coroutines.delay
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
+import com.example.resources.*
 
 internal tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (this) {
     is FragmentActivity -> this
@@ -190,7 +191,7 @@ private fun ForgotPinDialog(activity: FragmentActivity?, store: AppLockStore, on
             }
         }
         TinyButton(
-            text = stringResource(R.string.action_close),
+            text = org.jetbrains.compose.resources.stringResource(Res.string.action_close),
             onClick = onDismiss,
             style = TinyButtonStyle.Ghost,
             modifier = Modifier.align(Alignment.End)

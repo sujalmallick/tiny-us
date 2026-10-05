@@ -1,8 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -176,6 +174,9 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun MusicPlayerDialog(
@@ -195,7 +196,7 @@ fun MusicPlayerDialog(
             animation = tween(4000, easing = LinearEasing),
             repeatMode = RepeatMode.Restart
         ),
-        label = stringResource(R.string.ui_vinyl_rotation)
+        label = stringResource(Res.string.ui_vinyl_rotation)
     )
     val vinylAngle = if (isPlaying) rotation else 0f
 
@@ -207,12 +208,12 @@ fun MusicPlayerDialog(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = stringResource(R.string.ui_music_box),
+                    text = stringResource(Res.string.ui_music_box),
                     style = TinyType.Title,
                     modifier = Modifier.semantics { heading() }
                 )
                 Text(
-                    text = stringResource(R.string.ui_listening_together),
+                    text = stringResource(Res.string.ui_listening_together),
                     style = TinyType.Caption,
                     modifier = Modifier.padding(top = 2.dp)
                 )
@@ -242,13 +243,13 @@ fun MusicPlayerDialog(
                 ) {
                     Icon(
                         imageVector = PixelIcons.Headphones,
-                        contentDescription = stringResource(R.string.ui_earphones),
+                        contentDescription = stringResource(Res.string.ui_earphones),
                         tint = if (earphonesOn) TinyColors.Rose else TinyColors.InkMuted,
                         modifier = Modifier.size(16.dp)
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = if (earphonesOn) stringResource(R.string.ui_shared) else stringResource(R.string.ui_earphones),
+                        text = if (earphonesOn) stringResource(Res.string.ui_shared) else stringResource(Res.string.ui_earphones),
                         style = TinyType.Label.copy(color = if (earphonesOn) TinyColors.Rose else TinyColors.Ink),
                         maxLines = 1
                     )
@@ -316,7 +317,7 @@ fun MusicPlayerDialog(
                         )
                         if (audio.currentSong.rawResId != null) {
                             Spacer(modifier = Modifier.width(6.dp))
-                            TinyTag(text = stringResource(R.string.ui_mp3), color = TinyColors.Rose, background = TinyColors.RoseSoft)
+                            TinyTag(text = stringResource(Res.string.ui_mp3), color = TinyColors.Rose, background = TinyColors.RoseSoft)
                         }
                     }
 
@@ -352,7 +353,7 @@ fun MusicPlayerDialog(
                 ) {
                     Icon(
                         imageVector = PixelIcons.SkipPrevious,
-                        contentDescription = stringResource(R.string.ui_previous_song),
+                        contentDescription = stringResource(Res.string.ui_previous_song),
                         tint = TinyColors.Ink,
                         modifier = Modifier.size(24.dp)
                     )
@@ -379,7 +380,7 @@ fun MusicPlayerDialog(
                 ) {
                     Icon(
                         imageVector = if (isPlaying) PixelIcons.Pause else PixelIcons.PlayArrow,
-                        contentDescription = stringResource(R.string.ui_play_pause),
+                        contentDescription = stringResource(Res.string.ui_play_pause),
                         tint = Color.White,
                         modifier = Modifier.size(28.dp)
                     )
@@ -396,7 +397,7 @@ fun MusicPlayerDialog(
                 ) {
                     Icon(
                         imageVector = PixelIcons.SkipNext,
-                        contentDescription = stringResource(R.string.ui_next_song),
+                        contentDescription = stringResource(Res.string.ui_next_song),
                         tint = TinyColors.Ink,
                         modifier = Modifier.size(24.dp)
                     )
@@ -414,11 +415,11 @@ fun MusicPlayerDialog(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = stringResource(R.string.ui_playlist),
+                    text = stringResource(Res.string.ui_playlist),
                     style = TinyType.Micro.copy(fontWeight = FontWeight.Bold, letterSpacing = 1.sp)
                 )
                 Text(
-                    text = pluralStringResource(R.plurals.ui_song_count, audio.playlist.size, audio.playlist.size),
+                    text = pluralStringResource(Res.plurals.ui_song_count, audio.playlist.size, audio.playlist.size),
                     style = TinyType.Micro
                 )
             }
@@ -479,7 +480,7 @@ fun MusicPlayerDialog(
                                         if (song.rawResId != null) {
                                             Spacer(modifier = Modifier.width(6.dp))
                                             TinyTag(
-                                                text = stringResource(R.string.ui_mp3),
+                                                text = stringResource(Res.string.ui_mp3),
                                                 color = if (isSelected) TinyColors.Rose else TinyColors.InkMuted,
                                                 background = if (isSelected) TinyColors.Card else TinyColors.Muted
                                             )
@@ -498,9 +499,9 @@ fun MusicPlayerDialog(
                                 Spacer(modifier = Modifier.width(TinySpace.sm))
                                 TinyTag(
                                     text = when (audio.musicBoxState) {
-                                        MusicBoxState.PLAYING -> stringResource(R.string.ui_playing)
-                                        MusicBoxState.PAUSED -> stringResource(R.string.ui_paused)
-                                        MusicBoxState.STOPPED -> stringResource(R.string.ui_selected)
+                                        MusicBoxState.PLAYING -> stringResource(Res.string.ui_playing)
+                                        MusicBoxState.PAUSED -> stringResource(Res.string.ui_paused)
+                                        MusicBoxState.STOPPED -> stringResource(Res.string.ui_selected)
                                     },
                                     color = TinyColors.Rose,
                                     background = TinyColors.Card

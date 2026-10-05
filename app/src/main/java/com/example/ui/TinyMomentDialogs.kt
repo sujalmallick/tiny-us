@@ -1,8 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
@@ -171,6 +169,9 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
+import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun DailyTinyMomentDialog(
@@ -214,7 +215,7 @@ fun DailyTinyMomentDialog(
             Spacer(modifier = Modifier.height(TinySpace.md))
 
             Text(
-                text = stringResource(R.string.ui_today_s_tiny_moment),
+                text = stringResource(Res.string.ui_today_s_tiny_moment),
                 style = TinyType.Label.copy(color = TinyColors.Rose)
             )
 
@@ -235,7 +236,7 @@ fun DailyTinyMomentDialog(
                     animation = tween(2200, easing = LinearEasing),
                     repeatMode = RepeatMode.Restart
                 ),
-                label = stringResource(R.string.ui_shinesweep)
+                label = stringResource(Res.string.ui_shinesweep)
             )
             val shineGlow by infiniteTransition.animateFloat(
                 initialValue = 0.5f,
@@ -244,14 +245,14 @@ fun DailyTinyMomentDialog(
                     animation = tween(1100, easing = FastOutSlowInEasing),
                     repeatMode = RepeatMode.Reverse
                 ),
-                label = stringResource(R.string.ui_shineglow)
+                label = stringResource(Res.string.ui_shineglow)
             )
 
             var isPressed by remember { mutableStateOf(false) }
             val scale by animateFloatAsState(
                 targetValue = if (isPressed) 0.93f else 1f,
                 animationSpec = spring(stiffness = androidx.compose.animation.core.Spring.StiffnessMediumLow),
-                label = stringResource(R.string.ui_day_scale)
+                label = stringResource(Res.string.ui_day_scale)
             )
 
             Box(
@@ -318,7 +319,7 @@ fun DailyTinyMomentDialog(
                             )
                             Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                text = stringResource(R.string.ui_day_of_tiny_us, currentDay),
+                                text = stringResource(Res.string.ui_day_of_tiny_us, currentDay),
                                 style = TinyType.Label.copy(
                                     fontFamily = FontFamily.Serif,
                                     fontWeight = FontWeight.Bold,
@@ -338,7 +339,7 @@ fun DailyTinyMomentDialog(
             }
 
             Text(
-                text = stringResource(R.string.ui_tap_to_view_our_live_love_clock),
+                text = stringResource(Res.string.ui_tap_to_view_our_live_love_clock),
                 style = TinyType.Micro
             )
         }
@@ -365,7 +366,7 @@ fun DailyTinyMomentDialog(
                         ) {
                             Icon(
                                 PixelIcons.ArrowBack,
-                                contentDescription = stringResource(R.string.ui_previous_scene),
+                                contentDescription = stringResource(Res.string.ui_previous_scene),
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -379,7 +380,7 @@ fun DailyTinyMomentDialog(
                         ) {
                             Icon(
                                 PixelIcons.ArrowForward,
-                                contentDescription = stringResource(R.string.ui_next_scene),
+                                contentDescription = stringResource(Res.string.ui_next_scene),
                                 tint = TinyColors.InkMuted,
                                 modifier = Modifier.size(20.dp)
                             )
@@ -403,14 +404,14 @@ fun DailyTinyMomentDialog(
             verticalAlignment = Alignment.CenterVertically
         ) {
             TinyButton(
-                text = stringResource(R.string.ui_close),
+                text = stringResource(Res.string.ui_close),
                 onClick = onDismiss,
                 modifier = Modifier.weight(1f),
                 style = TinyButtonStyle.Ghost
             )
 
             TinyButton(
-                text = stringResource(R.string.ui_watch_scene),
+                text = stringResource(Res.string.ui_watch_scene),
                 onClick = {
                     val matchedScene = when (currentMoment.dayIndex) {
                         0 -> SceneType.FLOWER
@@ -483,7 +484,7 @@ fun RelationshipDurationDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             Text(
-                text = stringResource(R.string.ui_our_time),
+                text = stringResource(Res.string.ui_our_time),
                 style = TinyType.Label.copy(color = TinyColors.Rose, letterSpacing = 1.5.sp)
             )
 
@@ -496,7 +497,7 @@ fun RelationshipDurationDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             Text(
-                text = stringResource(R.string.ui_together_since),
+                text = stringResource(Res.string.ui_together_since),
                 style = TinyType.Caption
             )
 
@@ -517,15 +518,15 @@ fun RelationshipDurationDialog(
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             // Years, Months, Days
             Text(
-                text = pluralStringResource(R.plurals.ui_years, duration.years, duration.years),
+                text = pluralStringResource(Res.plurals.ui_years, duration.years, duration.years),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
             Text(
-                text = pluralStringResource(R.plurals.ui_months, duration.months, duration.months),
+                text = pluralStringResource(Res.plurals.ui_months, duration.months, duration.months),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
             Text(
-                text = pluralStringResource(R.plurals.ui_days, duration.days, duration.days),
+                text = pluralStringResource(Res.plurals.ui_days, duration.days, duration.days),
                 style = TinyType.Section.copy(fontSize = 18.sp, lineHeight = 24.sp)
             )
 
@@ -551,13 +552,13 @@ fun RelationshipDurationDialog(
         val formattedTotalDays = java.text.NumberFormat.getNumberInstance()
             .format(duration.totalDays)
         Text(
-            text = pluralStringResource(R.plurals.ui_total_days, duration.totalDays.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), formattedTotalDays),
+            text = pluralStringResource(Res.plurals.ui_total_days, duration.totalDays.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), formattedTotalDays),
             style = TinyType.Display.copy(color = TinyColors.Rose),
             textAlign = TextAlign.Center
         )
 
         TinyButton(
-            text = stringResource(R.string.ui_close),
+            text = stringResource(Res.string.ui_close),
             onClick = onDismiss,
             modifier = Modifier.fillMaxWidth(0.6f),
             style = TinyButtonStyle.Secondary,
@@ -600,7 +601,7 @@ fun ShiningDayBadge(
             )
             Spacer(modifier = Modifier.width(3.dp))
             Text(
-                text = stringResource(R.string.ui_day_number, dayCount),
+                text = stringResource(Res.string.ui_day_number, dayCount),
                 style = TinyType.Micro.copy(
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Serif,

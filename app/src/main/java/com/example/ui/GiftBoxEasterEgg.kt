@@ -1,7 +1,6 @@
 package com.example.ui
 
 import com.example.R
-import androidx.compose.ui.res.stringResource
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -53,6 +52,8 @@ import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
+import com.example.resources.*
+import org.jetbrains.compose.resources.stringResource
 
 @Composable
 fun GiftBoxEasterEgg(
@@ -84,7 +85,7 @@ fun GiftBoxEasterEgg(
             animation = tween(1100, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = stringResource(R.string.ui_glowpulse)
+        label = stringResource(Res.string.ui_glowpulse)
     )
 
     val wobbleAngle by animateFloatAsState(
@@ -95,7 +96,7 @@ fun GiftBoxEasterEgg(
             else -> 10f
         },
         animationSpec = spring(dampingRatio = 0.4f, stiffness = 400f),
-        label = stringResource(R.string.ui_wobble)
+        label = stringResource(Res.string.ui_wobble)
     )
 
     Surface(
@@ -114,7 +115,7 @@ fun GiftBoxEasterEgg(
             if (!isOpened) {
                 // UNOPENED GIFT BOX
                 Text(
-                    text = stringResource(R.string.ui_a_secret_surprise_for_you),
+                    text = stringResource(Res.string.ui_a_secret_surprise_for_you),
                     style = TinyType.Section.copy(color = TinyColors.Rose),
                     textAlign = TextAlign.Center
                 )
@@ -173,12 +174,12 @@ fun GiftBoxEasterEgg(
 
                 // Progress teaser text
                 val hintText = when (tapCount) {
-                    0 -> stringResource(R.string.ui_gift_hint_0)
-                    1 -> stringResource(R.string.ui_gift_hint_1)
-                    2 -> stringResource(R.string.ui_gift_hint_2)
-                    3 -> stringResource(R.string.ui_gift_hint_3)
-                    4 -> stringResource(R.string.ui_gift_hint_4)
-                    else -> stringResource(R.string.ui_gift_hint_5)
+                    0 -> stringResource(Res.string.ui_gift_hint_0)
+                    1 -> stringResource(Res.string.ui_gift_hint_1)
+                    2 -> stringResource(Res.string.ui_gift_hint_2)
+                    3 -> stringResource(Res.string.ui_gift_hint_3)
+                    4 -> stringResource(Res.string.ui_gift_hint_4)
+                    else -> stringResource(Res.string.ui_gift_hint_5)
                 }
 
                 Text(
@@ -210,19 +211,19 @@ fun GiftBoxEasterEgg(
                     verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
                 ) {
                     Text(
-                        text = stringResource(R.string.ui_your_surprise_is_ready),
+                        text = stringResource(Res.string.ui_your_surprise_is_ready),
                         style = TinyType.Section.copy(color = TinyColors.Rose),
                         textAlign = TextAlign.Center
                     )
                     TinyButton(
-                        text = stringResource(R.string.ui_open_your_surprise),
+                        text = stringResource(Res.string.ui_open_your_surprise),
                         onClick = { showSurpriseDialog = true },
                         modifier = Modifier.fillMaxWidth(),
                         style = TinyButtonStyle.Primary,
                         icon = TinyIcons.Gift
                     )
                     TinyButton(
-                        text = stringResource(R.string.ui_rewrap_gift),
+                        text = stringResource(Res.string.ui_rewrap_gift),
                         onClick = {
                             tapCount = 0
                             isOpened = false
@@ -252,7 +253,7 @@ internal fun RomanticSurpriseDialog(
             animation = tween(1100, easing = FastOutSlowInEasing),
             repeatMode = RepeatMode.Reverse
         ),
-        label = stringResource(R.string.ui_surpriseglowpulse)
+        label = stringResource(Res.string.ui_surpriseglowpulse)
     )
 
     TinyDialog(
@@ -261,8 +262,8 @@ internal fun RomanticSurpriseDialog(
         verticalSpacing = TinySpace.lg
     ) {
         TinyDialogHeader(
-            title = stringResource(R.string.ui_a_gift_made_with_love),
-            subtitle = stringResource(R.string.ui_made_with_love_by_yours),
+            title = stringResource(Res.string.ui_a_gift_made_with_love),
+            subtitle = stringResource(Res.string.ui_made_with_love_by_yours),
             icon = TinyIcons.Gift
         )
 
@@ -306,7 +307,7 @@ internal fun RomanticSurpriseDialog(
                 ) {
                     if (!isNameRevealed) {
                         Text(
-                            text = stringResource(R.string.ui_tap_to_unhide_name),
+                            text = stringResource(Res.string.ui_tap_to_unhide_name),
                             style = TinyType.Section.copy(color = TinyColors.Rose, letterSpacing = 0.5.sp)
                         )
                     } else {
@@ -322,7 +323,7 @@ internal fun RomanticSurpriseDialog(
                             )
                             Spacer(modifier = Modifier.height(2.dp))
                             Text(
-                                text = stringResource(R.string.ui_always_yours_tap_to_hide),
+                                text = stringResource(Res.string.ui_always_yours_tap_to_hide),
                                 style = TinyType.Micro.copy(color = TinyColors.Rose)
                             )
                         }
@@ -332,17 +333,17 @@ internal fun RomanticSurpriseDialog(
 
             // Romantic letter
             val profile = com.example.data.ProfileManager.getProfile()
-            val creatorName = if (isNameRevealed) profile.boyName else stringResource(R.string.ui_gift_your_favorite_person)
+            val creatorName = if (isNameRevealed) profile.boyName else stringResource(Res.string.ui_gift_your_favorite_person)
             val letterContent = profile.secretLetter.ifBlank {
-                stringResource(R.string.ui_gift_letter_default)
+                stringResource(Res.string.ui_gift_letter_default)
             }
             TinyCard(spacing = TinySpace.sm) {
                 Text(
-                    text = stringResource(R.string.ui_to_the_love_of_my_life),
+                    text = stringResource(Res.string.ui_to_the_love_of_my_life),
                     style = TinyType.BodyStrong
                 )
                 Text(
-                    text = stringResource(R.string.ui_letter_signoff, letterContent, creatorName),
+                    text = stringResource(Res.string.ui_letter_signoff, letterContent, creatorName),
                     style = TinyType.Body
                 )
                 Column(
@@ -369,45 +370,45 @@ internal fun RomanticSurpriseDialog(
                 verticalArrangement = Arrangement.spacedBy(TinySpace.sm)
             ) {
                 Text(
-                    text = stringResource(R.string.ui_a_little_guide_for_you_how_to_play),
+                    text = stringResource(Res.string.ui_a_little_guide_for_you_how_to_play),
                     style = TinyType.Section
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_street_food_date_our_food_stall),
-                    desc = stringResource(R.string.ui_gift_guide_0)
+                    title = stringResource(Res.string.ui_street_food_date_our_food_stall),
+                    desc = stringResource(Res.string.ui_gift_guide_0)
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_double_click_secret_whispers),
-                    desc = stringResource(R.string.ui_gift_guide_1)
+                    title = stringResource(Res.string.ui_double_click_secret_whispers),
+                    desc = stringResource(Res.string.ui_gift_guide_1)
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_cozy_couple_hug),
-                    desc = stringResource(R.string.ui_gift_guide_2)
+                    title = stringResource(Res.string.ui_cozy_couple_hug),
+                    desc = stringResource(Res.string.ui_gift_guide_2)
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_interactive_world_touches),
-                    desc = stringResource(R.string.ui_gift_guide_3)
+                    title = stringResource(Res.string.ui_interactive_world_touches),
+                    desc = stringResource(Res.string.ui_gift_guide_3)
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_atmosphere_and_relaxing_melodies),
-                    desc = stringResource(R.string.ui_gift_guide_4)
+                    title = stringResource(Res.string.ui_atmosphere_and_relaxing_melodies),
+                    desc = stringResource(Res.string.ui_gift_guide_4)
                 )
                 GuideItem(
                     icon = "",
-                    title = stringResource(R.string.ui_love_letters_and_keepsakes),
-                    desc = stringResource(R.string.ui_gift_guide_5)
+                    title = stringResource(Res.string.ui_love_letters_and_keepsakes),
+                    desc = stringResource(Res.string.ui_gift_guide_5)
                 )
             }
         }
 
         Column(verticalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
             TinyButton(
-                text = stringResource(R.string.ui_take_me_to_street_food_date),
+                text = stringResource(Res.string.ui_take_me_to_street_food_date),
                 onClick = {
                     onDismiss()
                     onJumpToMomoStall()
@@ -420,8 +421,8 @@ internal fun RomanticSurpriseDialog(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
             ) {
-                TinyButton(text = stringResource(R.string.ui_close), onClick = onDismiss, style = TinyButtonStyle.Ghost)
-                TinyButton(text = stringResource(R.string.ui_rewrap_gift), onClick = onRewrap, style = TinyButtonStyle.Ghost)
+                TinyButton(text = stringResource(Res.string.ui_close), onClick = onDismiss, style = TinyButtonStyle.Ghost)
+                TinyButton(text = stringResource(Res.string.ui_rewrap_gift), onClick = onRewrap, style = TinyButtonStyle.Ghost)
             }
         }
     }

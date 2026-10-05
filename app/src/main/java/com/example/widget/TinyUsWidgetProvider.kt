@@ -13,6 +13,8 @@ import com.example.MainActivity
 import com.example.R
 import com.example.data.PreferencesManager
 import com.example.ui.WidgetSceneRenderer
+import com.example.resources.*
+import com.example.engine.GameText
 
 /**
  * AppWidgetProvider for Tiny Us: a small pixel-art window into the couple's world (plan 06, H).
@@ -68,7 +70,7 @@ class TinyUsWidgetProvider : AppWidgetProvider() {
             val views = RemoteViews(context.packageName, R.layout.tiny_us_widget)
 
             views.setTextViewText(R.id.widget_couple_names, data.coupleNames)
-            views.setTextViewText(R.id.widget_day_counter, context.getString(R.string.ui_day_number, data.daysTogether))
+            views.setTextViewText(R.id.widget_day_counter, GameText.get(Res.string.ui_day_number, data.daysTogether))
             val statusText = when {
                 !data.latestSignalText.isNullOrBlank() -> data.latestSignalText
                 !data.sharedMoodText.isNullOrBlank() -> context.getString(R.string.widget_mood, data.sharedMoodText)
