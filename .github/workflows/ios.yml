@@ -2,10 +2,37 @@ name: Tiny Us iOS Build & IPA Package
 
 on:
   workflow_dispatch:
+  # Builds iOS work branches on every push, and any pull request that touches iOS or shared code.
+  push:
+    branches: [ 'ios/**' ]
+    paths:
+      - 'iosApp/**'
+      - 'shared/**'
+      - 'app/src/main/res/raw/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - '.github/workflows/ios.yml'
+      - '.github/scripts/report_build_errors.py'
+  pull_request:
+    paths:
+      - 'iosApp/**'
+      - 'shared/**'
+      - 'app/src/main/res/raw/**'
+      - 'gradle/**'
+      - '*.gradle.kts'
+      - '.github/workflows/ios.yml'
+      - '.github/scripts/report_build_errors.py'
+
+concurrency:
+  group: ios-${{ github.event_name }}-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   build-ios:
+    # An ios/** branch is already built by its push; skip the duplicate pull_request run.
+    if: github.event_name != 'pull_request' || !startsWith(github.head_ref, 'ios/')
     runs-on: macos-latest
+    timeout-minutes: 60
 
     steps:
       - name: Checkout repository
@@ -26,14 +53,26 @@ jobs:
       - name: Configure Android SDK Location
         run: echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > local.properties
 
+      - name: Show toolchain
+        run: |
+          mkdir -p build-logs
+          sw_vers
+          xcodebuild -version
+
       - name: Verify Privacy & Safeguards
-        run: ./gradlew verifyNoUnauthorizedNetworkingOrAnalytics
+        run: |
+          set -o pipefail
+          ./gradlew verifyNoUnauthorizedNetworkingOrAnalytics 2>&1 | tee build-logs/gradle-privacy.log
 
       - name: Run Shared iOS Unit Tests
-        run: ./gradlew :shared:iosSimulatorArm64Test
+        run: |
+          set -o pipefail
+          ./gradlew :shared:iosSimulatorArm64Test 2>&1 | tee build-logs/gradle-ios-tests.log
 
       - name: Precompile Shared iOS Frameworks
-        run: ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64
+        run: |
+          set -o pipefail
+          ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64 2>&1 | tee build-logs/gradle-frameworks.log
 
       - name: Build iOS App (Simulator Debug)
         run: |
@@ -47,7 +86,7 @@ jobs:
                      JAVA_HOME="$JAVA_HOME" \
                      CODE_SIGNING_ALLOWED=NO \
                      CODE_SIGNING_REQUIRED=NO \
-                     build 2>&1 | tee xcodebuild-debug.log || (echo "=== XCODEBUILD FAILED: LAST 150 LINES ===" && tail -n 150 xcodebuild-debug.log && exit 1)
+                     build 2>&1 | tee build-logs/xcodebuild-debug.log
 
       - name: Archive iOS App for Device
         run: |
@@ -62,7 +101,7 @@ jobs:
                      JAVA_HOME="$JAVA_HOME" \
                      archive \
                      CODE_SIGNING_ALLOWED=NO \
-                     CODE_SIGNING_REQUIRED=NO 2>&1 | tee xcodebuild-archive.log || (echo "=== XCODEBUILD ARCHIVE FAILED: LAST 150 LINES ===" && tail -n 150 xcodebuild-archive.log && exit 1)
+                     CODE_SIGNING_REQUIRED=NO 2>&1 | tee build-logs/xcodebuild-archive.log
 
       - name: Package Unsigned IPA
         run: |
@@ -77,13 +116,16 @@ jobs:
           path: TinyUs-iOS-unsigned.ipa
           retention-days: 14
 
-      - name: Upload Xcode Build Logs
+      # Job logs need a GitHub login, but annotations are public: surface compiler errors there.
+      - name: Report build errors
+        if: failure()
+        run: python3 .github/scripts/report_build_errors.py build-logs
+
+      - name: Upload Build Logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xcode-build-logs
-          path: |
-            xcodebuild-debug.log
-            xcodebuild-archive.log
+          name: ios-build-logs
+          path: build-logs/
           if-no-files-found: ignore
           retention-days: 7
