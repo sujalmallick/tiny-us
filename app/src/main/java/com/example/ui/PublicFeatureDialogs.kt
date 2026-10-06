@@ -1,6 +1,5 @@
 package com.example.ui
 
-import com.example.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,7 +17,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.rounded.Send
 import androidx.compose.material.icons.rounded.CardGiftcard
 import androidx.compose.material.icons.rounded.Check
@@ -47,7 +45,6 @@ import com.example.data.AdventureStatus
 import com.example.data.DailyMomentResponse
 import com.example.data.DailyPromptCatalog
 import com.example.data.DateAdventure
-import com.example.data.DateAdventureCatalog
 import com.example.data.LongDistanceSignal
 import com.example.data.LongDistanceSignalType
 import com.example.data.MiniGameCatalog
