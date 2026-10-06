@@ -21,28 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.VolumeOff
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.Backup
-import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.Checkroom
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Drafts
-import androidx.compose.material.icons.rounded.Face
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Landscape
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Nightlight
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.PhotoLibrary
-import androidx.compose.material.icons.rounded.Replay
-import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.VolunteerActivism
-import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -168,42 +146,19 @@ fun SettingsBottomSheet(
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val platform = LocalPlatformActions.current
+    val reminders = platform.rememberReminders()
     var tinyCareEnabled by remember { mutableStateOf(prefs.tinyCareEnabled) }
     var enabledCategories by remember { mutableStateOf(prefs.tinyCareCategories) }
     var showPermissionExplanation by remember { mutableStateOf(false) }
 
-    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            showPermissionExplanation = false
-            tinyCareEnabled = true
-            com.example.care.TinyCareScheduler.enable(context)
-        } else {
+    LaunchedEffect(Unit) {
+        // Reminders that the phone no longer allows are switched off.
+        if (tinyCareEnabled && reminders != null && (reminders.needsPermission() || !reminders.allowed())) {
             tinyCareEnabled = false
             prefs.tinyCareEnabled = false
-            com.example.care.TinyCareScheduler.disable(context)
-        }
-        onSettingsChanged()
-    }
-
-    LaunchedEffect(Unit) {
-        if (tinyCareEnabled) {
-            val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-            val permissionGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                androidx.core.content.ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-
-            if (!systemAllowed || !permissionGranted) {
-                tinyCareEnabled = false
-                prefs.tinyCareEnabled = false
-                com.example.care.TinyCareScheduler.disable(context)
-                onSettingsChanged()
-            }
+            reminders.disable()
+            onSettingsChanged()
         }
     }
 
@@ -580,7 +535,8 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // -- 6. Tiny Care Notifications --
+            // -- 6. Tiny Care Notifications (where the platform has reminders) --
+            if (reminders != null) {
             SettingsCategoryHeader(
                 icon = PixelIcons.VolunteerActivism,
                 title = stringResource(Res.string.ui_tiny_care),
@@ -607,21 +563,25 @@ fun SettingsBottomSheet(
                         checked = tinyCareEnabled,
                         onCheckedChange = { willEnable ->
                             if (willEnable) {
-                                val needsRuntimePermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                                    androidx.core.content.ContextCompat.checkSelfPermission(
-                                        context,
-                                        android.Manifest.permission.POST_NOTIFICATIONS
-                                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                                if (needsRuntimePermission) {
+                                if (reminders.needsPermission()) {
                                     showPermissionExplanation = true
-                                    permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    reminders.requestPermission { granted ->
+                                        if (granted) {
+                                            showPermissionExplanation = false
+                                            tinyCareEnabled = true
+                                            reminders.enable()
+                                        } else {
+                                            tinyCareEnabled = false
+                                            prefs.tinyCareEnabled = false
+                                            reminders.disable()
+                                        }
+                                        onSettingsChanged()
+                                    }
                                 } else {
-                                    val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-                                    if (systemAllowed) {
+                                    if (reminders.allowed()) {
                                         showPermissionExplanation = true
                                         tinyCareEnabled = true
-                                        com.example.care.TinyCareScheduler.enable(context)
+                                        reminders.enable()
                                     } else {
                                         showPermissionExplanation = true
                                     }
@@ -629,7 +589,7 @@ fun SettingsBottomSheet(
                             } else {
                                 showPermissionExplanation = false
                                 tinyCareEnabled = false
-                                com.example.care.TinyCareScheduler.disable(context)
+                                reminders.disable()
                             }
                             onSettingsChanged()
                         },
@@ -703,7 +663,7 @@ fun SettingsBottomSheet(
                         TinyButton(
                             text = stringResource(Res.string.ui_send_preview_reminder),
                             onClick = {
-                                com.example.care.TinyCareScheduler.sendTestNotification(context)
+                                reminders.sendPreview()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             style = TinyButtonStyle.Secondary,
@@ -718,6 +678,7 @@ fun SettingsBottomSheet(
                         )
                     }
                 }
+            }
             }
 
             // -- 7. Appearance --
@@ -859,23 +820,27 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // -- Privacy Lock & Discreet Mode --
-            SettingsCategoryHeader(
-                icon = PixelIcons.Lock,
-                title = stringResource(Res.string.privacy_section_title),
-                subtitle = stringResource(Res.string.privacy_section_subtitle)
-            )
-            SettingsSectionCard {
-                PrivacyLockSettings()
+            // -- Privacy Lock & Discreet Mode (where the platform has them) --
+            platform.privacySettings?.let { privacy ->
+                SettingsCategoryHeader(
+                    icon = PixelIcons.Lock,
+                    title = stringResource(Res.string.privacy_section_title),
+                    subtitle = stringResource(Res.string.privacy_section_subtitle)
+                )
+                SettingsSectionCard {
+                    privacy()
+                }
             }
 
-            SettingsCategoryHeader(
-                icon = PixelIcons.Backup,
-                title = stringResource(Res.string.backup_section_title),
-                subtitle = stringResource(Res.string.backup_section_subtitle)
-            )
-            SettingsSectionCard {
-                BackupRestoreSettings()
+            platform.backupSettings?.let { backup ->
+                SettingsCategoryHeader(
+                    icon = PixelIcons.Backup,
+                    title = stringResource(Res.string.backup_section_title),
+                    subtitle = stringResource(Res.string.backup_section_subtitle)
+                )
+                SettingsSectionCard {
+                    backup()
+                }
             }
 
             // -- 8. World Exploration & Privacy --
