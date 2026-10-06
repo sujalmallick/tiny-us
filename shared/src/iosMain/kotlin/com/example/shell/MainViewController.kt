@@ -2,6 +2,8 @@ package com.example.shell
 
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.withFrameNanos
+import com.example.ui.theme.MyApplicationTheme as TinyUsTheme
 import androidx.compose.ui.window.ComposeUIViewController
 import com.example.engine.GameText
 import kotlinx.coroutines.delay
@@ -32,6 +34,26 @@ fun SharedWorldViewController(): UIViewController {
                 delay(60_000)
                 SharedWorldBridge.weather?.let(WeatherMemory::save)
             }
+        }
+    }
+}
+
+/**
+ * The whole shared app for SwiftUI: `MainViewControllerKt.SharedMainViewController()`, the same main
+ * screen, menus and dialogs as Android (plan 08, S5).
+ */
+fun SharedMainViewController(): UIViewController {
+    LaunchDiagnostics.install()
+    loadSharedText()
+    LaunchDiagnostics.stage("starting the app")
+    return ComposeUIViewController {
+        val platform = remember { IosMainPlatform() }
+        TinyUsTheme {
+            com.example.ui.MainScreen(platform = platform)
+        }
+        LaunchedEffect(Unit) {
+            withFrameNanos { }
+            LaunchDiagnostics.markRunning()
         }
     }
 }
