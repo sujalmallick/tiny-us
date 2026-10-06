@@ -658,6 +658,18 @@ struct ContentView: View {
     private let clock = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
 
     var body: some View {
+        if sharedWorldOn {
+            // The whole app shared with Android (plan 08, S5): the same world, menus and dialogs.
+            SharedMainView()
+                .ignoresSafeArea()
+                .preferredColorScheme(.light)
+        } else {
+            classicBody
+        }
+    }
+
+    /// The classic SwiftUI app, kept as the fallback if the shared app stopped last time.
+    private var classicBody: some View {
         GeometryReader { proxy in
             ZStack {
                 Color(red: 0.10, green: 0.105, blue: 0.16).ignoresSafeArea()
