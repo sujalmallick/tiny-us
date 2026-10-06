@@ -15,23 +15,21 @@ import platform.Security.kSecRandomDefault
 
 actual object PinHasher {
     actual fun hash(pin: String, salt: ByteArray, iterations: Int): ByteArray {
-        val password = pin.encodeToByteArray()
         val out = ByteArray(32)
-        password.usePinned { p ->
-            salt.usePinned { s ->
-                out.usePinned { o ->
-                    CCKeyDerivationPBKDF(
-                        kCCPBKDF2,
-                        p.addressOf(0).reinterpret(),
-                        password.size.convert(),
-                        s.addressOf(0).reinterpret(),
-                        salt.size.convert(),
-                        kCCPRFHmacAlgSHA256,
-                        iterations.convert(),
-                        o.addressOf(0).reinterpret(),
-                        out.size.convert()
-                    )
-                }
+        salt.usePinned { s ->
+            out.usePinned { o ->
+                // The password goes in as a C string (UTF-8; a PIN is plain digits).
+                CCKeyDerivationPBKDF(
+                    kCCPBKDF2,
+                    pin,
+                    pin.encodeToByteArray().size.convert(),
+                    s.addressOf(0).reinterpret(),
+                    salt.size.convert(),
+                    kCCPRFHmacAlgSHA256,
+                    iterations.convert(),
+                    o.addressOf(0).reinterpret(),
+                    out.size.convert()
+                )
             }
         }
         return out

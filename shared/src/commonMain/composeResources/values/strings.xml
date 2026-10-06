@@ -893,6 +893,7 @@
     <string name="first_harvest_hint">Plant something for the kitchen and look after it.</string>
     <string name="first_garden_dish">From our garden</string>
     <string name="first_garden_dish_hint">Cook something you grew yourselves.</string>
+    <string name="action_next">Next</string>
     <!-- App lock (moved from the Android app with the lock screen; _ios variants name Apple's features) -->
     <string name="lock_title">Welcome back</string>
     <string name="lock_subtitle">Enter your PIN to open your tiny world</string>
