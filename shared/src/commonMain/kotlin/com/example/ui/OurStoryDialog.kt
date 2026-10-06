@@ -388,6 +388,14 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "OLD_BOOT" -> Res.string.keepsake_catch_old_boot
     "BOTTLE" -> Res.string.keepsake_catch_bottle
     "GOLDEN_FISH" -> Res.string.keepsake_catch_golden_fish
+    "MOON_JELLY" -> Res.string.keepsake_catch_moon_jelly
+    "GLOW_SQUID" -> Res.string.keepsake_catch_glow_squid
+    "RAIN_TROUT" -> Res.string.keepsake_catch_rain_trout
+    "ICE_COD" -> Res.string.keepsake_catch_ice_cod
+    "BLOSSOM_KOI" -> Res.string.keepsake_catch_blossom_koi
+    "PEARL" -> Res.string.keepsake_catch_pearl
+    "HEART_SHELL" -> Res.string.keepsake_catch_heart_shell
+    "SEA_GLASS_HEART" -> Res.string.keepsake_catch_sea_glass_heart
     "BOUQUET" -> Res.string.keepsake_bouquet
     else -> Res.string.keepsake_something
 }

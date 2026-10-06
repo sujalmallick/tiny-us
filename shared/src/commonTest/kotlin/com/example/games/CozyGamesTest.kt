@@ -118,16 +118,51 @@ class CozyGamesTest {
     }
 
     @Test
-    fun everyKindOfCatchTurnsUp() {
-        val seen = mutableSetOf<FishingCatch>()
-        repeat(600) { seed ->
-            val game = FishingGame(Random(seed))
-            game.cast()
-            game.runUntil(FishingGame.Phase.BITE)
-            game.tap()
-            seen += game.caught!!
+    fun everyKindOfCatchTurnsUpInItsMoment() {
+        fun catches(c: FishingConditions): Set<FishingCatch> {
+            val seen = mutableSetOf<FishingCatch>()
+            repeat(600) { seed ->
+                val game = FishingGame(Random(seed))
+                game.cast(conditions = c)
+                game.runUntil(FishingGame.Phase.BITE)
+                game.tap()
+                seen += game.caught!!
+            }
+            return seen
         }
-        assertEquals(FishingCatch.entries.toSet(), seen)
+        // An ordinary summer day: the common catches, nothing seasonal.
+        assertEquals(FishingCatch.entries.filter { !it.isSeasonal }.toSet(), catches(FishingConditions()))
+        // Each seasonal one comes up in its moment.
+        assertTrue(FishingCatch.RAIN_TROUT in catches(FishingConditions(weather = "RAIN")))
+        val night = catches(FishingConditions(isNight = true))
+        assertTrue(FishingCatch.MOON_JELLY in night && FishingCatch.GLOW_SQUID in night)
+        assertTrue(FishingCatch.ICE_COD in catches(FishingConditions(season = "WINTER")))
+        assertTrue(FishingCatch.BLOSSOM_KOI in catches(FishingConditions(season = "SPRING")))
+    }
+
+    @Test
+    fun seasonalCatchesStayInTheirMoment() {
+        val day = FishingConditions()
+        for (c in FishingCatch.entries.filter { it.isSeasonal }) assertEquals(0, c.weightIn(day), c.name)
+        assertEquals(0, FishingCatch.RAIN_TROUT.weightIn(FishingConditions(weather = "SNOW")))
+        assertEquals(0, FishingCatch.ICE_COD.weightIn(FishingConditions(season = "AUTUMN")))
+        // The golden fish is three times as likely at sunset.
+        assertEquals(FishingCatch.GOLDEN_FISH.weight * 3, FishingCatch.GOLDEN_FISH.weightIn(FishingConditions(isSunset = true)))
+        // The common catches don't care.
+        assertEquals(FishingCatch.CARP.weight, FishingCatch.CARP.weightIn(FishingConditions(season = "WINTER", isNight = true)))
+    }
+
+    @Test
+    fun baosPracticeBiteIsQuickAndPatient() {
+        val game = FishingGame(Random(1))
+        game.cast(firstEver = true, practice = true)
+        assertTrue(game.practice)
+        game.runUntil(FishingGame.Phase.BITE, limitSeconds = FishingGame.PRACTICE_WAIT_SECONDS + 0.2f)
+        // It waits twice as long as an ordinary bite before swimming off.
+        repeat(((FishingGame.BITE_WINDOW_SECONDS + 0.5f) / 0.05f).toInt()) { game.update(0.05f) }
+        assertEquals(FishingGame.Phase.BITE, game.phase)
+        assertEquals(FishingGame.TapResult.HOOKED, game.tap())
+        assertTrue(game.caught!!.isFish)
     }
 
     // --- Garden ---
@@ -214,5 +249,48 @@ class CozyGamesTest {
         }
         // Every seed has its own colours from the meadow's plants.
         for (seed in GardenPlots.SEEDS) assertTrue(com.example.data.GardenGrowth.keepsakePlants.any { it.id == seed }, seed)
+    }
+
+    // --- Something lovely for her (plan 09, F) ---
+
+    @Test
+    fun treasuresComeUpNowAndThenAndAreNotFish() {
+        val treasures = FishingCatch.entries.filter { it.isTreasure }
+        assertEquals(setOf(FishingCatch.PEARL, FishingCatch.HEART_SHELL, FishingCatch.SEA_GLASS_HEART), treasures.toSet())
+        assertTrue(treasures.none { it.isFish || it.isSeasonal })
+        // Rare: together less than one bite in eight on an ordinary day.
+        val day = FishingConditions()
+        val all = FishingCatch.entries.sumOf { it.weightIn(day) }
+        assertTrue(treasures.sumOf { it.weightIn(day) } * 8 < all)
+    }
+
+    @Test
+    fun aWaitingBottleIsTheNextBite() {
+        val game = FishingGame(Random(9))
+        game.cast()
+        game.forceNext(FishingCatch.BOTTLE)
+        game.runUntil(FishingGame.Phase.BITE)
+        game.tap()
+        assertEquals(FishingCatch.BOTTLE, game.caught)
+        // Only once: the cast after that rolls as usual.
+        var other = false
+        repeat(40) { seed ->
+            val g = FishingGame(Random(seed))
+            g.cast()
+            g.runUntil(FishingGame.Phase.BITE)
+            g.tap()
+            if (g.caught != FishingCatch.BOTTLE) other = true
+        }
+        assertTrue(other)
+    }
+
+    @Test
+    fun aBottleWashesUpFromItsDay() {
+        val bottle = com.example.data.SealedLetter(
+            id = "b", recipient = com.example.data.Partner.GIRL, kind = com.example.data.LetterKind.BOTTLE,
+            occasion = "", body = "x", author = "Leo", createdAt = 0L, opensOn = "2026-10-08"
+        )
+        assertFalse(bottle.canOpen(kotlinx.datetime.LocalDate(2026, 10, 7)))
+        assertTrue(bottle.canOpen(kotlinx.datetime.LocalDate(2026, 10, 8)))
     }
 }
