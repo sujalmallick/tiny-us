@@ -35,6 +35,8 @@ import com.example.engine.PerchSurface
 import com.example.scene.autonomy.AgentPhase
 import com.example.scene.autonomy.AutonomyAgent
 import com.example.scene.autonomy.Behavior
+import com.example.scene.autonomy.CoupleRequests
+import com.example.scene.autonomy.RequestKind
 import com.example.scene.autonomy.BehaviorBrain
 import com.example.scene.autonomy.BehaviorContext
 import com.example.scene.autonomy.Discovery
@@ -594,6 +596,12 @@ class SceneEngine(
     val autonomyLog = ArrayDeque<Behavior>()
 
     val discovery = Discovery()
+
+    /** Small requests from the couple (plan 07 D1): timing here, bubble drawn from it. */
+    val requests = CoupleRequests()
+    /** Canvas size from the last frame, for reactions to taps that don't pass it. */
+    private var lastCanvasW = 1f
+    private var lastCanvasH = 1f
     private var discoverySpawnTimer = DISCOVERY_FIRST_DELAY
 
     init {
@@ -4985,6 +4993,7 @@ class SceneEngine(
     }
 
     fun onTouchPot(cw: Float, ch: Float) {
+        grantRequest(RequestKind.TEA)
         audio.playCookingBubbles()
         audio.playBubblePop()
         repeat(8) {
@@ -5071,6 +5080,7 @@ class SceneEngine(
     }
 
     fun onTouchFridge(touchX: Float, touchY: Float) {
+        grantRequest(RequestKind.SNACK)
         audio.playStarTwinkle()
         particles.spawnSparkles(touchX, touchY, 6)
         particles.spawnHeart(touchX, touchY - 20f, Color(0xFFFF85A1))
@@ -5182,6 +5192,7 @@ class SceneEngine(
     }
 
     fun onTouchCat(cw: Float, ch: Float) {
+        grantRequest(RequestKind.MOCHI)
         careForMochi(1)
         // A best friend sometimes answers with a slow blink: cat for "I love you".
         if (com.example.progress.MochiFondness.level(mochiFondness) >= 3 && Random.nextFloat() < 0.3f) {
@@ -5409,6 +5420,7 @@ class SceneEngine(
     }
 
     fun onTouchKitchenTreatJar() {
+        grantRequest(RequestKind.MOCHI)
         if (catTreatInProgress) {
             showMessage(GameText.get(Res.string.scene_mochi_is_still_enjoying_the_last_little), duration = 1.8f)
             return
@@ -5476,6 +5488,7 @@ class SceneEngine(
     }
 
     fun onTouchCafePastry(cw: Float, ch: Float) {
+        grantRequest(RequestKind.SNACK)
         val plate = CafeLayout.plate(cw, ch, WorldViewport.pixelScale(cw))
         if (cafePastryBites >= CafeLayout.MAX_PASTRY_BITES) {
             cafePastryBites = 0
@@ -5565,6 +5578,7 @@ class SceneEngine(
     }
 
     fun onTouchCampfire(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        grantRequest(RequestKind.WARM)
         campfireEmbersTimer = 2.8f
         marshmallowRoastingTimer = 3.5f
         audio.playCandleFlicker()
@@ -5586,6 +5600,7 @@ class SceneEngine(
     }
 
     fun onTouchCampGuitar(cw: Float, ch: Float) {
+        grantRequest(RequestKind.SONG)
         campGuitarStrumTimer = 2.6f
         audio.playStarArpeggio()
         val guitar = CampfireLayout.guitar(cw, ch, WorldViewport.pixelScale(cw))
@@ -5612,6 +5627,7 @@ class SceneEngine(
 
     /** Mochi at the campfire: the usual cat reaction, with a blanket line when she was napping on it. */
     fun onTouchCampMochi(cw: Float, ch: Float) {
+        grantRequest(RequestKind.MOCHI)
         val wasNappingOnBlanket = catState == CatState.SLEEPING && CampfireLayout.isOnBlanket(catWorldX, catWorldY)
         onTouchCat(cw, ch)
         if (wasNappingOnBlanket) {
@@ -5622,6 +5638,7 @@ class SceneEngine(
     // ── Seaside Pier ─────────────────────────────────────────────────────
 
     fun onTouchPierIceCream(cw: Float, ch: Float) {
+        grantRequest(RequestKind.SNACK)
         if (pierIceCreamTimer > 0f) {
             showMessage(GameText.get(Res.string.scene_still_working_on_these_cones), duration = 1.8f)
             return
@@ -6667,6 +6684,7 @@ class SceneEngine(
         girlAgent.reset(firstDecisionIn = 4f + rng.nextFloat() * 3f)
         if (rareEventCooldown < RARE_EVENT_FIRST_DELAY) rareEventCooldown = RARE_EVENT_FIRST_DELAY
         resetDiscovery()
+        requests.reset()
     }
 
     /** Fills [walkBounds] for the current scene; false where walking makes no sense (the scooter). */
@@ -6702,10 +6720,14 @@ class SceneEngine(
         girlAgent.memory.tick(dt)
         if (rareEventCooldown > 0f) rareEventCooldown -= dt
         if (autonomyUserPause > 0f) autonomyUserPause -= dt
+        lastCanvasW = cw
+        lastCanvasH = ch
         updateMochiZoomies(dt)
+        updateRequests(dt)
 
         val sleepingOnCouch = currentScene == SceneType.SLEEP && !lampLit
         if (isWatchSceneActive || isDreamMode || sleepingOnCouch) {
+            requests.interrupt(rng)
             stopAutonomy(halt = false)
             if (autonomyUserPause < AUTONOMY_AFTER_CINEMATIC_PAUSE) autonomyUserPause = AUTONOMY_AFTER_CINEMATIC_PAUSE
             return
@@ -6807,6 +6829,7 @@ class SceneEngine(
         ctx.discoveryAvailable = canWalk && discoveryNear(c) != null
         ctx.isSitting = c.pose == CharacterPose.SIT || c.pose == CharacterPose.SIT_SNUGGLE
         ctx.rareCooldown = rareEventCooldown
+        ctx.requestAvailable = requestAvailableNow(partner)
 
         settleStrayPose(c, home)
         val choice = behaviorBrain.choose(ctx, agent.memory)
@@ -6912,6 +6935,12 @@ class SceneEngine(
                 walkTo(c, agent, home.x, home.y)
             }
             Behavior.DISCOVER -> walkToDiscovery(c, agent, cw, ch)
+            Behavior.ASK_FOR_SOMETHING -> {
+                val kind = if (requests.canStart) requests.pickKind(c === girl, rng) { requestFits(it) } else null
+                if (kind == null) { agent.rest(2f); return }
+                requests.start(kind, c === girl)
+                beginPerforming(c, agent, performDuration(b), partner, cw, ch)
+            }
             Behavior.SCENE_MOMENT -> {
                 // The scene's own hand-made moments, played as one shared activity.
                 triggerAutonomousMoment(cw, ch, sceneOnly = true)
@@ -6976,6 +7005,7 @@ class SceneEngine(
         Behavior.RARE_DANCE -> 3.6f
         Behavior.RARE_MOCHI_ZOOMIES -> 3.2f
         Behavior.VISIT_PROP, Behavior.SCENE_MOMENT -> 3.2f
+        Behavior.ASK_FOR_SOMETHING -> 2.4f
     }
 
     private fun walkTo(c: PixelCharacter, agent: AutonomyAgent, x: Float, y: Float) {
@@ -7189,6 +7219,7 @@ class SceneEngine(
                 markRareEvent()
             }
             Behavior.DISCOVER -> startDiscovery(c, cw, ch)
+            Behavior.ASK_FOR_SOMETHING -> announceRequest(c, requests.kind)
             else -> Unit
         }
         if (agent.behavior != Behavior.LOOK_AT_SKY && agent.behavior != Behavior.WEATHER_REACT) {
@@ -7510,6 +7541,96 @@ class SceneEngine(
         if (mochiZoomTimer <= 0f) catRoamSpeed = MOCHI_ROAM_SPEED
     }
 
+    // ── Requests (plan 07 D1) ─────────────────────────────────────────────
+    // Now and then one of them asks for something that fits the moment: a blanket, tea, a
+    // song, a snack, Mochi. Tapping the matching prop grants it; otherwise it fades quietly.
+
+    /** Who is asking right now, if anyone. */
+    val requestAsker: PixelCharacter?
+        get() = if (!requests.active) null else if (requests.askerIsGirl) girl else boy
+
+    private fun isMiniGameActive(): Boolean =
+        cozy.cookingActive || cozy.fishingActive || catchGame.active || starPuzzle.current != null
+
+    private fun isAsleep(c: PixelCharacter): Boolean =
+        c.pose == CharacterPose.SLEEP || c.pose == CharacterPose.SLEEP_YAWN ||
+            agentFor(c).behavior == Behavior.RARE_DOZE_OFF
+
+    private fun updateRequests(dt: Float) {
+        // A game or the scooter ride takes over: the wish is dropped without a word.
+        if (requests.active && (isMiniGameActive() || currentScene == SceneType.EVENING_RIDE)) requests.interrupt(rng)
+        // An unanswered request just fades; nothing else happens, and nothing counts it.
+        requests.tick(dt)
+    }
+
+    /** Whether a request may start now: its timing allows it, nothing else is going on, and some kind fits. */
+    private fun requestAvailableNow(partner: PixelCharacter): Boolean {
+        if (!requests.canStart || currentScene == SceneType.EVENING_RIDE || isMiniGameActive()) return false
+        if (sceneMessage != null || isAsleep(boy) || isAsleep(girl)) return false
+        return RequestKind.entries.any { requestFits(it) }
+    }
+
+    /** Which requests make sense in this scene at this time of day. */
+    private fun requestFits(kind: RequestKind): Boolean {
+        val phase = timeOfDayPhase
+        val evening = phase.isSunset || phase.isNight
+        return when (kind) {
+            RequestKind.WARM -> (evening && (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.SLEEP)) ||
+                (phase.isNight && currentScene == SceneType.CAMPFIRE)
+            RequestKind.TEA -> (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.COOKING) && !phase.isMidnight
+            RequestKind.SONG -> (currentScene == SceneType.COZY_LOFT || currentScene == SceneType.CAMPFIRE) && evening
+            RequestKind.SNACK -> currentScene == SceneType.COOKING || currentScene == SceneType.RAINY_CAFE ||
+                currentScene == SceneType.SEASIDE_PIER
+            // Mochi isn't drawn in the loft, and must be awake to come over.
+            RequestKind.MOCHI -> currentScene != SceneType.COZY_LOFT && currentScene != SceneType.EVENING_RIDE &&
+                catState != CatState.SLEEPING && !catSleeping
+        }
+    }
+
+    /** Roughly where the thing they're asking for is, so they can turn toward it. */
+    private fun requestTargetX(kind: RequestKind): Float? = when {
+        kind == RequestKind.MOCHI -> catWorldX
+        kind == RequestKind.WARM && currentScene == SceneType.CAMPFIRE -> CampfireLayout.PIT_X
+        kind == RequestKind.TEA && currentScene == SceneType.COOKING -> 0.60f
+        kind == RequestKind.SNACK && currentScene == SceneType.COOKING -> 0.78f
+        else -> null
+    }
+
+    /** The asker turns toward the prop and asks. GROWTH adds the spoken line and the bubble. */
+    private fun announceRequest(c: PixelCharacter, kind: RequestKind) {
+        requestTargetX(kind)?.let { x ->
+            if (abs(x - c.worldX) > 0.02f) c.direction = if (x < c.worldX) Direction.LEFT else Direction.RIGHT
+        }
+        c.emotion = CharacterEmotion.SHY
+    }
+
+    /**
+     * A tap on a prop that answers the current request grants it: both light up and the asker
+     * says thanks (a mug in hand for tea). Taps that don't match change nothing here.
+     */
+    private fun grantRequest(kind: RequestKind) {
+        if (!requests.grant(kind, rng)) return
+        val asker = if (requests.askerIsGirl) girl else boy
+        val partner = if (asker === boy) girl else boy
+        asker.emotion = CharacterEmotion.LOVING
+        partner.emotion = CharacterEmotion.LOVING
+        emote(asker, EmoteType.HEART, 2.2f)
+        emote(partner, EmoteType.HEART, 2.2f)
+        particles.spawnSparkles(lastCanvasW * asker.worldX, lastCanvasH * asker.worldY - 90f, 6)
+        audio.playHeartChime()
+        if (kind == RequestKind.TEA) asker.hold(HeldItem.MUG, CARRIED_ITEM_SECONDS, useSeconds = 1.6f)
+        onRequestGranted?.invoke(kind)
+    }
+
+    /** Called when a request is granted (GROWTH's progress events and thank-you line hook in here). */
+    var onRequestGranted: ((RequestKind) -> Unit)? = null
+
+    /** For tests and previews: [asker] asks for [kind] right away, whatever the timing. */
+    fun startRequestForTest(kind: RequestKind, asker: PixelCharacter) {
+        requests.forceStart(kind, asker === girl)
+        announceRequest(asker, kind)
+    }
+
     // ── Discoveries ──────────────────────────────────────────────────────
     // Every minute or so something small turns up: a wildflower, a red leaf, a folded note,
     // Mochi's lost toy, a seashell. A character may notice it, wander over and react.
@@ -7730,6 +7851,7 @@ class SceneEngine(
 
     // Cozy Loft Touch Interactions
     fun onTouchLoftSofa(cw: Float, ch: Float) {
+        grantRequest(RequestKind.WARM)
         audio.playHeartChime()
         boy.reactionTimer = 3.0f
         girl.reactionTimer = 3.0f
@@ -7810,6 +7932,7 @@ class SceneEngine(
     }
 
     fun onTouchLoftRecordPlayer(cw: Float, ch: Float) {
+        grantRequest(RequestKind.SONG)
         val pixelScale = WorldViewport.pixelScale(cw)
         val floorY = ch * 0.58f
         audio.playBubblePop()
@@ -7828,6 +7951,7 @@ class SceneEngine(
     }
 
     fun onTouchLoftTable(cw: Float, ch: Float) {
+        grantRequest(RequestKind.TEA)
         if (loftTableTimer > 0f) return
         loftTableTimer = 1.4f
         val pixelScale = WorldViewport.pixelScale(cw)
@@ -7950,6 +8074,7 @@ class SceneEngine(
     }
 
     fun onTouchTeakettle(cw: Float, ch: Float, touchX: Float, touchY: Float) {
+        grantRequest(RequestKind.TEA)
         if (teakettleWhistleTimer > 0f) return
         teakettleWhistleTimer = 2.2f
         audio.playSteamHiss()
@@ -7978,6 +8103,7 @@ class SceneEngine(
     }
 
     fun onTouchCouchThrow(cw: Float, ch: Float) {
+        grantRequest(RequestKind.WARM)
         if (cuddleBlanketTimer > 0f) return
         cuddleBlanketTimer = 3.5f
         audio.playLeafRustle()

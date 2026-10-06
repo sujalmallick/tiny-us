@@ -43,14 +43,17 @@ enum class Behavior(val category: BehaviorCategory, val baseWeight: Float, val c
     RARE_SHOOTING_STAR(BehaviorCategory.RARE, 1f, 300f),
     RARE_DOZE_OFF(BehaviorCategory.RARE, 1f, 360f),
     RARE_DANCE(BehaviorCategory.RARE, 1f, 300f),
-    RARE_MOCHI_ZOOMIES(BehaviorCategory.RARE, 1f, 300f);
+    RARE_MOCHI_ZOOMIES(BehaviorCategory.RARE, 1f, 300f),
+
+    // Asking the player for something small (plan 07 D1); its timing lives in CoupleRequests.
+    ASK_FOR_SOMETHING(BehaviorCategory.REQUEST, 0f, 30f);
 
     val involvesPartner: Boolean
         get() = category == BehaviorCategory.PARTNER || this == SCENE_MOMENT || this == SHELTER_CLOSE ||
             this == RARE_FLOWER_GIFT || this == RARE_SHOOTING_STAR || this == RARE_DOZE_OFF || this == RARE_DANCE
 }
 
-enum class BehaviorCategory { AMBIENT, ENVIRONMENT, PARTNER, MOCHI, SCENE, WEATHER, HOME, DISCOVERY, RARE }
+enum class BehaviorCategory { AMBIENT, ENVIRONMENT, PARTNER, MOCHI, SCENE, WEATHER, HOME, DISCOVERY, RARE, REQUEST }
 
 /** What a character can see and knows when deciding. Filled in place before each decision (no allocation). */
 class BehaviorContext {
@@ -81,6 +84,8 @@ class BehaviorContext {
     var isSitting: Boolean = false
     /** Seconds until any rare behavior may happen again (shared by the couple). */
     var rareCooldown: Float = 0f
+    /** A request may start now and some kind of request fits the moment. */
+    var requestAvailable: Boolean = false
 }
 
 /** Per-character short-term memory: what they did recently and what is still cooling down. */
@@ -205,6 +210,7 @@ class BehaviorBrain(var random: Random = Random.Default) {
         if (!c.propAvailable) set(Behavior.VISIT_PROP, 0f)
         if (!c.sceneMomentAvailable || !c.partnerAvailable) set(Behavior.SCENE_MOMENT, 0f)
         if (!c.discoveryAvailable) set(Behavior.DISCOVER, 0f) else add(Behavior.DISCOVER, 10f)
+        if (c.requestAvailable) add(Behavior.ASK_FOR_SOMETHING, REQUEST_WEIGHT) else set(Behavior.ASK_FOR_SOMETHING, 0f)
 
         // Weather.
         if (c.isOutdoor) {
@@ -292,6 +298,8 @@ class BehaviorBrain(var random: Random = Random.Default) {
         const val HOME_TOLERANCE = 0.005f
         const val TALK_DISTANCE = 0.24f
         const val CUDDLE_DISTANCE = 0.18f
+        /** Weight of asking for something when a request fits; kept low, the gap does the rest. */
+        const val REQUEST_WEIGHT = 3f
 
         /** Weight multiplier by how recently a behavior was done (most recent first). */
         private val RECENCY_PENALTY = floatArrayOf(0.12f, 0.35f, 0.6f, 0.85f)
