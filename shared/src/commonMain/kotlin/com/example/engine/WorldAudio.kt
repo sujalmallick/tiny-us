@@ -4,8 +4,8 @@ import com.example.scene.WeatherType
 
 /**
  * Everything the world and its screens ask of the sound system: weather music, the music box and
- * the little one-shot sounds that answer taps. Android's AmbientAudio implements it today; iOS gets
- * its own implementation when the world moves to shared code (plan 08, S3).
+ * the little one-shot sounds that answer taps. Android's AmbientAudio and iOS's IosWorldAudio
+ * implement it with the same music files and the same synthesized sounds ([SoundCue], [ToneSynth]).
  */
 interface WorldAudio {
     /** The weather whose music is playing (or fading in), or null before the first scene. */

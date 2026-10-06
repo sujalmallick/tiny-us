@@ -4,8 +4,8 @@ import com.example.scene.WeatherType
 
 /**
  * A sound system that makes no sound: it keeps the state the world reads (weather, indoors,
- * music box) but plays nothing. Used where no platform audio exists yet (iOS until its own
- * WorldAudio lands) and wherever a silent world is wanted.
+ * music box) but plays nothing. Used for headless worlds (tests, previews) and wherever a silent
+ * world is wanted.
  */
 class QuietWorldAudio : WorldAudio {
     override var currentWeather: WeatherType? = null
