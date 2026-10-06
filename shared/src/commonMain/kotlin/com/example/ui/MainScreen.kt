@@ -90,6 +90,7 @@ import com.example.data.CoupleDates
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 
 
 /**
@@ -450,6 +451,8 @@ fun MainScreen(
         engine.cozy.garden = progress.garden
         engine.cozy.cookedRecipes = progress.seenSet(com.example.progress.Seen.RECIPES)
         engine.cozy.hasCaughtFish = progress.count(com.example.progress.Counter.FISH) > 0
+        engine.cozy.hasFished = progress.count("games_${com.example.progress.Game.FISHING}") > 0
+        engine.cozy.dueBottle = dueBottle(birthdayStore)
         engine.cozy.pantry = progress.pantry
         // Which seeds the meadow takes (plan 09, E1), turned around south of the equator.
         engine.cozy.season = com.example.engine.SeasonalWeather.seasonOf(
@@ -1050,14 +1053,27 @@ fun MainScreen(
                 modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
             )
         } else if (engine.cozy.canFish) {
-            TinyButton(
-                text = stringResource(Res.string.fishing_start),
-                onClick = { engine.cozy.startFishing() },
-                icon = PixelIcons.VolunteerActivism,
-                compact = true,
-                testTag = "fishing_start_button",
+            // Fishing, and a message in a bottle for the other one (plan 09, F).
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
-            )
+            ) {
+                TinyButton(
+                    text = stringResource(Res.string.fishing_start),
+                    onClick = { engine.cozy.startFishing() },
+                    icon = PixelIcons.VolunteerActivism,
+                    compact = true,
+                    testTag = "fishing_start_button"
+                )
+                TinyButton(
+                    text = stringResource(Res.string.bottle_start),
+                    onClick = { engine.cozy.openBottleWriter() },
+                    icon = PixelIcons.Favorite,
+                    style = TinyButtonStyle.Outline,
+                    compact = true,
+                    testTag = "bottle_start_button"
+                )
+            }
         } else if (engine.hasCatchableWeather && !engine.isDreamMode) {
             TinyButton(
                 text = stringResource(Res.string.catch_start),
@@ -1069,6 +1085,37 @@ fun MainScreen(
                 compact = true,
                 testTag = "catch_start_button",
                 modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
+        }
+
+        // A message in a bottle (plan 09, F): writing one, and opening one that came up on the line.
+        if (engine.cozy.writingBottle) {
+            BottleWriter(
+                boyName = engine.boy.name,
+                girlName = engine.girl.name,
+                onToss = { recipient, body ->
+                    val author = if (recipient == com.example.data.Partner.GIRL) engine.boy.name else engine.girl.name
+                    val forName = if (recipient == com.example.data.Partner.GIRL) engine.girl.name else engine.boy.name
+                    // It washes up from tomorrow, so it's a surprise for another day.
+                    birthdayStore.seal(
+                        recipient, com.example.data.LetterKind.BOTTLE, body, author,
+                        opensOn = CoupleDates.today().plus(1, kotlinx.datetime.DateTimeUnit.DAY)
+                    )
+                    engine.cozy.dueBottle = dueBottle(birthdayStore)
+                    engine.cozy.tossBottle(forName)
+                },
+                onDismiss = { engine.cozy.closeBottleWriter() }
+            )
+        }
+        engine.cozy.bottleLanded?.let { bottle ->
+            BottleLetterDialog(
+                letter = bottle,
+                recipientName = if (bottle.recipient == com.example.data.Partner.GIRL) engine.girl.name else engine.boy.name,
+                onOpened = { birthdayStore.markOpened(bottle.id) },
+                onDismiss = {
+                    engine.cozy.bottleRead()
+                    engine.cozy.dueBottle = dueBottle(birthdayStore)
+                }
             )
         }
 
@@ -1534,8 +1581,37 @@ fun MainScreen(
         }
 
         if (showMiniGames) {
-            TwoPersonMiniGameDialog(
+            val platformActions = LocalPlatformActions.current
+            TinyGamesDialog(
                 prefs = prefs,
+                progress = progress,
+                photos = remember { platform.photos.getPolaroids() },
+                onReveal = { game, question, boyPick, girlPick, match ->
+                    // Saved like the old rounds, so the game board appears and the couple reacts.
+                    prefs.saveMiniGameRound(
+                        com.example.data.MiniGameRound(
+                            id = com.example.data.newMiniGameRoundId(),
+                            questionId = question.id,
+                            type = when (game) {
+                                com.example.games.TinyGame.THIS_OR_THAT -> com.example.data.MiniGameType.WOULD_YOU_RATHER
+                                com.example.games.TinyGame.GUESS_ME -> com.example.data.MiniGameType.WHO_KNOWS_WHO
+                                com.example.games.TinyGame.STORY_QUIZ -> com.example.data.MiniGameType.MEMORY_TRIVIA
+                            },
+                            prompt = question.prompt,
+                            options = question.options,
+                            boyChosenIndex = boyPick,
+                            // In the quiz a match means the right answer.
+                            girlChosenIndex = if (game == com.example.games.TinyGame.STORY_QUIZ) (if (match) boyPick else question.correct) else girlPick,
+                            isRevealed = true,
+                            timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
+                        )
+                    )
+                    platformActions.refreshWidgets()
+                },
+                onRoundFinished = { game, score, total ->
+                    recordProgress(com.example.progress.ProgressEvent.GamePlayed(game.progressId, score))
+                    engine.celebrateTinyGameRound(score, total)
+                },
                 onDismiss = { showMiniGames = false }
             )
         }
@@ -1628,4 +1704,10 @@ private fun syncCoupleDates(prefs: PreferencesManager) {
     CoupleCalendar.girlName = prefs.girlfriendName
     CoupleDates.boyBirthday = runCatching { LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
     CoupleDates.girlBirthday = runCatching { LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+}
+
+/** A message in a bottle that has washed up and isn't opened yet (plan 09, F), or null. */
+private fun dueBottle(store: com.example.data.BirthdayStore): com.example.data.SealedLetter? {
+    val today = CoupleDates.today()
+    return store.letters().firstOrNull { it.kind == com.example.data.LetterKind.BOTTLE && !it.isOpened && it.canOpen(today) }
 }

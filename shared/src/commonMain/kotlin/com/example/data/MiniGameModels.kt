@@ -76,3 +76,7 @@ object MiniGameCatalog {
         )
     )
 }
+
+/** A fresh id for a saved round. */
+@OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+fun newMiniGameRoundId(): String = kotlin.uuid.Uuid.random().toString()

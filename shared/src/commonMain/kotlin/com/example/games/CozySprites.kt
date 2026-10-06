@@ -375,6 +375,72 @@ object CozySprites {
             "yyyyyyyky.",
             "y..hhhhhh.",
             "....hh..w."
+        )),
+        // Seasonal catches (plan 09, F1).
+        FishingCatch.MOON_JELLY to Sprite(listOf(
+            "..www..",
+            ".wluuw.",
+            "wuluuuw",
+            "uuuuuuu",
+            ".l.u.l.",
+            ".l.u.l.",
+            "l..u..l"
+        )),
+        FishingCatch.GLOW_SQUID to Sprite(listOf(
+            "...B...",
+            "..BlB..",
+            ".BlylB.",
+            ".BlllB.",
+            ".BlylB.",
+            "..BBB..",
+            ".B.B.B.",
+            "B..B..B"
+        )),
+        FishingCatch.RAIN_TROUT to Sprite(listOf(
+            "....sss...",
+            "s..ssssss.",
+            "sssppppks.",
+            "s..BBBBBB.",
+            "....BB...."
+        )),
+        FishingCatch.ICE_COD to Sprite(listOf(
+            "....lll...",
+            "l..llllll.",
+            "lllwwwwkl.",
+            "l..SSSSSS.",
+            "....SS...."
+        )),
+        FishingCatch.BLOSSOM_KOI to Sprite(listOf(
+            "....www...",
+            "w..wowwpw.",
+            "wwwwwopkw.",
+            "w..pwwwow.",
+            "....ww...."
+        )),
+        // Little treasures for her.
+        FishingCatch.PEARL to Sprite(listOf(
+            "...w...",
+            "..www..",
+            ".pwwwp.",
+            "pqpqpqp",
+            "pqpqpqp",
+            ".ppppp."
+        )),
+        FishingCatch.HEART_SHELL to Sprite(listOf(
+            ".pp.pp.",
+            "pqqpqqp",
+            "ppppppp",
+            ".pqpqp.",
+            "..ppp..",
+            "...p..."
+        )),
+        FishingCatch.SEA_GLASS_HEART to Sprite(listOf(
+            ".ll.ll.",
+            "lwlllll",
+            "lllllll",
+            ".lllll.",
+            "..lll..",
+            "...l..."
         ))
     )
 

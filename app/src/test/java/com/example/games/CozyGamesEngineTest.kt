@@ -1,6 +1,8 @@
 package com.example.games
 
 import com.example.engine.AmbientAudio
+import com.example.resources.Res
+import com.example.resources.bao_hint_rain
 import com.example.progress.ProgressEvent
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
@@ -111,5 +113,92 @@ class CozyGamesEngineTest {
         assertTrue(tap())
         assertTrue(events.contains(ProgressEvent.FlowerPicked(0)))
         assertEquals(listOf("tulip"), e.cozy.garden.stems)
+    }
+
+    @Test
+    fun theFirstTimeGrandpaBaoTeachesThenAPracticeBite() {
+        val e = engine(SceneType.SEASIDE_PIER)
+        e.cozy.hasFished = false
+        e.cozy.startFishing()
+        assertTrue(e.cozy.inBaoLesson)
+        e.run(0.2f)
+        assertTrue(e.sceneMessage.orEmpty(), e.sceneMessage?.startsWith("Grandpa Bao") == true)
+        e.run(com.example.scene.CozyGames.LESSON_LINE_SECONDS * 3 + 0.2f)
+        assertFalse(e.cozy.inBaoLesson)
+        assertTrue(e.cozy.fishing.practice)
+        e.run(FishingGame.PRACTICE_WAIT_SECONDS + 0.2f)
+        assertEquals(FishingGame.Phase.BITE, e.cozy.fishing.phase)
+        // Next time, no lesson.
+        e.cozy.stopFishing()
+        e.cozy.startFishing()
+        assertFalse(e.cozy.inBaoLesson)
+        assertFalse(e.cozy.fishing.practice)
+    }
+
+    @Test
+    fun whatsBitingFollowsTheMoment() {
+        val e = engine(SceneType.SEASIDE_PIER)
+        e.cozy.season = "WINTER"
+        e.weather = com.example.scene.WeatherType.RAIN
+        val c = e.cozy.fishingConditions
+        assertEquals("WINTER", c.season)
+        assertEquals("RAIN", c.weather)
+        assertEquals(Res.string.bao_hint_rain, com.example.scene.CozyGames.baoHint(c))
+    }
+
+    @Test
+    fun aBottleComesUpOnTheLineAndWaitsToBeOpened() {
+        val e = engine(SceneType.SEASIDE_PIER)
+        e.cozy.hasFished = true
+        val letter = com.example.data.SealedLetter(
+            id = "b1", recipient = com.example.data.Partner.GIRL, kind = com.example.data.LetterKind.BOTTLE,
+            occasion = "", body = "Meet me at the pier", author = "Leo", createdAt = 0L, opensOn = "2026-01-01"
+        )
+        e.cozy.dueBottle = letter
+        e.cozy.startFishing()
+        var t = 0f
+        while (e.cozy.fishing.phase != FishingGame.Phase.BITE && t < 20f) {
+            e.run(0.1f)
+            t += 0.1f
+        }
+        e.cozy.tapFishing()
+        e.run(FishingGame.REEL_SECONDS + 0.2f)
+        assertEquals(letter, e.cozy.bottleLanded)
+        assertFalse(e.cozy.fishingActive)
+        e.cozy.bottleRead()
+        assertEquals(null, e.cozy.bottleLanded)
+    }
+
+    @Test
+    fun aTreasureIsGivenToHerStraightAway() {
+        val e = engine(SceneType.SEASIDE_PIER)
+        val events = mutableListOf<ProgressEvent>()
+        e.onProgress = { events += it }
+        e.cozy.hasFished = true
+        e.cozy.startFishing()
+        e.cozy.fishing.forceNext(FishingCatch.PEARL)
+        var t = 0f
+        while (e.cozy.fishing.phase != FishingGame.Phase.BITE && t < 20f) {
+            e.run(0.1f)
+            t += 0.1f
+        }
+        e.cozy.tapFishing()
+        e.run(FishingGame.REEL_SECONDS + 0.2f)
+        assertTrue(events.contains(ProgressEvent.FishCaught("PEARL")))
+        assertTrue(events.contains(ProgressEvent.GiftGiven("catch:PEARL", fromBoy = true)))
+        assertTrue(e.sceneMessage.orEmpty(), e.sceneMessage?.contains("a pearl") == true)
+    }
+
+    @Test
+    fun theBottleWriterOnlyOpensAtThePier() {
+        val e = engine(SceneType.SEASIDE_PIER)
+        e.cozy.openBottleWriter()
+        assertTrue(e.cozy.writingBottle)
+        e.cozy.tossBottle("Mia")
+        assertFalse(e.cozy.writingBottle)
+        assertTrue(e.sceneMessage.orEmpty(), e.sceneMessage?.contains("Mia will fish it up") == true)
+        val home = engine(SceneType.FLOWER)
+        home.cozy.openBottleWriter()
+        assertFalse(home.cozy.writingBottle)
     }
 }
