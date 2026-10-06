@@ -1,19 +1,20 @@
 package com.example.progress
 
-import android.content.SharedPreferences
-import org.json.JSONArray
-import org.json.JSONObject
+import com.example.data.JSONArray
+import com.example.data.JSONObject
+import com.example.data.KeyValueStorage
 
 /**
  * Keeps [ProgressState] as one JSON entry in tiny_us_prefs, the file Android backup and the
- * in-app Backup & Restore already carry.
+ * in-app Backup & Restore already carry. Common code on [KeyValueStorage]; the JSON is the same
+ * as org.json wrote it.
  */
-class ProgressStore(private val prefs: SharedPreferences) {
+class ProgressStore(private val storage: KeyValueStorage) {
 
-    fun load(): ProgressState = runCatching { decode(prefs.getString(KEY, null)) }.getOrNull() ?: ProgressState()
+    fun load(): ProgressState = runCatching { decode(storage.getString(KEY, null)) }.getOrNull() ?: ProgressState()
 
     fun save(state: ProgressState) {
-        prefs.edit().putString(KEY, encode(state)).apply()
+        storage.putString(KEY, encode(state))
     }
 
     companion object {
@@ -21,22 +22,27 @@ class ProgressStore(private val prefs: SharedPreferences) {
         /** The preferences file (PreferencesManager's), so backups include progress. */
         const val PREFS_FILE = "tiny_us_prefs"
 
+        private fun ints(map: Map<String, Int>) = JSONObject().apply { map.forEach { (k, v) -> put(k, v) } }
+        private fun strings(list: List<String>) = JSONArray().apply { list.forEach { put(it) } }
+
         fun encode(s: ProgressState): String = JSONObject().apply {
-            put("counters", JSONObject(s.counters))
-            put("seen", JSONObject().apply { s.seen.forEach { (k, v) -> put(k, JSONArray(v.sorted())) } })
-            put("keepsakes", JSONObject(s.keepsakes))
-            put("best", JSONObject(s.best))
+            put("counters", ints(s.counters))
+            put("seen", JSONObject().apply { s.seen.forEach { (k, v) -> put(k, strings(v.sorted())) } })
+            put("keepsakes", ints(s.keepsakes))
+            put("best", ints(s.best))
             put("firsts", JSONObject().apply { s.firsts.forEach { (k, v) -> put(k, v) } })
-            put("unlocked", JSONArray(s.unlocked.sorted()))
+            put("unlocked", strings(s.unlocked.sorted()))
             put("garden", JSONObject().apply {
-                put("plots", JSONArray(s.garden.plots.map { plot ->
-                    JSONObject().apply {
-                        plot.flower?.let { put("flower", it) }
-                        put("waterings", plot.waterings)
-                        put("lastWatered", plot.lastWatered)
+                put("plots", JSONArray().apply {
+                    s.garden.plots.forEach { plot ->
+                        put(JSONObject().apply {
+                            plot.flower?.let { put("flower", it) }
+                            put("waterings", plot.waterings)
+                            put("lastWatered", plot.lastWatered)
+                        })
                     }
-                }))
-                put("stems", JSONArray(s.garden.stems))
+                })
+                put("stems", strings(s.garden.stems))
             })
         }.toString()
 
