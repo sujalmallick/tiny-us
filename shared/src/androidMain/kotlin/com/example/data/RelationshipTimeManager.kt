@@ -14,16 +14,12 @@ import kotlinx.datetime.toKotlinLocalTime
  * The calculation itself is shared ([CoupleCalendar]); this keeps the start date and time there.
  */
 object RelationshipTimeManager {
-    // Configurable relationship start date (defaults to profile anniversary or today)
-    var relationshipStartDate: LocalDate = ProfileManager.getProfile().anniversaryDate?.toJavaLocalDate() ?: LocalDate.now()
+    // The relationship start date: the shared CoupleDates.anniversary (profile anniversary or today until set)
+    var relationshipStartDate: LocalDate
+        get() = CoupleDates.anniversary.toJavaLocalDate()
         set(value) {
-            field = value
             CoupleDates.anniversary = value.toKotlinLocalDate()
         }
-
-    init {
-        CoupleDates.anniversary = relationshipStartDate.toKotlinLocalDate()
-    }
 
     // Configurable exact start time: default 00:00 (can be updated with exact hour & minute)
     var relationshipStartTime: LocalTime

@@ -1,7 +1,5 @@
 package com.example.ui
 
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -27,10 +25,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -42,32 +37,24 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.Canvas
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.R
 import com.example.data.DailyPromptCatalog
-import com.example.data.PolaroidManager
 import com.example.data.PreferencesManager
 import com.example.data.StoryEntry
 import com.example.data.StoryInput
 import com.example.data.StoryKind
 import com.example.data.StorySection
 import com.example.data.StoryTimeline
-import com.example.ui.theme.DeepRose
 import com.example.ui.theme.PixelIcons
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
@@ -76,9 +63,6 @@ import com.example.ui.theme.TinyType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.time.format.DateTimeFormatter
-import java.time.format.FormatStyle
-import java.util.Locale
 import com.example.ui.theme.PixelCircleShape
 import com.example.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -96,13 +80,13 @@ private enum class StoryFilter(val labelRes: StringResource, val kinds: Set<Stor
 }
 
 /** Reads everything the app has stored and builds the story. Runs off the main thread. */
-internal fun loadStory(
+fun loadStory(
     prefs: PreferencesManager,
-    polaroids: PolaroidManager,
+    polaroids: PolaroidPhotos,
     progress: com.example.progress.ProgressState = com.example.progress.ProgressState(),
     titleOf: (StringResource) -> String = { "" }
 ): List<StoryEntry> {
-    val today = kotlinx.datetime.LocalDate.parse(java.time.LocalDate.now().toString())
+    val today = com.example.data.CoupleDates.today()
     val anniversary = runCatching { kotlinx.datetime.LocalDate.parse(prefs.anniversaryDate) }.getOrNull()
     val prompts = DailyPromptCatalog.defaultPrompts.associateBy { it.id }
     val input = StoryInput(
@@ -119,7 +103,7 @@ internal fun loadStory(
         }.toMap(),
         littleFirsts = progress.firsts.mapNotNull { (id, day) ->
             val first = com.example.progress.LittleFirsts.byId(id) ?: return@mapNotNull null
-            Triple(id, kotlinx.datetime.LocalDate.parse(java.time.LocalDate.ofEpochDay(day).toString()), titleOf(first.title))
+            Triple(id, kotlinx.datetime.LocalDate.fromEpochDays(day.toInt()), titleOf(first.title))
         }
     )
     return StoryTimeline.build(input, today)
@@ -127,23 +111,18 @@ internal fun loadStory(
 
 @Composable
 fun OurStoryDialog(
+    prefs: PreferencesManager,
+    polaroids: PolaroidPhotos,
+    progressStore: com.example.progress.ProgressStore,
     onDismiss: () -> Unit,
     openLittleFirsts: Boolean = false,
     /** Gives a keepsake from one partner to the other (plan 07, D3); null hides the giving. */
     onGiveKeepsake: ((item: String, fromBoy: Boolean) -> Unit)? = null
 ) {
-    val context = LocalContext.current
-    val prefs = remember { PreferencesManager(context) }
-    val polaroids = remember { PolaroidManager(context) }
-    val progressStore = remember {
-        com.example.progress.ProgressStore(
-            context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
-        )
-    }
     var progress by remember { mutableStateOf(progressStore.load()) }
     var showKeepsakes by remember { mutableStateOf(false) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
-        value = withContext(Dispatchers.IO) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
+        value = withContext(Dispatchers.Default) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
     }
     var filter by remember { mutableStateOf(StoryFilter.ALL) }
     // The "Little firsts" page (plan 07, B3), shown in place of the timeline.
@@ -241,8 +220,7 @@ private fun SectionHeader(section: StorySection) {
     val title = if (section.year == null || section.month == null) {
         stringResource(Res.string.story_undated)
     } else {
-        java.time.YearMonth.of(section.year!!, section.month!!)
-            .format(DateTimeFormatter.ofPattern("LLLL yyyy", Locale.getDefault()))
+        DateText.format(kotlinx.datetime.LocalDate(section.year!!, section.month!!, 1), "LLLL yyyy")
     }
     Text(
         title,
@@ -252,7 +230,7 @@ private fun SectionHeader(section: StorySection) {
 }
 
 @Composable
-private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
+private fun StoryRow(entry: StoryEntry, polaroids: PolaroidPhotos) {
     var expanded by remember { mutableStateOf(false) }
     // IntrinsicSize.Min lets the rail line stretch to the card's height.
     Row(Modifier.fillMaxWidth().height(IntrinsicSize.Min).heightIn(min = 64.dp)) {
@@ -278,8 +256,7 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
             verticalArrangement = Arrangement.spacedBy(2.dp)
         ) {
             val dateText = entry.date?.let {
-                java.time.LocalDate.of(it.year, it.monthNumber, it.dayOfMonth)
-                    .format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))
+                DateText.mediumDate(it)
             }
             if (dateText != null) {
                 Text(
@@ -296,13 +273,13 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
                 )
             }
             entry.imagePath?.let { path ->
-                val thumb by produceState<Bitmap?>(null, path) {
-                    value = withContext(Dispatchers.IO) { loadThumbnail(path) }
+                val thumb by produceState<androidx.compose.ui.graphics.ImageBitmap?>(null, path) {
+                    value = withContext(Dispatchers.Default) { polaroids.loadThumbnail(path) }
                 }
                 thumb?.let {
                     Spacer(Modifier.height(6.dp))
                     Image(
-                        bitmap = it.asImageBitmap(),
+                        bitmap = it,
                         contentDescription = entry.title,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxWidth().height(150.dp).clip(TinyRadius.Medium)
@@ -312,15 +289,6 @@ private fun StoryRow(entry: StoryEntry, polaroids: PolaroidManager) {
         }
     }
 }
-
-/** Loads a small version of a polaroid so a long story stays light on memory. */
-private fun loadThumbnail(path: String): Bitmap? = runCatching {
-    val bounds = BitmapFactory.Options().apply { inJustDecodeBounds = true }
-    BitmapFactory.decodeFile(path, bounds)
-    var sample = 1
-    while (bounds.outWidth / (sample * 2) >= 360) sample *= 2
-    BitmapFactory.decodeFile(path, BitmapFactory.Options().apply { inSampleSize = sample })
-}.getOrNull()
 
 @Composable
 private fun EmptyStory() {
@@ -338,7 +306,7 @@ private fun EmptyStory() {
  * rest as gentle hints, so there's something to look for without a checklist feel.
  */
 @Composable
-internal fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
+fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
     val all = com.example.progress.LittleFirsts.ALL
     val earned = all.filter { it.id in progress.firsts }.sortedByDescending { progress.firsts[it.id] }
     val ahead = all.filter { it.id !in progress.firsts }
@@ -355,8 +323,7 @@ internal fun LittleFirstsPage(progress: com.example.progress.ProgressState) {
             )
         }
         items(earned, key = { it.id }) { first ->
-            val date = java.time.LocalDate.ofEpochDay(progress.firsts[first.id] ?: 0L)
-                .format(DateTimeFormatter.ofPattern("d MMM yyyy", Locale.getDefault()))
+            val date = DateText.format(kotlinx.datetime.LocalDate.fromEpochDays((progress.firsts[first.id] ?: 0L).toInt()), "d MMM yyyy")
             LittleFirstRow(
                 title = stringResource(first.title),
                 detail = stringResource(Res.string.little_first_earned_on, date) +
@@ -391,7 +358,7 @@ private fun LittleFirstRow(title: String, detail: String, earned: Boolean) {
 }
 
 /** The name of a keepsake, for the page and the gift message. */
-internal fun keepsakeName(item: String): StringResource = when (item.substringAfter(":")) {
+fun keepsakeName(item: String): StringResource = when (item.substringAfter(":")) {
     "WILDFLOWER" -> Res.string.keepsake_wildflower
     "RED_LEAF" -> Res.string.keepsake_red_leaf
     "LOVE_NOTE" -> Res.string.keepsake_love_note
