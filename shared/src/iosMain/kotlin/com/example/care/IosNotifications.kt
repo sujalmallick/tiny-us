@@ -1,19 +1,23 @@
 package com.example.care
 
 import com.example.data.BirthdayStore
+import com.example.data.CoupleLifeStore
 import com.example.data.PreferencesManager
 import com.example.engine.GameText
 import com.example.resources.Res
-import com.example.resources.bday_morning_reminder
 import com.example.resources.ui_tiny_us
 import com.example.ui.Reminders
 import kotlin.time.Clock
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
 import platform.UserNotifications.*
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
 /**
- * Tiny Care and the birthday morning on iOS, through UNUserNotificationCenter. iOS runs no app code
+ * Tiny Care and the couple's mornings (birthdays, the anniversary, the month-iversary) on iOS, through UNUserNotificationCenter. iOS runs no app code
  * in the background, so the reminders are planned a few days ahead ([TinyCarePlan]) and planned
  * again each time the app opens or a setting changes.
  */
@@ -100,20 +104,29 @@ object IosNotifications {
         schedule(PREVIEW_ID, sample.title, sample.body, now + 1_000, now)
     }
 
-    /** Sets (or clears) the birthday-morning reminder. */
-    fun planBirthday(prefs: PreferencesManager) {
+    /**
+     * Sets (or clears) the next morning reminder: a birthday, the anniversary or the month-iversary,
+     * whichever is switched on and comes first. Android works out the text on the day; iOS has to
+     * write it now, so it is the text for that day.
+     */
+    fun planMornings(prefs: PreferencesManager) {
         center.removePendingNotificationRequestsWithIdentifiers(listOf(BIRTHDAY_ID))
         if (!allowed()) return
         val now = Clock.System.now().toEpochMilliseconds()
-        val at = BirthdayMorning.nextMillis(BirthdayStore(prefs.storage), now) ?: return
-        schedule(BIRTHDAY_ID, GameText.get(Res.string.ui_tiny_us), GameText.get(Res.string.bday_morning_reminder), at, now)
+        val birthdays = BirthdayStore(prefs.storage)
+        val life = CoupleLifeStore(prefs.storage)
+        val start = runCatching { LocalDate.parse(prefs.anniversaryDate) }.getOrNull()
+        val at = CoupleMornings.nextMillis(birthdays, life, start, now) ?: return
+        val day = Instant.fromEpochMilliseconds(at).toLocalDateTime(TimeZone.currentSystemDefault()).date
+        val message = CoupleMornings.messageFor(day, birthdays, life, start) ?: return
+        schedule(BIRTHDAY_ID, GameText.get(Res.string.ui_tiny_us), GameText.get(message), at, now)
     }
 
     /** Both plans, after the permission has been read (the app's start). */
     fun planAll(prefs: PreferencesManager) {
         refreshStatus {
             planTinyCare(prefs)
-            planBirthday(prefs)
+            planMornings(prefs)
         }
     }
 
