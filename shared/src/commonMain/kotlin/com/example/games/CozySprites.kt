@@ -293,6 +293,9 @@ object CozySprites {
         "...g.g..."
     ))
 
+    /** A bouquet kept or given doesn't remember its flowers: these three stand for it. */
+    val BOUQUET_COLORS = listOf(Color(0xFFFF6F91), Color(0xFFFFFFFF), Color(0xFFB497E7))
+
     val BOBBER = Sprite(listOf(
         "..r..",
         ".rrr.",

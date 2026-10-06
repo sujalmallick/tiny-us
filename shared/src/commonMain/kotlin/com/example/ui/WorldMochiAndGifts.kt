@@ -61,11 +61,22 @@ fun drawKeepsakeShelf(scope: DrawScope, shelf: List<String>, cw: Float, ch: Floa
     scope.drawRect(woodDark, Offset(left, y + 2f * p), Size(width, p))
     scope.drawRect(woodDark, Offset(left + 3f * p, y + 3f * p), Size(p, 3f * p))
     scope.drawRect(woodDark, Offset(left + width - 4f * p, y + 3f * p), Size(p, 3f * p))
-    shelf.take(5).forEachIndexed { i, item -> drawKeepsake(scope, item, left + 2f * p + i * 5.4f * p, y, p) }
+    // Small finds take a narrow spot; dishes, catches and bouquets are wider.
+    var x = left + 2f * p
+    for (item in shelf) {
+        val w = keepsakeSprite(item)?.width ?: 4
+        if (x + w * p > left + width) break
+        drawKeepsake(scope, item, x, y, p)
+        x += (w + 1.4f) * p
+    }
 }
 
 /** A keepsake as a tiny pixel sprite, standing on [baseY] with its left edge at [x]. */
 fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Float) {
+    keepsakeSprite(item)?.let { sprite ->
+        com.example.games.CozySprites.draw(scope, sprite, x, baseY - sprite.height * p, p, com.example.games.CozySprites.BOUQUET_COLORS)
+        return
+    }
     fun px(cx: Int, cy: Int, w: Int, h: Int, c: Color) = scope.drawRect(c, Offset(x + cx * p, baseY - (cy + h) * p), Size(w * p, h * p))
     when (item.substringAfter(":")) {
         "WILDFLOWER" -> { px(2, 0, 1, 3, Color(0xFF3F7A4A)); px(1, 3, 3, 1, Color(0xFFE88AA8)); px(2, 4, 1, 1, Color(0xFFF6BD60)); px(1, 4, 1, 1, Color(0xFFE88AA8)); px(3, 4, 1, 1, Color(0xFFE88AA8)) }
@@ -74,5 +85,16 @@ fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Floa
         "SEASHELL" -> { px(0, 0, 4, 1, Color(0xFFF5C6A5)); px(1, 1, 2, 2, Color(0xFFFADBC6)); px(2, 3, 1, 1, Color(0xFFF5C6A5)) }
         "STAR_PEBBLE" -> { px(0, 0, 4, 2, Color(0xFF6C757D)); px(1, 1, 1, 1, Color(0xFFFFD166)); px(2, 2, 1, 1, Color(0xFF8D99AE)) }
         else -> px(0, 0, 3, 3, Color(0xFFFFB5C2))
+    }
+}
+
+/** The pixel art for keepsakes made or caught in the cozy games (plan 07, C3-C5), or null. */
+fun keepsakeSprite(item: String): com.example.games.CozySprites.Sprite? {
+    val kind = item.substringAfter(":")
+    return when {
+        item.startsWith("dish:") -> com.example.games.CozySprites.DISHES[kind]
+        item.startsWith("catch:") -> com.example.games.FishingCatch.entries.firstOrNull { it.name == kind }?.let { com.example.games.CozySprites.CATCHES[it] }
+        item == com.example.progress.Gifts.BOUQUET -> com.example.games.CozySprites.BOUQUET
+        else -> null
     }
 }

@@ -261,6 +261,13 @@ fun PixelWorldView(
                         val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
                         val ny = tapOffset.y / h
 
+                        // The garden plots in the meadow come first: they sit low, where the
+                        // couple's generous touch boxes would otherwise reach (plan 07, C5).
+                        if (engine.cozy.onGardenTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) {
+                            flushPendingTap()
+                            return@detectTapGestures
+                        }
+
                         // Dedicated touch targets for Evening Scooter Ride
                         if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
                             val scootCenterX = w * 0.50f
@@ -1424,7 +1431,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 girlAccessoryIndex = engine.girl.accessoryIndex,
                 boyWearsGlasses = engine.boy.wearsGlasses,
                 boyLook = engine.boy.look,
-                girlLook = engine.girl.look
+                girlLook = engine.girl.look,
+                earphones = engine.earphonesActive
             )
         } else {
             val isHoldingUmbrella = engine.weather == com.example.scene.WeatherType.RAIN && isOutdoor
@@ -1677,6 +1685,9 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
 
         // Catch together (plan 07, C1): the basket and the golden stars.
         drawCatchGame(this, engine.catchGame, cw, ch, pixelScale, engine.sceneTime)
+
+        // Cooking, fishing and garden care (plan 07, C3-C5).
+        drawCozyGames(this, engine, cw, ch, pixelScale, engine.sceneTime)
 
         // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
         com.example.engine.SpecialDays.today()?.let { day ->

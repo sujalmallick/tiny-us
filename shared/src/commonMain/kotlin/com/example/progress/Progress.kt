@@ -29,6 +29,15 @@ sealed class ProgressEvent {
     data class MochiCare(val points: Int, val epochDay: Long) : ProgressEvent()
     /** A keepsake given from one partner to the other (plan 07, D3); it goes on the home shelf. */
     data class GiftGiven(val item: String, val fromBoy: Boolean) : ProgressEvent()
+    /** A dish served from the cooking game (plan 07, C3): it goes in the recipe book and the box. */
+    data class DishCooked(val recipe: String) : ProgressEvent()
+    /** Something reeled in at the pier (plan 07, C4): a [com.example.games.FishingCatch] name. */
+    data class FishCaught(val kind: String) : ProgressEvent()
+    /** Garden care (plan 07, C5): a seed planted, a plot watered, rain, a flower picked. */
+    data class GardenPlanted(val plot: Int, val flower: String) : ProgressEvent()
+    data class GardenWatered(val plot: Int, val epochDay: Long) : ProgressEvent()
+    data class GardenRained(val epochDay: Long) : ProgressEvent()
+    data class FlowerPicked(val plot: Int) : ProgressEvent()
 }
 
 /**
@@ -53,13 +62,21 @@ object MochiFondness {
 
 /** Keepsakes that can be given as gifts (Mochi's toy stays Mochi's). */
 object Gifts {
-    val GIVEABLE = listOf("discovery:WILDFLOWER", "discovery:RED_LEAF", "discovery:LOVE_NOTE", "discovery:SEASHELL", "discovery:STAR_PEBBLE")
+    /** A bouquet from the garden, as a keepsake id. */
+    const val BOUQUET = "garden:BOUQUET"
+    val GIVEABLE = listOf(
+        "discovery:WILDFLOWER", "discovery:RED_LEAF", "discovery:LOVE_NOTE", "discovery:SEASHELL", "discovery:STAR_PEBBLE",
+        BOUQUET, "catch:SEASHELL", "catch:BOTTLE", "catch:GOLDEN_FISH",
+        "dish:pancakes", "dish:soup", "dish:dumplings", "dish:cookies", "dish:tea"
+    )
     const val SHELF = "shelf:"
 }
 
 /** Mini-game ids. */
 object Game {
     const val CATCH = "catch"
+    const val COOKING = "cooking"
+    const val FISHING = "fishing"
 }
 
 /** Counter keys, so the firsts and the screens agree on names. */
@@ -75,6 +92,11 @@ object Counter {
     const val DAYS_TOGETHER = "days_together"
     const val MOCHI_FONDNESS = "mochi_fondness"
     const val GIFTS = "gifts"
+    const val DISHES = "dishes"
+    const val FISH = "fish"
+    const val GOLDEN_FISH = "golden_fish"
+    const val BLOOMS_PICKED = "blooms_picked"
+    const val BOUQUETS = "bouquets"
 }
 
 /** Set keys: things seen at least once. */
@@ -84,6 +106,8 @@ object Seen {
     const val SEASONS = "seasons"
     const val CONSTELLATIONS = "constellations"
     const val FULL_MOON_NIGHTS = "full_moon_nights"
+    /** Recipes cooked at least once: the recipe book. */
+    const val RECIPES = "recipes"
 }
 
 data class ProgressState(
@@ -96,7 +120,9 @@ data class ProgressState(
     /** Little firsts earned, with the epoch day they were earned. */
     val firsts: Map<String, Long> = emptyMap(),
     /** Reward items unlocked (never locked again). */
-    val unlocked: Set<String> = emptySet()
+    val unlocked: Set<String> = emptySet(),
+    /** The garden's plots and the flowers held for a bouquet (plan 07, C5). */
+    val garden: com.example.games.GardenPlots = com.example.games.GardenPlots()
 ) {
     fun count(key: String): Int = counters[key] ?: 0
     fun seenSet(key: String): Set<String> = seen[key] ?: emptySet()
@@ -132,6 +158,25 @@ data class ProgressState(
             else copy(counters = counters + ("mochi_care_day" to day) + ("mochi_care_today" to 0))
             val add = event.points.coerceAtMost((MochiFondness.DAILY_CAP - fresh.count("mochi_care_today")).coerceAtLeast(0))
             if (add <= 0) fresh else fresh.plus("mochi_care_today", add).plus(Counter.MOCHI_FONDNESS, add)
+        }
+        is ProgressEvent.DishCooked -> plus(Counter.DISHES).see(Seen.RECIPES, event.recipe).keep("dish:${event.recipe}")
+        is ProgressEvent.FishCaught -> {
+            val kind = com.example.games.FishingCatch.entries.firstOrNull { it.name == event.kind }
+            var next = keep("catch:${event.kind}").plus("games_${Game.FISHING}")
+            if (kind?.isFish == true) next = next.plus(Counter.FISH)
+            if (kind == com.example.games.FishingCatch.GOLDEN_FISH) next = next.plus(Counter.GOLDEN_FISH)
+            next
+        }
+        is ProgressEvent.GardenPlanted -> copy(garden = garden.plant(event.plot, event.flower))
+        is ProgressEvent.GardenWatered -> copy(garden = garden.water(event.plot, event.epochDay))
+        is ProgressEvent.GardenRained -> copy(garden = garden.rain(event.epochDay))
+        is ProgressEvent.FlowerPicked -> {
+            val (after, bouquet) = garden.pick(event.plot)
+            if (after == garden) this
+            else {
+                val picked = copy(garden = after).plus(Counter.BLOOMS_PICKED)
+                if (bouquet == null) picked else picked.keep(Gifts.BOUQUET).plus(Counter.BOUQUETS)
+            }
         }
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0

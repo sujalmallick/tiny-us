@@ -478,6 +478,9 @@ fun MainScreen(
         engine.foundConstellations = progress.seenSet(com.example.progress.Seen.CONSTELLATIONS)
         engine.mochiFondness = progress.count(com.example.progress.Counter.MOCHI_FONDNESS)
         engine.keepsakeShelf = progress.shelf
+        engine.cozy.garden = progress.garden
+        engine.cozy.cookedRecipes = progress.seenSet(com.example.progress.Seen.RECIPES)
+        engine.cozy.hasCaughtFish = progress.count(com.example.progress.Counter.FISH) > 0
     }
     // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
     // shows two and points to Our Story for the rest.
@@ -1026,6 +1029,53 @@ fun MainScreen(
                     style = TinyType.Label
                 )
             }
+        } else if (engine.cozy.cookingActive) {
+            CookingCard(engine.cozy, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 16.dp))
+        } else if (engine.cozy.fishingActive) {
+            // Fishing (plan 07, C4): a tap anywhere reels in when the bobber dips.
+            Box(
+                Modifier
+                    .fillMaxSize()
+                    .pointerInput(Unit) { detectTapGestures { engine.cozy.tapFishing() } }
+                    .testTag("fishing_layer")
+            )
+            TinyCard(
+                modifier = Modifier.align(Alignment.TopCenter).statusBarsPadding().padding(top = 72.dp),
+                padding = com.example.ui.theme.TinySpace.md
+            ) {
+                Text(
+                    stringResource(
+                        if (engine.cozy.fishingPhase == com.example.games.FishingGame.Phase.BITE) Res.string.fishing_bite else Res.string.fishing_waiting
+                    ),
+                    style = TinyType.Label
+                )
+            }
+            TinyButton(
+                text = stringResource(Res.string.fishing_stop),
+                onClick = { engine.cozy.stopFishing() },
+                icon = PixelIcons.Close,
+                compact = true,
+                testTag = "fishing_stop_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
+        } else if (engine.cozy.canCook) {
+            TinyButton(
+                text = stringResource(Res.string.cooking_start),
+                onClick = { engine.cozy.startCooking() },
+                icon = PixelIcons.VolunteerActivism,
+                compact = true,
+                testTag = "cooking_start_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
+        } else if (engine.cozy.canFish) {
+            TinyButton(
+                text = stringResource(Res.string.fishing_start),
+                onClick = { engine.cozy.startFishing() },
+                icon = PixelIcons.VolunteerActivism,
+                compact = true,
+                testTag = "fishing_start_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 20.dp)
+            )
         } else if (engine.hasCatchableWeather && !engine.isDreamMode) {
             TinyButton(
                 text = stringResource(Res.string.catch_start),

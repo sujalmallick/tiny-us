@@ -398,6 +398,18 @@ internal fun keepsakeName(item: String): StringResource = when (item.substringAf
     "SEASHELL" -> Res.string.keepsake_seashell
     "STAR_PEBBLE" -> Res.string.keepsake_star_pebble
     "MOCHI_TOY" -> Res.string.keepsake_mochi_toy
+    // Cooking, fishing and the garden (plan 07, C3-C5).
+    "pancakes" -> Res.string.keepsake_dish_pancakes
+    "soup" -> Res.string.keepsake_dish_soup
+    "dumplings" -> Res.string.keepsake_dish_dumplings
+    "cookies" -> Res.string.keepsake_dish_cookies
+    "tea" -> Res.string.keepsake_dish_tea
+    "MINNOW" -> Res.string.keepsake_catch_minnow
+    "CARP" -> Res.string.keepsake_catch_carp
+    "OLD_BOOT" -> Res.string.keepsake_catch_old_boot
+    "BOTTLE" -> Res.string.keepsake_catch_bottle
+    "GOLDEN_FISH" -> Res.string.keepsake_catch_golden_fish
+    "BOUQUET" -> Res.string.keepsake_bouquet
     else -> Res.string.keepsake_something
 }
 
@@ -412,7 +424,11 @@ private fun KeepsakesPage(
     girlName: String,
     onGive: ((item: String, fromBoy: Boolean) -> Unit)?
 ) {
-    val kept = progress.keepsakes.filter { it.key.startsWith("discovery:") && it.value > 0 }.toSortedMap()
+    val kinds = listOf("discovery:", "garden:", "dish:", "catch:")
+    val kept = progress.keepsakes.filter { (k, v) -> v > 0 && kinds.any { k.startsWith(it) } }
+        .entries.sortedWith(compareBy({ e -> kinds.indexOfFirst { e.key.startsWith(it) } }, { it.key }))
+        .associate { it.key to it.value }
+    val recipes = progress.seenSet(com.example.progress.Seen.RECIPES).size
     LazyColumn(
         contentPadding = PaddingValues(start = TinySpace.lg, end = TinySpace.lg, top = TinySpace.md, bottom = 32.dp),
         verticalArrangement = Arrangement.spacedBy(TinySpace.sm),
@@ -421,13 +437,32 @@ private fun KeepsakesPage(
         if (kept.isEmpty()) {
             item { Text(stringResource(Res.string.keepsakes_empty), style = TinyType.Body.copy(color = TinyColors.InkMuted)) }
         }
+        if (recipes > 0) {
+            item {
+                Text(
+                    stringResource(Res.string.recipe_book, recipes, com.example.games.Recipes.ALL.size),
+                    style = TinyType.Caption,
+                    modifier = Modifier.testTag("recipe_book")
+                )
+            }
+        }
         items(kept.keys.toList(), key = { it }) { item ->
             val count = kept[item] ?: 0
             TinyCard(padding = TinySpace.md) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Canvas(Modifier.size(36.dp).background(TinyColors.Muted, PixelCircleShape)) {
-                        val p = size.width / 9f
-                        drawKeepsake(this, item, 2.5f * p, 7f * p, p)
+                        val sprite = keepsakeSprite(item)
+                        if (sprite != null) {
+                            // The bigger pixel art for dishes, catches and bouquets, centred.
+                            val p = kotlin.math.floor(size.width / (maxOf(sprite.width, sprite.height) + 3))
+                            com.example.games.CozySprites.draw(
+                                this, sprite, (size.width - sprite.width * p) / 2f, (size.height - sprite.height * p) / 2f, p,
+                                com.example.games.CozySprites.BOUQUET_COLORS
+                            )
+                        } else {
+                            val p = size.width / 9f
+                            drawKeepsake(this, item, 2.5f * p, 7f * p, p)
+                        }
                     }
                     Spacer(Modifier.width(TinySpace.md))
                     Column(Modifier.weight(1f)) {

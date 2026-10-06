@@ -243,7 +243,8 @@ object LoftSprites {
         girlAccessoryIndex: Int = 0,
         boyWearsGlasses: Boolean = true,
         boyLook: AvatarLook = AvatarLook.DEFAULT_A,
-        girlLook: AvatarLook = AvatarLook.DEFAULT_B
+        girlLook: AvatarLook = AvatarLook.DEFAULT_B,
+        earphones: Boolean = false
     ) {
         val seatY = floorY - 5 * p
 
@@ -261,6 +262,22 @@ object LoftSprites {
         val girlY = seatY + breathGirl
         drawGirlOnSofa(scope, girlXPos, girlY, p, timeSeconds, girlEmotion, isKissing, isReadingBook, girlOutfitIndex, girlAccessoryIndex, girlLook)
 
+        // Shared earphones: a bud in each ear that faces the other (his right, her left), joined
+        // by the cord with its heart, as in every other scene.
+        if (earphones) {
+            val boyEar = Offset(boyXPos + 5f * p - 0.8f * p, boyYPos - 19f * p + 5f * p)
+            val girlEar = Offset(girlXPos - 4.5f * p - 1.2f * p, girlY - 18f * p + 5f * p)
+            drawSofaEarbud(scope, boyEar, p, Color(0xFF64B5F6))
+            drawSofaEarbud(scope, girlEar, p, Color(0xFFFF6B8B))
+            PixelArtRenderer.drawEarphoneCord(
+                scope,
+                Offset(boyEar.x + 1.5f * p, boyEar.y + 4f * p),
+                Offset(girlEar.x + 0.5f * p, girlEar.y + 4f * p),
+                p,
+                timeSeconds
+            )
+        }
+
         // 3. Floating little cuddle heart
         if (isKissing || (boyEmotion == CharacterEmotion.LOVING && sin(timeSeconds * 2.5f) > 0.70f)) {
             val hx = (boyXPos + girlXPos) / 2f + sin(timeSeconds * 4f) * 2 * p
@@ -268,6 +285,14 @@ object LoftSprites {
             scope.drawRect(Color(0xFFFF3366), Offset(hx - 2 * p, hy), Size(5 * p, 4 * p))
             scope.drawRect(Color(0xFFFF3366), Offset(hx - p, hy + 3 * p), Size(3 * p, 2 * p))
         }
+    }
+
+    /** A 2x2 earbud with its coloured dot and a short stem down, top-left at [at]. */
+    private fun drawSofaEarbud(scope: DrawScope, at: Offset, p: Float, accent: Color) {
+        val bud = Color(0xFFFDFBF7)
+        scope.drawRect(bud, at, Size(2f * p, 2f * p))
+        scope.drawRect(accent, Offset(at.x, at.y + p), Size(p, p))
+        scope.drawRect(PixelArtRenderer.EarphoneCord, Offset(at.x + p, at.y + 2f * p), Size(p, 2f * p))
     }
 
     /** Sofa-pose hair: long wavy locks with a ribbon, or short tousled bangs, in the partner's colours. */
