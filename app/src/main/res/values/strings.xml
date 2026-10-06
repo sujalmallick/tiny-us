@@ -10,24 +10,6 @@
 
 
     <!-- Backup & Restore -->
-    <string name="action_cancel">Cancel</string>
-    <string name="action_continue">Continue</string>
-    <string name="backup_explainer">Saves letters, keepsakes, photos and settings into one password-protected file. It goes wherever you choose — Tiny Us never uploads it.</string>
-    <string name="backup_export">Save backup</string>
-    <string name="backup_restore">Restore</string>
-    <string name="backup_working">Working on it… keep Tiny Us open.</string>
-    <string name="backup_password_title">Protect your backup</string>
-    <string name="backup_password_hint">At least 6 characters. Write it down — without it the file can’t be opened, not even by us.</string>
-    <string name="backup_password">Backup password</string>
-    <string name="backup_password_again">Type it again</string>
-    <string name="backup_enter_password">Backup password</string>
-    <string name="backup_saved">Backup saved (%1$d photos included).</string>
-    <string name="backup_failed">Something went wrong. Nothing was changed.</string>
-    <string name="backup_restored">Welcome home — your world is restored.</string>
-    <string name="backup_wrong_password">Wrong password or damaged backup.</string>
-    <string name="backup_restore_confirm_title">Replace everything?</string>
-    <string name="backup_restore_confirm_body">Restoring replaces all letters, keepsakes, photos and settings on this phone with the ones in the backup. If anything goes wrong, nothing is changed.</string>
-    <string name="backup_choose_file">Choose file</string>
 
 
     <!-- Discreet mode -->

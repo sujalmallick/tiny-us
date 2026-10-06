@@ -35,7 +35,7 @@ class AndroidPlatformActions(private val context: Context) : PlatformActions {
 
     override val privacySettings: (@Composable () -> Unit) = { PrivacyLockSettings(remember { AppLockStore(context) }) }
 
-    override val backupSettings: (@Composable () -> Unit) = { BackupRestoreSettings() }
+    override val backupSettings: (@Composable () -> Unit) = { BackupRestoreSettings(rememberAndroidBackupFiles()) }
 }
 
 /** Tiny Care reminders through [TinyCareScheduler], asking for POST_NOTIFICATIONS on Android 13+. */
