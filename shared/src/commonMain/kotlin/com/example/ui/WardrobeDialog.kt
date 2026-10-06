@@ -1,6 +1,5 @@
 package com.example.ui
 
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -116,7 +115,6 @@ fun WardrobeDialog(
 ) {
     var selectedTab by remember { mutableStateOf(0) } // 0: Girl, 1: Boy
     // The catalogue below is built inside remember { }, so it reads its text through resources.
-    val res = LocalContext.current.resources
     var filterHoodiesOnly by remember { mutableStateOf(false) }
 
     var selectedGirlOutfit by remember(currentGirlOutfitIndex) { mutableStateOf(currentGirlOutfitIndex) }

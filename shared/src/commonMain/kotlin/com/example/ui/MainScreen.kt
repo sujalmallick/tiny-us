@@ -1,7 +1,5 @@
 package com.example.ui
 
-import androidx.compose.ui.graphics.asImageBitmap
-import kotlinx.datetime.toJavaLocalDate
 import com.example.engine.WorldViewport
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
@@ -44,9 +42,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -59,8 +54,6 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.platform.LocalConfiguration
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
@@ -72,9 +65,7 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.PreferencesManager
-import com.example.data.PolaroidManager
 import com.example.data.PolaroidMemory
-import com.example.engine.AmbientAudio
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
 import com.example.scene.EnvironmentType
@@ -84,24 +75,31 @@ import com.example.ui.theme.DeepRose
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyType
 import kotlinx.coroutines.delay
-import android.graphics.Bitmap
-import android.graphics.Canvas as AndroidCanvas
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalView
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import java.util.UUID
 import com.example.resources.*
 import org.jetbrains.compose.resources.stringResource
 import com.example.engine.GameText
+import androidx.compose.ui.graphics.ImageBitmap
+import com.example.data.CoupleCalendar
+import com.example.data.CoupleDates
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 
+/**
+ * The main screen: the pixel world with its buttons, menus and dialogs. [platform] provides the
+ * saved data, the sound, the photos and what only the platform app can do.
+ */
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun MainScreen(
+    platform: MainPlatform,
     targetScene: String? = null,
     targetToken: Long = 0L,
     targetAtmosphere: String? = null,
@@ -115,21 +113,15 @@ fun MainScreen(
      */
     previewEngine: SceneEngine? = null
 ) {
-    val context = LocalContext.current
-    val prefs = remember { PreferencesManager(context) }
+    val prefs = platform.prefs
     val density = LocalDensity.current
-    val config = LocalConfiguration.current
-    val screenWidthPx = with(density) { config.screenWidthDp.dp.toPx() }
-    val screenHeightPx = with(density) { config.screenHeightDp.dp.toPx() }
-    val audio = remember {
-        AmbientAudio(context.applicationContext).apply {
-            isEnabled = prefs.soundEnabled
-        }
-    }
+    val screenSize = platform.screenSizePx()
+    val screenWidthPx = screenSize.width
+    val screenHeightPx = screenSize.height
+    val audio = remember { platform.createAudio(soundOn = prefs.soundEnabled) }
 
     val coroutineScope = rememberCoroutineScope()
-    val rootView = LocalView.current
-    val polaroidManager = remember { PolaroidManager(context) }
+    val polaroidCamera = platform.rememberPolaroidCamera()
 
     // Modal dialogs state
     var showMemories by remember { mutableStateOf(false) }
@@ -167,7 +159,7 @@ fun MainScreen(
     var boyAccessoryIndex by remember { mutableStateOf(prefs.boyAccessoryIndex) }
 
     // Polaroid capture state
-    var polaroidCaptureBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var polaroidCaptureBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
     var polaroidCaptureMemory by remember { mutableStateOf<PolaroidMemory?>(null) }
     var showPolaroidOverlay by remember { mutableStateOf(false) }
     var showPolaroidGallery by remember { mutableStateOf(false) }
@@ -248,7 +240,7 @@ fun MainScreen(
             prefs.addRecentScene(chosen.name)
             loadScene(chosen)
             // Carry on the last visit's weather, or start from today's season.
-            changeWeather(com.example.scene.WeatherMemory.startWeather(context))
+            changeWeather(platform.startWeather())
         }
     }
 
@@ -259,18 +251,13 @@ fun MainScreen(
     }
 
     LaunchedEffect(Unit) {
-        val loadedLocal = com.example.data.ProfileManager.loadFromLocalFile(context)
+        val loadedLocal = platform.loadLocalProfile()
         if (loadedLocal) {
             prefs.isOnboardingCompleted = true
             showOnboarding = false
             engine.updateNames(prefs.boyfriendName, prefs.girlfriendName)
         }
-        val anniv = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now())
-        com.example.data.RelationshipTimeManager.relationshipStartDate = anniv
-        com.example.data.SpecialCalendarManager.boyName = prefs.boyfriendName
-        com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
-        com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
-        com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+        syncCoupleDates(prefs)
         com.example.engine.SpecialDays.refresh()
     }
 
@@ -353,11 +340,9 @@ fun MainScreen(
             engine.weatherDriftEnabled = false
             engine.weather = it
         }
-        android.util.Log.d("TinyUs", "MainScreen LaunchedEffect targetScene: $targetScene, token: $targetToken, targetAtmosphere: $targetAtmosphere, birdSurface: $targetBirdSurface")
         atmosphere = targetAtmosphere ?: prefs.atmosphereMode
         if (!targetScene.isNullOrBlank()) {
             val sc = SceneType.values().firstOrNull { it.name.equals(targetScene, ignoreCase = true) }
-            android.util.Log.d("TinyUs", "MainScreen matched SceneType: $sc")
             if (sc != null) {
                 engine.loadScene(sc)
             }
@@ -408,7 +393,7 @@ fun MainScreen(
             // Special days (plan 06, G2): the couple greets the day once, on its first open.
             com.example.engine.SpecialDays.today()?.let { day ->
                 delay(if (welcome != null || newBloom != null) 5000 else 3500)
-                val (boyLine, girlLine) = specialDayLines(context, day, prefs.boyfriendName, prefs.girlfriendName)
+                val (boyLine, girlLine) = specialDayLines(day, prefs.boyfriendName, prefs.girlfriendName)
                 engine.greetSpecialDay(boyLine, girlLine)
             }
         }
@@ -416,15 +401,14 @@ fun MainScreen(
 
     // ── Progress and little firsts (plan 07, A-B) ──
     val progressStore = remember {
-        com.example.progress.ProgressStore(
-            context.getSharedPreferences(com.example.progress.ProgressStore.PREFS_FILE, android.content.Context.MODE_PRIVATE)
-        )
+        // tiny_us_prefs, the saved data's own file (so backups carry it)
+        com.example.progress.ProgressStore(prefs.storage)
     }
     var progress by remember { mutableStateOf(progressStore.load()) }
     val firstsToCelebrate = remember { androidx.compose.runtime.mutableStateListOf<com.example.progress.LittleFirst>() }
     val recordProgress: (com.example.progress.ProgressEvent) -> Unit = remember {
         { event ->
-            val (next, earned) = com.example.progress.LittleFirsts.apply(progress, event, java.time.LocalDate.now().toEpochDay())
+            val (next, earned) = com.example.progress.LittleFirsts.apply(progress, event, CoupleDates.today().toEpochDays().toLong())
             if (next != progress) {
                 progress = next
                 progressStore.save(next)
@@ -436,7 +420,7 @@ fun MainScreen(
         if (previewEngine == null) {
             engine.onProgress = recordProgress
             recordProgress(com.example.progress.ProgressEvent.SceneVisited(engine.currentScene.name))
-            recordProgress(com.example.progress.ProgressEvent.DaysTogether(com.example.data.RelationshipTimeManager.calculateTinyUsDay()))
+            recordProgress(com.example.progress.ProgressEvent.DaysTogether(CoupleCalendar.tinyUsDay()))
         }
         onDispose { engine.onProgress = null }
     }
@@ -491,7 +475,7 @@ fun MainScreen(
     LaunchedEffect(engine.weather) {
         if (previewEngine == null) {
             val season = com.example.engine.SeasonalWeather.seasonOf(
-                com.example.scene.WeatherMemory.currentMonth(), java.util.Locale.getDefault().country
+                CoupleDates.today().month.ordinal + 1, androidx.compose.ui.text.intl.Locale.current.region
             )
             recordProgress(com.example.progress.ProgressEvent.WeatherSeen(engine.weather.name, season))
         }
@@ -500,24 +484,22 @@ fun MainScreen(
         val fullMoon = com.example.engine.MoonPhase.illumination(currentMoonFraction()) > 0.93f
         if (previewEngine == null && engine.timeOfDayPhase.isNight && engine.isCurrentSceneOutdoor && fullMoon) {
             // A night after midnight still belongs to the evening before.
-            val now = java.time.LocalDateTime.now()
-            val night = if (now.hour < 12) now.toLocalDate().minusDays(1) else now.toLocalDate()
-            recordProgress(com.example.progress.ProgressEvent.FullMoonSeen(night.toEpochDay()))
+            val now = CoupleCalendar.now()
+            val night = if (now.hour < 12) now.date.minus(1, DateTimeUnit.DAY) else now.date
+            recordProgress(com.example.progress.ProgressEvent.FullMoonSeen(night.toEpochDays().toLong()))
         }
     }
 
     // Keep the home-screen widget on the scene and weather the couple is in (plan 06, H2).
     LaunchedEffect(engine.currentScene, engine.weather) {
-        if (previewEngine == null && com.example.widget.WidgetState.save(context, engine.currentScene, engine.weather)) {
-            com.example.widget.TinyUsWidgetProvider.updateAllWidgets(context)
-        }
+        if (previewEngine == null) platform.updateWidget(engine.currentScene, engine.weather)
     }
 
     // Remember the weather while the app is open, so a quick return finds the same sky.
     LaunchedEffect(Unit) {
         if (previewEngine != null) return@LaunchedEffect
         while (true) {
-            com.example.scene.WeatherMemory.save(context, engine.weather)
+            platform.saveWeather(engine.weather)
             delay(60_000)
         }
     }
@@ -542,20 +524,9 @@ fun MainScreen(
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
-    DisposableEffect(lifecycleOwner) {
-        val observer = LifecycleEventObserver { _, event ->
-            when (event) {
-                Lifecycle.Event.ON_PAUSE -> audio.pauseAll()
-                Lifecycle.Event.ON_RESUME -> audio.resumeAll()
-                else -> {}
-            }
-        }
-        lifecycleOwner.lifecycle.addObserver(observer)
-        onDispose {
-            lifecycleOwner.lifecycle.removeObserver(observer)
-            audio.release()
-        }
+    platform.OnAppPauseResume(onPause = { audio.pauseAll() }, onResume = { audio.resumeAll() })
+    DisposableEffect(audio) {
+        onDispose { audio.release() }
     }
 
     val screenBgColor = remember(isDark, engine.weather) {
@@ -1126,55 +1097,19 @@ fun MainScreen(
                             engine.triggerThinkingOfYou(screenWidthPx, screenHeightPx)
                             audio.playCameraShutter()
 
-                            // 2. Capture scene as bitmap, render complete Polaroid card, then show Polaroid overlay
+                            // 2. Take the Polaroid (capture, card, saved), then show it
                             coroutineScope.launch {
-                                val bmp = withContext(Dispatchers.Main) {
-                                    runCatching {
-                                        val v = rootView
-                                        val b = Bitmap.createBitmap(v.width, v.height, Bitmap.Config.ARGB_8888)
-                                        val c = AndroidCanvas(b)
-                                        v.draw(c)
-                                        b
-                                    }.getOrNull()
-                                }
-
-                                if (bmp != null) {
-                                    val scene = engine.currentScene
-                                    val envKey = scene.environment.name
-                                    val title = polaroidManager.pickTitle(
-                                        sceneEnvKey = envKey,
-                                        isNight = isDark,
-                                        isSunset = engine.timeOfDayPhase.isSunset
-                                    )
-                                    val dateStr = polaroidManager.formattedDate()
-                                    val timeStr = polaroidManager.formattedTime()
-
-                                    val polaroidCardBmp = withContext(Dispatchers.Default) {
-                                        polaroidManager.renderPolaroidCard(
-                                            sceneBitmap = bmp,
-                                            title = title,
-                                            date = dateStr,
-                                            time = timeStr,
-                                            sceneName = scene.title
-                                        )
-                                    }
-
-                                    val imagePath = withContext(Dispatchers.IO) {
-                                        polaroidManager.saveBitmap(polaroidCardBmp)
-                                    }
-                                    val memory = PolaroidMemory(
-                                        id = UUID.randomUUID().toString(),
-                                        title = title,
-                                        date = dateStr,
-                                        time = timeStr,
-                                        sceneName = scene.title,
-                                        sceneEnvKey = envKey,
-                                        imagePath = imagePath
-                                    )
-                                    polaroidManager.savePolaroid(memory)
+                                val scene = engine.currentScene
+                                val taken = polaroidCamera.take(
+                                    sceneName = scene.title,
+                                    sceneEnvKey = scene.environment.name,
+                                    isNight = isDark,
+                                    isSunset = engine.timeOfDayPhase.isSunset
+                                )
+                                if (taken != null) {
                                     recordProgress(com.example.progress.ProgressEvent.TinyMoment)
-                                    polaroidCaptureBitmap = polaroidCardBmp
-                                    polaroidCaptureMemory = memory
+                                    polaroidCaptureBitmap = taken.first
+                                    polaroidCaptureMemory = taken.second
                                     showPolaroidOverlay = true
                                 }
                             }
@@ -1268,12 +1203,7 @@ fun MainScreen(
                     audio.isEnabled = isSoundOn
                     engine.updateNames(prefs.boyfriendName, prefs.girlfriendName)
                     glassIntensity = prefs.buttonGlassIntensity
-                    val anniv = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now())
-                    com.example.data.RelationshipTimeManager.relationshipStartDate = anniv
-                    com.example.data.SpecialCalendarManager.boyName = prefs.boyfriendName
-                    com.example.data.SpecialCalendarManager.girlName = prefs.girlfriendName
-                    com.example.data.SpecialCalendarManager.boyBirthday = runCatching { java.time.LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
-                    com.example.data.SpecialCalendarManager.girlBirthday = runCatching { java.time.LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
+                    syncCoupleDates(prefs)
         com.example.engine.SpecialDays.refresh()
                 },
                 onReplayScene = {
@@ -1396,10 +1326,10 @@ fun MainScreen(
                     prefs.isOnboardingCompleted = true
 
                     engine.updateNames(bName, gName)
-                    com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate.toJavaLocalDate()
+                    CoupleDates.anniversary = annivDate
                     com.example.engine.SpecialDays.refresh()
-                    com.example.data.SpecialCalendarManager.boyName = bName
-                    com.example.data.SpecialCalendarManager.girlName = gName
+                    CoupleCalendar.boyName = bName
+                    CoupleCalendar.girlName = gName
 
                     showOnboarding = false
                 }
@@ -1429,19 +1359,23 @@ fun MainScreen(
         }
 
         if (showOurStory) {
-            OurStoryDialog(onDismiss = { showOurStory = false },
+            OurStoryDialog(
+                prefs = prefs,
+                polaroids = platform.photos,
+                progressStore = progressStore,
+                onDismiss = { showOurStory = false },
                 onGiveKeepsake = { item, fromBoy ->
                     recordProgress(com.example.progress.ProgressEvent.GiftGiven(item, fromBoy))
                     val giver = if (fromBoy) prefs.boyfriendName else prefs.girlfriendName
                     val partner = if (fromBoy) prefs.girlfriendName else prefs.boyfriendName
                     val itemName = GameText.get(keepsakeName(item))
                     // "a seashell" in the middle of the sentence (only the first letter changes).
-                    engine.giveGift(fromBoy, itemName.replaceFirstChar { it.lowercase(java.util.Locale.getDefault()) })
+                    engine.giveGift(fromBoy, itemName.replaceFirstChar { it.lowercase() })
                     // Remembered in Our Story.
                     prefs.addMemory(
                         GameText.get(Res.string.gift_story_title, itemName, partner),
                         GameText.get(Res.string.gift_story_note, giver),
-                        java.time.LocalDate.now().toString(),
+                        CoupleDates.today().toString(),
                         "gift"
                     )
                 }
@@ -1518,7 +1452,7 @@ fun MainScreen(
         // ── Polaroid Gallery Dialog ────────────────────────────────────────────
         if (showPolaroidGallery) {
             PolaroidGalleryDialog(
-                photos = polaroidManager,
+                photos = platform.photos,
                 audio = audio,
                 onDismiss = { showPolaroidGallery = false }
             )
@@ -1529,9 +1463,9 @@ fun MainScreen(
         val capturedMem = polaroidCaptureMemory
         if (showPolaroidOverlay && capturedBmp != null && capturedMem != null) {
             PolaroidCaptureOverlay(
-                bitmap = remember(capturedBmp) { capturedBmp.asImageBitmap() },
+                bitmap = capturedBmp,
                 memory = capturedMem,
-                photos = polaroidManager,
+                photos = platform.photos,
                 audio = audio,
                 onDismiss = {
                     showPolaroidOverlay = false
@@ -1626,13 +1560,11 @@ private fun ContrastIcon(
 }
 
 /** The couple's two lines for a special day: (boy, girl). */
-internal fun specialDayLines(
-    context: android.content.Context,
+fun specialDayLines(
     day: com.example.engine.SpecialDay,
     boyName: String,
     girlName: String
 ): Pair<String, String> {
-    val r = context.resources
     return when (day) {
         com.example.engine.SpecialDay.BOY_BIRTHDAY ->
             GameText.get(Res.string.special_boy_birthday_boy) to GameText.get(Res.string.special_boy_birthday_girl, boyName)
@@ -1650,4 +1582,13 @@ internal fun specialDayLines(
         com.example.engine.SpecialDay.DIWALI -> GameText.get(Res.string.special_diwali_boy) to GameText.get(Res.string.special_diwali_girl)
         com.example.engine.SpecialDay.CHRISTMAS -> GameText.get(Res.string.special_christmas_boy) to GameText.get(Res.string.special_christmas_girl)
     }
+}
+
+/** Hands the couple's names and dates from the saved data to the shared calendar and special days. */
+private fun syncCoupleDates(prefs: PreferencesManager) {
+    CoupleDates.anniversary = runCatching { LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(CoupleDates.today())
+    CoupleCalendar.boyName = prefs.boyfriendName
+    CoupleCalendar.girlName = prefs.girlfriendName
+    CoupleDates.boyBirthday = runCatching { LocalDate.parse(prefs.boyfriendBirthday) }.getOrNull()
+    CoupleDates.girlBirthday = runCatching { LocalDate.parse(prefs.girlfriendBirthday) }.getOrNull()
 }

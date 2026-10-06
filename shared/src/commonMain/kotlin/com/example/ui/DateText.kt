@@ -10,6 +10,9 @@ expect object DateText {
      */
     fun format(date: LocalDate, pattern: String, english: Boolean = false): String
 
+    /** [date] in the phone's medium date style ("Oct 6, 2026" in English). */
+    fun mediumDate(date: LocalDate): String
+
     /** Short weekday names, Monday first. */
     fun shortWeekdays(): List<String>
 
