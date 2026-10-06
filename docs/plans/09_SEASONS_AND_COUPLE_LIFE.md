@@ -174,7 +174,7 @@ Each is a tiny ritual in the world for a real friction. None of them is therapy,
 
 **Today:** `FishingGame` rolls MINNOW, CARP, SEASHELL, OLD_BOOT, BOTTLE and GOLDEN_FISH by weight only. Grandpa Bao's own catches (`PierCatch`) are just for show.
 
-- [ ] **F1. What's biting depends on the moment:**
+- [x] **F1. What's biting depends on the moment:**
   - a moon jelly and a glow squid at night;
   - a rain trout in the rain;
   - an ice cod in winter;
@@ -182,7 +182,7 @@ Each is a tiny ritual in the world for a real friction. None of them is therapy,
   - a golden fish most likely at sunset.
   
   The common catches stay everywhere.
-- [ ] **F2. Bao teaches.** The first "Fish together" starts a three-line lesson from Bao and one practice bite with a wider window. Afterwards, his letters hint at what's biting this season.
+- [x] **F2. Bao teaches.** The first "Fish together" starts a three-line lesson from Bao and one practice bite with a wider window. Afterwards, his letters hint at what's biting this season.
 - [ ] **F3.** Bao's catches and the couple's go into one fish page in the collection book (H).
 
 ## G. Morning mail (from Stardew's mailbox)
@@ -367,10 +367,11 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 - [x] E-5. Tests and renders. *(`GardenKitchenTest`, `GardenKitchenEngineTest`; `SCENE_PREVIEW_COZY=crops`, `STORE_SHOTS_COZY=picker|seeds|who`.)* E5 (recipes by mail) waits for section G.
 
 ### F. Seasonal fishing
-- [ ] F-1. Catches by season, weather and time; new fish art.
-- [ ] F-2. Bao's lesson and practice bite.
+- [x] F-1. Catches by season, weather and time; new fish art. *(`FishingConditions` and `FishingCatch.weightIn` in `FishingGame.kt`: a moon jelly and a glowing squid at night, a rain trout in rain, an ice cod in winter, a blossom koi in spring, and the golden fish three times as likely at sunset. The common catches stay everywhere. Art in `CozySprites.CATCHES`.)*
+- [x] F-2. Bao's lesson and practice bite. *(The first "Fish together" plays three lines from Bao, then a practice cast: a bite after 2 s with a 2.8 s window. Later casts sometimes start with Bao's hint for the moment. His letters come with section G.)*
+- [x] F-5. Something lovely for her (the user's twist): a message in a bottle (either of them writes a short note at the pier and tosses it; from the next day the next bite brings it up, sealed, for the other to open; `LetterKind.BOTTLE` in `SealedLetters.kt`, `ui/BottleDialogs.kt`), and little treasures he sometimes reels up and gives her on the spot (a pearl, a heart-shaped shell, a sea-glass heart), which go on the shelf.
 - [ ] F-3. Bao's catches go into the fish page.
-- [ ] F-4. Tests.
+- [x] F-4. Tests. *(`CozyGamesTest`: each catch in its moment, the weights, the practice bite; `CozyGamesEngineTest`: the lesson, the practice bite, the conditions and hints.)*
 
 ### G. Morning mail
 - [ ] G-1. A mailbox by the cottage in the meadow and home scenes, with a flag for unread mail.

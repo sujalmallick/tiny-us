@@ -5,8 +5,11 @@ import kotlin.uuid.ExperimentalUuidApi
 import kotlin.uuid.Uuid
 import kotlinx.datetime.LocalDate
 
-/** What a sealed letter waits for: a birthday (a date), or a moment its reader chooses. */
-enum class LetterKind { BIRTHDAY, OPEN_WHEN }
+/**
+ * What a sealed letter waits for: a birthday (a date), a moment its reader chooses, or the day a
+ * message in a bottle washes up on the line at the pier (plan 09, F).
+ */
+enum class LetterKind { BIRTHDAY, OPEN_WHEN, BOTTLE }
 
 /**
  * A letter one of them writes for the other and seals (plan 09, A and C). It stays hidden from
@@ -32,6 +35,7 @@ data class SealedLetter(
     fun canOpen(today: LocalDate): Boolean = when (kind) {
         LetterKind.OPEN_WHEN -> true
         LetterKind.BIRTHDAY -> Birthdays.parse(opensOn)?.let { today >= it } ?: true
+        LetterKind.BOTTLE -> Birthdays.parse(opensOn)?.let { today >= it } ?: true
     }
 }
 

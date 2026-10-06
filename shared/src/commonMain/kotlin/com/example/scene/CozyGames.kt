@@ -14,6 +14,7 @@ import com.example.engine.EmoteType
 import com.example.engine.GameText
 import com.example.games.CookingGame
 import com.example.games.FishingCatch
+import com.example.games.FishingConditions
 import com.example.games.FishingGame
 import com.example.games.GardenPlots
 import com.example.games.Ingredient
@@ -213,13 +214,96 @@ class CozyGames(private val engine: SceneEngine) {
 
     // ── Fishing ──
 
-    fun startFishing() {
+    /**
+     * A message in a bottle that has washed up and waits on the line (plan 09, F), kept up to
+     * date by the screen from the sealed letters. The next bite brings it.
+     */
+    var dueBottle: com.example.data.SealedLetter? = null
+    /** The bottle just reeled in, for the screen to open, or null. */
+    var bottleLanded by mutableStateOf<com.example.data.SealedLetter?>(null)
+        private set
+    /** The bottle-note writer is open. */
+    var writingBottle by mutableStateOf(false)
+        private set
+
+    fun openBottleWriter() {
+        if (canFish && !fishingActive) writingBottle = true
+    }
+
+    fun closeBottleWriter() {
+        writingBottle = false
+    }
+
+    /** The note is sealed: the bottle bobs off over the waves, to wash up another day. */
+    fun tossBottle(forName: String) {
+        writingBottle = false
+        val w = engine.lastWorldW
+        val h = engine.lastWorldH
+        engine.audio.playWaterDrip()
+        engine.particles.spawnSparkles(w * 0.30f, h * 0.52f, 10, Color(0xFFBDE0FE))
+        engine.particles.spawnHeart(w * 0.30f, h * 0.50f, Color(0xFFFF85A1))
+        engine.showMessage(GameText.get(Res.string.bottle_tossed, forName), duration = 4f)
+    }
+
+    /** The bottle has been read (or put away): it won't come up again. */
+    fun bottleRead() {
+        bottleLanded = null
+    }
+
+    /** Casts the line, bringing a waiting bottle on the next bite. */
+    private fun castLine(practice: Boolean = false) {
+        fishing.cast(firstEver = !hasCaughtFish, conditions = fishingConditions, practice = practice)
+        if (!practice && dueBottle != null) fishing.forceNext(FishingCatch.BOTTLE)
+    }
+
+    /** Whether they've ever fished: the first time, Grandpa Bao teaches first (plan 09, F2). */
+    var hasFished = false
+
+    /** Seconds into Bao's lesson, or a negative number when there's none. */
+    private var lessonTime = -1f
+    private var lessonLine = -1
+
+    val inBaoLesson: Boolean get() = lessonTime >= 0f
+
+    /** What's biting depends on this moment (plan 09, F1). */
+    val fishingConditions: FishingConditions
+        get() = FishingConditions(
+            season = season,
+            weather = engine.weather.name,
+            isNight = engine.timeOfDayPhase.isNight,
+            isSunset = engine.timeOfDayPhase.isSunset
+        )
+
+    fun startFishing(random: Random = Random.Default) {
         if (!canFish || fishingActive) return
-        fishing.cast(firstEver = !hasCaughtFish)
         fishingActive = true
-        fishingPhase = fishing.phase
         engine.audio.playReelClick()
-        engine.showMessage(GameText.get(Res.string.fishing_hint), duration = 3.5f)
+        if (!hasFished) {
+            // The first time, Bao shows them how, then a slow practice bite (plan 09, F2).
+            lessonTime = 0f
+            lessonLine = -1
+            fishingPhase = fishing.phase
+            return
+        }
+        castLine()
+        fishingPhase = fishing.phase
+        // Now and then Bao says what's biting right now.
+        val hint = baoHint(fishingConditions)
+        engine.showMessage(GameText.get(if (hint != null && random.nextBoolean()) hint else Res.string.fishing_hint), duration = 3.5f)
+    }
+
+    private fun updateBaoLesson(dt: Float) {
+        lessonTime += dt
+        val line = (lessonTime / LESSON_LINE_SECONDS).toInt()
+        if (line != lessonLine && line < BAO_LESSON.size) {
+            lessonLine = line
+            engine.showMessage(GameText.get(BAO_LESSON[line]), duration = LESSON_LINE_SECONDS)
+        }
+        if (line >= BAO_LESSON.size) {
+            lessonTime = -1f
+            hasFished = true
+            castLine(practice = true)
+        }
     }
 
     fun tapFishing() {
@@ -240,7 +324,14 @@ class CozyGames(private val engine: SceneEngine) {
     fun stopFishing() {
         fishing.stop()
         fishingActive = false
+        lessonTime = -1f
         fishingPhase = fishing.phase
+    }
+
+    /** A treasure for her: he gives it to her right there, and it goes on the shelf. */
+    private fun giveTreasure(t: FishingCatch) {
+        engine.giveGift(fromBoy = true, itemName = GameText.get(catchName(t)))
+        report(ProgressEvent.GiftGiven("catch:${t.name}", fromBoy = true))
     }
 
     private fun updateFishing(dt: Float, cw: Float, ch: Float) {
@@ -248,6 +339,11 @@ class CozyGames(private val engine: SceneEngine) {
         if (!fishingActive) return
         if (engine.currentScene != SceneType.SEASIDE_PIER) {
             stopFishing()
+            return
+        }
+        if (inBaoLesson) {
+            updateBaoLesson(dt)
+            fishingPhase = fishing.phase
             return
         }
         val before = fishing.phase
@@ -259,7 +355,21 @@ class CozyGames(private val engine: SceneEngine) {
         if (before == FishingGame.Phase.BITE && fishing.phase == FishingGame.Phase.WAITING) {
             engine.showMessage(GameText.get(Res.string.fishing_got_away), duration = 2.2f)
         }
-        if (landed != null) {
+        if (landed == FishingCatch.BOTTLE && dueBottle != null) {
+            // A message in a bottle, for one of them: the line comes in and the screen opens it.
+            val bottle = dueBottle
+            dueBottle = null
+            report(ProgressEvent.FishCaught(landed.name))
+            engine.audio.playStarArpeggio()
+            engine.particles.spawnSparkles(cw * BOBBER_X, ch * BOBBER_Y, 12, Color(0xFFBDE0FE))
+            stopFishing()
+            bottleLanded = bottle
+            return
+        }
+        if (landed != null && landed.isTreasure) {
+            report(ProgressEvent.FishCaught(landed.name))
+            giveTreasure(landed)
+        } else if (landed != null) {
             engine.audio.playHeartChime()
             if (landed == FishingCatch.GOLDEN_FISH) engine.audio.playStarArpeggio()
             engine.particles.spawnSparkles(cw * BOBBER_X, ch * BOBBER_Y, 10, if (landed == FishingCatch.GOLDEN_FISH) Color(0xFFFFD166) else null)
@@ -269,7 +379,7 @@ class CozyGames(private val engine: SceneEngine) {
             report(ProgressEvent.FishCaught(landed.name))
         }
         // After a catch is shown, the line goes straight back in until they stop.
-        if (fishing.phase == FishingGame.Phase.IDLE) fishing.cast(firstEver = !hasCaughtFish)
+        if (fishing.phase == FishingGame.Phase.IDLE) castLine()
         fishingPhase = fishing.phase
     }
 
@@ -466,6 +576,19 @@ class CozyGames(private val engine: SceneEngine) {
         const val TABLE_GIRL_X = 0.58f
         const val MEAL_SECONDS = 9f
         const val DINNER_TALK_AFTER = 4.3f
+        /** Grandpa Bao's lesson: three lines, then the practice bite (plan 09, F2). */
+        val BAO_LESSON = listOf(Res.string.bao_lesson_1, Res.string.bao_lesson_2, Res.string.bao_lesson_3)
+        const val LESSON_LINE_SECONDS = 3.2f
+
+        /** Bao's hint about what's biting in [c], or null when it's an ordinary moment. */
+        fun baoHint(c: FishingConditions): StringResource? = when {
+            c.weather == "RAIN" -> Res.string.bao_hint_rain
+            c.isNight -> Res.string.bao_hint_night
+            c.season == "WINTER" -> Res.string.bao_hint_winter
+            c.season == "SPRING" -> Res.string.bao_hint_spring
+            c.isSunset -> Res.string.bao_hint_sunset
+            else -> null
+        }
 
         fun recipeName(id: String): StringResource = when (id) {
             "pancakes" -> Res.string.recipe_pancakes
@@ -515,6 +638,14 @@ class CozyGames(private val engine: SceneEngine) {
             FishingCatch.OLD_BOOT -> Res.string.catch_old_boot
             FishingCatch.BOTTLE -> Res.string.catch_bottle
             FishingCatch.GOLDEN_FISH -> Res.string.catch_golden_fish
+            FishingCatch.MOON_JELLY -> Res.string.catch_moon_jelly
+            FishingCatch.GLOW_SQUID -> Res.string.catch_glow_squid
+            FishingCatch.RAIN_TROUT -> Res.string.catch_rain_trout
+            FishingCatch.ICE_COD -> Res.string.catch_ice_cod
+            FishingCatch.BLOSSOM_KOI -> Res.string.catch_blossom_koi
+            FishingCatch.PEARL -> Res.string.catch_pearl
+            FishingCatch.HEART_SHELL -> Res.string.catch_heart_shell
+            FishingCatch.SEA_GLASS_HEART -> Res.string.catch_sea_glass_heart
         }
 
         fun flowerName(id: String): StringResource = when (id) {
