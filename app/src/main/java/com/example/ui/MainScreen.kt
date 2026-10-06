@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.ui.graphics.asImageBitmap
 import kotlinx.datetime.toJavaLocalDate
 import com.example.R
 import com.example.engine.WorldViewport
@@ -1540,7 +1541,7 @@ fun MainScreen(
         // ── Polaroid Gallery Dialog ────────────────────────────────────────────
         if (showPolaroidGallery) {
             PolaroidGalleryDialog(
-                polaroidManager = polaroidManager,
+                photos = polaroidManager,
                 audio = audio,
                 onDismiss = { showPolaroidGallery = false }
             )
@@ -1551,9 +1552,9 @@ fun MainScreen(
         val capturedMem = polaroidCaptureMemory
         if (showPolaroidOverlay && capturedBmp != null && capturedMem != null) {
             PolaroidCaptureOverlay(
-                bitmap = capturedBmp,
+                bitmap = remember(capturedBmp) { capturedBmp.asImageBitmap() },
                 memory = capturedMem,
-                polaroidManager = polaroidManager,
+                photos = polaroidManager,
                 audio = audio,
                 onDismiss = {
                     showPolaroidOverlay = false

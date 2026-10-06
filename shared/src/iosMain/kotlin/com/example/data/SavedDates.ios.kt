@@ -10,4 +10,11 @@ actual object SavedDates {
         formatter.setLocalizedDateFormatFromTemplate(if (withYear) "MMMdyyyy" else "MMMd")
         return formatter.stringFromDate(NSDate())
     }
+
+    actual fun shortTime(): String {
+        val formatter = NSDateFormatter()
+        formatter.locale = NSLocale.currentLocale
+        formatter.dateFormat = "h:mm a"
+        return formatter.stringFromDate(NSDate())
+    }
 }
