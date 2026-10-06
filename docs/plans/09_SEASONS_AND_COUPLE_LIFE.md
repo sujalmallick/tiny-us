@@ -31,6 +31,13 @@ The user's answers to the decisions at the end:
 - **New UI goes in `shared/commonMain`** so iOS gets it too (plan 08). New text goes in `composeResources` strings, with no emoji.
 - **One branch per section,** each with renders and tests, merged by a PR the user opens.
 
+## Twists, not grinding (user direction, 2026-10-07)
+
+"Don't make this a farming simulator, we need twists." So:
+- **No grind loops.** No crop counts or stock to manage, no daily chores, no timers to babysit, no "catch 30 of X" goals. A collection is a scrapbook, not a completion bar.
+- **Every loop ends in a couple moment or a reveal.** Something one of them chose in secret, a surprise in the world, a note from the other. Not a number going up.
+- **Each section has at least one twist,** listed in "The twist in each section" below. A section isn't done without it.
+
 ## Not taken from Stardew
 
 Energy, gold and shops, friendship hearts to grind, crops that die, tools to upgrade, combat, and a calendar that punishes you for missing a day. Tiny Us already avoids all of these.
@@ -263,6 +270,20 @@ These are on the site and legal-pages side, not the app:
 - GROWTH: progress, collections, strings, dialogs and firsts.
 - IOS: keeps shared UI in `commonMain`.
 
+## The twist in each section
+
+| Section | The twist |
+|---|---|
+| A. Birthday | The partner's sealed letter is hidden in the gift box; the party starts in the dark. *(Done.)* |
+| B. Tiny Games | Our Story Quiz asks about the couple's own life; a miss gets "Opposites attract!". *(Done.)* |
+| C. Couple life | The Dinner Decider spins only what survived both secret vetoes. The full Thank-You Jar is opened and one old thank-you is read aloud. "Open when..." letters choose their own moment. |
+| D. Festivals | Each partner secretly picks the other's flower crown. Lantern wishes come back a year later ("Last summer you wished..."). Gifts are chosen in secret and unwrapped together. |
+| E. Garden to kitchen (GROWTH) | *Merged as #31. The user chose to keep it as it is, with no twists added.* |
+| F. Fishing (GROWTH) | Something lovely for her: a message in a bottle (a sealed note dropped at the pier comes up on the other's line on a later day), and little treasures he sometimes reels up for her (a pearl, a heart-shaped shell, a sea-glass heart), kept on the shelf. |
+| G. Mail | *Dropped by the user (2026-10-07).* |
+| H. Collection book | Each item says who found it first, where and when. A few hidden entries only appear when found ("???"). |
+| I. Characters | Each has a small secret that a gift unlocks: Bao's old love letter, Leo's sketchbook, where Pip hides his treasure. |
+
 ## Build checklist
 
 This is the working list; it is ticked as things land. The screens IOS moved to `commonMain` (`SettingsBottomSheet`, `MainScreen`, `OurStoryDialog`, `WardrobeDialog`, `ProgressStore`) landed in #24 and #25, so nothing is blocked any more.
@@ -314,15 +335,15 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 
   Renders: a filmstrip of the surprise, and the cake and hat sprites.
 
-### B. Simpler Tiny Games
-- [ ] B-1. A shared `TinyGames` model: three games (THIS_OR_THAT, GUESS_ME, STORY_QUIZ), rounds of 5, pass-the-phone turns, a reveal, the best round kept.
-- [ ] B-2. Question decks in strings: 60 or more each for This or That and Guess Me, drawn without repeats.
-- [ ] B-3. A Story Quiz generator from the couple's own data (polaroids, dishes, anniversary month, discoveries, the first fish). It's hidden until it can make 5 questions.
-- [ ] B-4. One dialog in shared UI: pick a game, then each turn ("Bean, pick", hidden, "Sprout, pick"), then the reveal. It replaces `TwoPersonMiniGameDialog`.
-- [ ] B-5. Reactions in the world: a match makes both jump with hearts, a miss gets a shrug and "Opposites attract". The end of a round shows "You matched N of 5".
-- [ ] B-6. Started from the game board prop, and from Settings.
-- [ ] B-7. Website parity (J): the Daily Moments deck grows from 10 to 120 or more, by season; Date Adventures grow from 7 to 30 or more.
-- [ ] B-8. Tests: turns hide answers, the quiz is never empty, no repeats within a round. Renders of the dialog.
+### B. Simpler Tiny Games (branch `feature/plan09-b-tiny-games`)
+- [x] B-1. A shared `TinyGames` model: three games (THIS_OR_THAT, GUESS_ME, STORY_QUIZ), rounds of 5, pass-the-phone turns, a reveal, the best round kept.
+- [x] B-2. Question decks in strings: 60 or more each for This or That and Guess Me, drawn without repeats.
+- [x] B-3. A Story Quiz generator from the couple's own data (polaroids, dishes, anniversary month, discoveries, the first fish). It's hidden until it can make 5 questions.
+- [x] B-4. One dialog in shared UI: pick a game, then each turn ("Bean, pick", hidden, "Sprout, pick"), then the reveal. It replaces `TwoPersonMiniGameDialog`.
+- [x] B-5. Reactions in the world: a match makes both jump with hearts, a miss gets a shrug and "Opposites attract". The end of a round shows "You matched N of 5".
+- [x] B-6. Started from the game board prop, and from Settings. *Both already opened the games; they now open Tiny Games.*
+- [x] B-7. Website parity (J): the Daily Moments deck grows from 10 to 120 or more, by season; Date Adventures grow from 7 to 30 or more. *130 prompts (70 everyday, 15 for each season, one day in three) and 32 adventures; saved lists get the new ones.*
+- [x] B-8. Tests: turns hide answers, the quiz is never empty, no repeats within a round. Renders of the dialog.
 
 ### C. Couple life
 - [ ] C-1. Dinner Decider:
@@ -337,7 +358,7 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
   - a reading on a rainy day.
 - [ ] C-3. "Open when..." letters, on the sealed-letter store from A-1:
   - occasions plus a custom one;
-  - they show in the mailbox until opened.
+  - they wait, sealed, in an "Open when..." list in Love Notes until their reader opens one (G's mailbox is dropped).
 - [ ] C-4. Make-Up Bench:
   - the bench scene, with a cloud and a rainbow;
   - both partners write privately, then both are revealed;
@@ -359,26 +380,30 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 - [ ] D-6. Decorations, Our Story entries, the "Every festival" first, and Diwali and Holi dates past 2030.
 - [ ] D-7. Tests and renders.
 
-### E. Garden to kitchen
+### E. Garden to kitchen (GROWTH, merged as #31)
 - [x] E-1. A seed picker, seasonal crops, and the sunroom pots as the winter greenhouse. *(`Seeds` in `GardenPlots.kt`: flowers outside winter; strawberries and peas in spring, tomatoes and basil in summer, pumpkins and apples in autumn; nothing in the meadow in winter; mint and basil in the two sunroom pots all year. The picker is `SeedPickerCard` in `ui/CozyCards.kt`.)*
 - [x] E-2. Plots for Bean, for Sprout and a shared one, with "who's watering?". *(Plot 0 is his (blue flag), 1 is shared (gold heart), 2 is hers (pink flag). The shared plot grows once both have watered that day; `WhoWatersCard` asks who it is, and the caption says "Bean watered. Waiting for Sprout".)*
 - [x] E-3. A pantry, plus recipes that use crops (the 5 starting recipes stay free). *(Harvests go to `ProgressState.pantry`; six garden recipes: tomato soup, strawberry pancakes, pumpkin pie, mint tea, apple crumble, pea soup. "Cook together" opens `RecipePickerCard`; a locked recipe says what it needs. Firsts: "Our first harvest", "From our garden". The chef's apron still means the five starters.)*
 - [x] E-4. Sharing the meal at the table, with a dinner-talk question. *(After a dish is served they walk to the table and sit; a Daily Moments question follows as the caption, "Over dinner: ...".)*
-- [x] E-5. Tests and renders. *(`GardenKitchenTest`, `GardenKitchenEngineTest`; `SCENE_PREVIEW_COZY=crops`, `STORE_SHOTS_COZY=picker|seeds|who`.)* E5 (recipes by mail) waits for section G.
+- [x] E-5. Tests and renders. *(`GardenKitchenTest`, `GardenKitchenEngineTest`; `SCENE_PREVIEW_COZY=crops`, `STORE_SHOTS_COZY=picker|seeds|who`.)* E5 (recipes by mail) was dropped with G.
 
-### F. Seasonal fishing
+### F. Seasonal fishing (GROWTH)
 - [x] F-1. Catches by season, weather and time; new fish art. *(`FishingConditions` and `FishingCatch.weightIn` in `FishingGame.kt`: a moon jelly and a glowing squid at night, a rain trout in rain, an ice cod in winter, a blossom koi in spring, and the golden fish three times as likely at sunset. The common catches stay everywhere. Art in `CozySprites.CATCHES`.)*
-- [x] F-2. Bao's lesson and practice bite. *(The first "Fish together" plays three lines from Bao, then a practice cast: a bite after 2 s with a 2.8 s window. Later casts sometimes start with Bao's hint for the moment. His letters come with section G.)*
+- [x] F-2. Bao's lesson and practice bite. *(The first "Fish together" plays three lines from Bao, then a practice cast: a bite after 2 s with a 2.8 s window. Later casts sometimes start with Bao's hint for the moment. His letters were dropped with G.)*
 - [x] F-5. Something lovely for her (the user's twist): a message in a bottle (either of them writes a short note at the pier and tosses it; from the next day the next bite brings it up, sealed, for the other to open; `LetterKind.BOTTLE` in `SealedLetters.kt`, `ui/BottleDialogs.kt`), and little treasures he sometimes reels up and gives her on the spot (a pearl, a heart-shaped shell, a sea-glass heart), which go on the shelf.
 - [ ] F-3. Bao's catches go into the fish page.
 - [x] F-4. Tests. *(`CozyGamesTest`: each catch in its moment, the weights, the practice bite; `CozyGamesEngineTest`: the lesson, the practice bite, the conditions and hints.)*
 
-### G. Morning mail
-- [ ] G-1. A mailbox by the cottage in the meadow and home scenes, with a flag for unread mail.
-- [ ] G-2. Love notes get a recipient and a read state (a migration), with sealed envelopes.
-- [ ] G-3. A daily letter catalog (Mochi, Bao, Leo, recipes, festivals), at most one a day.
-- [ ] G-4. A letters page in Our Story.
-- [ ] G-5. Tests.
+### G. Morning mail: dropped
+The user decided on 2026-10-07 that G isn't needed. That also drops:
+- E-5 (recipes by mail);
+- Bao's letters in F-2;
+- the thank-you letter in I-2 (a thank-you line in the scene instead).
+
+The sealed letters from A and C keep their own homes:
+- the birthday gift box (A);
+- the "Open when..." list (C-3);
+- the bottle on the line (F, as `LetterKind.BOTTLE`).
 
 ### H. Collection book
 - [ ] H-1. Collection pages with "found N of M", silhouettes and hints.
@@ -388,7 +413,7 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 
 ### I. Characters' routines and likes
 - [ ] I-1. Routines for Leo, Bao and Pip by the clock.
-- [ ] I-2. Favourite gifts, a unique line for each, and a thank-you letter (needs G).
+- [ ] I-2. Favourite gifts, a unique line for each, and their small secret unlocked (a thank-you line in the scene; G is dropped).
 - [ ] I-3. Tests.
 
 ## Decisions for the user

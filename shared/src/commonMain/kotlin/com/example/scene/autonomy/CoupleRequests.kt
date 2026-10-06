@@ -26,6 +26,9 @@ class CoupleRequests {
     var quiet: Float = 0f
         private set
     private var lastKind: RequestKind? = null
+    /** How many requests have started since this was made (for tests). */
+    var startedCount: Int = 0
+        private set
 
     val active: Boolean get() = secondsLeft > 0f
 
@@ -91,6 +94,7 @@ class CoupleRequests {
         this.askerIsGirl = askerIsGirl
         lastKind = kind
         secondsLeft = WINDOW
+        startedCount++
     }
 
     /** The player tapped the prop for [kind]: true if that answers the request. */

@@ -930,4 +930,171 @@
     <string name="bottle_open">Open it</string>
     <string name="bottle_later">Not yet</string>
     <string name="bottle_keep">Keep it</string>
+
+    <!-- Plan 09 B: Tiny Games -->
+    <string name="tg_title">Tiny Games</string>
+    <string name="tg_subtitle">Five questions, one phone, two of you.</string>
+    <string name="tg_this_or_that">This or That</string>
+    <string name="tg_this_or_that_desc">Both pick in secret, then see if you match.</string>
+    <string name="tg_guess_me">Guess Me</string>
+    <string name="tg_guess_me_desc">One answers about themselves, the other guesses.</string>
+    <string name="tg_story_quiz">Our Story Quiz</string>
+    <string name="tg_story_quiz_desc">Questions from your own polaroids, dishes and dates. Answer together.</string>
+    <string name="tg_story_quiz_locked">Make a few more memories first: polaroids, dishes and finds.</string>
+    <string name="tg_best">Best: %1$d of 5</string>
+    <string name="tg_pass_to">Pass the phone to %1$s</string>
+    <string name="tg_no_peeking">No peeking!</string>
+    <string name="tg_ready">I’m %1$s, show me</string>
+    <string name="tg_your_pick">%1$s, your pick</string>
+    <string name="tg_about_you">%1$s, answer about yourself</string>
+    <string name="tg_guess_for">%1$s, what did %2$s pick?</string>
+    <string name="tg_together">Answer together</string>
+    <string name="tg_question_of">Question %1$d of %2$d</string>
+    <string name="tg_match">A match!</string>
+    <string name="tg_miss">Opposites attract</string>
+    <string name="tg_right">Right!</string>
+    <string name="tg_wrong">Not quite, it was: %1$s</string>
+    <string name="tg_next">Next</string>
+    <string name="tg_finish">See how we did</string>
+    <string name="tg_result">You matched %1$d of %2$d</string>
+    <string name="tg_result_quiz">You got %1$d of %2$d right</string>
+    <string name="tg_result_line_high">Two hearts, one wavelength.</string>
+    <string name="tg_result_line_mid">A little alike, a little different. Just right.</string>
+    <string name="tg_result_line_low">Plenty left to learn about each other. That’s the fun part.</string>
+    <string name="tg_play_again">Play again</string>
+    <string name="tg_done">Done</string>
+    <string name="tg_opposites_line">Opposites attract!</string>
+    <string name="quiz_month">Which month did we get together?</string>
+    <string name="quiz_weekday">On which day of the week did we get together?</string>
+    <string name="quiz_days">About how long have we been together?</string>
+    <string name="quiz_days_option">%1$d days</string>
+    <string name="quiz_photo">In which scene did we take the polaroid “%1$s”?</string>
+    <string name="quiz_recipe">Which of these have we cooked together?</string>
+    <string name="quiz_found">Which of these have we found on our walks?</string>
+    <string name="quiz_first">Which little first have we already earned?</string>
+    <string name="quiz_catch">What have we caught at the pier?</string>
+    <string-array name="tiny_this_or_that">
+        <item>Sunrise or stars?|Watching the sunrise|Counting the stars</item>
+        <item>A cabin in the mountains or a cottage by the sea?|Mountain cabin|Seaside cottage</item>
+        <item>Pancakes or waffles?|Pancakes|Waffles</item>
+        <item>A rainy day in or a snowy day out?|Rainy day in|Snowy day out</item>
+        <item>Tea or coffee?|Tea|Coffee</item>
+        <item>Road trip or train journey?|Road trip|Train journey</item>
+        <item>Breakfast in bed or dinner by candlelight?|Breakfast in bed|Candlelit dinner</item>
+        <item>Cats or dogs?|Cats, like Mochi|Dogs</item>
+        <item>Movie night or game night?|Movie night|Game night</item>
+        <item>Beach or forest?|Beach|Forest</item>
+        <item>Slow dance or silly dance?|Slow dance|Silly dance</item>
+        <item>A handwritten letter or a surprise voice note?|Handwritten letter|Voice note</item>
+        <item>A picnic in the park or a picnic on the floor?|In the park|On the living room floor</item>
+        <item>Matching pajamas or matching hoodies?|Pajamas|Hoodies</item>
+        <item>Summer evenings or winter mornings?|Summer evenings|Winter mornings</item>
+        <item>Cook together or order in?|Cook together|Order in</item>
+        <item>Plan every detail or see where the day goes?|Plan it all|See where it goes</item>
+        <item>A big city weekend or a tiny village weekend?|Big city|Tiny village</item>
+        <item>Ice cream or hot chocolate?|Ice cream|Hot chocolate</item>
+        <item>Sing in the car or talk in the car?|Sing|Talk</item>
+        <item>Flowers or snacks as a surprise?|Flowers|Snacks</item>
+        <item>Museum or aquarium?|Museum|Aquarium</item>
+        <item>A bookshop or a flea market?|Bookshop|Flea market</item>
+        <item>A morning walk or a midnight walk?|Morning walk|Midnight walk</item>
+        <item>Camping under the stars or a cozy hotel?|Camping|Cozy hotel</item>
+        <item>Sweet or savory breakfast?|Sweet|Savory</item>
+        <item>Long hugs or forehead kisses?|Long hugs|Forehead kisses</item>
+        <item>A board game or a jigsaw puzzle?|Board game|Jigsaw puzzle</item>
+        <item>Window seat or aisle seat?|Window|Aisle</item>
+        <item>A garden of flowers or a garden of vegetables?|Flowers|Vegetables</item>
+        <item>Rewatch an old favorite or try something new?|Old favorite|Something new</item>
+        <item>A lazy Sunday or an adventure Sunday?|Lazy Sunday|Adventure Sunday</item>
+        <item>A fireplace or fairy lights?|Fireplace|Fairy lights</item>
+        <item>Dumplings or noodles?|Dumplings|Noodles</item>
+        <item>Polaroids or videos of our days?|Polaroids|Videos</item>
+        <item>Learn to dance together or learn to cook together?|Dance|Cook</item>
+        <item>A hot air balloon or a boat ride?|Hot air balloon|Boat ride</item>
+        <item>Rain on the window or waves on the shore?|Rain on the window|Waves on the shore</item>
+        <item>One big dessert to share or two small ones?|One to share|Two small ones</item>
+        <item>Spring blossoms or autumn leaves?|Spring blossoms|Autumn leaves</item>
+        <item>A day with no phones or a day with no plans?|No phones|No plans</item>
+        <item>Stargazing or cloud watching?|Stargazing|Cloud watching</item>
+        <item>Early nights or late nights?|Early nights|Late nights</item>
+        <item>Little gifts often or one big gift now and then?|Little and often|One big gift</item>
+        <item>A blanket fort or a snowman?|Blanket fort|Snowman</item>
+        <item>A breakfast date or a dessert date?|Breakfast date|Dessert date</item>
+        <item>Karaoke or a quiet café?|Karaoke|Quiet café</item>
+        <item>Sunflowers or roses?|Sunflowers|Roses</item>
+        <item>A treehouse or a houseboat?|Treehouse|Houseboat</item>
+        <item>Bake cookies or make pizza?|Cookies|Pizza</item>
+        <item>A walk in the rain or a dance in the kitchen?|Walk in the rain|Dance in the kitchen</item>
+        <item>Postcards or souvenirs from our trips?|Postcards|Souvenirs</item>
+        <item>Mountains at dawn or city lights at night?|Mountains at dawn|City lights at night</item>
+        <item>A puppy or a kitten as Mochi’s friend?|Puppy|Kitten</item>
+        <item>Morning cuddles or evening cuddles?|Morning|Evening</item>
+        <item>Write a song together or paint a picture together?|Write a song|Paint a picture</item>
+        <item>A surprise trip or a trip we plan together?|Surprise trip|Planned together</item>
+        <item>Soup on a cold day or salad on a hot day?|Soup on a cold day|Salad on a hot day</item>
+        <item>Fireworks or paper lanterns?|Fireworks|Paper lanterns</item>
+        <item>Grow old by the sea or grow old in the hills?|By the sea|In the hills</item>
+    </string-array>
+    <string-array name="tiny_guess_me">
+        <item>Rainy day snack|Warm dumplings|Hot chocolate and cookies|Noodle soup|Crispy fries</item>
+        <item>Perfect Sunday afternoon|Reading and napping|Baking something sweet|Movies under a blanket|A slow walk outside</item>
+        <item>Favorite season|Spring|Summer|Autumn|Winter</item>
+        <item>Ideal holiday|Beach and sun|Snowy mountains|A new city|Staying home together</item>
+        <item>Comfort movie|Romantic comedy|Animation|Adventure|Mystery</item>
+        <item>Go-to drink|Tea|Coffee|Juice|Hot chocolate</item>
+        <item>Favorite time of day|Early morning|Lazy afternoon|Golden sunset|Late night</item>
+        <item>What helps after a long day|A hug|Some quiet time|Food|Talking it through</item>
+        <item>Dream pet besides Mochi|A puppy|A bunny|A parrot|A turtle</item>
+        <item>Favorite way to show love|Saying it|A little gift|Doing something helpful|A long hug</item>
+        <item>Pizza topping|Extra cheese|Mushrooms|Pineapple|Veggies</item>
+        <item>Where they would rather live|By the sea|In the mountains|In a big city|In a small village</item>
+        <item>Superpower they would pick|Flying|Teleporting|Reading minds|Pausing time</item>
+        <item>Breakfast order|Pancakes|Eggs and toast|Fruit and yogurt|Just coffee</item>
+        <item>Weekend energy|Up early, plans all day|Slow and sleepy|A bit of both|Depends on the weather</item>
+        <item>Favorite dessert|Chocolate cake|Ice cream|Cheesecake|Fresh fruit</item>
+        <item>Road trip music|Pop sing-alongs|Old classics|Calm acoustic|Whatever is on the radio</item>
+        <item>How they handle a cold|Soup and blankets|Pretend it’s fine|Sleep it off|Ask for cuddles</item>
+        <item>Favorite kind of date|Dinner out|A cozy night in|An outdoor adventure|Trying something new</item>
+        <item>Talent they’re proud of|Cooking|Singing|Drawing|Remembering everything</item>
+        <item>Morning person or night owl|Morning person|Night owl|Neither, always sleepy|Somehow both</item>
+        <item>Favorite color right now|Blue|Pink|Green|Yellow</item>
+        <item>First thing they’d save in a fire drill|Their phone|A photo of us|Their favorite hoodie|Mochi</item>
+        <item>Ideal gift|Something handmade|Something useful|An experience together|A surprise snack</item>
+        <item>Favorite weather|Sunny and warm|Rainy and cozy|Snowy|Breezy autumn</item>
+        <item>Café order|A latte|Tea|Hot chocolate|Something sweet to eat</item>
+        <item>Biggest pet peeve|Being late|Loud chewing|Messy rooms|Slow internet</item>
+        <item>Dream job for a day|Baker|Astronaut|Zookeeper|Author</item>
+        <item>How they celebrate a win|A fancy dinner|A dance party|Quietly, with a smile|Telling everyone</item>
+        <item>Favorite thing about home|The bed|The kitchen|The view|Each other</item>
+        <item>Chocolate choice|Milk|Dark|White|Anything, honestly</item>
+        <item>Ideal bedtime|Before ten|Around eleven|After midnight|Whenever they fall asleep</item>
+        <item>What they notice first in a new place|The food|The people|The views|The smells</item>
+        <item>Favorite kind of book|Romance|Fantasy|Mystery|Comics</item>
+        <item>Ice cream flavor|Vanilla|Chocolate|Strawberry|Mango</item>
+        <item>Rainy day plan|Movies|Baking|Napping|Walking in the rain</item>
+        <item>Word they text most|Haha|Okay|Love you|Wait</item>
+        <item>Holiday they look forward to|Their birthday|New Year|Valentine’s Day|Diwali or Christmas</item>
+        <item>How they relax|Music|A walk|Games|A warm bath</item>
+        <item>Movie snack|Popcorn|Nachos|Candy|Nothing, just the film</item>
+        <item>Sound they love|Rain|Ocean waves|Birdsong|A crackling fire</item>
+        <item>What they’d name a boat|Something funny|Something sweet|Our names|Mochi</item>
+        <item>Favorite meal of the day|Breakfast|Lunch|Dinner|Midnight snacks</item>
+        <item>How they say sorry|With words|With a hug|With a treat|By fixing it</item>
+        <item>Thing they could talk about for hours|Food|Movies and shows|Travel plans|Us</item>
+        <item>Sport they’d watch|Football|Cricket|Tennis|None, thank you</item>
+        <item>Dream car|Tiny and cute|Big and comfy|Something classic|A scooter is enough</item>
+        <item>Bedtime ritual|Reading|Scrolling|Talking|Falling asleep at once</item>
+        <item>Favorite flower|Roses|Sunflowers|Tulips|Lavender</item>
+        <item>Photo they take most|Food|Selfies|Views|Pets</item>
+        <item>What they cook best|Pasta|Eggs|Noodles|Anything instant</item>
+        <item>A free hour goes on|A nap|Music|Messages|A snack</item>
+        <item>Coziest outfit|A hoodie|Pajamas|A big sweater|Socks and a blanket</item>
+        <item>Next trip they dream of|Japan|Europe|The mountains|Anywhere together</item>
+        <item>Ideal number of pets|One|Two|A whole farm|Just Mochi</item>
+        <item>Breakfast drink|Coffee|Tea|Juice|Water</item>
+        <item>Favorite kind of rain|A light drizzle|A big storm|Rain at night|Rain with sunshine</item>
+        <item>What they want more of|Sleep|Travel|Time together|Snacks</item>
+        <item>How they feel most loved|Kind words|A warm touch|A thoughtful gift|Time together</item>
+        <item>What they’d do with a free day together|Go somewhere new|Stay in bed|Cook a feast|Visit friends</item>
+    </string-array>
 </resources>
