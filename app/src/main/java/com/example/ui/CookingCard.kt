@@ -50,9 +50,9 @@ fun CookingCard(cozy: CozyGames, modifier: Modifier = Modifier) {
         when (game.phase) {
             CookingGame.Phase.GATHERING -> {
                 val done = recipe.ingredients.take(game.added).toSet()
-                cozy.cookingChoices.chunked(3).forEach { row ->
-                    Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
-                        row.forEach { ingredient ->
+                // One short row, so the card leaves the kitchen in view.
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TinySpace.xs)) {
+                        cozy.cookingChoices.forEach { ingredient ->
                             IngredientButton(
                                 ingredient = ingredient,
                                 isNext = ingredient == game.next,
@@ -62,7 +62,6 @@ fun CookingCard(cozy: CozyGames, modifier: Modifier = Modifier) {
                                 modifier = Modifier.weight(1f)
                             )
                         }
-                    }
                 }
                 Text(stringResource(Res.string.cooking_hint), style = TinyType.Caption.copy(color = TinyColors.InkMuted))
             }
@@ -109,8 +108,8 @@ private fun IngredientButton(
             }
             .testTag("ingredient_${ingredient.name}")
     ) {
-        Box(Modifier.fillMaxWidth().padding(vertical = 6.dp), contentAlignment = Alignment.Center) {
-            Canvas(Modifier.size(44.dp)) {
+        Box(Modifier.fillMaxWidth().padding(vertical = 5.dp), contentAlignment = Alignment.Center) {
+            Canvas(Modifier.size(32.dp)) {
                 val sprite = CozySprites.INGREDIENTS.getValue(ingredient)
                 val p = kotlin.math.floor(size.minDimension / 9f)
                 CozySprites.draw(this, sprite, (size.width - sprite.width * p) / 2f, (size.height - sprite.height * p) / 2f, p)
