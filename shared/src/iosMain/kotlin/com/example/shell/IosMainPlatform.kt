@@ -48,9 +48,13 @@ class IosMainPlatform : MainPlatform {
 
     override fun saveWeather(weather: WeatherType) = WeatherMemory.save(weather)
 
-    override fun birthdaysChanged() = IosNotifications.planBirthday(prefs)
+    override fun birthdaysChanged() = IosNotifications.planMornings(prefs)
 
-    override fun settingsChanged() = IosNotifications.planTinyCareIfChanged(prefs)
+    override fun settingsChanged() {
+        IosNotifications.planTinyCareIfChanged(prefs)
+        // The anniversary and month-iversary switches live in settings too.
+        IosNotifications.planMornings(prefs)
+    }
 
     override fun updateWidget(scene: SceneType, weather: WeatherType) {
         val publish = IosWidget.publish ?: return
