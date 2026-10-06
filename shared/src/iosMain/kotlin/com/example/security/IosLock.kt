@@ -11,9 +11,9 @@ import platform.Foundation.NSUserDefaults
 import platform.LocalAuthentication.LAContext
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthentication
 import platform.LocalAuthentication.LAPolicyDeviceOwnerAuthenticationWithBiometrics
-import platform.UIKit.UIApplication
-import platform.UIKit.UIApplicationDidEnterBackgroundNotification
-import platform.UIKit.UIApplicationWillEnterForegroundNotification
+import platform.Foundation.NSError
+// A star import: the alternate-icon calls are an Objective-C category on UIApplication.
+import platform.UIKit.*
 import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
@@ -58,7 +58,7 @@ object IosDiscreetIcon : DiscreetSwitch {
     override fun isEnabled(): Boolean = UIApplication.sharedApplication.alternateIconName == ICON
 
     override fun setEnabled(enabled: Boolean) {
-        UIApplication.sharedApplication.setAlternateIconName(if (enabled) ICON else null) { _ ->
+        UIApplication.sharedApplication.setAlternateIconName(if (enabled) ICON else null) { _: NSError? ->
             dispatch_async(dispatch_get_main_queue()) { IosLock.replanReminders() }
         }
     }
