@@ -248,7 +248,7 @@ class SceneEngine(
     private val baoLinePicker = AntiRepeatRandomPicker(GRANDPA_BAO_LINES)
     /** Today's Daily Tiny Moments question, revealed by the message in a bottle. */
     var dailyPromptProvider: () -> String = {
-        DailyPromptCatalog.getPromptForDay(
+        DailyPromptCatalog.today(
             com.example.data.RelationshipTimeCalculator.calculateTinyUsDay(com.example.data.CoupleDates.anniversary, com.example.data.CoupleDates.today()).toInt()
         ).question
     }
@@ -665,17 +665,7 @@ class SceneEngine(
                 girl.emoteTimer = 2.5f
                 audio.playHeartChime()
             }
-            is com.example.data.WorldEvent.MiniGameCompleted -> {
-                boy.reactionTimer = 2.6f
-                girl.reactionTimer = 2.6f
-                boy.emotion = CharacterEmotion.PLAYFUL
-                girl.emotion = CharacterEmotion.PLAYFUL
-                boy.emote = EmoteType.HEART
-                girl.emote = EmoteType.HEART
-                boy.emoteTimer = 2.2f
-                girl.emoteTimer = 2.2f
-                audio.playBubblePop()
-            }
+            is com.example.data.WorldEvent.MiniGameCompleted -> reactToTinyGame(event.isMatch)
             is com.example.data.WorldEvent.SharedMoodChanged -> {
                 when (event.moodName) {
                     "Tired" -> {
@@ -4491,6 +4481,54 @@ class SceneEngine(
     }
 
     /** A little first was earned: both light up with a heart, a few sparkles, and the news. */
+    /**
+     * A Tiny Games reveal (plan 09, B): a match has them jump with hearts; a miss gets a playful
+     * shrug and "Opposites attract!". They stay put; the game is played over the world.
+     */
+    fun reactToTinyGame(match: Boolean) {
+        val cw = lastWorldW
+        val ch = lastWorldH
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 2.6f
+            c.emotion = if (match) CharacterEmotion.HAPPY else CharacterEmotion.PLAYFUL
+        }
+        if (match) {
+            for (c in charactersBoyGirl) {
+                if (c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.JOY_JUMP
+                c.bounceOffset = 6f
+                c.emote = EmoteType.HEART
+                c.emoteTimer = 2.2f
+            }
+            if (cw > 0f) particles.spawnHeart(cw * (boy.worldX + girl.worldX) / 2f, ch * boy.worldY - 90f)
+            audio.playHeartChime()
+        } else {
+            boy.emote = EmoteType.QUESTION
+            girl.emote = EmoteType.SWEAT
+            boy.emoteTimer = 2f
+            girl.emoteTimer = 2f
+            speakerSpeech(if (Random.nextBoolean()) boy else girl, GameText.get(Res.string.tg_opposites_line), 2.4f)
+            audio.playBubblePop()
+        }
+    }
+
+    /** The end of a Tiny Games round: a bigger cheer for a good score. */
+    fun celebrateTinyGameRound(score: Int, total: Int) {
+        if (total <= 0) return
+        val cw = lastWorldW
+        val ch = lastWorldH
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 3f
+            c.emotion = CharacterEmotion.LOVING
+            c.emote = EmoteType.HEART
+            c.emoteTimer = 2.6f
+        }
+        if (score * 5 >= total * 4 && cw > 0f) {
+            repeat(4) { particles.spawnHeart(cw * (0.35f + it * 0.1f), ch * boy.worldY - 100f) }
+            particles.spawnSparkles(cw * 0.5f, ch * boy.worldY - 120f, 8)
+        }
+        audio.playStarTwinkle()
+    }
+
     fun celebrateLittleFirst(message: String) {
         boy.emote = EmoteType.HEART
         girl.emote = EmoteType.HEART

@@ -170,14 +170,16 @@ class CoupleRequestsTest {
         var askLogged = false
         run(600f) {
             t += dt
-            if (firstAt < 0f && engine.requests.active) {
+            if (firstAt < 0f && engine.requests.startedCount > 0) {
+                // Counted, not polled: a start is never missed, even if it ends within a frame.
+                if (!engine.requests.active) println("Request started and ended within one update at t=$t")
                 firstAt = t
                 asked = engine.requests.kind
                 // The log keeps only the last few dozen activities, so look now.
                 askLogged = engine.autonomyLog.lastOrNull() == Behavior.ASK_FOR_SOMETHING
             }
         }
-        assertTrue("A request should start within ten minutes", firstAt > 0f)
+        assertTrue("A request should start within ten minutes (cooldown ${engine.requests.cooldown}, scene ${engine.currentScene}, log ${engine.autonomyLog.takeLast(8)})", firstAt > 0f)
         assertTrue("None in the first ${CoupleRequests.FIRST_DELAY}s: $firstAt", firstAt >= CoupleRequests.FIRST_DELAY)
         assertNotNull(asked)
         assertTrue("Loft at sunset asks for warmth, tea or a song: $asked", asked != RequestKind.SNACK && asked != RequestKind.MOCHI)

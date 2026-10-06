@@ -683,7 +683,10 @@ class PreferencesManager(val storage: KeyValueStorage) {
                     )
                 )
             }
-            list.ifEmpty { DateAdventureCatalog.defaultAdventures }.also { cachedAdventures = it }
+            // Adventures added to the catalog later (plan 09, B) join a saved list at the end.
+            val saved = list.map { it.id }.toSet()
+            val merged = list + DateAdventureCatalog.defaultAdventures.filter { it.id !in saved }
+            merged.ifEmpty { DateAdventureCatalog.defaultAdventures }.also { cachedAdventures = it }
         } catch (_: Exception) {
             DateAdventureCatalog.defaultAdventures.also { cachedAdventures = it }
         }
@@ -802,7 +805,7 @@ class PreferencesManager(val storage: KeyValueStorage) {
         prefs.putString("daily_moment_responses_json", arr.toString())
 
         if (response.isBothAnswered || response.isRevealed) {
-            val prompt = DailyPromptCatalog.defaultPrompts.find { it.id == response.promptId }
+            val prompt = DailyPromptCatalog.byId(response.promptId)
             WorldEventBus.post(
                 WorldEvent.TinyMomentCompleted(
                     id = Uuid.random().toString(),
@@ -891,7 +894,8 @@ class PreferencesManager(val storage: KeyValueStorage) {
                     timestamp = nowMillis(),
                     gameId = round.id,
                     gameTypeName = round.type.title,
-                    summary = if (round.isMatch) "Sweet Match!" else "Shared Perspective"
+                    summary = if (round.isMatch) "Sweet Match!" else "Shared Perspective",
+                    isMatch = round.isMatch
                 )
             )
         }
@@ -1014,7 +1018,7 @@ class PreferencesManager(val storage: KeyValueStorage) {
     fun getWidgetData(currentWeather: String = "Sunny", timePhase: String = "Day", sceneName: String = "Living Room"): TinyUsWidgetData {
         val todayStr = CoupleDates.today().toString()
         val dayIndex = daysTogetherToday().toInt()
-        val prompt = DailyPromptCatalog.getPromptForDay(dayIndex)
+        val prompt = DailyPromptCatalog.today(dayIndex)
         val momentResp = getDailyMomentResponseForDate(todayStr, prompt.id)
         val mood = getPartnerMoodState()
         val latestSig = getLongDistanceSignals().firstOrNull()

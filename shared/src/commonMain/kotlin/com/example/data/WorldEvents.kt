@@ -33,7 +33,9 @@ sealed class WorldEvent {
         override val timestamp: Long,
         val gameId: String,
         val gameTypeName: String,
-        val summary: String
+        val summary: String,
+        /** The two picks matched (or the quiz answer was right): the couple cheers, else a playful shrug. */
+        val isMatch: Boolean = true
     ) : WorldEvent()
 
     data class SharedMoodChanged(

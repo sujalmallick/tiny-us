@@ -1581,8 +1581,37 @@ fun MainScreen(
         }
 
         if (showMiniGames) {
-            TwoPersonMiniGameDialog(
+            val platformActions = LocalPlatformActions.current
+            TinyGamesDialog(
                 prefs = prefs,
+                progress = progress,
+                photos = remember { platform.photos.getPolaroids() },
+                onReveal = { game, question, boyPick, girlPick, match ->
+                    // Saved like the old rounds, so the game board appears and the couple reacts.
+                    prefs.saveMiniGameRound(
+                        com.example.data.MiniGameRound(
+                            id = com.example.data.newMiniGameRoundId(),
+                            questionId = question.id,
+                            type = when (game) {
+                                com.example.games.TinyGame.THIS_OR_THAT -> com.example.data.MiniGameType.WOULD_YOU_RATHER
+                                com.example.games.TinyGame.GUESS_ME -> com.example.data.MiniGameType.WHO_KNOWS_WHO
+                                com.example.games.TinyGame.STORY_QUIZ -> com.example.data.MiniGameType.MEMORY_TRIVIA
+                            },
+                            prompt = question.prompt,
+                            options = question.options,
+                            boyChosenIndex = boyPick,
+                            // In the quiz a match means the right answer.
+                            girlChosenIndex = if (game == com.example.games.TinyGame.STORY_QUIZ) (if (match) boyPick else question.correct) else girlPick,
+                            isRevealed = true,
+                            timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
+                        )
+                    )
+                    platformActions.refreshWidgets()
+                },
+                onRoundFinished = { game, score, total ->
+                    recordProgress(com.example.progress.ProgressEvent.GamePlayed(game.progressId, score))
+                    engine.celebrateTinyGameRound(score, total)
+                },
                 onDismiss = { showMiniGames = false }
             )
         }

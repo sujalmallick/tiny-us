@@ -298,8 +298,12 @@ class BehaviorBrain(var random: Random = Random.Default) {
         const val HOME_TOLERANCE = 0.005f
         const val TALK_DISTANCE = 0.24f
         const val CUDDLE_DISTANCE = 0.18f
-        /** Weight of asking for something when a request fits; kept low, the gap does the rest. */
-        const val REQUEST_WEIGHT = 3f
+        /**
+         * Weight of asking for something when a request fits. CoupleRequests' long gaps already
+         * keep requests rare, so once one is allowed it should come fairly soon (at 3 it often
+         * didn't come for many minutes).
+         */
+        const val REQUEST_WEIGHT = 8f
 
         /** Weight multiplier by how recently a behavior was done (most recent first). */
         private val RECENCY_PENALTY = floatArrayOf(0.12f, 0.35f, 0.6f, 0.85f)
