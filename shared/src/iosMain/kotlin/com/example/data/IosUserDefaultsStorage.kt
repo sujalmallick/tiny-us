@@ -1,5 +1,12 @@
+@file:OptIn(kotlinx.cinterop.ExperimentalForeignApi::class)
+
 package com.example.data
 
+import kotlinx.cinterop.toKString
+import platform.Foundation.NSArgumentDomain
+import platform.Foundation.NSGlobalDomain
+import platform.Foundation.NSNumber
+import platform.Foundation.NSRegistrationDomain
 import platform.Foundation.NSUserDefaults
 
 /**
@@ -67,6 +74,60 @@ class IosUserDefaultsStorage(
 
     override fun remove(key: String) {
         defaults.removeObjectForKey(key)
+    }
+
+    /** The keys this app saved here (not the system's global or registered defaults). */
+    private fun ownKeys(): List<String> {
+        val system = NSUserDefaults.standardUserDefaults
+        val notOurs = listOfNotNull(
+            system.persistentDomainForName(NSGlobalDomain),
+            system.volatileDomainForName(NSRegistrationDomain),
+            system.volatileDomainForName(NSArgumentDomain)
+        ).flatMap { it.keys }.mapNotNull { it as? String }.toSet()
+        return defaults.dictionaryRepresentation().keys.mapNotNull { it as? String }.filter { it !in notOurs }
+    }
+
+    /**
+     * Every saved value with its type, for a backup: String, Int, Long, Float, Boolean or
+     * Set<String>. iOS keeps whole numbers without their size, so [longKeys] are read as Long.
+     */
+    fun snapshot(longKeys: Set<String> = emptySet()): Map<String, Any> {
+        val out = LinkedHashMap<String, Any>()
+        ownKeys().forEach { key ->
+            val value: Any = when (val v = defaults.objectForKey(key)) {
+                is String -> v
+                is Boolean -> v
+                is Int -> if (key in longKeys) v.toLong() else v
+                is Long -> if (key in longKeys) v else if (v in Int.MIN_VALUE..Int.MAX_VALUE) v.toInt() else v
+                is Double -> v.toFloat()
+                is Float -> v
+                is List<*> -> v.filterIsInstance<String>().toSet()
+                is NSNumber -> when (v.objCType?.toKString()) {
+                    "c", "B" -> v.boolValue
+                    "f", "d" -> v.floatValue
+                    else -> v.longLongValue.let { n -> if (key in longKeys || n !in Int.MIN_VALUE..Int.MAX_VALUE) n else n.toInt() }
+                }
+                else -> null
+            } ?: return@forEach
+            out[key] = value
+        }
+        return out
+    }
+
+    /** Replaces everything this app saved here with [values] (from a backup). */
+    fun replaceAll(values: Map<String, Any>) {
+        ownKeys().forEach { defaults.removeObjectForKey(it) }
+        values.forEach { (key, value) ->
+            @Suppress("UNCHECKED_CAST")
+            when (value) {
+                is String -> putString(key, value)
+                is Boolean -> putBoolean(key, value)
+                is Int -> putInt(key, value)
+                is Long -> putLong(key, value)
+                is Float -> putFloat(key, value)
+                is Set<*> -> putStringSet(key, value as Set<String>)
+            }
+        }
     }
 
     override fun clear() {

@@ -29,6 +29,7 @@ internal class JSONObject() {
     fun put(name: String, value: Int): JSONObject = apply { values[name] = value }
     fun put(name: String, value: Long): JSONObject = apply { values[name] = value }
     fun put(name: String, value: Boolean): JSONObject = apply { values[name] = value }
+    fun put(name: String, value: Double): JSONObject = apply { values[name] = value }
     fun put(name: String, value: JSONArray): JSONObject = apply { values[name] = value }
     fun put(name: String, value: JSONObject): JSONObject = apply { values[name] = value }
 
@@ -46,6 +47,13 @@ internal class JSONObject() {
     fun optBoolean(name: String, fallback: Boolean = false): Boolean = values[name]?.let(::asBoolean) ?: fallback
 
     fun optInt(name: String, fallback: Int = 0): Int = values[name]?.let(::asLong)?.toInt() ?: fallback
+    fun optDouble(name: String, fallback: Double = 0.0): Double = when (val v = values[name]) {
+        is Double -> v
+        is Int -> v.toDouble()
+        is Long -> v.toDouble()
+        is String -> v.toDoubleOrNull() ?: fallback
+        else -> fallback
+    }
 
     fun getJSONArray(name: String): JSONArray = get(name) as? JSONArray ?: throw JSONException("$name is not an array")
     fun optJSONArray(name: String): JSONArray? = values[name] as? JSONArray
