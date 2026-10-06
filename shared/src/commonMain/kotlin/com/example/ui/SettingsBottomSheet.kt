@@ -142,6 +142,9 @@ fun SettingsBottomSheet(
     var anniversaryDate by remember { mutableStateOf(prefs.anniversaryDate) }
     var boyBirthday by remember { mutableStateOf(prefs.boyfriendBirthday) }
     var girlBirthday by remember { mutableStateOf(prefs.girlfriendBirthday) }
+    val birthdayStore = remember(prefs) { com.example.data.BirthdayStore(prefs.storage) }
+    var letterHints by remember { mutableStateOf(birthdayStore.letterHintsEnabled) }
+    var morningReminder by remember { mutableStateOf(birthdayStore.morningReminderEnabled) }
     var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
@@ -271,37 +274,51 @@ fun SettingsBottomSheet(
                     colors = tinyTextFieldColors()
                 )
 
-                // Birthdays (recurring yearly)
+                // Birthdays (recurring yearly), picked from a calendar; the year is optional (plan 09, A)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TinySpace.md)) {
-                    OutlinedTextField(
+                    BirthdayField(
+                        label = stringResource(Res.string.label_your_birthday),
                         value = boyBirthday,
                         onValueChange = {
                             boyBirthday = it
-                            prefs.boyfriendBirthday = it
+                            birthdayStore.setBirthday(com.example.data.Partner.BOY, it)
                             onSettingsChanged()
                         },
-                        label = { Text(stringResource(Res.string.label_your_birthday)) },
-                        placeholder = { Text(stringResource(Res.string.ui_yyyy_mm_dd)) },
-                        modifier = Modifier.weight(1f).testTag("input_boy_bday"),
-                        singleLine = true,
-                        shape = TinyFieldShape,
-                        colors = tinyTextFieldColors()
+                        modifier = Modifier.weight(1f),
+                        testTag = "input_boy_bday"
                     )
-                    OutlinedTextField(
+                    BirthdayField(
+                        label = stringResource(Res.string.label_partner_birthday),
                         value = girlBirthday,
                         onValueChange = {
                             girlBirthday = it
-                            prefs.girlfriendBirthday = it
+                            birthdayStore.setBirthday(com.example.data.Partner.GIRL, it)
                             onSettingsChanged()
                         },
-                        label = { Text(stringResource(Res.string.label_partner_birthday)) },
-                        placeholder = { Text(stringResource(Res.string.ui_yyyy_mm_dd)) },
-                        modifier = Modifier.weight(1f).testTag("input_girl_bday"),
-                        singleLine = true,
-                        shape = TinyFieldShape,
-                        colors = tinyTextFieldColors()
+                        modifier = Modifier.weight(1f),
+                        testTag = "input_girl_bday"
                     )
                 }
+                BirthdayLetterHint(birthdayStore, boyName, girlName)
+                SettingsToggleRow(
+                    text = stringResource(Res.string.bday_setting_letter_hints),
+                    checked = letterHints,
+                    onCheckedChange = {
+                        letterHints = it
+                        birthdayStore.letterHintsEnabled = it
+                    },
+                    testTag = "toggle_birthday_letter_hints"
+                )
+                SettingsToggleRow(
+                    text = stringResource(Res.string.bday_setting_morning),
+                    checked = morningReminder,
+                    onCheckedChange = {
+                        morningReminder = it
+                        birthdayStore.morningReminderEnabled = it
+                        onSettingsChanged()
+                    },
+                    testTag = "toggle_birthday_morning"
+                )
 
                 // Secret Gift Box Easter Egg (Tap 5 times to reveal!)
                 GiftBoxEasterEgg(
@@ -898,5 +915,18 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(TinySpace.lg))
         }
+    }
+}
+
+/** A plain text-and-switch row for the settings cards. */
+@Composable
+private fun SettingsToggleRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, testTag: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, style = TinyType.Body, modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(TinySpace.sm))
+        Switch(checked = checked, onCheckedChange = onCheckedChange, colors = tinySwitchColors())
     }
 }

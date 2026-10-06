@@ -16,6 +16,7 @@ object RewardItems {
     const val CHEF_APRON_INDEX = 7
     const val FISHER_HAT_INDEX = 8
     const val FLOWER_CROWN_INDEX = 9
+    const val PARTY_HAT_INDEX = com.example.engine.PixelArtRenderer.PARTY_HAT_ACCESSORY
 
     fun forDressOutfit(index: Int): String? = if (index == STAR_HOODIE_DRESS_INDEX) Rewards.STAR_HOODIE else null
     fun forTrouserOutfit(index: Int): String? = if (index == STAR_HOODIE_TROUSER_INDEX) Rewards.STAR_HOODIE else null
@@ -26,6 +27,7 @@ object RewardItems {
         CHEF_APRON_INDEX -> Rewards.CHEF_APRON
         FISHER_HAT_INDEX -> Rewards.FISHER_HAT
         FLOWER_CROWN_INDEX -> Rewards.FLOWER_CROWN
+        PARTY_HAT_INDEX -> Rewards.PARTY_HAT
         else -> null
     }
     fun forTheme(theme: RoomTheme): String? = if (theme == RoomTheme.STARRY_NIGHT) Rewards.STARRY_ROOM else null

@@ -74,6 +74,8 @@ fun OnboardingDialog(
     initialAnniversaryDate: LocalDate = CoupleDates.today(),
     initialSecretCode: String = "",
     initialSecretNote: String = "",
+    /** When given, the setup also asks for both birthdays (optional) and saves them here (plan 09, A). */
+    birthdayStore: com.example.data.BirthdayStore? = null,
     onDismiss: () -> Unit,
     onComplete: (
         boyName: String,
@@ -91,6 +93,8 @@ fun OnboardingDialog(
     var showSecretFields by remember { mutableStateOf(initialSecretCode.isNotEmpty() || initialSecretNote.isNotEmpty()) }
     var secretCode by remember { mutableStateOf(initialSecretCode) }
     var secretNote by remember { mutableStateOf(initialSecretNote) }
+    var boyBirthday by remember { mutableStateOf(birthdayStore?.birthdays()?.get(com.example.data.Partner.BOY)?.toString() ?: "") }
+    var girlBirthday by remember { mutableStateOf(birthdayStore?.birthdays()?.get(com.example.data.Partner.GIRL)?.toString() ?: "") }
 
 
     Dialog(
@@ -216,6 +220,35 @@ fun OnboardingDialog(
                             }
                         }
 
+                        // Birthdays, optional: the app throws a little surprise on the day (plan 09, A)
+                        if (birthdayStore != null) {
+                            Spacer(modifier = Modifier.height(TinySpace.lg))
+                            Column(modifier = Modifier.fillMaxWidth().testTag("onboarding_birthdays")) {
+                                Text(stringResource(Res.string.onboarding_birthdays_title), style = TinyType.Label)
+                                Text(
+                                    stringResource(Res.string.onboarding_birthdays_body),
+                                    style = TinyType.Caption,
+                                    modifier = Modifier.padding(top = 2.dp, bottom = TinySpace.sm)
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.md)) {
+                                    BirthdayField(
+                                        label = boyName.ifBlank { PersonalProfile.DEFAULT_NAME_A },
+                                        value = boyBirthday,
+                                        onValueChange = { boyBirthday = it },
+                                        modifier = Modifier.weight(1f),
+                                        testTag = "onboarding_boy_birthday"
+                                    )
+                                    BirthdayField(
+                                        label = girlName.ifBlank { PersonalProfile.DEFAULT_NAME_B },
+                                        value = girlBirthday,
+                                        onValueChange = { girlBirthday = it },
+                                        modifier = Modifier.weight(1f),
+                                        testTag = "onboarding_girl_birthday"
+                                    )
+                                }
+                            }
+                        }
+
                         Spacer(modifier = Modifier.height(TinySpace.md))
 
                         // Secret note toggle (unified keepsake system)
@@ -286,6 +319,10 @@ fun OnboardingDialog(
                             onClick = {
                                 val finalBoy = boyName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_A }.take(MAX_NAME_LENGTH)
                                 val finalGirl = girlName.trim().ifBlank { PersonalProfile.DEFAULT_NAME_B }.take(MAX_NAME_LENGTH)
+                                birthdayStore?.let { store ->
+                                    if (boyBirthday.isNotEmpty()) store.setBirthday(com.example.data.Partner.BOY, boyBirthday)
+                                    if (girlBirthday.isNotEmpty()) store.setBirthday(com.example.data.Partner.GIRL, girlBirthday)
+                                }
                                 onComplete(
                                     finalBoy,
                                     finalGirl,

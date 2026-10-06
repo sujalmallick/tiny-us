@@ -33,6 +33,9 @@ interface MainPlatform {
     /** Keeps the home-screen widget on the scene and weather the couple is in. */
     fun updateWidget(scene: SceneType, weather: WeatherType) {}
 
+    /** The birthdays or their reminder setting changed: the platform reschedules its reminder (plan 09, A). */
+    fun birthdaysChanged() {}
+
     /** Loads a profile file shipped with the app, if there is one; true when it was found. */
     fun loadLocalProfile(): Boolean = false
 
