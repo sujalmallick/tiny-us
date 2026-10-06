@@ -20,7 +20,6 @@ import com.example.security.AppLockStore
 import com.example.ui.AppLockScreen
 import com.example.ui.MainScreen
 import com.example.ui.SplashScreen
-import com.example.ui.theme.MyApplicationTheme
 
 import android.content.Intent
 
@@ -47,7 +46,7 @@ class MainActivity : FragmentActivity() {
         android.util.Log.d("TinyUs", "onCreate intent scene: $sc, atmosphere: $at, birdSurface: $bs")
         sceneTarget.value = sc?.let { it to System.currentTimeMillis() }
         setContent {
-            MyApplicationTheme {
+            com.example.ui.AndroidAppRoot {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     // Replace the whole app (and any open dialogs) while locked.
                     if (AppLock.isLocked) {

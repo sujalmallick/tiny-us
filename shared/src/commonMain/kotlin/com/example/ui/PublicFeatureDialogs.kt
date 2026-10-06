@@ -1,5 +1,11 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.ui
 
+import com.example.data.CoupleCalendar
+import com.example.data.CoupleDates
+import kotlin.time.Clock
+import kotlin.uuid.Uuid
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -17,10 +23,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.automirrored.rounded.Send
-import androidx.compose.material.icons.rounded.CardGiftcard
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.Refresh
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
@@ -34,7 +36,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.text.font.FontStyle
 import androidx.compose.ui.text.font.FontWeight
@@ -51,7 +52,6 @@ import com.example.data.MiniGameCatalog
 import com.example.data.MiniGameRound
 import com.example.data.MiniGameType
 import com.example.data.PreferencesManager
-import com.example.data.RelationshipTimeManager
 import com.example.data.SharedMoodType
 import com.example.data.WorldEvent
 import com.example.data.WorldEventBus
@@ -59,11 +59,6 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
-import com.example.widget.TinyUsWidgetProvider
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
 import com.example.ui.theme.PixelIcons
 import com.example.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -77,7 +72,7 @@ fun DateAdventuresDialog(
     prefs: PreferencesManager,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val platform = LocalPlatformActions.current
     var savedAdventures by remember { mutableStateOf(prefs.getDateAdventures()) }
     var selectedCategory by remember { mutableStateOf<String?>(null) }
 
@@ -151,15 +146,15 @@ fun DateAdventuresDialog(
                         if (updated.isFullyCompleted) {
                             WorldEventBus.post(
                                 WorldEvent.DateAdventureCompleted(
-                                    id = UUID.randomUUID().toString(),
-                                    timestamp = System.currentTimeMillis(),
+                                    id = Uuid.random().toString(),
+                                    timestamp = Clock.System.now().toEpochMilliseconds(),
                                     adventureId = updated.id,
                                     title = updated.title,
                                     completedBy = if (updated.completedByBoy && updated.completedByGirl) "both" else if (updated.completedByBoy) "boy" else "girl"
                                 )
                             )
                         }
-                        TinyUsWidgetProvider.updateAllWidgets(context)
+                        platform.refreshWidgets()
                     }
                 )
             }
@@ -269,7 +264,7 @@ private fun DateAdventureCard(
                                 adventure.copy(
                                     completedByBoy = nextBoy,
                                     status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
-                                    completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
+                                    completedTimestamp = if (completeBoth) Clock.System.now().toEpochMilliseconds() else null
                                 )
                             )
                         }
@@ -286,7 +281,7 @@ private fun DateAdventureCard(
                                 adventure.copy(
                                     completedByGirl = nextGirl,
                                     status = if (completeBoth) AdventureStatus.COMPLETED else AdventureStatus.IN_PROGRESS,
-                                    completedTimestamp = if (completeBoth) System.currentTimeMillis() else null
+                                    completedTimestamp = if (completeBoth) Clock.System.now().toEpochMilliseconds() else null
                                 )
                             )
                         }
@@ -306,7 +301,7 @@ private fun DateAdventureCard(
                                     completedByBoy = true,
                                     completedByGirl = true,
                                     status = AdventureStatus.COMPLETED,
-                                    completedTimestamp = System.currentTimeMillis()
+                                    completedTimestamp = Clock.System.now().toEpochMilliseconds()
                                 )
                             )
                         },
@@ -380,9 +375,9 @@ fun DailyMomentPromptDialog(
     prefs: PreferencesManager,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
-    val todayStr = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
-    val dayIndex = remember { RelationshipTimeManager.calculateTinyUsDay().toInt() }
+    val platform = LocalPlatformActions.current
+    val todayStr = remember { CoupleDates.today().toString() }
+    val dayIndex = remember { CoupleCalendar.tinyUsDay().toInt() }
     val currentPrompt = remember { DailyPromptCatalog.getPromptForDay(dayIndex) }
 
     var savedResponse by remember { mutableStateOf(prefs.getDailyMomentResponseForDate(todayStr, currentPrompt.id)) }
@@ -474,12 +469,12 @@ fun DailyMomentPromptDialog(
                         boyAnswer = answerA.ifBlank { null },
                         girlAnswer = answerB.ifBlank { null },
                         isRevealed = revealPartnerAnswers || hasBoth,
-                        completedTimestamp = if (hasBoth) System.currentTimeMillis() else null
+                        completedTimestamp = if (hasBoth) Clock.System.now().toEpochMilliseconds() else null
                     )
                     prefs.saveDailyMomentResponse(updated)
                     savedResponse = updated
                     revealPartnerAnswers = updated.isRevealed
-                    TinyUsWidgetProvider.updateAllWidgets(context)
+                    platform.refreshWidgets()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary
@@ -506,7 +501,7 @@ fun TwoPersonMiniGameDialog(
     prefs: PreferencesManager,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val platform = LocalPlatformActions.current
     var selectedType by remember { mutableStateOf(MiniGameType.WOULD_YOU_RATHER) }
     var questionIndex by remember { mutableIntStateOf(0) }
 
@@ -652,7 +647,7 @@ fun TwoPersonMiniGameDialog(
                 onClick = {
                     isRevealed = true
                     val round = MiniGameRound(
-                        id = UUID.randomUUID().toString(),
+                        id = Uuid.random().toString(),
                         questionId = currentQuestion.id,
                         type = selectedType,
                         prompt = currentQuestion.prompt,
@@ -660,10 +655,10 @@ fun TwoPersonMiniGameDialog(
                         boyChosenIndex = choiceAIndex,
                         girlChosenIndex = choiceBIndex,
                         isRevealed = true,
-                        timestamp = System.currentTimeMillis()
+                        timestamp = Clock.System.now().toEpochMilliseconds()
                     )
                     prefs.saveMiniGameRound(round)
-                    TinyUsWidgetProvider.updateAllWidgets(context)
+                    platform.refreshWidgets()
                 },
                 enabled = choiceAIndex != null || choiceBIndex != null,
                 modifier = Modifier.fillMaxWidth(),
@@ -732,7 +727,7 @@ fun SharedMoodDialog(
     prefs: PreferencesManager,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val platform = LocalPlatformActions.current
     val currentMoodState = remember { prefs.getPartnerMoodState() }
 
     var selectedMoodA by remember { mutableStateOf(currentMoodState.boyMood) }
@@ -775,7 +770,7 @@ fun SharedMoodDialog(
             onClick = {
                 prefs.setPartnerMood("boy", selectedMoodA, isSharedA)
                 prefs.setPartnerMood("girl", selectedMoodB, isSharedB)
-                TinyUsWidgetProvider.updateAllWidgets(context)
+                platform.refreshWidgets()
                 onDismiss()
             },
             modifier = Modifier.fillMaxWidth(),
@@ -876,7 +871,7 @@ fun LongDistanceSheet(
     prefs: PreferencesManager,
     onDismiss: () -> Unit
 ) {
-    val context = LocalContext.current
+    val platform = LocalPlatformActions.current
     var savedSignals by remember { mutableStateOf(prefs.getLongDistanceSignals()) }
     var customNote by remember { mutableStateOf("") }
     var selectedSignalType by remember { mutableStateOf(LongDistanceSignalType.SEND_HEART) }
@@ -953,16 +948,16 @@ fun LongDistanceSheet(
                 text = stringResource(Res.string.ui_send_signal),
                 onClick = {
                     val newSignal = LongDistanceSignal(
-                        id = UUID.randomUUID().toString(),
+                        id = Uuid.random().toString(),
                         sender = "boy",
                         type = selectedSignalType,
                         note = customNote.ifBlank { null },
-                        timestamp = System.currentTimeMillis()
+                        timestamp = Clock.System.now().toEpochMilliseconds()
                     )
                     prefs.sendLongDistanceSignal(newSignal)
                     savedSignals = prefs.getLongDistanceSignals()
                     customNote = ""
-                    TinyUsWidgetProvider.updateAllWidgets(context)
+                    platform.refreshWidgets()
                 },
                 modifier = Modifier.fillMaxWidth(),
                 style = TinyButtonStyle.Primary,
