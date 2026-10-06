@@ -1,5 +1,6 @@
 package com.example
 
+import kotlinx.datetime.toJavaLocalDate
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.PreferencesManager
@@ -132,18 +133,18 @@ class OnboardingAndGeneralizationTest {
 
             val beginning = memories.first { it.id == "our_beginning" }
             assertEquals("Our Beginning", beginning.title)
-            assertEquals(testAnniv, beginning.date)
+            assertEquals(testAnniv, beginning.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.RELATIONSHIP, beginning.type)
 
             val boyBday = memories.first { it.id == "boy_birthday" }
             assertEquals("Noah's Birthday", boyBday.title)
-            assertEquals(LocalDate.of(2000, 3, 20), boyBday.date)
+            assertEquals(LocalDate.of(2000, 3, 20), boyBday.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.BIRTHDAY, boyBday.type)
             assertTrue(boyBday.annualRecurring)
 
             val girlBday = memories.first { it.id == "girl_birthday" }
             assertEquals("Mia's Birthday", girlBday.title)
-            assertEquals(LocalDate.of(2001, 8, 10), girlBday.date)
+            assertEquals(LocalDate.of(2001, 8, 10), girlBday.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.BIRTHDAY, girlBday.type)
             assertTrue(girlBday.annualRecurring)
         } finally {

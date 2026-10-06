@@ -1,5 +1,14 @@
 package com.example.ui
 
+import com.example.data.CoupleCalendar
+import com.example.data.CoupleDates
+import com.example.engine.WorldAudio
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.isoDayNumber
+import kotlinx.datetime.minus
+import kotlinx.datetime.plus
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -21,7 +30,6 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import com.example.engine.AmbientAudio
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
@@ -44,10 +52,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.LocalDate
-import java.time.YearMonth
-import java.time.format.DateTimeFormatter
-import com.example.data.SpecialCalendarManager
 import com.example.data.TinyUsMemory
 import com.example.data.SpecialMemoryType
 import com.example.ui.theme.PixelIcons
@@ -65,14 +69,14 @@ import org.jetbrains.compose.resources.pluralStringResource
 @Composable
 fun SpecialCalendarDialog(
     onDismiss: () -> Unit,
-    audio: AmbientAudio? = null,
+    audio: WorldAudio? = null,
     boyfriendName: String = com.example.data.ProfileManager.getProfile().boyName,
     girlfriendName: String = com.example.data.ProfileManager.getProfile().girlName
 ) {
-    var displayedYearMonth by remember { mutableStateOf(YearMonth.now()) }
+    var displayedYearMonth by remember { mutableStateOf(CoupleDates.today().firstOfMonth()) }
     var selectedMemory by remember { mutableStateOf<TinyUsMemory?>(null) }
-    val today = remember { LocalDate.now() }
-    val todayMemories = remember(displayedYearMonth) { SpecialCalendarManager.getMemoriesForDate(today) }
+    val today = remember { CoupleDates.today() }
+    val todayMemories = remember(displayedYearMonth) { CoupleCalendar.getMemoriesForDate(today) }
 
     TinyDialog(
         onDismissRequest = onDismiss,
@@ -148,7 +152,7 @@ fun SpecialCalendarDialog(
                 IconButton(
                     onClick = {
                         audio?.playBubblePop()
-                        displayedYearMonth = displayedYearMonth.minusMonths(1)
+                        displayedYearMonth = displayedYearMonth.minus(1, DateTimeUnit.MONTH)
                     },
                     modifier = Modifier.testTag("calendar_prev_month")
                 ) {
@@ -165,19 +169,19 @@ fun SpecialCalendarDialog(
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     val monthTitle = remember(displayedYearMonth) {
-                        displayedYearMonth.format(DateTimeFormatter.ofPattern("MMMM yyyy"))
+                        DateText.format(displayedYearMonth, "MMMM yyyy")
                     }
                     Text(
                         text = monthTitle,
                         style = TinyType.Section.copy(fontSize = 16.sp),
                         textAlign = TextAlign.Center
                     )
-                    if (displayedYearMonth != YearMonth.from(today)) {
+                    if (displayedYearMonth != today.firstOfMonth()) {
                         TinyButton(
                             text = stringResource(Res.string.ui_jump_to_today),
                             onClick = {
                                 audio?.playBubblePop()
-                                displayedYearMonth = YearMonth.from(today)
+                                displayedYearMonth = today.firstOfMonth()
                             },
                             style = TinyButtonStyle.Ghost,
                             compact = true
@@ -188,7 +192,7 @@ fun SpecialCalendarDialog(
                 IconButton(
                     onClick = {
                         audio?.playBubblePop()
-                        displayedYearMonth = displayedYearMonth.plusMonths(1)
+                        displayedYearMonth = displayedYearMonth.plus(1, DateTimeUnit.MONTH)
                     },
                     modifier = Modifier.testTag("calendar_next_month")
                 ) {
@@ -205,7 +209,7 @@ fun SpecialCalendarDialog(
 
             // Days of Week Header
             // Short weekday names in the phone's language, Monday first.
-            val daysOfWeek = java.time.DayOfWeek.values().map { it.getDisplayName(java.time.format.TextStyle.SHORT, java.util.Locale.getDefault()) }
+            val daysOfWeek = remember { DateText.shortWeekdays() }
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween
@@ -227,8 +231,8 @@ fun SpecialCalendarDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             // Calendar Days Grid
-            val firstDayOfWeek = displayedYearMonth.atDay(1).dayOfWeek.value // 1=Mon, 7=Sun
-            val daysInMonth = displayedYearMonth.lengthOfMonth()
+            val firstDayOfWeek = displayedYearMonth.dayOfWeek.isoDayNumber // 1=Mon, 7=Sun
+            val daysInMonth = displayedYearMonth.daysUntil(displayedYearMonth.plus(1, DateTimeUnit.MONTH))
             val emptySlotsBefore = firstDayOfWeek - 1
             val totalCells = emptySlotsBefore + daysInMonth
             val totalRows = (totalCells + 6) / 7
@@ -242,9 +246,9 @@ fun SpecialCalendarDialog(
                         val cellIndex = row * 7 + col
                         val dayNum = cellIndex - emptySlotsBefore + 1
                         if (dayNum in 1..daysInMonth) {
-                            val cellDate = displayedYearMonth.atDay(dayNum)
+                            val cellDate = displayedYearMonth.plus(dayNum - 1, DateTimeUnit.DAY)
                             val isCellToday = (cellDate == today)
-                            val cellMemories = SpecialCalendarManager.getMemoriesForDate(cellDate)
+                            val cellMemories = CoupleCalendar.getMemoriesForDate(cellDate)
                             val hasEvent = cellMemories.isNotEmpty()
                             val memoryType = cellMemories.firstOrNull()?.type
 
@@ -344,13 +348,13 @@ fun CalendarMemoryDetailCard(
     onDismiss: () -> Unit
 ) {
     var countdown by remember {
-        mutableStateOf(SpecialCalendarManager.calculateCountdown(memory.date))
+        mutableStateOf(CoupleCalendar.calculateCountdown(memory.date))
     }
 
     if (memory.isFuture) {
         LaunchedEffect(memory.date) {
             while (isActive) {
-                countdown = SpecialCalendarManager.calculateCountdown(memory.date)
+                countdown = CoupleCalendar.calculateCountdown(memory.date)
                 delay(1000)
             }
         }
@@ -379,7 +383,7 @@ fun CalendarMemoryDetailCard(
             Spacer(modifier = Modifier.height(TinySpace.xs))
 
             val formattedDate = remember(memory.date) {
-                memory.date.format(DateTimeFormatter.ofPattern("dd MMMM yyyy"))
+                DateText.format(memory.date, "dd MMMM yyyy")
             }
             Text(
                 text = formattedDate,
@@ -432,7 +436,7 @@ fun CalendarMemoryDetailCard(
                             )
                             Spacer(modifier = Modifier.height(TinySpace.xs))
                             Text(
-                                text = String.format("%02d HOURS  %02d MINUTES  %02d SECONDS", countdown.hours, countdown.minutes, countdown.seconds),
+                                text = "${two(countdown.hours)} HOURS  ${two(countdown.minutes)} MINUTES  ${two(countdown.seconds)} SECONDS",
                                 style = TinyType.Micro.copy(
                                     fontFamily = FontFamily.Monospace,
                                     fontWeight = FontWeight.Bold,
@@ -508,3 +512,9 @@ internal fun LegendItem(icon: ImageVector, label: String) {
         Text(text = label, style = TinyType.Micro, maxLines = 1)
     }
 }
+
+/** The first day of this date's month (the calendar shows one month at a time). */
+private fun LocalDate.firstOfMonth(): LocalDate = LocalDate(year, month, 1)
+
+/** Two digits, as in a clock. */
+private fun two(value: Long): String = value.toString().padStart(2, '0')

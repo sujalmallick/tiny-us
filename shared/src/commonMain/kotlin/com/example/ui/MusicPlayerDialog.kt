@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.WorldAudio
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -33,7 +34,6 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
-import com.example.engine.AmbientAudio
 import com.example.engine.MusicBoxState
 import com.example.scene.SceneEngine
 import androidx.compose.material3.Card
@@ -74,7 +74,7 @@ import org.jetbrains.compose.resources.pluralStringResource
 
 @Composable
 fun MusicPlayerDialog(
-    audio: AmbientAudio,
+    audio: WorldAudio,
     engine: SceneEngine,
     onEnableAudio: (() -> Unit)? = null,
     onDismiss: () -> Unit

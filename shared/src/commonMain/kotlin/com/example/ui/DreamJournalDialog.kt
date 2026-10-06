@@ -1,3 +1,5 @@
+@file:OptIn(kotlin.uuid.ExperimentalUuidApi::class)
+
 package com.example.ui
 
 import androidx.compose.foundation.background
@@ -167,11 +169,11 @@ fun DreamJournalDialog(
                     } else {
                         val (theme, keywords) = parseDreamTheme(trimmed)
                         val entry = com.example.data.DreamEntry(
-                            id = java.util.UUID.randomUUID().toString(),
+                            id = kotlin.uuid.Uuid.random().toString(),
                             text = trimmed,
                             matchedKeywords = keywords,
                             dreamTheme = theme,
-                            timestamp = System.currentTimeMillis()
+                            timestamp = kotlin.time.Clock.System.now().toEpochMilliseconds()
                         )
                         prefs.addDreamEntry(entry)
                         onDreamSaved()

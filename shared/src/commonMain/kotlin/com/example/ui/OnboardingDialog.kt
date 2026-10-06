@@ -1,5 +1,11 @@
 package com.example.ui
 
+import com.example.data.CoupleDates
+import kotlin.time.Instant
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.atStartOfDayIn
+import kotlinx.datetime.toLocalDateTime
 import com.example.data.PersonalProfile
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
@@ -53,10 +59,6 @@ import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
-import java.time.Instant
-import java.time.LocalDate
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
 import com.example.ui.theme.PixelIcons
 import com.example.resources.*
 import org.jetbrains.compose.resources.stringResource
@@ -72,7 +74,7 @@ private const val MAX_NAME_LENGTH = 10
 fun OnboardingDialog(
     initialBoyName: String = PersonalProfile.DEFAULT_NAME_A,
     initialGirlName: String = PersonalProfile.DEFAULT_NAME_B,
-    initialAnniversaryDate: LocalDate = LocalDate.now(),
+    initialAnniversaryDate: LocalDate = CoupleDates.today(),
     initialSecretCode: String = "",
     initialSecretNote: String = "",
     onDismiss: () -> Unit,
@@ -93,7 +95,6 @@ fun OnboardingDialog(
     var secretCode by remember { mutableStateOf(initialSecretCode) }
     var secretNote by remember { mutableStateOf(initialSecretNote) }
 
-    val dateFormatter = remember { DateTimeFormatter.ofPattern("MMM dd, yyyy") }
 
     Dialog(
         onDismissRequest = onDismiss,
@@ -212,7 +213,7 @@ fun OnboardingDialog(
                                 )
                                 Spacer(modifier = Modifier.width(TinySpace.md))
                                 Text(
-                                    text = anniversaryDate.format(dateFormatter),
+                                    text = DateText.format(anniversaryDate, "MMM dd, yyyy"),
                                     style = TinyType.Body
                                 )
                             }
@@ -310,16 +311,10 @@ fun OnboardingDialog(
 
     if (showDatePicker) {
         val nowMillis = remember {
-            LocalDate.now()
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
+            CoupleDates.today().atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         }
         val initialSelectedMillis = remember(anniversaryDate) {
-            anniversaryDate
-                .atStartOfDay(ZoneId.systemDefault())
-                .toInstant()
-                .toEpochMilli()
+            anniversaryDate.atStartOfDayIn(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         }
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = initialSelectedMillis,
@@ -337,9 +332,8 @@ fun OnboardingDialog(
                 TextButton(
                     onClick = {
                         datePickerState.selectedDateMillis?.let { millis ->
-                            anniversaryDate = Instant.ofEpochMilli(millis)
-                                .atZone(ZoneId.systemDefault())
-                                .toLocalDate()
+                            anniversaryDate = Instant.fromEpochMilliseconds(millis)
+                                .toLocalDateTime(TimeZone.currentSystemDefault()).date
                         }
                         showDatePicker = false
                     }

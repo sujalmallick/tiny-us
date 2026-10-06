@@ -1,5 +1,6 @@
 package com.example.ui
 
+import kotlinx.datetime.toJavaLocalDate
 import com.example.R
 import com.example.engine.WorldViewport
 import com.example.ui.theme.PixelCornerShape
@@ -1401,7 +1402,7 @@ fun MainScreen(
             OnboardingDialog(
                 initialBoyName = prefs.boyfriendName,
                 initialGirlName = prefs.girlfriendName,
-                initialAnniversaryDate = runCatching { java.time.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(java.time.LocalDate.now()),
+                initialAnniversaryDate = runCatching { kotlinx.datetime.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(com.example.data.CoupleDates.today()),
                 initialSecretCode = prefs.secretCode,
                 initialSecretNote = prefs.secretCodeBody,
                 onDismiss = {
@@ -1417,7 +1418,7 @@ fun MainScreen(
                     prefs.isOnboardingCompleted = true
 
                     engine.updateNames(bName, gName)
-                    com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate
+                    com.example.data.RelationshipTimeManager.relationshipStartDate = annivDate.toJavaLocalDate()
                     com.example.engine.SpecialDays.refresh()
                     com.example.data.SpecialCalendarManager.boyName = bName
                     com.example.data.SpecialCalendarManager.girlName = gName

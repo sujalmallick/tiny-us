@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.data.CoupleCalendar
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
@@ -54,8 +55,6 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import java.time.format.DateTimeFormatter
-import com.example.data.RelationshipTimeManager
 import com.example.data.TinyMoment
 import com.example.scene.SceneType
 import androidx.compose.animation.core.Spring
@@ -87,12 +86,12 @@ fun DailyTinyMomentDialog(
 
     // Dynamic day counter that automatically refreshes across midnight
     var currentDay by remember {
-        mutableLongStateOf(daysTogether.coerceAtLeast(RelationshipTimeManager.calculateTinyUsDay()))
+        mutableLongStateOf(daysTogether.coerceAtLeast(CoupleCalendar.tinyUsDay()))
     }
 
     LaunchedEffect(Unit) {
         while (isActive) {
-            val nowDay = RelationshipTimeManager.calculateTinyUsDay()
+            val nowDay = CoupleCalendar.tinyUsDay()
             if (nowDay != currentDay) {
                 currentDay = nowDay
             }
@@ -356,13 +355,13 @@ fun RelationshipDurationDialog(
     onDismiss: () -> Unit
 ) {
     var duration by remember {
-        mutableStateOf(RelationshipTimeManager.getExactDuration())
+        mutableStateOf(CoupleCalendar.exactDuration())
     }
 
     // Lightweight live ticker active ONLY while this popup is visible
     LaunchedEffect(Unit) {
         while (isActive) {
-            duration = RelationshipTimeManager.getExactDuration()
+            duration = CoupleCalendar.exactDuration()
             delay(1000L)
         }
     }
@@ -402,9 +401,7 @@ fun RelationshipDurationDialog(
             )
 
             val formattedStartDate = remember {
-                com.example.data.RelationshipTimeManager.relationshipStartDate.format(
-                    java.time.format.DateTimeFormatter.ofPattern("d MMMM yyyy", java.util.Locale.ENGLISH)
-                )
+                DateText.format(com.example.data.CoupleDates.anniversary, "d MMMM yyyy", english = true)
             }
 
             Text(
@@ -433,13 +430,7 @@ fun RelationshipDurationDialog(
             Spacer(modifier = Modifier.height(TinySpace.sm))
 
             // Live ticking time: hours, minutes, seconds
-            val timeStr = String.format(
-                java.util.Locale.US,
-                "%02d hours  %02d mins  %02d secs",
-                duration.hours,
-                duration.minutes,
-                duration.seconds
-            )
+            val timeStr = "${two(duration.hours)} hours  ${two(duration.minutes)} mins  ${two(duration.seconds)} secs"
             Text(
                 text = timeStr,
                 style = TinyType.Caption.copy(letterSpacing = 0.5.sp)
@@ -449,8 +440,7 @@ fun RelationshipDurationDialog(
         TinyDivider()
 
         // Total days count
-        val formattedTotalDays = java.text.NumberFormat.getNumberInstance()
-            .format(duration.totalDays)
+        val formattedTotalDays = DateText.grouped(duration.totalDays)
         Text(
             text = pluralStringResource(Res.plurals.ui_total_days, duration.totalDays.coerceAtMost(Int.MAX_VALUE.toLong()).toInt(), formattedTotalDays),
             style = TinyType.Display.copy(color = TinyColors.Rose),
@@ -511,3 +501,6 @@ fun ShiningDayBadge(
         }
     }
 }
+
+/** Two digits, as in a clock. */
+private fun two(value: Long): String = value.toString().padStart(2, '0')
