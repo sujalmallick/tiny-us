@@ -120,6 +120,21 @@ class ScenePreviewTest {
                 who.hold(com.example.engine.HeldItem.valueOf(parts[0]), 60f, useSeconds = if (parts.size > 1) 30f else 0f)
                 who.heldItemAge = 0.3f
             }
+            // SCENE_PREVIEW_COUPLE=jar shows the Thank-You Jar (11 thanks); =bench the Make-Up
+            // Bench's clouds; =rainbow the rainbow as they clear (plan 09, C).
+            System.getenv("SCENE_PREVIEW_COUPLE")?.let { mode ->
+                val store = com.example.data.CoupleLifeStore(com.example.data.InMemoryKeyValueStorage())
+                repeat(11) { store.addThankYou(it % 2 == 0, "thanks $it") }
+                coupleLifeStore = store
+                if (mode == "bench" || mode == "rainbow") {
+                    startMakeUpBench()
+                    repeat(240) { update(1f / 60f, cw, ch) }
+                    if (mode == "rainbow") {
+                        finishMakeUpBench(com.example.data.MakeUpChoice.HUG)
+                        repeat(50) { update(1f / 60f, cw, ch) }
+                    }
+                }
+            }
             // SCENE_PREVIEW_EMOTE=HEART,MUSIC_NOTE shows those emote bubbles over the girl and the boy.
             System.getenv("SCENE_PREVIEW_EMOTE")?.split(',')?.zip(listOf(girl, boy))?.forEach { (name, who) ->
                 who.emote = com.example.engine.EmoteType.valueOf(name.trim())

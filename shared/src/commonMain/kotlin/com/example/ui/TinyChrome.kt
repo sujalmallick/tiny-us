@@ -422,6 +422,9 @@ object TinyIcons {
         "milestone" -> PixelIcons.Celebration
         "first" -> PixelIcons.AutoAwesome
         "birthday" -> PixelIcons.Celebration
+        "phones_down" -> PixelIcons.Bedtime
+        "make_up" -> PixelIcons.Favorite
+        "jar" -> PixelIcons.VolunteerActivism
         "upcoming" -> PixelIcons.HourglassTop
         else -> PixelIcons.Favorite
     }

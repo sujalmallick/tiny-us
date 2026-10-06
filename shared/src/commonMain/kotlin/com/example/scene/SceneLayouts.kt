@@ -299,6 +299,11 @@ object KitchenLayout {
      * Mochi's treat jar sits on top of the fridge, out of reach and clear of the couple (it used
      * to hang on the wall right behind the boy). This is the jar's base centre.
      */
+    /** The Thank-You Jar's spot (plan 09, C): bottom centre, on its own little shelf right of the keepsakes. */
+    fun thankYouJar(cw: Float, ch: Float, p: Float): Offset {
+        val clock = clockCenter(cw, ch, p)
+        return Offset(clock.x + 22f * p, clock.y + 16f * p)
+    }
     fun treatJar(cw: Float, ch: Float, p: Float) = Offset(cw * 0.88f, floorY(ch) - 64f * p - 5f * p)
 }
 

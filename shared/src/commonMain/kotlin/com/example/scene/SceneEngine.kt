@@ -1199,6 +1199,7 @@ class SceneEngine(
         lastWorldH = canvasHeight
         cozy.update(deltaSeconds, canvasWidth, canvasHeight)
         updateBirthday(deltaSeconds, canvasWidth, canvasHeight)
+        updateCoupleLife(deltaSeconds)
         starPuzzle.update(deltaSeconds)
         // The stars are only there at night outdoors.
         if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
@@ -6779,7 +6780,7 @@ class SceneEngine(
         updateRequests(dt)
 
         val sleepingOnCouch = currentScene == SceneType.SLEEP && !lampLit
-        if (isWatchSceneActive || isDreamMode || sleepingOnCouch || birthdaySurprise.isRunning) {
+        if (isWatchSceneActive || isDreamMode || sleepingOnCouch || birthdaySurprise.isRunning || makeUpActive || phonesDownActive) {
             requests.interrupt(rng)
             stopAutonomy(halt = false)
             if (autonomyUserPause < AUTONOMY_AFTER_CINEMATIC_PAUSE) autonomyUserPause = AUTONOMY_AFTER_CINEMATIC_PAUSE
@@ -7593,6 +7594,239 @@ class SceneEngine(
         if (mochiZoomTimer <= 0f) return
         mochiZoomTimer -= dt
         if (mochiZoomTimer <= 0f) catRoamSpeed = MOCHI_ROAM_SPEED
+    }
+
+    // ── Couple life (plan 09, C) ──────────────────────────────────────────
+    // The Dinner Decider's pick, the Thank-You Jar, the Make-Up Bench and Phones Down play out
+    // in the world here; their screens live in CoupleLifeDialogs.
+
+    /** Section C's saved data; set by the app once it has storage (like [birthdayStore]). */
+    var coupleLifeStore: com.example.data.CoupleLifeStore? by mutableStateOf(null)
+
+    /** The Decider landed on [pick]: they cheer and one of them says so. */
+    fun reactToDinnerPick(pick: String) {
+        val cw = lastWorldW
+        val ch = lastWorldH
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 2.4f
+            c.emotion = CharacterEmotion.HAPPY
+            if (c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.JOY_JUMP
+            emote(c, EmoteType.SPARKLE, 1.8f)
+        }
+        speakerSpeech(if (rng.nextBoolean()) boy else girl, GameText.get(Res.string.decider_world_line, pick), 2.8f)
+        particles.spawnSparkles(cw * (boy.worldX + girl.worldX) / 2f, ch * boy.worldY - 100f, 6)
+        audio.playStarTwinkle()
+    }
+
+    /**
+     * A thank-you went in the jar: the one thanked blushes, the other smiles. When it filled the
+     * jar, Mochi comes to celebrate and one old thank-you is read aloud (the twist).
+     */
+    fun onThankYou(fromBoy: Boolean, text: String, filledJar: Boolean) {
+        val giver = if (fromBoy) boy else girl
+        val thanked = if (fromBoy) girl else boy
+        thanked.emotion = CharacterEmotion.SHY
+        thanked.reactionTimer = 2.4f
+        giver.emotion = CharacterEmotion.LOVING
+        giver.reactionTimer = 2.4f
+        emote(thanked, EmoteType.BLUSH, 2f)
+        emote(giver, EmoteType.HEART, 2f)
+        speakerSpeech(giver, GameText.get(Res.string.jar_thanks_line, text), 2.8f)
+        audio.playHeartChime()
+        if (!filledJar) return
+        val cw = lastWorldW
+        val ch = lastWorldH
+        particles.spawnSparkles(cw * 0.5f, ch * 0.45f, 10, Color(0xFFFFD166))
+        repeat(3) { particles.spawnHeart(cw * (0.4f + it * 0.1f), ch * boy.worldY - 110f) }
+        // Mochi trots over to see what the fuss is about.
+        if (currentScene != SceneType.COZY_LOFT && currentScene != SceneType.EVENING_RIDE) {
+            catTargetX = ((boy.worldX + girl.worldX) / 2f).coerceIn(0.15f, 0.85f)
+            catTargetY = catWorldY
+            catFacingLeft = catTargetX < catWorldX
+            catSleeping = false
+            catState = CatState.WALK_FOLLOW
+            audio.playCatPurr()
+        }
+        coupleLifeStore?.pickToReadAloud(rng)?.let { old ->
+            val reader = if (old.fromBoy) girl else boy
+            val writer = if (old.fromBoy) boy else girl
+            jarReadAloudPending = GameText.get(Res.string.jar_read_aloud, writer.name, old.text) to reader
+            jarReadAloudTimer = 3.2f
+        }
+    }
+
+    private var jarReadAloudPending: Pair<String, PixelCharacter>? = null
+    private var jarReadAloudTimer = 0f
+
+    private fun updateCoupleLife(dt: Float) {
+        jarReadAloudPending?.let { (line, reader) ->
+            jarReadAloudTimer -= dt
+            if (jarReadAloudTimer <= 0f) {
+                jarReadAloudPending = null
+                speakerSpeech(reader, line, 4.2f)
+                emote(if (reader === boy) girl else boy, EmoteType.HEART, 2.4f)
+            }
+        }
+        updateRainyReading()
+        updateMakeUpBench(dt)
+        updatePhonesDown(dt)
+    }
+
+    /** On a rainy day in the kitchen, once a day, one old thank-you is remembered. */
+    private fun updateRainyReading() {
+        val store = coupleLifeStore ?: return
+        if (weather != WeatherType.RAIN || currentScene != SceneType.COOKING || sceneTime < 6f) return
+        val today = CoupleDates.today().toString()
+        if (store.lastRainyReading == today || sceneMessage != null || isWatchSceneActive) return
+        val old = store.pickToReadAloud(rng) ?: return
+        store.lastRainyReading = today
+        val writer = if (old.fromBoy) boy else girl
+        showMessage(GameText.get(Res.string.jar_rainy_line, writer.name, old.text), duration = 5f)
+        emote(if (old.fromBoy) girl else boy, EmoteType.HEART, 2.4f)
+    }
+
+    // The Make-Up Bench: they sit apart under a small grey cloud while each writes privately;
+    // when both are done the cloud clears to a rainbow and they come back together.
+
+    /** True from "We need a moment" until they've come back together. */
+    var makeUpActive: Boolean by mutableStateOf(false)
+        private set
+    /** 1 while the grey cloud hangs over them, fading to 0 as it clears. */
+    var makeUpCloud: Float = 0f
+        private set
+    /** 0 to 1 while the rainbow shows after it clears. */
+    var makeUpRainbow: Float = 0f
+        private set
+    private var makeUpClearing = false
+
+    /** The scene's opening script would hold their places, so a moment that moves them skips the rest of it. */
+    private fun skipOpeningScript() {
+        if (sceneTime < scriptEndTime() + 0.6f) sceneTime = scriptEndTime() + 0.6f
+    }
+
+    fun startMakeUpBench() {
+        skipOpeningScript()
+        makeUpActive = true
+        makeUpCloud = 1f
+        makeUpRainbow = 0f
+        makeUpClearing = false
+        notifyUserInteraction()
+        for ((c, x) in listOf(boy to 0.30f, girl to 0.70f)) {
+            c.moveTo(x, c.worldY)
+            c.emotion = CharacterEmotion.SHY
+            emote(c, EmoteType.DOTS, 2.4f)
+        }
+        boy.direction = Direction.LEFT
+        girl.direction = Direction.RIGHT
+    }
+
+    /** Both have written and chosen what's next: the cloud clears and they come together. */
+    fun finishMakeUpBench(choice: com.example.data.MakeUpChoice) {
+        if (!makeUpActive) return
+        makeUpClearing = true
+        audio.playStarTwinkle()
+        boy.moveTo(0.45f, boy.worldY, arrivePose = if (choice == com.example.data.MakeUpChoice.HUG) CharacterPose.HUG else null)
+        girl.moveTo(0.55f, girl.worldY, arrivePose = if (choice == com.example.data.MakeUpChoice.HUG) CharacterPose.HUG else null)
+        boy.direction = Direction.RIGHT
+        girl.direction = Direction.LEFT
+        for (c in charactersBoyGirl) {
+            c.emotion = CharacterEmotion.LOVING
+            c.reactionTimer = 6f
+        }
+        when (choice) {
+            com.example.data.MakeUpChoice.HUG -> Unit
+            com.example.data.MakeUpChoice.TEA -> for (c in charactersBoyGirl) c.hold(HeldItem.MUG, CARRIED_ITEM_SECONDS, useSeconds = 2f)
+            com.example.data.MakeUpChoice.TALK_LATER -> speakerSpeech(girl, GameText.get(Res.string.bench_talk_later_line), 3f)
+        }
+        showMessage(GameText.get(Res.string.bench_world_line), duration = 3f)
+    }
+
+    /** They left the bench without finishing: everything goes back to normal. */
+    fun cancelMakeUpBench() {
+        makeUpActive = false
+        makeUpCloud = 0f
+        makeUpRainbow = 0f
+        makeUpClearing = false
+    }
+
+    private fun updateMakeUpBench(dt: Float) {
+        if (!makeUpActive) return
+        // Keep their places while the cloud hangs; the routine waits too (see updateAutonomy).
+        if (!makeUpClearing) {
+            for (c in charactersBoyGirl) c.reactionTimer = maxOf(c.reactionTimer, 0.3f)
+            return
+        }
+        makeUpCloud = (makeUpCloud - dt * 0.8f).coerceAtLeast(0f)
+        makeUpRainbow = if (makeUpCloud > 0f) (1f - makeUpCloud) else (makeUpRainbow - dt * 0.25f).coerceAtLeast(0f)
+        if (makeUpCloud <= 0f && makeUpRainbow <= 0f) {
+            makeUpActive = false
+            makeUpClearing = false
+            for (c in charactersBoyGirl) if (c.pose == CharacterPose.HUG) c.transitionPoseTo(CharacterPose.IDLE)
+        }
+    }
+
+    // Phones Down: the couple settle down together and the world goes quiet under a night-light,
+    // until the time is up (then a little bloom) or they end it.
+
+    /** True while a Phones Down session is running. */
+    var phonesDownActive: Boolean by mutableStateOf(false)
+        private set
+    /** Seconds left, for the overlay's clock. */
+    var phonesDownSecondsLeft: Long by mutableStateOf(0L)
+        private set
+    private var phonesDownTick = 0f
+
+    /** Starts (or, after a restart, resumes) the session saved in [coupleLifeStore]. */
+    fun startPhonesDown(minutes: Int? = null) {
+        val store = coupleLifeStore ?: return
+        if (minutes != null) store.startPhonesDown(minutes)
+        val left = store.phonesDownSecondsLeft() ?: return
+        skipOpeningScript()
+        phonesDownActive = true
+        phonesDownSecondsLeft = left
+        notifyUserInteraction()
+        boy.moveTo(0.45f, boy.worldY)
+        girl.moveTo(0.55f, girl.worldY, arrivePose = CharacterPose.SIT_SNUGGLE)
+        boy.direction = Direction.RIGHT
+        girl.direction = Direction.LEFT
+        for (c in charactersBoyGirl) c.emotion = CharacterEmotion.LOVING
+    }
+
+    /** They ended it early: nothing lost, and it still counts as time together. */
+    fun stopPhonesDown() {
+        val store = coupleLifeStore ?: return
+        if (!phonesDownActive) return
+        store.endPhonesDown()
+        phonesDownActive = false
+        for (c in charactersBoyGirl) c.transitionPoseTo(CharacterPose.IDLE)
+        showMessage(GameText.get(Res.string.pd_ended_early), duration = 3f)
+    }
+
+    private fun updatePhonesDown(dt: Float) {
+        if (!phonesDownActive) return
+        val store = coupleLifeStore ?: return
+        for (c in charactersBoyGirl) c.reactionTimer = maxOf(c.reactionTimer, 0.3f)
+        phonesDownTick += dt
+        if (phonesDownTick < 0.5f) return
+        phonesDownTick = 0f
+        val left = store.phonesDownSecondsLeft() ?: run { phonesDownActive = false; return }
+        phonesDownSecondsLeft = left
+        if (left > 0L) return
+        val minutes = store.phonesDownMinutes
+        if (store.endPhonesDown()) {
+            onProgress?.invoke(com.example.progress.ProgressEvent.PhonesDown(minutes))
+            showMessage(GameText.get(Res.string.pd_finished, minutes), duration = 5f)
+            val cw = lastWorldW
+            val ch = lastWorldH
+            repeat(6) { particles.spawnPetals(cw * (0.3f + it * 0.08f), ch * 0.35f, 2) }
+            particles.spawnSparkles(cw * 0.5f, ch * boy.worldY - 100f, 8)
+            audio.playHeartChime()
+        }
+        phonesDownActive = false
+        for (c in charactersBoyGirl) {
+            c.transitionPoseTo(CharacterPose.IDLE)
+            emote(c, EmoteType.HEART, 2.4f)
+        }
     }
 
     // ── Birthday surprise (plan 09, A) ────────────────────────────────────

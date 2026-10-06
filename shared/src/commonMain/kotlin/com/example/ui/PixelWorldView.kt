@@ -117,7 +117,9 @@ fun PixelWorldView(
     onOpenDateAdventures: (() -> Unit)? = null,
     onOpenDailyMoment: (() -> Unit)? = null,
     onOpenMiniGames: (() -> Unit)? = null,
-    onOpenLongDistance: (() -> Unit)? = null
+    onOpenLongDistance: (() -> Unit)? = null,
+    /** The Thank-You Jar on the kitchen wall was tapped (plan 09, C). */
+    onOpenThankYouJar: (() -> Unit)? = null
 ) {
     var frameNanos by remember { mutableLongStateOf(0L) }
     var viewportWidth by remember { mutableFloatStateOf(1080f) }
@@ -376,6 +378,13 @@ fun PixelWorldView(
                                 }
                             }
                             EnvironmentType.KITCHEN -> {
+                                if (engine.coupleLifeStore != null && onOpenThankYouJar != null) {
+                                    val thanks = com.example.scene.KitchenLayout.thankYouJar(w, h, pixelScale)
+                                    if (abs(tapOffset.x - thanks.x) < 10f * pixelScale && tapOffset.y in (thanks.y - 16f * pixelScale)..(thanks.y + 4f * pixelScale)) {
+                                        onOpenThankYouJar()
+                                        return@detectTapGestures
+                                    }
+                                }
                                 val jar = com.example.scene.KitchenLayout.treatJar(w, h, pixelScale)
                                 if (kotlin.math.hypot(tapOffset.x - jar.x, tapOffset.y - (jar.y - 6f * pixelScale)) < 16f * pixelScale) {
                                     engine.onTouchKitchenTreatJar()
@@ -1711,6 +1720,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         }
         // The birthday party (plan 09, A): a banner, and the gift box until it's opened.
         drawBirthdayParty(this, engine, cw, ch, pixelScale)
+        // Couple life (plan 09, C): the Thank-You Jar, and the Make-Up Bench's cloud and rainbow.
+        drawCoupleLife(this, engine, cw, ch, pixelScale)
 
         // Atmospheric Lighting & Time-of-Day Layering
         val isTwilight = timePhase.isTwilight

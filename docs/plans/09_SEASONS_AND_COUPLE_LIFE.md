@@ -345,31 +345,31 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 - [x] B-7. Website parity (J): the Daily Moments deck grows from 10 to 120 or more, by season; Date Adventures grow from 7 to 30 or more. *130 prompts (70 everyday, 15 for each season, one day in three) and 32 adventures; saved lists get the new ones.*
 - [x] B-8. Tests: turns hide answers, the quiz is never empty, no repeats within a round. Renders of the dialog.
 
-### C. Couple life
-- [ ] C-1. Dinner Decider:
+### C. Couple life (branch `feature/plan09-c-couple-life`)
+- [x] C-1. Dinner Decider:
   - a model with categories (eat, watch, do), 8 options, each partner's custom options, and secret vetoes (2 each), then a spin;
   - the dialog;
-  - the wheel and its result in the kitchen;
+  - the wheel and its result in the kitchen; *(the wheel spins in the dialog, and the couple say the pick out loud in the world)*
   - "Cook it" leads into the cooking game.
-- [ ] C-2. Thank-You Jar:
+- [x] C-2. Thank-You Jar:
   - a model (chips plus a line of text, who wrote it, when);
   - the jar on the kitchen shelf, filling with pebbles;
   - a full jar of 20 becomes a keepsake and Mochi celebrates;
-  - a reading on a rainy day.
-- [ ] C-3. "Open when..." letters, on the sealed-letter store from A-1:
+  - a reading on a rainy day. *(Once a day, in the kitchen, when it rains.)*
+- [x] C-3. "Open when..." letters, on the sealed-letter store from A-1:
   - occasions plus a custom one;
   - they wait, sealed, in an "Open when..." list in Love Notes until their reader opens one (G's mailbox is dropped).
-- [ ] C-4. Make-Up Bench:
+- [x] C-4. Make-Up Bench:
   - the bench scene, with a cloud and a rainbow;
   - both partners write privately, then both are revealed;
   - a choice of hug, tea or "talk later" (a gentle reminder);
   - saved only if they choose to keep it.
-- [ ] C-5. Phones Down:
+- [x] C-5. Phones Down:
   - a together timer of 15, 30 or 60 minutes, showing the night-light sofa view;
   - a garden bloom and an Our Story line at the end;
   - leaving early is fine.
-- [ ] C-6. Opt-in reminders for anniversaries and month-iversaries.
-- [ ] C-7. Tests and renders for each.
+- [x] C-6. Opt-in reminders for anniversaries and month-iversaries. *(Shared `care/DateMornings.kt` and `CoupleMornings`, merged with the birthday morning; toggles in Settings > Our World. Android done; iOS switches over after this lands.)*
+- [x] C-7. Tests and renders for each. *(`CoupleLifeTest`, `CoupleLifeEngineTest`, `CoupleLifePreviewTest` (`COUPLE_LIFE_PREVIEW_DIR`), and `SCENE_PREVIEW_COUPLE=jar|bench|rainbow`.)*
 
 ### D. Festivals
 - [ ] D-1. A `Festival` model: one per season, a 3-day window in mid-season (hemisphere-aware through `SeasonalWeather`), a poster 2 days before, and years recorded.

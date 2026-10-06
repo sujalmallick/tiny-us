@@ -45,6 +45,10 @@ sealed class ProgressEvent {
     data class RequestGranted(val kind: String) : ProgressEvent()
     /** A birthday surprise was held (plan 09, A). */
     data class BirthdayCelebrated(val forBoy: Boolean, val belated: Boolean) : ProgressEvent()
+    /** A Thank-You Jar was filled (plan 09, C); it goes in the keepsake box. */
+    object ThankYouJarFilled : ProgressEvent()
+    /** A Phones Down session ran its full time (plan 09, C). */
+    data class PhonesDown(val minutes: Int) : ProgressEvent()
 }
 
 /**
@@ -112,6 +116,8 @@ object Counter {
     const val HARVESTS = "harvests"
     const val GARDEN_DISHES = "garden_dishes"
     const val BIRTHDAYS = "birthdays"
+    const val THANK_YOU_JARS = "thank_you_jars"
+    const val PHONES_DOWN = "phones_down"
 }
 
 /** Set keys: things seen at least once. */
@@ -216,6 +222,8 @@ data class ProgressState(
         }
         is ProgressEvent.RequestGranted -> plus(Counter.REQUESTS).see(Seen.REQUEST_KINDS, event.kind)
         is ProgressEvent.BirthdayCelebrated -> plus(Counter.BIRTHDAYS)
+        is ProgressEvent.ThankYouJarFilled -> plus(Counter.THANK_YOU_JARS).keep("jar:THANK_YOU")
+        is ProgressEvent.PhonesDown -> plus(Counter.PHONES_DOWN)
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0
             if (have <= 0) this
