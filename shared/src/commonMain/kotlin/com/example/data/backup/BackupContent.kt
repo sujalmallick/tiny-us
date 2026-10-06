@@ -49,7 +49,7 @@ object BackupContent {
                 name.startsWith("files/$PHOTO_DIR/") -> {
                     val file = name.substringAfterLast('/')
                     // Only plain file names: never let an entry escape the photo folder.
-                    if (file.isNotEmpty() && !file.startsWith(".") && '\' !in file) photos[file] = data
+                    if (file.isNotEmpty() && !file.startsWith(".") && '\\' !in file) photos[file] = data
                 }
             }
         }
@@ -58,7 +58,7 @@ object BackupContent {
     }
 
     /** Typed so ints stay ints and string sets stay sets on restore (Android's TinyBackup format). */
-    fun prefsToJson(values: Map<String, Any>): JSONObject {
+    internal fun prefsToJson(values: Map<String, Any>): JSONObject {
         val obj = JSONObject()
         values.forEach { (key, value) ->
             val typed = when (value) {
@@ -75,7 +75,7 @@ object BackupContent {
         return obj
     }
 
-    fun jsonToPrefs(obj: JSONObject): Map<String, Any> {
+    internal fun jsonToPrefs(obj: JSONObject): Map<String, Any> {
         val out = LinkedHashMap<String, Any>()
         obj.keys().forEach { key ->
             val typed = obj.optJSONObject(key) ?: return@forEach
@@ -99,7 +99,7 @@ object BackupContent {
         val fixed = JSONArray()
         for (i in 0 until arr.length()) {
             val item = arr.optJSONObject(i) ?: continue
-            val name = item.optString("imagePath").substringAfterLast('/').substringAfterLast('\')
+            val name = item.optString("imagePath").substringAfterLast('/').substringAfterLast('\\')
             if (name.isNotEmpty()) item.set("imagePath", "$photoDir/$name")
             fixed.put(item)
         }

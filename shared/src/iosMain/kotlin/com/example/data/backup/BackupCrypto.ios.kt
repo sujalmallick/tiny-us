@@ -15,8 +15,18 @@ import platform.Foundation.NSData
 import platform.Foundation.create
 import platform.Security.SecRandomCopyBytes
 import platform.Security.kSecRandomDefault
-import platform.compression.COMPRESSION_ZLIB
-import platform.compression.compression_decode_buffer
+import kotlinx.cinterop.alloc
+import kotlinx.cinterop.memScoped
+import kotlinx.cinterop.ptr
+import kotlinx.cinterop.sizeOf
+import platform.zlib.ZLIB_VERSION
+import platform.zlib.Z_FINISH
+import platform.zlib.Z_OK
+import platform.zlib.Z_STREAM_END
+import platform.zlib.inflate
+import platform.zlib.inflateEnd
+import platform.zlib.inflateInit2_
+import platform.zlib.z_stream
 import platform.posix.memcpy
 
 /**
@@ -83,12 +93,26 @@ actual object RawInflate {
         if (size == 0) return ByteArray(0)
         if (data.isEmpty()) return null
         val out = ByteArray(size)
-        // COMPRESSION_ZLIB is raw DEFLATE (RFC 1951), what ZIP entries hold.
-        val written = data.usePinned { d ->
-            out.usePinned { o ->
-                compression_decode_buffer(o.addressOf(0).reinterpret(), size.convert(), d.addressOf(0).reinterpret(), data.size.convert(), null, COMPRESSION_ZLIB)
+        val ok = memScoped {
+            val stream = alloc<z_stream>()
+            data.usePinned { d ->
+                out.usePinned { o ->
+                    stream.next_in = d.addressOf(0).reinterpret()
+                    stream.avail_in = data.size.convert()
+                    stream.next_out = o.addressOf(0).reinterpret()
+                    stream.avail_out = size.convert()
+                    // Window bits -15: raw DEFLATE (RFC 1951), what ZIP entries hold.
+                    if (inflateInit2_(stream.ptr, -15, ZLIB_VERSION, sizeOf<z_stream>().convert()) != Z_OK) {
+                        false
+                    } else {
+                        val result = inflate(stream.ptr, Z_FINISH)
+                        val written = stream.total_out.toLong()
+                        inflateEnd(stream.ptr)
+                        result == Z_STREAM_END && written == size.toLong()
+                    }
+                }
             }
         }
-        return if (written.toInt() == size) out else null
+        return if (ok) out else null
     }
 }
