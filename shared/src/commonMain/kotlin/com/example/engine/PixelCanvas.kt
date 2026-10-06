@@ -183,6 +183,9 @@ data class PixelCharacter(
     /** A party hat for the birthday (plan 09, A), worn over whatever accessory they chose. */
     var wearsPartyHat: Boolean = false
 
+    /** The Blossom Picnic's flower crown (plan 09, D): which flower, or -1 for none. */
+    var crownFlower: Int = -1
+
     /** Take [item] for [seconds], using it straight away for [useSeconds]. */
     fun hold(item: HeldItem, seconds: Float, useSeconds: Float = 0f) {
         heldItem = item
@@ -389,6 +392,12 @@ object PixelArtRenderer {
     const val CHARACTER_SCALE_FACTOR = 1.10f
     /** The party hat's accessory index (a reward from the first birthday surprise). */
     const val PARTY_HAT_ACCESSORY = 10
+    /** The Blossom Picnic's crown, worn for the day (not a wardrobe item). */
+    const val FESTIVAL_CROWN_ACCESSORY = 11
+    /** The festival flowers, in the order of the `festival_flowers` strings. */
+    val FESTIVAL_FLOWERS = listOf(
+        Color(0xFF8ECAE6), Color(0xFFB497E7), Color(0xFFFFD166), Color(0xFFFF6B9A), Color(0xFFFFF8EF), Color(0xFFE63946)
+    )
 
 
     data class GirlDressPalette(
@@ -649,7 +658,7 @@ object PixelArtRenderer {
         }
 
         // Layer accessories on top of character (unless in snow mode where winter gear is worn)
-        if (char.wearsPartyHat || (!isSnow && char.accessoryIndex > 0)) {
+        if (char.wearsPartyHat || char.crownFlower >= 0 || (!isSnow && char.accessoryIndex > 0)) {
             drawAccessory(drawScope, char, startX, startY + poseOffsetY, p, flip)
         }
 
@@ -1923,7 +1932,23 @@ object PixelArtRenderer {
             )
         }
 
-        when (if (char.wearsPartyHat) PARTY_HAT_ACCESSORY else char.accessoryIndex) {
+        val shown = when {
+            char.wearsPartyHat -> PARTY_HAT_ACCESSORY
+            char.crownFlower >= 0 -> FESTIVAL_CROWN_ACCESSORY
+            else -> char.accessoryIndex
+        }
+        when (shown) {
+            FESTIVAL_CROWN_ACCESSORY -> {
+                // The Blossom Picnic crown (plan 09, D): three of the flowers the other one picked
+                val leaf = Color(0xFF6BBF59)
+                val petal = FESTIVAL_FLOWERS[char.crownFlower % FESTIVAL_FLOWERS.size]
+                drawRect(6, 3, 7, 1, leaf)
+                for (i in 0 until 3) {
+                    val x = 6 + i * 3
+                    drawRect(x - 1, 2, 2, 2, petal)
+                    px(x, 2, Color(0xFFFFE066))
+                }
+            }
             PARTY_HAT_ACCESSORY -> {
                 // Party Hat (plan 09: a birthday surprise): a striped pink cone with a pom-pom
                 val cone = Color(0xFFFF6B9A)

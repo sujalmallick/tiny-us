@@ -9,7 +9,9 @@ import kotlinx.datetime.LocalDate
  * What a sealed letter waits for: a birthday (a date), a moment its reader chooses, or the day a
  * message in a bottle washes up on the line at the pier (plan 09, F).
  */
-enum class LetterKind { BIRTHDAY, OPEN_WHEN, BOTTLE }
+enum class LetterKind { BIRTHDAY, OPEN_WHEN, BOTTLE,
+    /** A wish written on a lantern at Lantern Night (plan 09, D), kept by its writer for a year. */
+    LANTERN }
 
 /**
  * A letter one of them writes for the other and seals (plan 09, A and C). It stays hidden from
@@ -36,6 +38,7 @@ data class SealedLetter(
         LetterKind.OPEN_WHEN -> true
         LetterKind.BIRTHDAY -> Birthdays.parse(opensOn)?.let { today >= it } ?: true
         LetterKind.BOTTLE -> Birthdays.parse(opensOn)?.let { today >= it } ?: true
+        LetterKind.LANTERN -> Birthdays.parse(opensOn)?.let { today >= it } ?: false
     }
 }
 

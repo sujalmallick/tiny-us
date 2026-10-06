@@ -75,7 +75,9 @@ object LittleFirsts {
         LittleFirst("first_harvest", Res.string.first_harvest, Res.string.first_harvest_hint) { it.count(Counter.HARVESTS) >= 1 },
         LittleFirst("first_garden_dish", Res.string.first_garden_dish, Res.string.first_garden_dish_hint) { it.count(Counter.GARDEN_DISHES) >= 1 },
         LittleFirst("thank_you_jar", Res.string.first_thank_you_jar, Res.string.first_thank_you_jar_hint) { it.count(Counter.THANK_YOU_JARS) >= 1 },
-        LittleFirst("phones_down", Res.string.first_phones_down, Res.string.first_phones_down_hint) { it.count(Counter.PHONES_DOWN) >= 1 }
+        LittleFirst("phones_down", Res.string.first_phones_down, Res.string.first_phones_down_hint) { it.count(Counter.PHONES_DOWN) >= 1 },
+        LittleFirst("first_festival", Res.string.first_festival, Res.string.first_festival_hint) { it.count(Counter.FESTIVALS) >= 1 },
+        LittleFirst("every_festival", Res.string.every_festival, Res.string.every_festival_hint) { it.seenSet(Seen.FESTIVALS).size >= com.example.data.Festival.entries.size }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

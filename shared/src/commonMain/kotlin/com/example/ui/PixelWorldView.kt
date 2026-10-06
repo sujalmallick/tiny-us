@@ -1722,6 +1722,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         drawBirthdayParty(this, engine, cw, ch, pixelScale)
         // Couple life (plan 09, C): the Thank-You Jar, and the Make-Up Bench's cloud and rainbow.
         drawCoupleLife(this, engine, cw, ch, pixelScale)
+        // Festivals (plan 09, D): the poster, the decorations and the lanterns rising.
+        drawFestival(this, engine, cw, ch, pixelScale)
 
         // Atmospheric Lighting & Time-of-Day Layering
         val isTwilight = timePhase.isTwilight

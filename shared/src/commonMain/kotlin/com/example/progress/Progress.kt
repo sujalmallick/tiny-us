@@ -49,6 +49,8 @@ sealed class ProgressEvent {
     object ThankYouJarFilled : ProgressEvent()
     /** A Phones Down session ran its full time (plan 09, C). */
     data class PhonesDown(val minutes: Int) : ProgressEvent()
+    /** A festival was celebrated (plan 09, D); its keepsake goes in the box. */
+    data class FestivalCelebrated(val festival: String) : ProgressEvent()
 }
 
 /**
@@ -118,6 +120,7 @@ object Counter {
     const val BIRTHDAYS = "birthdays"
     const val THANK_YOU_JARS = "thank_you_jars"
     const val PHONES_DOWN = "phones_down"
+    const val FESTIVALS = "festivals"
 }
 
 /** Set keys: things seen at least once. */
@@ -129,6 +132,8 @@ object Seen {
     const val FULL_MOON_NIGHTS = "full_moon_nights"
     /** Recipes cooked at least once: the recipe book. */
     const val RECIPES = "recipes"
+    /** Festivals celebrated at least once (plan 09, D). */
+    const val FESTIVALS = "festivals"
     /** The kinds of request granted at least once. */
     const val REQUEST_KINDS = "request_kinds"
     /** The crops harvested at least once. */
@@ -224,6 +229,7 @@ data class ProgressState(
         is ProgressEvent.BirthdayCelebrated -> plus(Counter.BIRTHDAYS)
         is ProgressEvent.ThankYouJarFilled -> plus(Counter.THANK_YOU_JARS).keep("jar:THANK_YOU")
         is ProgressEvent.PhonesDown -> plus(Counter.PHONES_DOWN)
+        is ProgressEvent.FestivalCelebrated -> see(Seen.FESTIVALS, event.festival).plus(Counter.FESTIVALS).keep("festival:${event.festival}")
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0
             if (have <= 0) this

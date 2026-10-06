@@ -135,6 +135,22 @@ class ScenePreviewTest {
                     }
                 }
             }
+            // SCENE_PREVIEW_FESTIVAL=BLOSSOM_PICNIC (or LANTERN_NIGHT, GIFT_EXCHANGE) dresses the scene
+            // for that festival (plan 09, D): crowns on, lanterns rising, or gifts under the tree.
+            System.getenv("SCENE_PREVIEW_FESTIVAL")?.let { name ->
+                val f = com.example.data.Festival.valueOf(name)
+                com.example.data.Festivals.override = f
+                festivalStore = com.example.data.FestivalStore(com.example.data.InMemoryKeyValueStorage())
+                refreshFestival()
+                when (f) {
+                    com.example.data.Festival.BLOSSOM_PICNIC -> celebratePicnic(1, 2)
+                    com.example.data.Festival.LANTERN_NIGHT -> { releaseLanterns(); repeat(120) { update(1f / 60f, cw, ch) } }
+                    com.example.data.Festival.GIFT_EXCHANGE -> {
+                        festivalStore?.savePicks(f, com.example.data.CoupleDates.today().year, com.example.data.FestivalPicks(boy = "card", girl = "card"))
+                        refreshFestival()
+                    }
+                }
+            }
             // SCENE_PREVIEW_EMOTE=HEART,MUSIC_NOTE shows those emote bubbles over the girl and the boy.
             System.getenv("SCENE_PREVIEW_EMOTE")?.split(',')?.zip(listOf(girl, boy))?.forEach { (name, who) ->
                 who.emote = com.example.engine.EmoteType.valueOf(name.trim())
