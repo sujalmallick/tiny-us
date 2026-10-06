@@ -24,8 +24,8 @@ import platform.posix.memcpy
 
 /**
  * Polaroids on iOS: PNG files in the app's Documents/polaroids, the list in [PolaroidStore], and
- * Save to Photos through UIKit. A new Polaroid is the screen as it was when the heart was tapped;
- * the shared screens frame it as a card.
+ * Save to Photos through UIKit. A new Polaroid is the screen as it was when the heart was tapped,
+ * printed as a card ([IosPolaroidCard]) like Android's.
  */
 class IosPolaroidPhotos(storage: KeyValueStorage) : PolaroidPhotos {
     private val store = PolaroidStore(storage) { path -> NSFileManager.defaultManager.removeItemAtPath(path, error = null) }
@@ -41,7 +41,14 @@ class IosPolaroidPhotos(storage: KeyValueStorage) : PolaroidPhotos {
 
     override fun deletePolaroid(id: String) = store.deletePolaroid(id)
 
-    override fun loadCard(memory: PolaroidMemory): ImageBitmap? = decode(memory.imagePath)
+    /** The card for [memory]; a bare screenshot from an earlier version is printed as a card first. */
+    override fun loadCard(memory: PolaroidMemory): ImageBitmap? {
+        val image = decodeSkia(memory.imagePath) ?: return null
+        if (image.height.toFloat() / image.width.toFloat() <= 1.7f) return image.toComposeImageBitmap()
+        val card = IosPolaroidCard.render(image, memory.title, memory.date, memory.time, memory.sceneName)
+        card.encodeToData(EncodedImageFormat.PNG)?.bytes?.toNSData()?.writeToFile(memory.imagePath, atomically = true)
+        return card.toComposeImageBitmap()
+    }
 
     override fun loadThumbnail(path: String, maxWidth: Int): ImageBitmap? = decode(path)
 
@@ -59,29 +66,36 @@ class IosPolaroidPhotos(storage: KeyValueStorage) : PolaroidPhotos {
         val shot = renderer.imageWithActions { _ ->
             window.drawViewHierarchyInRect(window.bounds, afterScreenUpdates = true)
         }
-        val png = UIImagePNGRepresentation(shot) ?: return null
-        val bytes = png.toByteArray()
-        val bitmap = runCatching { SkiaImage.makeFromEncoded(bytes).toComposeImageBitmap() }.getOrNull() ?: return null
+        val shotPng = UIImagePNGRepresentation(shot) ?: return null
+        val scene = runCatching { SkiaImage.makeFromEncoded(shotPng.toByteArray()) }.getOrNull() ?: return null
+
+        val title = store.pickTitle(sceneEnvKey, isNight, isSunset)
+        val date = store.formattedDate()
+        val time = store.formattedTime()
+        val card = IosPolaroidCard.render(scene, title, date, time, sceneName)
+        val cardPng = card.encodeToData(EncodedImageFormat.PNG)?.bytes ?: return null
 
         val path = "$folder/pol_${Clock.System.now().toEpochMilliseconds()}_${Uuid.random().toString().take(6)}.png"
-        if (!png.writeToFile(path, atomically = true)) return null
+        if (!cardPng.toNSData().writeToFile(path, atomically = true)) return null
         val memory = PolaroidMemory(
             id = Uuid.random().toString(),
-            title = store.pickTitle(sceneEnvKey, isNight, isSunset),
-            date = store.formattedDate(),
-            time = store.formattedTime(),
+            title = title,
+            date = date,
+            time = time,
             sceneName = sceneName,
             sceneEnvKey = sceneEnvKey,
             imagePath = path
         )
         store.savePolaroid(memory)
-        return bitmap to memory
+        return card.toComposeImageBitmap() to memory
     }
 
-    private fun decode(path: String): ImageBitmap? {
+    private fun decodeSkia(path: String): SkiaImage? {
         val data = NSData.dataWithContentsOfFile(path) ?: return null
-        return runCatching { SkiaImage.makeFromEncoded(data.toByteArray()).toComposeImageBitmap() }.getOrNull()
+        return runCatching { SkiaImage.makeFromEncoded(data.toByteArray()) }.getOrNull()
     }
+
+    private fun decode(path: String): ImageBitmap? = decodeSkia(path)?.toComposeImageBitmap()
 
     /** The image's pixels as PNG bytes (read back and encoded by Skia, as the pixel buffer does). */
     private fun encodePng(image: ImageBitmap): ByteArray? = runCatching {
