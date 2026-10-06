@@ -28,6 +28,7 @@ import com.example.scene.WeatherMemory
 import com.example.scene.WeatherType
 import com.example.widget.TinyUsWidgetProvider
 import com.example.widget.WidgetState
+import com.example.resources.*
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -74,6 +75,17 @@ class AndroidMainPlatform(private val context: Context) : MainPlatform {
         if (WidgetState.save(context, scene, weather)) TinyUsWidgetProvider.updateAllWidgets(context)
     }
 
+    override fun birthdaysChanged() = com.example.care.BirthdayReminder.schedule(context)
+
+    private fun birthdayPolaroidTitle(): String? {
+        val name = when (com.example.engine.SpecialDays.today()) {
+            com.example.engine.SpecialDay.BOY_BIRTHDAY -> prefs.boyfriendName
+            com.example.engine.SpecialDay.GIRL_BIRTHDAY -> prefs.girlfriendName
+            else -> return null
+        }
+        return com.example.engine.GameText.get(com.example.resources.Res.string.bday_polaroid_title, name)
+    }
+
     override fun loadLocalProfile(): Boolean = ProfileManager.loadFromLocalFile(context)
 
     @Composable
@@ -113,7 +125,9 @@ class AndroidMainPlatform(private val context: Context) : MainPlatform {
                     }.getOrNull()
                 } ?: return@PolaroidCamera null
 
-                val title = polaroids.pickTitle(sceneEnvKey = sceneEnvKey, isNight = isNight, isSunset = isSunset)
+                // On a birthday the Polaroid says so (plan 09, A).
+                val title = birthdayPolaroidTitle()
+                    ?: polaroids.pickTitle(sceneEnvKey = sceneEnvKey, isNight = isNight, isSunset = isSunset)
                 val date = polaroids.formattedDate()
                 val time = polaroids.formattedTime()
                 val card = withContext(Dispatchers.Default) {

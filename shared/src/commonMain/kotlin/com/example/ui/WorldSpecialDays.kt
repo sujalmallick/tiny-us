@@ -201,3 +201,44 @@ private fun confetti(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Flo
         else scope.drawRect(c, Offset(xx, y), Size(p, 2f * p))
     }
 }
+
+/**
+ * The birthday party (plan 09, A): a cloth banner with the birthday person's name across the
+ * wall, and the wrapped gift at their feet until it's opened. Drawn only while the party is on.
+ */
+fun drawBirthdayParty(scope: DrawScope, engine: com.example.scene.SceneEngine, cw: Float, ch: Float, p: Float) {
+    val surprise = engine.birthdaySurprise
+    if (!surprise.partyOn(com.example.data.CoupleDates.today()) || surprise.birthdayOf.isEmpty()) return
+    if (engine.currentScene != com.example.scene.SceneType.SLEEP) return
+
+    // Banner: two lines, "Happy birthday" and the name, on a pink cloth with a gold edge.
+    val names = surprise.birthdayOf.map { if (it == com.example.data.Partner.BOY) engine.boy.name else engine.girl.name }
+    val name = names.joinToString(" & ")
+    val bw = 76
+    val bh = 20
+    val left = cw / 2f - bw / 2f * p
+    val top = ch * 0.27f
+    scope.drawRect(Color(0xFF8C6D5A), Offset(left - 3f * p, top - 2f * p), Size(p, 3f * p))
+    scope.drawRect(Color(0xFF8C6D5A), Offset(left + (bw + 2) * p, top - 2f * p), Size(p, 3f * p))
+    scope.drawRect(Color(0xFFE5677F), Offset(left - p, top - p), Size((bw + 2) * p, (bh + 2) * p))
+    scope.drawRect(Color(0xFFFFE3EA), Offset(left, top), Size(bw * p, bh * p))
+    for (i in 0 until bw step 4) scope.drawRect(Color(0xFFFFD166), Offset(left + i * p, top + (bh - 1) * p), Size(2f * p, p))
+    com.example.engine.PixelFont.drawCentered(scope, "HAPPY BIRTHDAY", left, top + p, bw, 8, p, Color(0xFFE5677F))
+    com.example.engine.PixelFont.drawCentered(scope, name, left, top + 9f * p, bw, 9, p, Color(0xFF5B3A4A), shadow = Color(0x33E5677F))
+
+    // The gift box at the birthday person's feet, wobbling until it's opened.
+    if (!surprise.showsGift) return
+    val who = surprise.birthdayOf.first()
+    val c = if (who == com.example.data.Partner.BOY) engine.boy else engine.girl
+    val gx = cw * (c.worldX + if (who == com.example.data.Partner.BOY) -0.07f else 0.07f)
+    val gy = ch * (c.worldY + 0.02f)
+    val wobble = if (sin(engine.sceneTime * 9f) > 0.6f) p else 0f
+    val w = 12f * p
+    val h = 9f * p
+    scope.drawRect(Color(0x33000000), Offset(gx - w / 2f - p, gy - p), Size(w + 2f * p, 2f * p))
+    scope.drawRect(Color(0xFF7FB3E0), Offset(gx - w / 2f + wobble, gy - h), Size(w, h))
+    scope.drawRect(Color(0xFF5E93C4), Offset(gx - w / 2f - p + wobble, gy - h - 3f * p), Size(w + 2f * p, 3f * p)) // lid
+    scope.drawRect(Color(0xFFFF6B9A), Offset(gx - p + wobble, gy - h - 3f * p), Size(2f * p, h + 3f * p)) // ribbon
+    scope.drawRect(Color(0xFFFF6B9A), Offset(gx - 4f * p + wobble, gy - h - 6f * p), Size(3f * p, 3f * p)) // bow
+    scope.drawRect(Color(0xFFFF6B9A), Offset(gx + p + wobble, gy - h - 6f * p), Size(3f * p, 3f * p))
+}

@@ -40,7 +40,9 @@ data class StoryInput(
     /** Calendar date each earned bloom first appeared, by bloom index. */
     val gardenBloomDates: Map<Int, LocalDate> = emptyMap(),
     /** "Little firsts" the couple earned (id to date and title), shown as milestones. */
-    val littleFirsts: List<Triple<String, LocalDate, String>> = emptyList()
+    val littleFirsts: List<Triple<String, LocalDate, String>> = emptyList(),
+    /** Birthday parties (plan 09, A), from [StoryTimeline.birthdayEntries]. */
+    val birthdays: List<StoryEntry> = emptyList()
 )
 
 /**
@@ -112,11 +114,27 @@ object StoryTimeline {
         input.littleFirsts.forEach { (id, date, title) ->
             entries += StoryEntry(id = "first:$id", kind = StoryKind.MILESTONE, date = date, title = title, iconKey = "first")
         }
+        entries += input.birthdays
 
         // Chronological; undated entries last, keeping their original order.
         return entries.withIndex()
             .sortedWith(compareBy<IndexedValue<StoryEntry>>({ it.value.date == null }, { it.value.date }, { kindOrder(it.value.kind) }, { it.index }))
             .map { it.value }
+    }
+
+    /**
+     * One entry per birthday party, titled by [titleFor] (for example "Sprout's birthday"), with
+     * the sealed letter that was opened at it as the body. The wish stays private and isn't shown.
+     */
+    fun birthdayEntries(store: BirthdayStore, titleFor: (BirthdayRecord) -> String): List<StoryEntry> {
+        val letters = store.letters().associateBy { it.id }
+        return store.records().mapNotNull { r ->
+            val date = Birthdays.parse(r.date) ?: return@mapNotNull null
+            StoryEntry(
+                id = "birthday:${r.partner}:${r.date}", kind = StoryKind.MILESTONE, date = date,
+                title = titleFor(r), body = r.letterId?.let { letters[it]?.body }.orEmpty(), iconKey = "birthday"
+            )
+        }
     }
 
     fun groupByMonth(entries: List<StoryEntry>): List<StorySection> {

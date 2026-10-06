@@ -104,6 +104,12 @@ fun loadStory(
         littleFirsts = progress.firsts.mapNotNull { (id, day) ->
             val first = com.example.progress.LittleFirsts.byId(id) ?: return@mapNotNull null
             Triple(id, kotlinx.datetime.LocalDate.fromEpochDays(day.toInt()), titleOf(first.title))
+        },
+        // Birthday parties (plan 09, A), with the sealed letter opened at each.
+        birthdays = StoryTimeline.birthdayEntries(com.example.data.BirthdayStore(prefs.storage)) { r ->
+            val name = if (r.partner == com.example.data.Partner.BOY) prefs.boyfriendName else prefs.girlfriendName
+            if (r.age != null) com.example.engine.GameText.get(com.example.resources.Res.string.bday_turned_age, name, r.age)
+            else com.example.engine.GameText.get(com.example.resources.Res.string.bday_story_title, name)
         }
     )
     return StoryTimeline.build(input, today)

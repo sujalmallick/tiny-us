@@ -265,22 +265,22 @@ These are on the site and legal-pages side, not the app:
 
 ## Build checklist
 
-This is the working list; it is ticked as things land. **Blocked (IOS)** marks items that edit `SettingsBottomSheet`, `MainScreen`, `OurStoryDialog`, `WardrobeDialog` or `ProgressStore`. IOS is moving those files to `commonMain` in `ios/s4-settings` and `ios/s4-main`, so those items wait until both merge.
+This is the working list; it is ticked as things land. The screens IOS moved to `commonMain` (`SettingsBottomSheet`, `MainScreen`, `OurStoryDialog`, `WardrobeDialog`, `ProgressStore`) landed in #24 and #25, so nothing is blocked any more.
 
 ### A. Birthday surprise (branch `feature/plan09-a-birthday`)
-- [ ] A-1. A `SealedLetter` model and store in shared data:
+- [x] A-1. A `SealedLetter` model and store in shared data:
   - fields: id, recipient (BOY/GIRL), kind (BIRTHDAY / OPEN_WHEN), occasion text, body, author, createdAt, opensOn (a date, for birthdays) and openedAt;
   - JSON in `tiny_us_prefs`, so backups carry it;
   - not shown in Love Notes or Our Story until opened.
-- [ ] A-2. `Birthdays` logic, pure and tested:
+- [x] A-2. `Birthdays` logic, pure and tested:
   - the next birthday for each partner, and days until it;
   - whether today is a birthday, or within the 3-day "belated" window if the app wasn't opened on the day;
   - both on the same day; 29 February; the age only when a birth year is known;
   - whether the letter hint should show (14 days before);
   - the party already held this year.
-- [ ] A-3. `HeldItem.CAKE`, with art: carried and at the chest, candles lit or blown out.
-- [ ] A-4. Party hat art: a wardrobe accessory, plus Mochi's tiny hat in the world.
-- [ ] A-5. The surprise cinematic in `SceneEngine` (a `BirthdaySurprise` state machine), started from `greetSpecialDay` on a birthday, so `MainScreen` isn't touched:
+- [x] A-3. `HeldItem.CAKE`, with art: carried and at the chest, candles lit or blown out.
+- [x] A-4. Party hat art: a wardrobe accessory (index 10). *Mochi wears a pink and yellow party ruff in the collar slot instead of a hat, since her head moves with every pose.*
+- [x] A-5. The surprise cinematic in `SceneEngine` (a `BirthdaySurprise` state machine), started from `greetSpecialDay` on a birthday, so `MainScreen` isn't touched:
   - DARK: the room is dim, and the caption "Hmm, why is it so dark?";
   - LIGHTS: a tap turns the lamp on;
   - SURPRISE: confetti and a name banner, the partner holds the cake, Mochi in a hat;
@@ -288,24 +288,24 @@ This is the working list; it is ticked as things land. **Blocked (IOS)** marks i
   - WISH: an optional wish;
   - GIFT: the box wobbles, and a tap opens the sealed letter;
   - then a day-long party mode.
-- [ ] A-6. Party mode for the day:
+- [x] A-6. Party mode for the day:
   - balloons in every scene (exists), a name banner, the birthday person in the party hat;
   - a "Happy birthday" line when either character is tapped;
-  - a birthday frame on polaroids.
-- [ ] A-7. Overlays in shared UI, called from the engine's state:
+  - a birthday frame on polaroids. *Done as a birthday title on the card ("Happy birthday, Sprout"); the photo already shows the banner and hats.*
+- [x] A-7. Overlays in shared UI, called from the engine's state:
   - the wish field (optional; saved privately);
   - the letter reader for the sealed letter.
-- [ ] A-8. Progress:
+- [x] A-8. Progress:
   - the first, "A birthday surprise", which unlocks the party hat;
   - a birthday entry in Our Story (`StoryTimeline`) with the year, the wish (private) and the letter.
-- [ ] A-9. Onboarding gets an optional "Your birthdays" step with date pickers (month and day, year optional) and a skip. `OnboardingDialog` is already common.
-- [ ] A-10. **Blocked (IOS).** Settings > Our World: date pickers replace the free-text fields, and old values migrate as they are. Plus two opt-in toggles: "Birthday letter reminders" and "Morning surprise reminder".
-- [ ] A-11. The letter hint, 14 days before:
+- [x] A-9. Onboarding gets an optional "Your birthdays" step with date pickers (month and day, year optional) and a skip. `OnboardingDialog` is already common.
+- [x] A-10. Settings > Our World: date pickers replace the free-text fields, and old values migrate as they are. Plus two opt-in toggles: "Birthday letter reminders" and "Morning surprise reminder".
+- [x] A-11. The letter hint, 14 days before:
   - a line on the special calendar and a flag on the mailbox: "A birthday is coming. Want to leave a sealed letter?";
   - the writer dialog for a sealed letter;
-  - **Blocked (IOS)** only for any `MainScreen` entry point.
-- [ ] A-12. The morning reminder on the day (Android, opt-in, through `TinyCareScheduler`'s alarm path, which survives a reboot): "Something is waiting for you in Tiny Us today." It never names whose birthday it is.
-- [ ] A-13. Tests:
+  - *Shown in Settings > Our World and in the special calendar. The mailbox flag comes with G-1.*
+- [x] A-12. The morning reminder on the day (Android, opt-in, through `TinyCareScheduler`'s alarm path, which survives a reboot): "Something is waiting for you in Tiny Us today." It never names whose birthday it is.
+- [x] A-13. Tests:
   - the date logic;
   - the letter stays hidden until the day;
   - the surprise runs through every state, and a tap at each step works;
@@ -320,7 +320,7 @@ This is the working list; it is ticked as things land. **Blocked (IOS)** marks i
 - [ ] B-3. A Story Quiz generator from the couple's own data (polaroids, dishes, anniversary month, discoveries, the first fish). It's hidden until it can make 5 questions.
 - [ ] B-4. One dialog in shared UI: pick a game, then each turn ("Bean, pick", hidden, "Sprout, pick"), then the reveal. It replaces `TwoPersonMiniGameDialog`.
 - [ ] B-5. Reactions in the world: a match makes both jump with hearts, a miss gets a shrug and "Opposites attract". The end of a round shows "You matched N of 5".
-- [ ] B-6. Started from the game board prop, and from Settings (**Blocked (IOS)**).
+- [ ] B-6. Started from the game board prop, and from Settings.
 - [ ] B-7. Website parity (J): the Daily Moments deck grows from 10 to 120 or more, by season; Date Adventures grow from 7 to 30 or more.
 - [ ] B-8. Tests: turns hide answers, the quiz is never empty, no repeats within a round. Renders of the dialog.
 
@@ -376,7 +376,7 @@ This is the working list; it is ticked as things land. **Blocked (IOS)** marks i
 - [ ] G-1. A mailbox by the cottage in the meadow and home scenes, with a flag for unread mail.
 - [ ] G-2. Love notes get a recipient and a read state (a migration), with sealed envelopes.
 - [ ] G-3. A daily letter catalog (Mochi, Bao, Leo, recipes, festivals), at most one a day.
-- [ ] G-4. A letters page in Our Story (**Blocked (IOS)** until `OurStoryDialog` lands).
+- [ ] G-4. A letters page in Our Story.
 - [ ] G-5. Tests.
 
 ### H. Collection book

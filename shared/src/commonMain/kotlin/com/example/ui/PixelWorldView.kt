@@ -241,6 +241,8 @@ fun PixelWorldView(
                         val tapOffset = camera.toWorld(screenTap)
                         // The user is playing: the couple's own routine steps aside for a moment.
                         engine.notifyUserInteraction()
+                        // The birthday surprise (plan 09, A) takes taps while it runs.
+                        if (engine.onBirthdayTap(camera.worldW, camera.worldH)) return@detectTapGestures
                         if (engine.isDreamMode) {
                             engine.particles.spawnSparkles(tapOffset.x, tapOffset.y, 4)
                             return@detectTapGestures
@@ -1173,6 +1175,13 @@ fun PixelWorldView(
             @Suppress("UNUSED_VARIABLE")
             val currentFrame = frameNanos // Explicitly read frameNanos to trigger continuous 60 FPS redraws!
             drawWorld(engine, lowResBuffer, cameraNow())
+            // The birthday surprise opens in the dark (plan 09, A).
+            val dark = engine.birthdaySurprise.darkness
+            if (dark > 0f) drawRect(Color(0xFF05070F).copy(alpha = 0.88f * dark))
+        }
+        // The surprise's wish and sealed letter, over the world (only once the app gave the engine its store).
+        if (engine.birthdayStore != null) {
+            BirthdaySurpriseOverlay(engine)
         }
 
         val camera = cameraNow()
@@ -1487,7 +1496,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                         catState = engine.catState,
                         isSnow = isSnow,
                         facingLeft = engine.catFacingLeft,
-                        collarStyle = engine.mochiCollarStyle
+                        collarStyle = if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle
                     )
                 }
             }
@@ -1694,6 +1703,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         com.example.engine.SpecialDays.today()?.let { day ->
             drawSpecialDayDecor(this, day, cw, ch, pixelScale, engine.sceneTime, isNight || timePhase.isMidnight)
         }
+        // The birthday party (plan 09, A): a banner, and the gift box until it's opened.
+        drawBirthdayParty(this, engine, cw, ch, pixelScale)
 
         // Atmospheric Lighting & Time-of-Day Layering
         val isTwilight = timePhase.isTwilight

@@ -534,6 +534,9 @@ object WorldSprites {
     /**
      * Draw the cute Kitty Cat ("Mochi").
      */
+    /** Mochi's collar style for the birthday party ruff (the chosen collars are 0 to 2). */
+    const val PARTY_COLLAR = 3
+
     fun drawCat(
         scope: DrawScope,
         cx: Float,
@@ -796,6 +799,16 @@ object WorldSprites {
                     scope.drawRect(scarfRed, Offset(left + 4f * p, top + 2f * p + walkFlutter), Size(3.5f * p, 2f * p))
                     scope.drawRect(scarfFringe, Offset(left + 2.8f * p, top + 2f * p + walkFlutter), Size(1.4f * p, 2f * p))
                 }
+            }
+        }
+        if (collarStyle == PARTY_COLLAR) {
+            // A frilly party ruff for a birthday (plan 09, A): pink and yellow points round the neck.
+            val neckY = groundY - 6.2f * p
+            val colors = listOf(Color(0xFFFF6B9A), Color(0xFFFFD166))
+            for (i in 0 until 4) {
+                val x = cx - 3.2f * p + i * 1.6f * p
+                scope.drawRect(colors[i % 2], Offset(x, neckY), Size(1.6f * p, 1.3f * p))
+                scope.drawRect(colors[i % 2], Offset(x + 0.4f * p, neckY + 1.3f * p), Size(0.8f * p, 0.8f * p))
             }
         }
         if (collarStyle == 1 || collarStyle == 2) {

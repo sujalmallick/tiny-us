@@ -67,7 +67,9 @@ fun SpecialCalendarDialog(
     onDismiss: () -> Unit,
     audio: WorldAudio? = null,
     boyfriendName: String = com.example.data.ProfileManager.getProfile().boyName,
-    girlfriendName: String = com.example.data.ProfileManager.getProfile().girlName
+    girlfriendName: String = com.example.data.ProfileManager.getProfile().girlName,
+    /** When given, a coming birthday offers a sealed letter here (plan 09, A). */
+    birthdayStore: com.example.data.BirthdayStore? = null
 ) {
     var displayedYearMonth by remember { mutableStateOf(CoupleDates.today().firstOfMonth()) }
     var selectedMemory by remember { mutableStateOf<TinyUsMemory?>(null) }
@@ -96,6 +98,7 @@ fun SpecialCalendarDialog(
                 .padding(start = TinySpace.lg, end = TinySpace.lg, bottom = TinySpace.xl),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            birthdayStore?.let { BirthdayLetterHint(it, boyfriendName, girlfriendName, Modifier.padding(bottom = TinySpace.md)) }
             // Today's Special Event Banner (if today has an event!)
             if (todayMemories.isNotEmpty()) {
                 val firstToday = todayMemories.first()
@@ -379,7 +382,9 @@ fun CalendarMemoryDetailCard(
             Spacer(modifier = Modifier.height(TinySpace.xs))
 
             val formattedDate = remember(memory.date) {
-                DateText.format(memory.date, "dd MMMM yyyy")
+                // A birthday saved without its year shows just the day (plan 09, A).
+                if (com.example.data.Birthdays.hasYear(memory.date)) DateText.format(memory.date, "dd MMMM yyyy")
+                else DateText.format(memory.date, "dd MMMM")
             }
             Text(
                 text = formattedDate,

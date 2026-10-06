@@ -138,6 +138,8 @@ fun MainScreen(
     var showAvatarCustomizer by remember { mutableStateOf(false) }
     var showOurStory by remember { mutableStateOf(false) }
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
+    // Birthdays, sealed letters and the surprise party (plan 09, A).
+    val birthdayStore = remember(prefs) { com.example.data.BirthdayStore(prefs.storage) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
         mutableStateOf(
@@ -242,6 +244,10 @@ fun MainScreen(
             // Carry on the last visit's weather, or start from today's season.
             changeWeather(platform.startWeather())
         }
+    }
+    // The birthday surprise waits until the couple has finished the first setup (and never in previews).
+    LaunchedEffect(showOnboarding) {
+        if (!showOnboarding && previewEngine == null) engine.birthdayStore = birthdayStore
     }
 
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
@@ -1205,6 +1211,7 @@ fun MainScreen(
                     glassIntensity = prefs.buttonGlassIntensity
                     syncCoupleDates(prefs)
         com.example.engine.SpecialDays.refresh()
+                    platform.birthdaysChanged()
                 },
                 onReplayScene = {
                     engine.loadScene(engine.currentScene)
@@ -1313,6 +1320,7 @@ fun MainScreen(
                 initialAnniversaryDate = runCatching { kotlinx.datetime.LocalDate.parse(prefs.anniversaryDate) }.getOrDefault(com.example.data.CoupleDates.today()),
                 initialSecretCode = prefs.secretCode,
                 initialSecretNote = prefs.secretCodeBody,
+                birthdayStore = birthdayStore,
                 onDismiss = {
                     prefs.isOnboardingCompleted = true
                     showOnboarding = false
@@ -1330,6 +1338,8 @@ fun MainScreen(
                     com.example.engine.SpecialDays.refresh()
                     CoupleCalendar.boyName = bName
                     CoupleCalendar.girlName = gName
+                    syncCoupleDates(prefs)
+                    platform.birthdaysChanged()
 
                     showOnboarding = false
                 }
@@ -1354,7 +1364,8 @@ fun MainScreen(
                 onDismiss = { showSpecialCalendar = false },
                 audio = audio,
                 boyfriendName = prefs.boyfriendName,
-                girlfriendName = prefs.girlfriendName
+                girlfriendName = prefs.girlfriendName,
+                birthdayStore = birthdayStore
             )
         }
 
