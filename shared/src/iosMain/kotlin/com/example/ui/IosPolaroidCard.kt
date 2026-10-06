@@ -25,8 +25,9 @@ object IosPolaroidCard {
     /** 7x6 pixel heart for the watermark ('X' = filled cell). */
     private val PIXEL_HEART = listOf(".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X...")
 
-    private fun typeface(family: String, style: FontStyle): Typeface =
-        FontMgr.default.matchFamilyStyle(family, style) ?: Typeface.makeDefault()
+    /** The named font, or null for Skia's default (a Font takes null as "the default typeface"). */
+    private fun typeface(family: String, style: FontStyle): Typeface? =
+        FontMgr.default.matchFamilyStyle(family, style)
 
     private fun fill(argb: Long) = Paint().apply { color = argb.toInt(); isAntiAlias = true; mode = PaintMode.FILL }
 
