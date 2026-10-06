@@ -57,10 +57,7 @@ object SpecialCalendarManager {
 
     // Base template memories (dynamic based on relationship start date & birthdays)
     val fixedMemories: List<TinyUsMemory>
-        get() {
-            RelationshipTimeManager.relationshipStartDate // the start date is synced on first use
-            return CoupleCalendar.fixedMemories
-        }
+        get() = CoupleCalendar.fixedMemories
 
     fun getMemoriesForDate(date: LocalDate): List<TinyUsMemory> = CoupleCalendar.getMemoriesForDate(date.toKotlinLocalDate())
 

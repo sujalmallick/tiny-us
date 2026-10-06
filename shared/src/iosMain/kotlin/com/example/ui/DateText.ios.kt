@@ -20,6 +20,20 @@ actual object DateText {
         return formatter.stringFromDate(day)
     }
 
+    actual fun mediumDate(date: LocalDate): String {
+        val parser = NSDateFormatter()
+        parser.locale = NSLocale(localeIdentifier = "en_US_POSIX")
+        parser.timeZone = utc!!
+        parser.dateFormat = "yyyy-MM-dd"
+        val day = parser.dateFromString(date.toString()) ?: return date.toString()
+        val formatter = NSDateFormatter()
+        formatter.locale = NSLocale.currentLocale
+        formatter.timeZone = utc
+        formatter.dateStyle = NSDateFormatterMediumStyle
+        formatter.timeStyle = NSDateFormatterNoStyle
+        return formatter.stringFromDate(day)
+    }
+
     @Suppress("UNCHECKED_CAST")
     actual fun shortWeekdays(): List<String> {
         val formatter = NSDateFormatter()

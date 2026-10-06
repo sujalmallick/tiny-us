@@ -36,6 +36,8 @@ class MainActivity : FragmentActivity() {
         enableHighRefreshRate()
         AppLock.onActivityCreated(this, lockStore)
         com.example.care.TinyCareScheduler.createNotificationChannel(this)
+        // The opt-in birthday morning reminder (plan 09, A) follows the saved birthdays.
+        com.example.care.BirthdayReminder.schedule(this)
         checkTinyCarePermissionStatus()
         val sc = intent?.getStringExtra("scene")
         val at = intent?.getStringExtra("atmosphere")

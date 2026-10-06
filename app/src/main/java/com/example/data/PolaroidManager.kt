@@ -287,6 +287,14 @@ class PolaroidManager(private val context: Context) : PolaroidPhotos {
 
     override fun saveToGallery(card: ImageBitmap, title: String): Boolean = saveToDeviceGallery(card.asAndroidBitmap(), title)
 
+    override fun loadThumbnail(path: String, maxWidth: Int): ImageBitmap? = runCatching {
+        val bounds = android.graphics.BitmapFactory.Options().apply { inJustDecodeBounds = true }
+        android.graphics.BitmapFactory.decodeFile(path, bounds)
+        var sample = 1
+        while (bounds.outWidth / (sample * 2) >= maxWidth) sample *= 2
+        android.graphics.BitmapFactory.decodeFile(path, android.graphics.BitmapFactory.Options().apply { inSampleSize = sample })?.asImageBitmap()
+    }.getOrNull()
+
     // ─── Metadata, titles and dates (shared PolaroidStore) ───────────────────
 
     override fun getPolaroids(): List<PolaroidMemory> = store.getPolaroids()

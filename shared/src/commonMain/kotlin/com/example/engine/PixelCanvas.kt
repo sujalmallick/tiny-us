@@ -65,7 +65,12 @@ enum class EmoteType {
 
 /** Something a character carries in one hand. The engine hands them out; [PixelArtRenderer] draws them. */
 enum class HeldItem {
-    NONE, MUG, BOOK, WATERING_CAN, MISTER, FLOWER, LEAF, LOVE_NOTE, SEASHELL, STAR_PEBBLE, YARN_BALL, LANTERN;
+    NONE, MUG, BOOK, WATERING_CAN, MISTER, FLOWER, LEAF, LOVE_NOTE, SEASHELL, STAR_PEBBLE, YARN_BALL, LANTERN,
+    /** A birthday cake with three candles (plan 09, A); [PixelCharacter.heldItemState] says which are lit. */
+    CAKE;
+
+    /** Always carried in both hands at the chest, never hanging from one. */
+    val heldInBothHands: Boolean get() = this == CAKE
 
     /** Used at arm's length (pouring, spraying, lighting the way) rather than brought up to the chest. */
     val isTool: Boolean get() = this == WATERING_CAN || this == MISTER || this == LANTERN
@@ -170,6 +175,13 @@ data class PixelCharacter(
     var heldItemTimeLeft: Float = 0f
     /** While above 0 the item is raised and in use: sipping, reading, pouring. */
     var heldItemUse: Float = 0f
+    /** Item-specific state: for the cake, bit i set means candle i is still lit. */
+    var heldItemState: Int = 0
+    /** Raised in front of them: in use, or an item that's always held in both hands. */
+    val heldItemRaised: Boolean get() = heldItem != HeldItem.NONE && (heldItemUse > 0f || heldItem.heldInBothHands)
+
+    /** A party hat for the birthday (plan 09, A), worn over whatever accessory they chose. */
+    var wearsPartyHat: Boolean = false
 
     /** Take [item] for [seconds], using it straight away for [useSeconds]. */
     fun hold(item: HeldItem, seconds: Float, useSeconds: Float = 0f) {
@@ -177,6 +189,7 @@ data class PixelCharacter(
         heldItemAge = 0f
         heldItemTimeLeft = seconds
         heldItemUse = useSeconds
+        heldItemState = 0
     }
 
     fun putAwayHeldItem() {
@@ -184,6 +197,7 @@ data class PixelCharacter(
         heldItemAge = 0f
         heldItemTimeLeft = 0f
         heldItemUse = 0f
+        heldItemState = 0
     }
 
     /**
@@ -373,6 +387,8 @@ object PixelArtRenderer {
 
     /** Uniform 10% character size increase applied to every scene automatically. */
     const val CHARACTER_SCALE_FACTOR = 1.10f
+    /** The party hat's accessory index (a reward from the first birthday surprise). */
+    const val PARTY_HAT_ACCESSORY = 10
 
 
     data class GirlDressPalette(
@@ -633,7 +649,7 @@ object PixelArtRenderer {
         }
 
         // Layer accessories on top of character (unless in snow mode where winter gear is worn)
-        if (!isSnow && char.accessoryIndex > 0) {
+        if (char.wearsPartyHat || (!isSnow && char.accessoryIndex > 0)) {
             drawAccessory(drawScope, char, startX, startY + poseOffsetY, p, flip)
         }
 
@@ -1075,7 +1091,12 @@ object PixelArtRenderer {
                 fillRect(13, 11, 2, 3, sweaterColor)
                 fillRect(13, 9, 2, 2, handColor)
             }
-            else -> if (char.heldItem != HeldItem.NONE && char.heldItemUse > 0f && !char.heldItem.isTool) {
+            else -> if (char.heldItem.heldInBothHands) {
+                // A cake is carried low in both hands, under its plate, clear of the face
+                fillRect(5, 13, 2, 5, sweaterColor)
+                fillRect(11, 13, 2, 5, sweaterColor)
+                fillRect(7, 18, 4, 1, handColor)
+            } else if (char.heldItemRaised && !char.heldItem.isTool) {
                 // Both hands bring the item up to the chest: a sip, a read, a sniff
                 fillRect(5, 13, 2, 3, sweaterColor)
                 fillRect(11, 13, 2, 3, sweaterColor)
@@ -1084,7 +1105,7 @@ object PixelArtRenderer {
                 // Natural relaxed arms at sides
                 fillRect(4, 13, 2, 4, sweaterColor)
                 fillRect(4, 17, 1, 1, handColor)
-                if (char.heldItem != HeldItem.NONE && char.heldItemUse > 0f && char.heldItem.isTool) {
+                if (char.heldItemRaised && char.heldItem.isTool) {
                     // Front arm brought up to use the tool
                     fillRect(12, 14, 3, 2, sweaterColor)
                     fillRect(15, 14, 1, 2, handColor)
@@ -1106,12 +1127,12 @@ object PixelArtRenderer {
                 char.pose !in EMPTY_HAND_POSES -> {
                     val y0 = startY - char.breathingOffset
                     when {
-                        char.heldItemUse <= 0f ->
+                        !char.heldItemRaised ->
                             // Carried in the outer hand, clear of whoever they're standing beside
                             drawHeldItem(scope, char, startX, y0, p, flip, 4, 17, raised = false, backHand = true)
                         char.heldItem.isTool ->
                             drawHeldItem(scope, char, startX, y0, p, flip, 15, 14, raised = true, backHand = false)
-                        else -> drawHeldAtChest(scope, char, startX, y0, p, flip, bottomY = 14)
+                        else -> drawHeldAtChest(scope, char, startX, y0, p, flip, bottomY = if (char.heldItem.heldInBothHands) 17 else 14)
                     }
                 }
             }
@@ -1479,7 +1500,12 @@ object PixelArtRenderer {
 
         // Held item rests on the hands in the lap, raised a little while in use
         if (char.heldItem != HeldItem.NONE) {
-            drawHeldAtChest(scope, char, startX, startY - char.breathingOffset, p, flip, bottomY = if (char.heldItemUse > 0f) 14 else 15)
+            val lapBottom = when {
+                char.heldItem.heldInBothHands -> 19
+                char.heldItemRaised -> 14
+                else -> 15
+            }
+            drawHeldAtChest(scope, char, startX, startY - char.breathingOffset, p, flip, bottomY = lapBottom)
         }
 
         // Sitting folded legs
@@ -1897,7 +1923,21 @@ object PixelArtRenderer {
             )
         }
 
-        when (char.accessoryIndex) {
+        when (if (char.wearsPartyHat) PARTY_HAT_ACCESSORY else char.accessoryIndex) {
+            PARTY_HAT_ACCESSORY -> {
+                // Party Hat (plan 09: a birthday surprise): a striped pink cone with a pom-pom
+                val cone = Color(0xFFFF6B9A)
+                val stripe = Color(0xFFFFD166)
+                px(9, -2, Color(0xFFFFF3B0))
+                px(9, -1, cone)
+                drawRect(8, 0, 3, 1, cone)
+                px(9, 0, stripe)
+                drawRect(8, 1, 3, 1, cone)
+                drawRect(7, 2, 5, 1, cone)
+                px(8, 2, stripe)
+                px(10, 2, stripe)
+                drawRect(6, 3, 7, 1, Color(0xFFE5677F))
+            }
             1 -> {
                 // Beanie (Cozy Ribbed Beanie): sits on crown gy 0..5
                 val beanieColor = if (char.isGirl) Color(0xFFE8998D) else Color(0xFF264653)
@@ -2387,7 +2427,19 @@ object PixelArtRenderer {
             "FgF",
             "FgF",
             "FFF"
-        ), mapOf('F' to Color(0xFF3D2C2E), 'g' to Color(0xFFFFD166)))
+        ), mapOf('F' to Color(0xFF3D2C2E), 'g' to Color(0xFFFFD166))),
+        // Flames ('f') are drawn per candle by drawHeldItem, only while lit.
+        HeldItem.CAKE to ItemArt(listOf(
+            ".f.f.f.",
+            ".c.c.c.",
+            "WWWWWWW",
+            "SpSSpSS",
+            "DDDDDDD",
+            "...h..."
+        ), mapOf(
+            'c' to Color(0xFF8ECAE6), 'W' to Color(0xFFFFF1F5), 'p' to Color(0xFFE5677F),
+            'S' to Color(0xFFF4C27A), 'D' to Color(0xFFDDE3EA)
+        ))
     )
 
     /** Held up in front while in use; items without an entry are just raised as carried. */
@@ -2468,6 +2520,13 @@ object PixelArtRenderer {
         art.rows.forEachIndexed { y, row ->
             row.forEachIndexed { x, ch ->
                 if (ch == '.' || ch == 'h') return@forEachIndexed
+                if (ch == 'f') {
+                    val candle = x / 2
+                    if (char.heldItemState and (1 shl candle) != 0) {
+                        dot(x - art.handX, y - art.handY, if (flicker xor (candle == 1)) Color(0xFFFFB703) else Color(0xFFFF7B00))
+                    }
+                    return@forEachIndexed
+                }
                 var color = art.colors[ch] ?: return@forEachIndexed
                 if (item == HeldItem.LANTERN && ch == 'g' && !flicker) color = Color(0xFFFFB703)
                 dot(x - art.handX, y - art.handY, color)

@@ -14,6 +14,9 @@ interface PolaroidPhotos {
     /** The finished card for [memory], or null if its image is gone. */
     fun loadCard(memory: PolaroidMemory): ImageBitmap?
 
+    /** A small version of the image at [path] (about [maxWidth] pixels wide), so a long story stays light. */
+    fun loadThumbnail(path: String, maxWidth: Int = 360): ImageBitmap?
+
     /** Saves [card] to the phone's photo library; true when it worked. */
     fun saveToGallery(card: ImageBitmap, title: String): Boolean
 }

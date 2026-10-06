@@ -73,6 +73,15 @@
         </receiver>
 
         <receiver
+            android:name="com.example.care.BirthdayReminderReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="com.tinyus.app.ACTION_BIRTHDAY_MORNING" />
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
             android:name="com.example.widget.TinyUsWidgetProvider"
             android:exported="true">
             <intent-filter>

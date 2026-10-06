@@ -248,5 +248,51 @@ class ScenePreviewTest {
         }
     }
 
+    /** SCENE_PREVIEW_BIRTHDAY=dir renders the birthday surprise's beats (plan 09, A) as PNGs. */
+    @Test
+    fun writesBirthdayFilmstripWhenAsked() {
+        val out = File(System.getenv("SCENE_PREVIEW_BIRTHDAY") ?: return).apply { mkdirs() }
+        val camera = WorldCamera.forScreen(cw, ch, SceneType.SLEEP, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
+        val w = camera.worldW
+        val h = camera.worldH
+        val today = com.example.data.CoupleDates.today()
+        val store = com.example.data.BirthdayStore(com.example.data.InMemoryKeyValueStorage())
+        store.setBirthday(com.example.data.Partner.GIRL, kotlinx.datetime.LocalDate(1996, today.month, today.day).toString())
+        val engine = SceneEngine(audio = AmbientAudio().apply { isEnabled = false }, onOpenLoveNotes = {}, onOpenMemories = {}).apply {
+            updateAtmosphereMode(System.getenv("SCENE_PREVIEW_PHASE") ?: "SUNSET")
+            loadScene(SceneType.FLOWER)
+            birthdayStore = store
+            birthdayOverlayShowing = true
+        }
+        fun frames(seconds: Float) = repeat((seconds * 60).toInt()) { engine.update(1f / 60f, w, h) }
+        fun shot(name: String) {
+            val frame = render(cw, ch) {
+                drawWorld(engine, LowResWorldBuffer(), camera)
+                val dark = engine.birthdaySurprise.darkness
+                if (dark > 0f) drawRect(Color(0xFF05070F).copy(alpha = 0.88f * dark))
+            }
+            save(frame, File(out, "birthday_$name.png"))
+            frame.recycle()
+        }
+        frames(1.5f)
+        shot("1_dark")
+        engine.onBirthdayTap(w, h)
+        frames(1.4f)
+        shot("2_surprise")
+        frames(3f)
+        engine.onBirthdayTap(w, h)
+        frames(0.3f)
+        shot("3_candles")
+        engine.onBirthdayTap(w, h)
+        engine.onBirthdayTap(w, h)
+        frames(1.2f)
+        engine.submitBirthdayWish("")
+        frames(0.5f)
+        shot("4_gift")
+        engine.onBirthdayTap(w, h)
+        frames(3f)
+        shot("5_party")
+    }
+
     private fun save(bmp: Bitmap, file: File) = file.outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
 }

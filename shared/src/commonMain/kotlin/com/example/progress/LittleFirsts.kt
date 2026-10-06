@@ -27,6 +27,7 @@ object Rewards {
     const val CHEF_APRON = "accessory_chef_apron"
     const val FISHER_HAT = "accessory_fisher_hat"
     const val FLOWER_CROWN = "accessory_flower_crown"
+    const val PARTY_HAT = "accessory_party_hat"
 }
 
 object LittleFirsts {
@@ -69,7 +70,8 @@ object LittleFirsts {
         LittleFirst("first_bloom", Res.string.first_bloom, Res.string.first_bloom_hint) { it.count(Counter.BLOOMS_PICKED) >= 1 },
         LittleFirst("first_bouquet", Res.string.first_bouquet, Res.string.first_bouquet_hint, Rewards.FLOWER_CROWN) { it.count(Counter.BOUQUETS) >= 1 },
         LittleFirst("first_request", Res.string.first_request, Res.string.first_request_hint) { it.count(Counter.REQUESTS) >= 1 },
-        LittleFirst("all_requests", Res.string.all_requests, Res.string.all_requests_hint) { it.seenSet(Seen.REQUEST_KINDS).size >= REQUEST_KIND_COUNT }
+        LittleFirst("all_requests", Res.string.all_requests, Res.string.all_requests_hint) { it.seenSet(Seen.REQUEST_KINDS).size >= REQUEST_KIND_COUNT },
+        LittleFirst("birthday_surprise", Res.string.first_birthday_surprise, Res.string.first_birthday_surprise_hint, Rewards.PARTY_HAT) { it.count(Counter.BIRTHDAYS) >= 1 }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

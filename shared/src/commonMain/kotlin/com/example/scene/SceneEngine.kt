@@ -1,6 +1,7 @@
 package com.example.scene
 
 import com.example.engine.GameText
+import com.example.data.CoupleDates
 import com.example.engine.WorldViewport
 
 import androidx.compose.runtime.getValue
@@ -599,6 +600,15 @@ class SceneEngine(
 
     /** Small requests from the couple (plan 07 D1): timing here, bubble drawn from it. */
     val requests = CoupleRequests()
+
+    /** Birthdays, sealed letters and parties (plan 09, A); set by the app once it has storage. */
+    var birthdayStore: com.example.data.BirthdayStore? by mutableStateOf(null)
+    /** Today's birthday surprise, if there is one; the overlay reads it too. */
+    val birthdaySurprise = BirthdaySurprise()
+    /** Set by the overlay while it's on screen, so the wish and the letter wait for it. */
+    var birthdayOverlayShowing = false
+    private var birthdayCheckedDay = Long.MIN_VALUE
+    private var birthdayLinesSaid = 0
     /** Canvas size from the last frame, for reactions to taps that don't pass it. */
     private var lastCanvasW = 1f
     private var lastCanvasH = 1f
@@ -1198,6 +1208,7 @@ class SceneEngine(
         lastWorldW = canvasWidth
         lastWorldH = canvasHeight
         cozy.update(deltaSeconds, canvasWidth, canvasHeight)
+        updateBirthday(deltaSeconds, canvasWidth, canvasHeight)
         starPuzzle.update(deltaSeconds)
         // The stars are only there at night outdoors.
         if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
@@ -4494,6 +4505,8 @@ class SceneEngine(
 
     /** The couple greets a special day (plan 06, G2): both say their line at once. */
     fun greetSpecialDay(boyLine: String, girlLine: String) {
+        // On a birthday with the surprise set up, the party does the greeting.
+        if (birthdaySurprise.isRunning || birthdaySurprise.partyOn(CoupleDates.today())) return
         specialDayGreetingHold = 0f
         speakerSpeech(boy, boyLine, SPECIAL_DAY_LINE_SECONDS)
         speakerSpeech(girl, girlLine, SPECIAL_DAY_LINE_SECONDS)
@@ -4671,6 +4684,7 @@ class SceneEngine(
             return
         }
         if (useHeldItem(boy, cw, ch)) return
+        if (sayBirthdayLine(boy)) return
         boy.reactionTimer = 2.8f
         val idx = boyTapPicker.pick()
         when (idx) {
@@ -4743,6 +4757,7 @@ class SceneEngine(
             return
         }
         if (useHeldItem(girl, cw, ch)) return
+        if (sayBirthdayLine(girl)) return
         girl.reactionTimer = 2.8f
         val idx = girlTapPicker.pick()
         when (idx) {
@@ -6726,7 +6741,7 @@ class SceneEngine(
         updateRequests(dt)
 
         val sleepingOnCouch = currentScene == SceneType.SLEEP && !lampLit
-        if (isWatchSceneActive || isDreamMode || sleepingOnCouch) {
+        if (isWatchSceneActive || isDreamMode || sleepingOnCouch || birthdaySurprise.isRunning) {
             requests.interrupt(rng)
             stopAutonomy(halt = false)
             if (autonomyUserPause < AUTONOMY_AFTER_CINEMATIC_PAUSE) autonomyUserPause = AUTONOMY_AFTER_CINEMATIC_PAUSE
@@ -7500,6 +7515,7 @@ class SceneEngine(
             HeldItem.YARN_BALL -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playBubblePop() }
             HeldItem.WATERING_CAN, HeldItem.MISTER -> { audio.playWaterDrip(); particles.spawnSparkles(x + 30f, y - 50f, 3, Color(0xFFBFE6FF)) }
             HeldItem.LANTERN -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playCandleFlicker() }
+            HeldItem.CAKE -> { emote(c, EmoteType.HEART, 1.6f); audio.playHeartChime() }
             HeldItem.NONE -> Unit
         }
         return true
@@ -7540,6 +7556,262 @@ class SceneEngine(
         mochiZoomTimer -= dt
         if (mochiZoomTimer <= 0f) catRoamSpeed = MOCHI_ROAM_SPEED
     }
+
+    // ── Birthday surprise (plan 09, A) ────────────────────────────────────
+    // On a birthday (or up to three days late, if the app wasn't opened on the day) the couple
+    // throws a surprise party at home: the room is dark, a tap turns the light on, and the
+    // partner is there with a cake. Candles, a wish, a gift with the sealed letter, and the party
+    // carries on for the rest of the day. Taps reach it through [onBirthdayTap].
+
+    private fun partnerChar(p: com.example.data.Partner): PixelCharacter = if (p == com.example.data.Partner.BOY) boy else girl
+
+    /** True when nothing else owns the screen, so a surprise may start. */
+    private fun canStartBirthday(): Boolean =
+        wipeAlpha == 0f && !isWatchSceneActive && !isDreamMode && sceneTime > 1.0f &&
+            !catchGame.active && !cozy.cookingActive && !cozy.fishingActive && starPuzzle.current == null
+
+    private fun updateBirthday(dt: Float, cw: Float, ch: Float) {
+        val store = birthdayStore ?: return
+        val today = CoupleDates.today()
+        val surprise = birthdaySurprise
+        if (!surprise.isRunning) {
+            // Party mode after the surprise (also after the app is reopened the same day).
+            if (surprise.partyDay != today) {
+                val heldToday = com.example.data.Partner.entries.filter { store.partyHeldOn(it) == today }
+                if (heldToday.isNotEmpty()) {
+                    surprise.partyDay = today
+                    if (surprise.birthdayOf.isEmpty()) surprise.birthdayOf = heldToday
+                }
+            }
+            val party = surprise.partyDay == today
+            for (p in com.example.data.Partner.entries) partnerChar(p).wearsPartyHat = party && p in surprise.birthdayOf
+            val epochDay = today.toEpochDays().toLong()
+            if (epochDay != birthdayCheckedDay && canStartBirthday()) {
+                birthdayCheckedDay = epochDay
+                val due = store.partyDue(today)
+                if (due.isNotEmpty()) startBirthdaySurprise(store, due, today)
+            }
+            return
+        }
+        surprise.stepTime += dt
+        val t = surprise.stepTime
+        // Hold their places and poses: the room's idle loops wait until the surprise is over.
+        boy.reactionTimer = maxOf(boy.reactionTimer, 0.3f)
+        girl.reactionTimer = maxOf(girl.reactionTimer, 0.3f)
+        when (surprise.step) {
+            SurpriseStep.DARK -> if (t > 3.5f && t - dt <= 3.5f) {
+                showMessage(GameText.get(Res.string.bday_dark_hint), duration = 30f)
+            }
+            SurpriseStep.LIGHTS -> if (t >= BirthdaySurprise.LIGHTS_SECONDS) beginSurpriseReveal(cw, ch)
+            SurpriseStep.SURPRISE -> {
+                if (eventChance(6f, dt)) confettiBurst(cw, ch, 2)
+                if (t >= BirthdaySurprise.SURPRISE_SECONDS) {
+                    surprise.go(SurpriseStep.CANDLES)
+                    showMessage(GameText.get(Res.string.bday_candles_hint), duration = 30f)
+                }
+            }
+            SurpriseStep.CANDLES -> if (cakeHolder()?.heldItemState == 0 && t >= BirthdaySurprise.AFTER_CANDLES_SECONDS) {
+                if (birthdayOverlayShowing) {
+                    surprise.go(SurpriseStep.WISH)
+                    showMessage(GameText.get(Res.string.bday_make_a_wish), duration = 3f)
+                } else {
+                    toGift()
+                }
+            }
+            SurpriseStep.WISH -> if (!birthdayOverlayShowing || t >= BirthdaySurprise.WISH_TIMEOUT_SECONDS) toGift()
+            SurpriseStep.LETTER -> if (!birthdayOverlayShowing) finishBirthdaySurprise()
+            else -> Unit
+        }
+    }
+
+    private fun startBirthdaySurprise(store: com.example.data.BirthdayStore, due: List<com.example.data.Partner>, today: kotlinx.datetime.LocalDate) {
+        val birthdays = store.birthdays()
+        val first = due.first()
+        val birthday = birthdays[first] ?: return
+        val date = com.example.data.Birthdays.last(birthday, today)
+        val letters = due.mapNotNull { p -> birthdays[p]?.let { store.birthdayLetter(p, com.example.data.Birthdays.last(it, today)) } }
+        loadScene(SceneType.SLEEP)
+        sceneTime = scriptEndTime() + 1f // the party replaces the sleepy opening
+        wipeAlpha = 0f
+        birthdaySurprise.begin(due, date, com.example.data.Birthdays.isBelated(birthday, today), letters)
+        birthdayLinesSaid = 0
+        notifyUserInteraction()
+        // Places for the reveal: standing in front of the sofa, facing each other.
+        for ((c, x) in listOf(boy to 0.44f, girl to 0.56f)) {
+            c.moveTo(x, 0.68f)
+            c.pose = CharacterPose.IDLE
+        }
+        boy.direction = Direction.RIGHT
+        girl.direction = Direction.LEFT
+        if (due.size == 1) partnerChar(first.other).emotion = CharacterEmotion.PLAYFUL
+        catSleeping = false
+        catState = CatState.SITTING_PURR
+        catWorldX = 0.70f
+        showMessage(GameText.get(Res.string.bday_dark), duration = 30f)
+    }
+
+    /** Who holds the cake: the partner, or the girl when it's both their birthdays. */
+    private fun cakeHolder(): PixelCharacter? {
+        val who = birthdaySurprise.birthdayOf
+        if (who.isEmpty()) return null
+        return if (who.size > 1) girl else partnerChar(who.first().other)
+    }
+
+    private fun beginSurpriseReveal(cw: Float, ch: Float) {
+        val surprise = birthdaySurprise
+        surprise.go(SurpriseStep.SURPRISE)
+        sceneMessage = null
+        val holder = cakeHolder() ?: return
+        holder.hold(com.example.engine.HeldItem.CAKE, 600f)
+        holder.heldItemState = (1 shl BirthdaySurprise.CANDLES) - 1
+        holder.emotion = CharacterEmotion.LOVING
+        for (p in surprise.birthdayOf) {
+            val c = partnerChar(p)
+            c.wearsPartyHat = true
+            c.emotion = CharacterEmotion.SURPRISED
+            emote(c, EmoteType.EXCLAMATION, 1.6f)
+        }
+        val name = partnerChar(surprise.birthdayOf.first()).name
+        val line = when {
+            surprise.birthdayOf.size > 1 -> GameText.get(Res.string.bday_surprise_both)
+            surprise.belated -> GameText.get(Res.string.bday_surprise_belated, name)
+            else -> GameText.get(Res.string.bday_surprise_one, name)
+        }
+        speakerSpeech(holder, line, 3.2f)
+        if (surprise.birthdayOf.size == 1) {
+            speakerSpeech(partnerChar(surprise.birthdayOf.first()), GameText.get(Res.string.bday_reaction), 2.4f)
+        }
+        confettiBurst(cw, ch, 10)
+        audio.playHeartChime()
+        audio.playStarTwinkle()
+    }
+
+    private fun confettiBurst(cw: Float, ch: Float, count: Int) {
+        val colors = listOf(Color(0xFFFF6B9A), Color(0xFFFFD166), Color(0xFF8ECAE6), Color(0xFFB497E7), Color(0xFF6BBF59))
+        repeat(count) {
+            particles.spawnSparkles(cw * (0.15f + rng.nextFloat() * 0.7f), ch * (0.35f + rng.nextFloat() * 0.15f), 2, colors[rng.nextInt(colors.size)])
+        }
+    }
+
+    private fun toGift() {
+        birthdaySurprise.go(SurpriseStep.GIFT)
+        showMessage(GameText.get(Res.string.bday_gift_hint), duration = 30f)
+    }
+
+    /**
+     * A tap during the surprise. Returns true when the surprise used it (the tap then does
+     * nothing else): the light, a candle, the gift.
+     */
+    fun onBirthdayTap(cw: Float, ch: Float): Boolean {
+        val surprise = birthdaySurprise
+        if (!surprise.isRunning) return false
+        when (surprise.step) {
+            SurpriseStep.DARK -> {
+                surprise.go(SurpriseStep.LIGHTS)
+                sceneMessage = null
+                audio.playBubblePop()
+            }
+            SurpriseStep.CANDLES -> {
+                val holder = cakeHolder() ?: return true
+                val lit = holder.heldItemState
+                if (lit != 0) {
+                    val candle = 31 - lit.countLeadingZeroBits()
+                    holder.heldItemState = lit and (1 shl candle).inv()
+                    surprise.stepTime = 0f
+                    particles.spawnSteam(cw * holder.worldX, ch * holder.worldY - 60f)
+                    audio.playBubblePop()
+                    if (holder.heldItemState == 0) {
+                        sceneMessage = null
+                        for (p in surprise.birthdayOf) emote(partnerChar(p), EmoteType.HEART, 2f)
+                        particles.spawnHeart(cw * holder.worldX, ch * holder.worldY - 90f)
+                        audio.playHeartChime()
+                    }
+                }
+            }
+            SurpriseStep.GIFT -> {
+                sceneMessage = null
+                audio.playStarTwinkle()
+                particles.spawnSparkles(cw * 0.5f, ch * 0.70f, 8)
+                if (surprise.letters.isNotEmpty() && birthdayOverlayShowing) {
+                    surprise.go(SurpriseStep.LETTER)
+                } else {
+                    cakeHolder()?.let { speakerSpeech(it, GameText.get(Res.string.bday_no_letter_line), 3f) }
+                    finishBirthdaySurprise()
+                }
+            }
+            else -> Unit
+        }
+        return true
+    }
+
+    /** The wish from the overlay (empty to keep it secret). */
+    fun submitBirthdayWish(wish: String) {
+        if (birthdaySurprise.step != SurpriseStep.WISH) return
+        birthdaySurprise.wish = wish.trim()
+        toGift()
+    }
+
+    /** The overlay finished showing the current letter; the next one shows, or the surprise ends. */
+    fun closeBirthdayLetter() {
+        val surprise = birthdaySurprise
+        if (surprise.step != SurpriseStep.LETTER) return
+        surprise.currentLetter?.let { birthdayStore?.markOpened(it.id) }
+        if (surprise.letterIndex + 1 < surprise.letters.size) {
+            surprise.letterIndex++
+            surprise.stepTime = 0f
+        } else {
+            finishBirthdaySurprise()
+        }
+    }
+
+    private fun finishBirthdaySurprise() {
+        val surprise = birthdaySurprise
+        val store = birthdayStore
+        val today = CoupleDates.today()
+        val birthdays = store?.birthdays().orEmpty()
+        val opened = store?.letters()?.filter { it.isOpened }?.map { it.id }?.toSet().orEmpty()
+        for (p in surprise.birthdayOf) {
+            val birthday = birthdays[p] ?: continue
+            val thisYear = com.example.data.Birthdays.last(birthday, today)
+            store?.recordParty(
+                com.example.data.BirthdayRecord(
+                    partner = p,
+                    date = thisYear.toString(),
+                    age = com.example.data.Birthdays.ageOn(birthday, thisYear),
+                    wish = surprise.wish,
+                    letterId = surprise.letters.firstOrNull { it.recipient == p && it.id in opened }?.id,
+                    belated = surprise.belated
+                )
+            )
+            onProgress?.invoke(com.example.progress.ProgressEvent.BirthdayCelebrated(p == com.example.data.Partner.BOY, surprise.belated))
+        }
+        surprise.partyDay = today
+        surprise.go(SurpriseStep.DONE)
+        sceneMessage = null
+        // The cake stays out a little longer, then they settle down for the party.
+        cakeHolder()?.heldItemTimeLeft = 20f
+        for (p in surprise.birthdayOf) emote(partnerChar(p), EmoteType.HEART, 2.4f)
+    }
+
+    /** During the party, the first tap on each of them says something for the day. */
+    private fun sayBirthdayLine(c: PixelCharacter): Boolean {
+        val surprise = birthdaySurprise
+        if (surprise.isRunning || !surprise.partyOn(CoupleDates.today())) return false
+        val bit = if (c === boy) 1 else 2
+        if (birthdayLinesSaid and bit != 0) return false
+        val birthdayPerson = surprise.birthdayOf.firstOrNull() ?: return false
+        birthdayLinesSaid = birthdayLinesSaid or bit
+        val isBirthday = surprise.birthdayOf.any { partnerChar(it) === c }
+        val line = if (isBirthday) GameText.get(Res.string.bday_party_line_birthday)
+        else GameText.get(Res.string.bday_party_line_partner, partnerChar(birthdayPerson).name)
+        speakerSpeech(c, line, 2.8f)
+        emote(c, EmoteType.HEART, 1.6f)
+        c.reactionTimer = 1.6f
+        return true
+    }
+
+    /** Mochi wears a party ruff while the party is on. */
+    val mochiPartyCollar: Boolean get() = birthdaySurprise.partyOn(CoupleDates.today())
 
     // ── Requests (plan 07 D1) ─────────────────────────────────────────────
     // Now and then one of them asks for something that fits the moment: a blanket, tea, a

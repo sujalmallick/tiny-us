@@ -21,28 +21,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
-import androidx.compose.material.icons.automirrored.rounded.VolumeOff
-import androidx.compose.material.icons.automirrored.rounded.VolumeUp
-import androidx.compose.material.icons.filled.AutoAwesome
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.rounded.Backup
-import androidx.compose.material.icons.rounded.Bedtime
-import androidx.compose.material.icons.rounded.Checkroom
-import androidx.compose.material.icons.rounded.ChevronRight
-import androidx.compose.material.icons.rounded.Drafts
-import androidx.compose.material.icons.rounded.Face
-import androidx.compose.material.icons.rounded.Favorite
-import androidx.compose.material.icons.rounded.Landscape
-import androidx.compose.material.icons.rounded.Lock
-import androidx.compose.material.icons.rounded.Nightlight
-import androidx.compose.material.icons.rounded.Palette
-import androidx.compose.material.icons.rounded.PhotoLibrary
-import androidx.compose.material.icons.rounded.Replay
-import androidx.compose.material.icons.rounded.Shuffle
-import androidx.compose.material.icons.rounded.VolunteerActivism
-import androidx.compose.material.icons.rounded.WbSunny
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -164,46 +142,26 @@ fun SettingsBottomSheet(
     var anniversaryDate by remember { mutableStateOf(prefs.anniversaryDate) }
     var boyBirthday by remember { mutableStateOf(prefs.boyfriendBirthday) }
     var girlBirthday by remember { mutableStateOf(prefs.girlfriendBirthday) }
+    val birthdayStore = remember(prefs) { com.example.data.BirthdayStore(prefs.storage) }
+    var letterHints by remember { mutableStateOf(birthdayStore.letterHintsEnabled) }
+    var morningReminder by remember { mutableStateOf(birthdayStore.morningReminderEnabled) }
     var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
 
-    val context = androidx.compose.ui.platform.LocalContext.current
+    val platform = LocalPlatformActions.current
+    val reminders = platform.rememberReminders()
     var tinyCareEnabled by remember { mutableStateOf(prefs.tinyCareEnabled) }
     var enabledCategories by remember { mutableStateOf(prefs.tinyCareCategories) }
     var showPermissionExplanation by remember { mutableStateOf(false) }
 
-    val permissionLauncher = androidx.activity.compose.rememberLauncherForActivityResult(
-        contract = androidx.activity.result.contract.ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            showPermissionExplanation = false
-            tinyCareEnabled = true
-            com.example.care.TinyCareScheduler.enable(context)
-        } else {
+    LaunchedEffect(Unit) {
+        // Reminders that the phone no longer allows are switched off.
+        if (tinyCareEnabled && reminders != null && (reminders.needsPermission() || !reminders.allowed())) {
             tinyCareEnabled = false
             prefs.tinyCareEnabled = false
-            com.example.care.TinyCareScheduler.disable(context)
-        }
-        onSettingsChanged()
-    }
-
-    LaunchedEffect(Unit) {
-        if (tinyCareEnabled) {
-            val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-            val permissionGranted = if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU) {
-                androidx.core.content.ContextCompat.checkSelfPermission(
-                    context,
-                    android.Manifest.permission.POST_NOTIFICATIONS
-                ) == android.content.pm.PackageManager.PERMISSION_GRANTED
-            } else true
-
-            if (!systemAllowed || !permissionGranted) {
-                tinyCareEnabled = false
-                prefs.tinyCareEnabled = false
-                com.example.care.TinyCareScheduler.disable(context)
-                onSettingsChanged()
-            }
+            reminders.disable()
+            onSettingsChanged()
         }
     }
 
@@ -316,37 +274,51 @@ fun SettingsBottomSheet(
                     colors = tinyTextFieldColors()
                 )
 
-                // Birthdays (recurring yearly)
+                // Birthdays (recurring yearly), picked from a calendar; the year is optional (plan 09, A)
                 Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(TinySpace.md)) {
-                    OutlinedTextField(
+                    BirthdayField(
+                        label = stringResource(Res.string.label_your_birthday),
                         value = boyBirthday,
                         onValueChange = {
                             boyBirthday = it
-                            prefs.boyfriendBirthday = it
+                            birthdayStore.setBirthday(com.example.data.Partner.BOY, it)
                             onSettingsChanged()
                         },
-                        label = { Text(stringResource(Res.string.label_your_birthday)) },
-                        placeholder = { Text(stringResource(Res.string.ui_yyyy_mm_dd)) },
-                        modifier = Modifier.weight(1f).testTag("input_boy_bday"),
-                        singleLine = true,
-                        shape = TinyFieldShape,
-                        colors = tinyTextFieldColors()
+                        modifier = Modifier.weight(1f),
+                        testTag = "input_boy_bday"
                     )
-                    OutlinedTextField(
+                    BirthdayField(
+                        label = stringResource(Res.string.label_partner_birthday),
                         value = girlBirthday,
                         onValueChange = {
                             girlBirthday = it
-                            prefs.girlfriendBirthday = it
+                            birthdayStore.setBirthday(com.example.data.Partner.GIRL, it)
                             onSettingsChanged()
                         },
-                        label = { Text(stringResource(Res.string.label_partner_birthday)) },
-                        placeholder = { Text(stringResource(Res.string.ui_yyyy_mm_dd)) },
-                        modifier = Modifier.weight(1f).testTag("input_girl_bday"),
-                        singleLine = true,
-                        shape = TinyFieldShape,
-                        colors = tinyTextFieldColors()
+                        modifier = Modifier.weight(1f),
+                        testTag = "input_girl_bday"
                     )
                 }
+                BirthdayLetterHint(birthdayStore, boyName, girlName)
+                SettingsToggleRow(
+                    text = stringResource(Res.string.bday_setting_letter_hints),
+                    checked = letterHints,
+                    onCheckedChange = {
+                        letterHints = it
+                        birthdayStore.letterHintsEnabled = it
+                    },
+                    testTag = "toggle_birthday_letter_hints"
+                )
+                SettingsToggleRow(
+                    text = stringResource(Res.string.bday_setting_morning),
+                    checked = morningReminder,
+                    onCheckedChange = {
+                        morningReminder = it
+                        birthdayStore.morningReminderEnabled = it
+                        onSettingsChanged()
+                    },
+                    testTag = "toggle_birthday_morning"
+                )
 
                 // Secret Gift Box Easter Egg (Tap 5 times to reveal!)
                 GiftBoxEasterEgg(
@@ -580,7 +552,8 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // -- 6. Tiny Care Notifications --
+            // -- 6. Tiny Care Notifications (where the platform has reminders) --
+            if (reminders != null) {
             SettingsCategoryHeader(
                 icon = PixelIcons.VolunteerActivism,
                 title = stringResource(Res.string.ui_tiny_care),
@@ -607,21 +580,25 @@ fun SettingsBottomSheet(
                         checked = tinyCareEnabled,
                         onCheckedChange = { willEnable ->
                             if (willEnable) {
-                                val needsRuntimePermission = android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.TIRAMISU &&
-                                    androidx.core.content.ContextCompat.checkSelfPermission(
-                                        context,
-                                        android.Manifest.permission.POST_NOTIFICATIONS
-                                    ) != android.content.pm.PackageManager.PERMISSION_GRANTED
-
-                                if (needsRuntimePermission) {
+                                if (reminders.needsPermission()) {
                                     showPermissionExplanation = true
-                                    permissionLauncher.launch(android.Manifest.permission.POST_NOTIFICATIONS)
+                                    reminders.requestPermission { granted ->
+                                        if (granted) {
+                                            showPermissionExplanation = false
+                                            tinyCareEnabled = true
+                                            reminders.enable()
+                                        } else {
+                                            tinyCareEnabled = false
+                                            prefs.tinyCareEnabled = false
+                                            reminders.disable()
+                                        }
+                                        onSettingsChanged()
+                                    }
                                 } else {
-                                    val systemAllowed = androidx.core.app.NotificationManagerCompat.from(context).areNotificationsEnabled()
-                                    if (systemAllowed) {
+                                    if (reminders.allowed()) {
                                         showPermissionExplanation = true
                                         tinyCareEnabled = true
-                                        com.example.care.TinyCareScheduler.enable(context)
+                                        reminders.enable()
                                     } else {
                                         showPermissionExplanation = true
                                     }
@@ -629,7 +606,7 @@ fun SettingsBottomSheet(
                             } else {
                                 showPermissionExplanation = false
                                 tinyCareEnabled = false
-                                com.example.care.TinyCareScheduler.disable(context)
+                                reminders.disable()
                             }
                             onSettingsChanged()
                         },
@@ -703,7 +680,7 @@ fun SettingsBottomSheet(
                         TinyButton(
                             text = stringResource(Res.string.ui_send_preview_reminder),
                             onClick = {
-                                com.example.care.TinyCareScheduler.sendTestNotification(context)
+                                reminders.sendPreview()
                             },
                             modifier = Modifier.fillMaxWidth(),
                             style = TinyButtonStyle.Secondary,
@@ -718,6 +695,7 @@ fun SettingsBottomSheet(
                         )
                     }
                 }
+            }
             }
 
             // -- 7. Appearance --
@@ -859,23 +837,27 @@ fun SettingsBottomSheet(
                 }
             }
 
-            // -- Privacy Lock & Discreet Mode --
-            SettingsCategoryHeader(
-                icon = PixelIcons.Lock,
-                title = stringResource(Res.string.privacy_section_title),
-                subtitle = stringResource(Res.string.privacy_section_subtitle)
-            )
-            SettingsSectionCard {
-                PrivacyLockSettings()
+            // -- Privacy Lock & Discreet Mode (where the platform has them) --
+            platform.privacySettings?.let { privacy ->
+                SettingsCategoryHeader(
+                    icon = PixelIcons.Lock,
+                    title = stringResource(Res.string.privacy_section_title),
+                    subtitle = stringResource(Res.string.privacy_section_subtitle)
+                )
+                SettingsSectionCard {
+                    privacy()
+                }
             }
 
-            SettingsCategoryHeader(
-                icon = PixelIcons.Backup,
-                title = stringResource(Res.string.backup_section_title),
-                subtitle = stringResource(Res.string.backup_section_subtitle)
-            )
-            SettingsSectionCard {
-                BackupRestoreSettings()
+            platform.backupSettings?.let { backup ->
+                SettingsCategoryHeader(
+                    icon = PixelIcons.Backup,
+                    title = stringResource(Res.string.backup_section_title),
+                    subtitle = stringResource(Res.string.backup_section_subtitle)
+                )
+                SettingsSectionCard {
+                    backup()
+                }
             }
 
             // -- 8. World Exploration & Privacy --
@@ -933,5 +915,18 @@ fun SettingsBottomSheet(
 
             Spacer(modifier = Modifier.height(TinySpace.lg))
         }
+    }
+}
+
+/** A plain text-and-switch row for the settings cards. */
+@Composable
+private fun SettingsToggleRow(text: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit, testTag: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth().testTag(testTag),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(text, style = TinyType.Body, modifier = Modifier.weight(1f))
+        Spacer(modifier = Modifier.width(TinySpace.sm))
+        Switch(checked = checked, onCheckedChange = onCheckedChange, colors = tinySwitchColors())
     }
 }

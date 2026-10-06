@@ -40,6 +40,8 @@ sealed class ProgressEvent {
     data class FlowerPicked(val plot: Int) : ProgressEvent()
     /** One of them asked for something and the player answered (plan 07, D1). */
     data class RequestGranted(val kind: String) : ProgressEvent()
+    /** A birthday surprise was held (plan 09, A). */
+    data class BirthdayCelebrated(val forBoy: Boolean, val belated: Boolean) : ProgressEvent()
 }
 
 /**
@@ -100,6 +102,7 @@ object Counter {
     const val BLOOMS_PICKED = "blooms_picked"
     const val BOUQUETS = "bouquets"
     const val REQUESTS = "requests"
+    const val BIRTHDAYS = "birthdays"
 }
 
 /** Set keys: things seen at least once. */
@@ -184,6 +187,7 @@ data class ProgressState(
             }
         }
         is ProgressEvent.RequestGranted -> plus(Counter.REQUESTS).see(Seen.REQUEST_KINDS, event.kind)
+        is ProgressEvent.BirthdayCelebrated -> plus(Counter.BIRTHDAYS)
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0
             if (have <= 0) this

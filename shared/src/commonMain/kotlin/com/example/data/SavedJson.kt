@@ -45,8 +45,14 @@ internal class JSONObject() {
     fun optLong(name: String, fallback: Long = 0L): Long = values[name]?.let(::asLong) ?: fallback
     fun optBoolean(name: String, fallback: Boolean = false): Boolean = values[name]?.let(::asBoolean) ?: fallback
 
+    fun optInt(name: String, fallback: Int = 0): Int = values[name]?.let(::asLong)?.toInt() ?: fallback
+
     fun getJSONArray(name: String): JSONArray = get(name) as? JSONArray ?: throw JSONException("$name is not an array")
     fun optJSONArray(name: String): JSONArray? = values[name] as? JSONArray
+    fun optJSONObject(name: String): JSONObject? = values[name] as? JSONObject
+
+    /** The names in this object, in the order they were added. */
+    fun keys(): Iterator<String> = values.keys.toList().iterator()
 
     override fun toString(): String = buildString {
         append('{')
@@ -82,6 +88,8 @@ internal class JSONArray() {
         values.getOrNull(index) as? JSONObject ?: throw JSONException("Item $index is not an object")
 
     fun getString(index: Int): String = (values.getOrNull(index) ?: throw JSONException("No item $index")).toString()
+    fun optString(index: Int, fallback: String = ""): String = values.getOrNull(index)?.toString() ?: fallback
+    fun optJSONObject(index: Int): JSONObject? = values.getOrNull(index) as? JSONObject
 
     override fun toString(): String = buildString {
         append('[')
