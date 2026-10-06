@@ -1,4 +1,4 @@
-"""Builds app/src/main/res/font/tiny_pixel.ttf, the Tiny Us pixel font (Plan 03, Phase 5).
+"""Builds shared/src/androidMain/res/font/tiny_pixel.ttf, the Tiny Us pixel font (Plan 03, Phase 5).
 
 Every glyph is drawn on a 5-wide grid: 7 rows from the cap line to the baseline, plus 2 rows of
 descender. Each lit cell becomes a square in the outline, so the font is pixel art at any size.
@@ -190,6 +190,6 @@ def build(out_path):
 
 if __name__ == "__main__":
     here = os.path.dirname(os.path.abspath(__file__))
-    out = os.path.join(here, "..", "..", "app", "src", "main", "res", "font", "tiny_pixel.ttf")
+    out = os.path.join(here, "..", "..", "shared", "src", "androidMain", "res", "font", "tiny_pixel.ttf")
     os.makedirs(os.path.dirname(out), exist_ok=True)
     build(os.path.normpath(out))

@@ -48,6 +48,13 @@ class IosUserDefaultsStorage(
         defaults.setInteger(value, forKey = key)
     }
 
+    override fun getFloat(key: String, defaultValue: Float): Float =
+        if (defaults.objectForKey(key) != null) defaults.floatForKey(key) else defaultValue
+
+    override fun putFloat(key: String, value: Float) {
+        defaults.setFloat(value, forKey = key)
+    }
+
     @Suppress("UNCHECKED_CAST")
     override fun getStringSet(key: String, defaultValue: Set<String>): Set<String> {
         val array = defaults.stringArrayForKey(key) ?: return defaultValue

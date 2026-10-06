@@ -16,6 +16,7 @@
 		A10000000000000000000024 /* bgm_sakura.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000025 /* bgm_sakura.mp3 */; };
 		A10000000000000000000026 /* bgm_autumn.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000027 /* bgm_autumn.mp3 */; };
 		A10000000000000000000028 /* bgm_snow.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000029 /* bgm_snow.mp3 */; };
+		A1000000000000000000006B /* tiny_pixel.ttf in Resources */ = {isa = PBXBuildFile; fileRef = A1000000000000000000006A /* tiny_pixel.ttf */; };
 		A10000000000000000000038 /* WidgetExtension.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000039 /* WidgetExtension.swift */; };
 		A10000000000000000000040 /* TinyWidgetPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
 		A10000000000000000000042 /* TinyWidgetPayload.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
@@ -39,6 +40,7 @@
 		A10000000000000000000025 /* bgm_sakura.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_sakura.mp3; path = ../../app/src/main/res/raw/bgm_sakura.mp3; sourceTree = "<group>"; };
 		A10000000000000000000027 /* bgm_autumn.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_autumn.mp3; path = ../../app/src/main/res/raw/bgm_autumn.mp3; sourceTree = "<group>"; };
 		A10000000000000000000029 /* bgm_snow.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; name = bgm_snow.mp3; path = ../../app/src/main/res/raw/bgm_snow.mp3; sourceTree = "<group>"; };
+		A1000000000000000000006A /* tiny_pixel.ttf */ = {isa = PBXFileReference; lastKnownFileType = file; name = tiny_pixel.ttf; path = ../../shared/src/androidMain/res/font/tiny_pixel.ttf; sourceTree = "<group>"; };
 		A10000000000000000000039 /* WidgetExtension.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WidgetExtension.swift; sourceTree = "<group>"; };
 		A10000000000000000000041 /* TinyWidgetPayload.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWidgetPayload.swift; sourceTree = "<group>"; };
 		A10000000000000000000043 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
@@ -94,6 +96,7 @@
 				A10000000000000000000025 /* bgm_sakura.mp3 */,
 				A10000000000000000000027 /* bgm_autumn.mp3 */,
 				A10000000000000000000029 /* bgm_snow.mp3 */,
+				A1000000000000000000006A /* tiny_pixel.ttf */,
 			);
 			path = iosApp;
 			sourceTree = "<group>";
@@ -185,6 +188,7 @@
 				A10000000000000000000024 /* bgm_sakura.mp3 in Resources */,
 				A10000000000000000000026 /* bgm_autumn.mp3 in Resources */,
 				A10000000000000000000028 /* bgm_snow.mp3 in Resources */,
+				A1000000000000000000006B /* tiny_pixel.ttf in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

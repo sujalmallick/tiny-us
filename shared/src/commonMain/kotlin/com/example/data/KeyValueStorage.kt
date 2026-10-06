@@ -13,6 +13,8 @@ interface KeyValueStorage {
     fun putInt(key: String, value: Int)
     fun getLong(key: String, defaultValue: Long = 0L): Long
     fun putLong(key: String, value: Long)
+    fun getFloat(key: String, defaultValue: Float = 0f): Float
+    fun putFloat(key: String, value: Float)
     fun getStringSet(key: String, defaultValue: Set<String> = emptySet()): Set<String>
     fun putStringSet(key: String, values: Set<String>)
     fun remove(key: String)
@@ -50,6 +52,13 @@ class InMemoryKeyValueStorage : KeyValueStorage {
         (data[key] as? Long) ?: defaultValue
 
     override fun putLong(key: String, value: Long) {
+        data[key] = value
+    }
+
+    override fun getFloat(key: String, defaultValue: Float): Float =
+        (data[key] as? Float) ?: defaultValue
+
+    override fun putFloat(key: String, value: Float) {
         data[key] = value
     }
 

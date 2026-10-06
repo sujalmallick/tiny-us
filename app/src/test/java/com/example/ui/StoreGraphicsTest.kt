@@ -66,7 +66,7 @@ class StoreGraphicsTest {
         val banner = Bitmap.createBitmap(world, 0, top, 1024, 500)
 
         val context = ApplicationProvider.getApplicationContext<android.content.Context>()
-        val font = ResourcesCompat.getFont(context, R.font.tiny_pixel)
+        val font = ResourcesCompat.getFont(context, com.example.shared.R.font.tiny_pixel)
         val canvas = Canvas(banner)
         // Largest size (in steps of 8, which keeps the pixel font's blocks even) that fits maxW.
         fun fit(s: String, maxW: Float, start: Float): Float {
