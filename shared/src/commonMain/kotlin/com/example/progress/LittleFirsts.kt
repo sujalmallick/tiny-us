@@ -24,6 +24,9 @@ object Rewards {
     const val STAR_HOODIE = "outfit_star_hoodie"
     const val STARRY_ROOM = "theme_starry_night"
     const val MOCHI_HEADBAND = "accessory_mochi_headband"
+    const val CHEF_APRON = "accessory_chef_apron"
+    const val FISHER_HAT = "accessory_fisher_hat"
+    const val FLOWER_CROWN = "accessory_flower_crown"
 }
 
 object LittleFirsts {
@@ -55,7 +58,13 @@ object LittleFirsts {
         LittleFirst("mochi_friendly", Res.string.mochi_friendly, Res.string.mochi_friendly_hint) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 1 },
         LittleFirst("mochi_cuddly", Res.string.mochi_cuddly, Res.string.mochi_cuddly_hint) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 2 },
         LittleFirst("mochi_best_friend", Res.string.mochi_best_friend, Res.string.mochi_best_friend_hint, Rewards.MOCHI_HEADBAND) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 3 },
-        LittleFirst("first_gift", Res.string.first_gift, Res.string.first_gift_hint) { it.count(Counter.GIFTS) >= 1 }
+        LittleFirst("first_gift", Res.string.first_gift, Res.string.first_gift_hint) { it.count(Counter.GIFTS) >= 1 },
+        LittleFirst("first_dish", Res.string.first_dish, Res.string.first_dish_hint) { it.count(Counter.DISHES) >= 1 },
+        LittleFirst("all_recipes", Res.string.all_recipes, Res.string.all_recipes_hint, Rewards.CHEF_APRON) { it.seenSet(Seen.RECIPES).size >= com.example.games.CookingGame.GOOD_DISHES },
+        LittleFirst("first_fish", Res.string.first_fish, Res.string.first_fish_hint, Rewards.FISHER_HAT) { it.count(Counter.FISH) >= 1 },
+        LittleFirst("golden_fish", Res.string.golden_fish, Res.string.golden_fish_hint) { it.count(Counter.GOLDEN_FISH) >= 1 },
+        LittleFirst("first_bloom", Res.string.first_bloom, Res.string.first_bloom_hint) { it.count(Counter.BLOOMS_PICKED) >= 1 },
+        LittleFirst("first_bouquet", Res.string.first_bouquet, Res.string.first_bouquet_hint, Rewards.FLOWER_CROWN) { it.count(Counter.BOUQUETS) >= 1 }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

@@ -47,7 +47,7 @@ One small, testable progress store that everything else writes to.
   - Mochi's first slow blink, a request granted.
 - [x] B2. When one is earned, a soft toast plus both characters' heart emote, then an entry in Our Story (`StoryKind.MILESTONE`, from the stored dates).
 - [x] B3. A "Little firsts" page (a chip in Our Story) (from the heart menu or Our Story): earned ones in colour with their date; unearned ones as a gentle hint ("Somewhere, after rain...").
-- [x] B4. **Rewards:** *(first four done: rainbow scarf, snowman beanie, star hoodie, starry-night theme; the rest come with their mini-games)* about 10 new items that some firsts unlock. For example: a rainbow scarf (first rainbow), a star-pattern hoodie (all constellations), a snowman beanie (first snowman), a chef apron (5 dishes), a fisher's cap (first fish), a flower crown (first bouquet), a Mochi-ear headband (Mochi's fondness), a "starry night" room theme (100 days). Each needs new pixel art. Locked items show in the wardrobe as a silhouette with how to earn them.
+- [x] B4. **Rewards:** *(all eight done: rainbow scarf, snowman beanie, star hoodie, starry-night theme, Mochi-ear headband, chef's apron (every recipe), fisher's bucket hat (first fish), flower crown (first bouquet))* about 10 new items that some firsts unlock. For example: a rainbow scarf (first rainbow), a star-pattern hoodie (all constellations), a snowman beanie (first snowman), a chef apron (5 dishes), a fisher's cap (first fish), a flower crown (first bouquet), a Mochi-ear headband (Mochi's fondness), a "starry night" room theme (100 days). Each needs new pixel art. Locked items show in the wardrobe as a silhouette with how to earn them.
 - [x] B5. Tests: each first fires once; rewards unlock; nothing ever re-locks.
 
 ## C. Mini-games
@@ -56,10 +56,10 @@ Each is short, optional, can't be lost, and ends with a cozy result that goes in
 
 - [x] C1. **Catch together** (outdoor, any falling weather): tap the basket to start a 30-second round. Drag the basket under falling petals, snow or leaves; rare golden ones count extra; your best score is kept. *Reuses the weather particles.*
 - [x] C2. **Stargazing puzzle** *(6 constellations: the 3 old ones plus Mochi's Whiskers, the Little Scooter, the Paper Kite)* (night, outdoor): tap a constellation to start; its stars show dimly, and you tap them in order (a line draws between each). Done: the constellation glows and is named. All three, then new ones (5 to 8 total, data-driven). *Reuses the star field and overlay.*
-- [ ] C3. **Cooking** (kitchen): a recipe card (e.g. pancakes, soup, dumplings, cookies, tea) shows 3 to 5 ingredients; tap them in order on the counter and fridge. The dish appears on the table and goes into a **recipe book**. Mistakes just wiggle; no failing.
-- [ ] C4. **Fishing** (pier): the couple takes a rod next to Grandpa Bao. Tap when the bobber dips, with a forgiving timing window. Catches are fish, seashells, an old boot, or a message in a bottle, each kept with a count. *Reuses `PierFishingPhase` and the bobber art.*
-- [ ] C5. **Garden care** (meadow or sunroom): plant a seed (pick a flower), water it once a day, and it grows over a few days into a flower. Pick flowers to make a **bouquet** (a keepsake, and it can be given as a gift). *Grows alongside `GardenGrowth`; skipping days only slows it, never kills it.*
-- [ ] C6. Tests: each game's rules (pure Kotlin), plus renders of each game in play.
+- [x] C3. **Cooking** *(a "Cook together" button in the kitchen opens the recipe card; the dish appears on the table; the recipe book is in Keepsakes)* (kitchen): a recipe card (e.g. pancakes, soup, dumplings, cookies, tea) shows 3 to 5 ingredients; tap them in order on the counter and fridge. The dish appears on the table and goes into a **recipe book**. Mistakes just wiggle; no failing.
+- [x] C4. **Fishing** *(a "Fish together" button at the pier; a tap anywhere while the bobber is under; the line goes back in until they stop)* (pier): the couple takes a rod next to Grandpa Bao. Tap when the bobber dips, with a forgiving timing window. Catches are fish, seashells, an old boot, or a message in a bottle, each kept with a count. *Reuses `PierFishingPhase` and the bobber art.*
+- [x] C5. **Garden care** *(three plots at the front of the meadow: tap to plant, water and pick; rain waters them too)* (meadow or sunroom): plant a seed (pick a flower), water it once a day, and it grows over a few days into a flower. Pick flowers to make a **bouquet** (a keepsake, and it can be given as a gift). *Grows alongside `GardenGrowth`; skipping days only slows it, never kills it.*
+- [x] C6. Tests: each game's rules (pure Kotlin), plus renders of each game in play.
 
 ## D. Deeper interaction
 

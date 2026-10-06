@@ -59,6 +59,22 @@ class ScenePreviewTest {
             // SCENE_PREVIEW_FRAMES overrides the count (for example to let the birds arrive).
             // SCENE_PREVIEW_CATCH=1 starts a round of Catch together (with falling weather).
             if (System.getenv("SCENE_PREVIEW_CATCH") != null) startCatchGame()
+            // SCENE_PREVIEW_COZY=cook (a dish served, in the kitchen), fish (the couple's line out at
+            // the pier) or garden (the meadow's plots growing, one in bloom, a picked flower held).
+            // Several at once, comma-separated; each only shows in its own scene.
+            for (mode in System.getenv("SCENE_PREVIEW_COZY")?.split(',').orEmpty()) when (mode.trim()) {
+                "cook" -> {
+                    cozy.startCooking(kotlin.random.Random(2))
+                    cozy.cooking.recipe?.ingredients?.forEach { cozy.tapIngredient(it) }
+                    repeat(180) { update(1f / 60f, cw, ch) }
+                }
+                "fish" -> cozy.startFishing()
+                "garden" -> cozy.garden = com.example.games.GardenPlots()
+                    .plant(0, "tulip").water(0, 1).water(0, 2).water(0, 3)
+                    .plant(1, "sunflower").water(1, 1)
+                    .plant(2, "lavender")
+                    .copy(stems = listOf("daisy"))
+            }
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
             check(wipeAlpha == 0f)

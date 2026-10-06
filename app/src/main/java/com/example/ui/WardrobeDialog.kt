@@ -460,6 +460,27 @@ fun WardrobeDialog(
                 description = GameText.get(Res.string.wardrobe_snowman_beanie_desc),
                 iconType = "beanie",
                 reward = com.example.progress.Rewards.SNOWMAN_BEANIE
+            ),
+            AccessoryItem(
+                id = com.example.progress.RewardItems.CHEF_APRON_INDEX,
+                name = GameText.get(Res.string.wardrobe_chef_apron),
+                description = GameText.get(Res.string.wardrobe_chef_apron_desc),
+                iconType = "scarf",
+                reward = com.example.progress.Rewards.CHEF_APRON
+            ),
+            AccessoryItem(
+                id = com.example.progress.RewardItems.FISHER_HAT_INDEX,
+                name = GameText.get(Res.string.wardrobe_fisher_hat),
+                description = GameText.get(Res.string.wardrobe_fisher_hat_desc),
+                iconType = "cap",
+                reward = com.example.progress.Rewards.FISHER_HAT
+            ),
+            AccessoryItem(
+                id = com.example.progress.RewardItems.FLOWER_CROWN_INDEX,
+                name = GameText.get(Res.string.wardrobe_flower_crown),
+                description = GameText.get(Res.string.wardrobe_flower_crown_desc),
+                iconType = "beanie",
+                reward = com.example.progress.Rewards.FLOWER_CROWN
             )
         )
     }

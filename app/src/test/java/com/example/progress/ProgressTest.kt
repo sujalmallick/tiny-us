@@ -118,7 +118,9 @@ class ProgressTest {
             ProgressEvent.RainbowWish, ProgressEvent.ConstellationFound("TWO_HEARTS"),
             ProgressEvent.DiscoveryFound("SEASHELL"), ProgressEvent.Caught("SNOWFLAKE")
         )
-        val withBest = s.bestScore("catch", 42)
+        val withBest = s.bestScore("catch", 42).copy(
+            garden = com.example.games.GardenPlots().plant(1, "tulip").water(1, 20000L).copy(stems = listOf("daisy"))
+        )
         ProgressStore(prefs).save(withBest)
         assertEquals(withBest, ProgressStore(prefs).load())
         // The in-app backup copies tiny_us_prefs, and so the progress with it.

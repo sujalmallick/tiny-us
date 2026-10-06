@@ -140,6 +140,8 @@ class SceneEngine(
     )
 
     val particles = ParticleSystem()
+    /** Cooking, fishing and garden care (plan 07, C3-C5). Declared early: loadScene puts them away. */
+    val cozy = CozyGames(this)
     val birdSystem = BirdSystem()
 
     var sceneTime: Float = 0f
@@ -713,6 +715,7 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        cozy.stopAll()
         onProgress?.invoke(com.example.progress.ProgressEvent.SceneVisited(type.name))
         particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
@@ -1180,6 +1183,7 @@ class SceneEngine(
         if (mochiMeterTimer > 0f) mochiMeterTimer = (mochiMeterTimer - deltaSeconds).coerceAtLeast(0f)
         lastWorldW = canvasWidth
         lastWorldH = canvasHeight
+        cozy.update(deltaSeconds, canvasWidth, canvasHeight)
         starPuzzle.update(deltaSeconds)
         // The stars are only there at night outdoors.
         if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
@@ -4320,8 +4324,11 @@ class SceneEngine(
     }
 
     /** The world size from the last update, for reactions started from outside the frame loop. */
-    private var lastWorldW = 1080f
-    private var lastWorldH = 2400f
+    internal var lastWorldW = 1080f
+        private set
+    internal var lastWorldH = 2400f
+        private set
+
 
     /** One partner gives the other a keepsake called [itemName]: both react, and it goes on the shelf. */
     fun giveGift(fromBoy: Boolean, itemName: String) {
