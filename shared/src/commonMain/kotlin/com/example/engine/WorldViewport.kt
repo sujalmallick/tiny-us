@@ -24,6 +24,13 @@ object WorldViewport {
      */
     const val LOW_RES_CHARACTER_BLOCKS = 2
 
+    /**
+     * The most screen pixels one game pixel may take. Unlimited by default (every Android screen
+     * fills its width with the stage); iOS sets it from the screen's scale so a big iPad shows more
+     * of the scene around the couple instead of drawing them very large.
+     */
+    var maxZoom: Int = Int.MAX_VALUE
+
     /** True when the world is drawn by the low-res pixel renderer. */
     val pixelRenderer: Boolean get() = com.example.FeatureFlags.PIXEL_RENDERER
 

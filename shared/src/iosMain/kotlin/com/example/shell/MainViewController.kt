@@ -8,6 +8,9 @@ import androidx.compose.ui.window.ComposeUIViewController
 import com.example.engine.GameText
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.runBlocking
+import com.example.engine.WorldViewport
+import kotlin.math.floor
+import platform.UIKit.UIScreen
 import platform.UIKit.UIViewController
 
 /** Entry point for SwiftUI: `MainViewControllerKt.SharedComposeViewController()` hosts shared Compose UI. */
@@ -20,6 +23,7 @@ fun SharedComposeViewController(): UIViewController {
 fun SharedWorldViewController(): UIViewController {
     LaunchDiagnostics.install()
     loadSharedText()
+    limitWorldZoom()
     LaunchDiagnostics.stage("starting the world")
     return ComposeUIViewController {
         SharedWorldScreen(
@@ -45,6 +49,7 @@ fun SharedWorldViewController(): UIViewController {
 fun SharedMainViewController(): UIViewController {
     LaunchDiagnostics.install()
     loadSharedText()
+    limitWorldZoom()
     LaunchDiagnostics.stage("starting the app")
     return ComposeUIViewController {
         val platform = remember { IosMainPlatform() }
@@ -57,6 +62,16 @@ fun SharedMainViewController(): UIViewController {
         }
     }
 }
+
+/**
+ * At most [MAX_GAME_PIXEL_POINTS] points per game pixel: about a phone's size, so the couple on a big
+ * iPad is drawn as on an iPhone and the scene shows more around them (iPhones already fit under it).
+ */
+private fun limitWorldZoom() {
+    WorldViewport.maxZoom = floor(MAX_GAME_PIXEL_POINTS * UIScreen.mainScreen.scale).toInt().coerceAtLeast(1)
+}
+
+private const val MAX_GAME_PIXEL_POINTS = 4.0
 
 /** Shared text for the engine and other non-Compose code, loaded once (Android does this at app start). */
 private fun loadSharedText() {

@@ -109,7 +109,7 @@ class WorldCamera private constructor(
         ): WorldCamera {
             if (!pixelRenderer || screenW <= 0f || screenH <= 0f) return classic(screenW, screenH)
             val minStageH = ceil(STAGE_MIN_W * STAGE_MIN_ASPECT).toInt()
-            val zoom = minOf(floor(screenW / STAGE_MIN_W).toInt(), floor(screenH / minStageH).toInt()).coerceAtLeast(1)
+            val zoom = minOf(floor(screenW / STAGE_MIN_W).toInt(), floor(screenH / minStageH).toInt(), WorldViewport.maxZoom).coerceAtLeast(1)
             val gameW = ceil(screenW / zoom).toInt()
             val gameH = ceil(screenH / zoom).toInt()
             val stageW = gameW
