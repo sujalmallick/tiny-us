@@ -2,100 +2,70 @@ package com.example.data
 
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.time.temporal.ChronoUnit
+import kotlinx.datetime.toJavaLocalDate
 import kotlinx.datetime.toKotlinLocalDate
+import kotlinx.datetime.toKotlinLocalDateTime
 
-data class TinyUsMemory(
-    val id: String,
-    val date: LocalDate,
-    val title: String,
-    val description: String,
-    val type: SpecialMemoryType,
-    val isPrivate: Boolean = false,
-    val isFuture: Boolean = false,
-    val annualRecurring: Boolean = false
-)
+/** [TinyUsMemory] from a java.time date, for Android code and tests. */
+fun TinyUsMemory(
+    id: String,
+    date: LocalDate,
+    title: String,
+    description: String,
+    type: SpecialMemoryType,
+    isPrivate: Boolean = false,
+    isFuture: Boolean = false,
+    annualRecurring: Boolean = false
+): TinyUsMemory = TinyUsMemory(id, date.toKotlinLocalDate(), title, description, type, isPrivate, isFuture, annualRecurring)
 
+/**
+ * The special calendar for Android code, in java.time types. The calendar itself is shared
+ * ([CoupleCalendar]); this keeps its settings there.
+ */
 object SpecialCalendarManager {
 
     // Single source of truth for the relationship start date
     val startDate: LocalDate get() = RelationshipTimeManager.relationshipStartDate
 
     // Optional custom memory entries loaded from local data layer or user entries
-    var customMemories: List<TinyUsMemory>? = null
-
-    var boyBirthday: LocalDate? = null
+    var customMemories: List<TinyUsMemory>?
+        get() = CoupleCalendar.customMemories
         set(value) {
-            field = value
+            CoupleCalendar.customMemories = value
+        }
+
+    var boyBirthday: LocalDate?
+        get() = CoupleDates.boyBirthday?.toJavaLocalDate()
+        set(value) {
             CoupleDates.boyBirthday = value?.toKotlinLocalDate()
         }
-    var girlBirthday: LocalDate? = null
+    var girlBirthday: LocalDate?
+        get() = CoupleDates.girlBirthday?.toJavaLocalDate()
         set(value) {
-            field = value
             CoupleDates.girlBirthday = value?.toKotlinLocalDate()
         }
-    var boyName: String = PersonalProfile.DEFAULT_NAME_A
-    var girlName: String = PersonalProfile.DEFAULT_NAME_B
+    var boyName: String
+        get() = CoupleCalendar.boyName
+        set(value) {
+            CoupleCalendar.boyName = value
+        }
+    var girlName: String
+        get() = CoupleCalendar.girlName
+        set(value) {
+            CoupleCalendar.girlName = value
+        }
 
     // Base template memories (dynamic based on relationship start date & birthdays)
     val fixedMemories: List<TinyUsMemory>
         get() {
-            customMemories?.let { return it }
-            val list = mutableListOf(
-                TinyUsMemory(
-                    id = "our_beginning",
-                    date = startDate,
-                    title = "Our Beginning",
-                    description = "Where our story began. The first day of forever.",
-                    type = SpecialMemoryType.RELATIONSHIP,
-                    annualRecurring = true
-                )
-            )
-            boyBirthday?.let { bDate ->
-                list.add(
-                    TinyUsMemory(
-                        id = "boy_birthday",
-                        date = bDate,
-                        title = "${boyName}'s Birthday",
-                        description = "Celebrating the most wonderful person in the world!",
-                        type = SpecialMemoryType.BIRTHDAY,
-                        annualRecurring = true
-                    )
-                )
-            }
-            girlBirthday?.let { gDate ->
-                list.add(
-                    TinyUsMemory(
-                        id = "girl_birthday",
-                        date = gDate,
-                        title = "${girlName}'s Birthday",
-                        description = "Celebrating the most special, beautiful soul!",
-                        type = SpecialMemoryType.BIRTHDAY,
-                        annualRecurring = true
-                    )
-                )
-            }
-            return list
+            RelationshipTimeManager.relationshipStartDate // the start date is synced on first use
+            return CoupleCalendar.fixedMemories
         }
 
-    fun getMemoriesForDate(date: LocalDate): List<TinyUsMemory> {
-        return fixedMemories.filter { mem ->
-            if (mem.annualRecurring) {
-                mem.date.month == date.month && mem.date.dayOfMonth == date.dayOfMonth
-            } else {
-                mem.date == date
-            }
-        }
-    }
+    fun getMemoriesForDate(date: LocalDate): List<TinyUsMemory> = CoupleCalendar.getMemoriesForDate(date.toKotlinLocalDate())
 
-    fun hasMemoryOnDate(date: LocalDate): Boolean {
-        return getMemoriesForDate(date).isNotEmpty()
-    }
+    fun hasMemoryOnDate(date: LocalDate): Boolean = getMemoriesForDate(date).isNotEmpty()
 
-    fun calculateCountdown(targetDate: LocalDate, now: LocalDateTime = LocalDateTime.now()): LiveCountdown {
-        val targetDateTime = targetDate.atStartOfDay()
-        val totalSecs = ChronoUnit.SECONDS.between(now, targetDateTime)
-        val isSameDay = now.toLocalDate() == targetDate
-        return RelationshipTimeCalculator.computeCountdown(totalSecs, isSameDay)
-    }
+    fun calculateCountdown(targetDate: LocalDate, now: LocalDateTime = LocalDateTime.now()): LiveCountdown =
+        CoupleCalendar.calculateCountdown(targetDate.toKotlinLocalDate(), now.toKotlinLocalDateTime())
 }

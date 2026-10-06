@@ -1,6 +1,6 @@
 package com.example.ui
 
-import com.example.R
+import com.example.engine.WorldAudio
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -14,14 +14,11 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -37,25 +34,18 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.PreferencesManager
-import com.example.engine.AmbientAudio
 import com.example.engine.CharacterPose
 import com.example.engine.Direction
 import com.example.engine.EmoteType
 import com.example.engine.ParticleSystem
 import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelCharacter
-import com.example.ui.theme.BlushPink
-import com.example.ui.theme.DarkSlate
 import com.example.ui.theme.DeepRose
-import com.example.ui.theme.PeachMuted
-import com.example.ui.theme.SoftRose
 import com.example.ui.theme.TinyColors
 import kotlinx.coroutines.delay
 import kotlin.random.Random
@@ -64,13 +54,13 @@ import com.example.ui.theme.PixelIcons
 import com.example.resources.*
 import org.jetbrains.compose.resources.stringResource
 
+/** The opening scene; it plays through [audio] and releases it when the splash ends. */
 @Composable
 fun SplashScreen(
+    prefs: PreferencesManager,
+    audio: WorldAudio,
     onSplashComplete: () -> Unit
 ) {
-    val context = LocalContext.current
-    val prefs = remember { PreferencesManager(context) }
-    val audio = remember { AmbientAudio(context.applicationContext).apply { isEnabled = prefs.soundEnabled } }
     DisposableEffect(audio) {
         onDispose {
             audio.release()

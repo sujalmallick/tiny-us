@@ -1,5 +1,6 @@
 package com.example
 
+import kotlinx.datetime.toJavaLocalDate
 import android.content.Context
 import androidx.test.core.app.ApplicationProvider
 import com.example.data.PreferencesManager
@@ -600,32 +601,32 @@ class TinyUsOfflineTest {
             assertEquals("Must have exactly 6 fixed relationship milestones", 6, memories.size)
 
             val beginning = memories.first { it.id == "our_beginning" }
-            assertEquals(testStart, beginning.date)
+            assertEquals(testStart, beginning.date.toJavaLocalDate())
             assertEquals("Our Beginning", beginning.title)
             assertEquals(SpecialMemoryType.RELATIONSHIP, beginning.type)
 
             val kiss = memories.first { it.id == "first_kiss" }
-            assertEquals(LocalDate.of(2024, 2, 14), kiss.date)
+            assertEquals(LocalDate.of(2024, 2, 14), kiss.date.toJavaLocalDate())
             assertEquals("Our First Kiss", kiss.title)
             assertEquals(SpecialMemoryType.KISS, kiss.type)
 
             val boyBday = memories.first { it.id == "boy_birthday" }
-            assertEquals(LocalDate.of(2000, 5, 10), boyBday.date)
+            assertEquals(LocalDate.of(2000, 5, 10), boyBday.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.BIRTHDAY, boyBday.type)
             assertTrue("Birthday is annual recurring", boyBday.annualRecurring)
 
             val girlBday = memories.first { it.id == "girl_birthday" }
-            assertEquals(LocalDate.of(2000, 8, 15), girlBday.date)
+            assertEquals(LocalDate.of(2000, 8, 15), girlBday.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.BIRTHDAY, girlBday.type)
             assertTrue("Birthday is annual recurring", girlBday.annualRecurring)
 
             val priv = memories.first { it.id == "private_memory" }
-            assertEquals(LocalDate.of(2024, 6, 20), priv.date)
+            assertEquals(LocalDate.of(2024, 6, 20), priv.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.PRIVATE, priv.type)
             assertTrue("Private memory is marked private", priv.isPrivate)
 
             val nextMeet = memories.first { it.id == "next_meet" }
-            assertEquals(LocalDate.of(2026, 10, 28), nextMeet.date)
+            assertEquals(LocalDate.of(2026, 10, 28), nextMeet.date.toJavaLocalDate())
             assertEquals(SpecialMemoryType.FUTURE_MEETING, nextMeet.type)
             assertTrue("Next meet is future event", nextMeet.isFuture)
         } finally {
