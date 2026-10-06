@@ -44,7 +44,9 @@ data class StoryInput(
     /** Birthday parties (plan 09, A), from [StoryTimeline.birthdayEntries]. */
     val birthdays: List<StoryEntry> = emptyList(),
     /** Couple-life moments (plan 09, C), from [StoryTimeline.coupleLifeEntries]. */
-    val coupleLife: List<StoryEntry> = emptyList()
+    val coupleLife: List<StoryEntry> = emptyList(),
+    /** Festivals celebrated (plan 09, D), from [StoryTimeline.festivalEntries]. */
+    val festivals: List<StoryEntry> = emptyList()
 )
 
 /**
@@ -118,6 +120,7 @@ object StoryTimeline {
         }
         entries += input.birthdays
         entries += input.coupleLife
+        entries += input.festivals
 
         // Chronological; undated entries last, keeping their original order.
         return entries.withIndex()
@@ -165,6 +168,18 @@ object StoryTimeline {
         }
         return list
     }
+
+    /** One entry per festival per year it was celebrated, dated on its first day. */
+    fun festivalEntries(store: FestivalStore, southern: Boolean, titleFor: (Festival, FestivalPicks) -> String): List<StoryEntry> =
+        Festival.entries.flatMap { f ->
+            store.years(f).sorted().map { y ->
+                StoryEntry(
+                    id = "festival:${f.name}:$y", kind = StoryKind.MOMENT_TOGETHER,
+                    date = LocalDate(y, Festivals.month(f, southern), Festivals.FIRST_DAY),
+                    title = titleFor(f, store.picks(f, y)), iconKey = "festival"
+                )
+            }
+        }
 
     fun groupByMonth(entries: List<StoryEntry>): List<StorySection> {
         val dated = entries.filter { it.date != null }

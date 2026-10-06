@@ -112,6 +112,10 @@ fun loadStory(
             makeUpTitle = com.example.engine.GameText.get(com.example.resources.Res.string.bench_story),
             jarTitle = com.example.engine.GameText.get(com.example.resources.Res.string.first_thank_you_jar)
         ),
+        festivals = StoryTimeline.festivalEntries(
+            com.example.data.FestivalStore(prefs.storage),
+            com.example.data.Festivals.isSouthern(androidx.compose.ui.text.intl.Locale.current.region)
+        ) { f, picks -> festivalStoryTitle(f, picks) },
         birthdays = StoryTimeline.birthdayEntries(com.example.data.BirthdayStore(prefs.storage)) { r ->
             val name = if (r.partner == com.example.data.Partner.BOY) prefs.boyfriendName else prefs.girlfriendName
             if (r.age != null) com.example.engine.GameText.get(com.example.resources.Res.string.bday_turned_age, name, r.age)
@@ -404,6 +408,9 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "SEA_GLASS_HEART" -> Res.string.keepsake_catch_sea_glass_heart
     "BOUQUET" -> Res.string.keepsake_bouquet
     "THANK_YOU" -> Res.string.keepsake_thank_you_jar
+    "BLOSSOM_PICNIC" -> Res.string.keepsake_festival_picnic
+    "LANTERN_NIGHT" -> Res.string.keepsake_festival_lantern
+    "GIFT_EXCHANGE" -> Res.string.keepsake_festival_gift
     else -> Res.string.keepsake_something
 }
 
@@ -487,5 +494,20 @@ private fun KeepsakesPage(
         if (progress.shelf.isNotEmpty()) {
             item { Text(stringResource(Res.string.keepsakes_on_shelf, progress.shelf.size), style = TinyType.Caption, modifier = Modifier.padding(top = TinySpace.sm)) }
         }
+    }
+}
+
+/** How a festival reads in Our Story: the picnic's flowers, the lanterns, the gifts exchanged. */
+private fun festivalStoryTitle(f: com.example.data.Festival, picks: com.example.data.FestivalPicks): String {
+    val flowers = GameText.array(Res.array.festival_flowers)
+    fun gift(id: String) = if (id == HANDMADE_CARD) GameText.get(Res.string.fest_gift_handmade) else GameText.get(keepsakeName(id))
+    return when (f) {
+        com.example.data.Festival.BLOSSOM_PICNIC -> GameText.get(
+            Res.string.fest_story_picnic,
+            flowers.getOrElse(picks.boy.toIntOrNull() ?: -1) { "" },
+            flowers.getOrElse(picks.girl.toIntOrNull() ?: -1) { "" }
+        )
+        com.example.data.Festival.LANTERN_NIGHT -> GameText.get(Res.string.fest_story_lantern)
+        com.example.data.Festival.GIFT_EXCHANGE -> GameText.get(Res.string.fest_story_gift, gift(picks.boy), gift(picks.girl))
     }
 }

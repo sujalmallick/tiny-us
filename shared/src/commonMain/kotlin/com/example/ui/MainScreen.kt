@@ -144,6 +144,9 @@ fun MainScreen(
     // The couple-life tools (plan 09, C) and whichever of them is open.
     val coupleLifeStore = remember(prefs) { com.example.data.CoupleLifeStore(prefs.storage) }
     var coupleTool by remember { mutableStateOf<CoupleTool?>(null) }
+    // The festivals (plan 09, D) and whether one's screen is open.
+    val festivalStore = remember(prefs) { com.example.data.FestivalStore(prefs.storage) }
+    var showFestival by remember { mutableStateOf(false) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
         mutableStateOf(
@@ -254,6 +257,8 @@ fun MainScreen(
         if (!showOnboarding && previewEngine == null) {
             engine.birthdayStore = birthdayStore
             engine.coupleLifeStore = coupleLifeStore
+            engine.festivalStore = festivalStore
+            engine.refreshFestival()
             // A Phones Down session still running from before the app closed carries on.
             if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()
         }
@@ -577,6 +582,20 @@ fun MainScreen(
             onOpenLongDistance = if (com.example.FeatureFlags.PARTNER_SYNC) ({ showLongDistance = true }) else null,
             onOpenThankYouJar = { coupleTool = CoupleTool.JAR }
         )
+        // A festival today (plan 09, D): a button to join in, which takes them to its scene.
+        engine.festivalToJoin?.let { festival ->
+            TinyButton(
+                text = stringResource(Res.string.fest_join) + ": " + engine.festivalName(festival),
+                onClick = {
+                    if (engine.currentScene != festival.scene) engine.loadScene(festival.scene)
+                    showFestival = true
+                },
+                icon = PixelIcons.Celebration,
+                compact = true,
+                testTag = "festival_join_button",
+                modifier = Modifier.align(Alignment.BottomStart).navigationBarsPadding().padding(start = 16.dp, bottom = 76.dp)
+            )
+        }
         // Phones down (plan 09, C): a night-light over the world until the time is up.
         if (engine.phonesDownActive) {
             PhonesDownOverlay(engine.phonesDownSecondsLeft, onEnd = { engine.stopPhonesDown() }, modifier = Modifier.fillMaxSize())
@@ -1598,6 +1617,34 @@ fun MainScreen(
             DailyMomentPromptDialog(
                 prefs = prefs,
                 onDismiss = { showDailyMomentPrompt = false }
+            )
+        }
+
+        // Festivals (plan 09, D)
+        val festivalDay = engine.festivalDay
+        if (showFestival && festivalDay != null) {
+            FestivalDialog(
+                festival = festivalDay.festival,
+                year = festivalDay.year,
+                store = festivalStore,
+                letters = birthdayStore,
+                progress = progress,
+                boyName = prefs.boyfriendName,
+                girlName = prefs.girlfriendName,
+                callbacks = FestivalCallbacks(
+                    onPicnic = { forGirl, forBoy -> engine.celebratePicnic(forGirl, forBoy) },
+                    onLanterns = { engine.releaseLanterns() },
+                    onGifts = { boyGave, girlGave ->
+                        if (boyGave != HANDMADE_CARD) recordProgress(com.example.progress.ProgressEvent.GiftGiven(boyGave, fromBoy = true))
+                        if (girlGave != HANDMADE_CARD) recordProgress(com.example.progress.ProgressEvent.GiftGiven(girlGave, fromBoy = false))
+                        engine.openFestivalGifts()
+                    },
+                    onCelebrated = { recordProgress(com.example.progress.ProgressEvent.FestivalCelebrated(it.name)) }
+                ),
+                onDismiss = {
+                    showFestival = false
+                    engine.refreshFestival()
+                }
             )
         }
 

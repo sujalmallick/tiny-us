@@ -2,6 +2,7 @@ package com.example.scene
 
 import com.example.engine.GameText
 import com.example.data.CoupleDates
+import kotlinx.datetime.daysUntil
 import com.example.engine.WorldViewport
 
 import androidx.compose.runtime.getValue
@@ -103,6 +104,8 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** How long the released lanterns take to drift out of sight (plan 09, D). */
+        const val LANTERN_SECONDS = 14f
         /** Give up on a walk that hasn't arrived after this long. */
         const val AUTONOMY_WALK_TIMEOUT = 12f
         /** Rare surprises: none in the first minute or so, then at least this far apart. */
@@ -1200,6 +1203,7 @@ class SceneEngine(
         cozy.update(deltaSeconds, canvasWidth, canvasHeight)
         updateBirthday(deltaSeconds, canvasWidth, canvasHeight)
         updateCoupleLife(deltaSeconds)
+        updateFestival(deltaSeconds)
         starPuzzle.update(deltaSeconds)
         // The stars are only there at night outdoors.
         if (starPuzzle.current != null && (!timeOfDayPhase.isNight || !isCurrentSceneOutdoor)) starPuzzle.stop()
@@ -7827,6 +7831,135 @@ class SceneEngine(
             c.transitionPoseTo(CharacterPose.IDLE)
             emote(c, EmoteType.HEART, 2.4f)
         }
+    }
+
+    // ── Festivals (plan 09, D) ─────────────────────────────────────────────
+    // A poster two days before, then three days of a festival in its own scene: a picnic with
+    // flower crowns picked in secret, lanterns carrying sealed wishes, gifts under a little tree.
+    // The screens are in FestivalDialogs; the world's side is here and in WorldFestivals.
+
+    /** The festivals' saved data; set by the app once it has storage. */
+    var festivalStore: com.example.data.FestivalStore? by mutableStateOf(null)
+    /** Today's festival (or its poster), refreshed once a day. */
+    var festivalDay: com.example.data.FestivalDay? by mutableStateOf(null)
+        private set
+    /** Wrapped gifts wait under the tree (both picked, not opened yet). */
+    var giftBoxesWaiting: Boolean by mutableStateOf(false)
+        private set
+    /** Seconds since the lanterns were let go, or 0 when there are none in the sky. */
+    var lanternRise: Float = 0f
+        private set
+    private var festivalCheckedDay = Long.MIN_VALUE
+    private var festivalAnnouncedDay = Long.MIN_VALUE
+
+    fun festivalName(f: com.example.data.Festival): String = GameText.get(
+        when (f) {
+            com.example.data.Festival.BLOSSOM_PICNIC -> Res.string.fest_blossom_picnic
+            com.example.data.Festival.LANTERN_NIGHT -> Res.string.fest_lantern_night
+            com.example.data.Festival.GIFT_EXCHANGE -> Res.string.fest_gift_exchange
+        }
+    )
+
+    /** Today's festival, if it's on and not celebrated yet this year (so it can be joined). */
+    val festivalToJoin: com.example.data.Festival?
+        get() {
+            val day = festivalDay ?: return null
+            val store = festivalStore ?: return null
+            if (day.phase != com.example.data.FestivalPhase.ON) return null
+            return day.festival.takeIf { !store.celebrated(it, day.year) || (it == com.example.data.Festival.GIFT_EXCHANGE && giftBoxesWaiting) }
+        }
+
+    /** Re-reads today's festival and what's been done (after a dialog changes something). */
+    fun refreshFestival() {
+        val store = festivalStore ?: return
+        val day = com.example.data.Festivals.today()
+        festivalDay = day
+        val on = day?.phase == com.example.data.FestivalPhase.ON
+        // The crowns are worn on the picnic's days once they've been revealed.
+        val picnic = if (on && day?.festival == com.example.data.Festival.BLOSSOM_PICNIC) store.picks(day.festival, day.year) else null
+        val crowns = picnic?.takeIf { it.revealed }
+        boy.crownFlower = crowns?.girl?.toIntOrNull() ?: -1 // she picked his
+        girl.crownFlower = crowns?.boy?.toIntOrNull() ?: -1
+        val gifts = if (on && day?.festival == com.example.data.Festival.GIFT_EXCHANGE) store.picks(day.festival, day.year) else null
+        giftBoxesWaiting = gifts != null && gifts.boy.isNotEmpty() && gifts.girl.isNotEmpty() && !gifts.revealed
+    }
+
+    private fun updateFestival(dt: Float) {
+        festivalStore ?: return
+        val today = CoupleDates.today().toEpochDays().toLong()
+        if (today != festivalCheckedDay) {
+            festivalCheckedDay = today
+            refreshFestival()
+        }
+        if (lanternRise > 0f) {
+            lanternRise += dt
+            if (lanternRise > LANTERN_SECONDS) lanternRise = 0f
+        }
+        // Once a day: the poster, or "it's today".
+        val day = festivalDay ?: return
+        if (festivalAnnouncedDay == today || sceneTime < 4f || sceneMessage != null || isWatchSceneActive || birthdaySurprise.isRunning) return
+        festivalAnnouncedDay = today
+        val name = festivalName(day.festival)
+        val line = when (day.phase) {
+            com.example.data.FestivalPhase.POSTER -> {
+                val start = kotlinx.datetime.LocalDate(day.year, com.example.data.Festivals.month(day.festival, com.example.data.Festivals.isSouthern(androidx.compose.ui.text.intl.Locale.current.region)), com.example.data.Festivals.FIRST_DAY)
+                val days = CoupleDates.today().daysUntil(start)
+                if (days <= 1) GameText.get(Res.string.fest_poster_tomorrow, name) else GameText.get(Res.string.fest_poster, name, days)
+            }
+            com.example.data.FestivalPhase.ON -> if (festivalToJoin != null) GameText.get(Res.string.fest_today, name) else return
+        }
+        showMessage(line, duration = 4.5f)
+    }
+
+    /** The picnic's crowns are revealed: [boyPickedForGirl] and [girlPickedForBoy] are flowers. */
+    fun celebratePicnic(boyPickedForGirl: Int, girlPickedForBoy: Int) {
+        boy.crownFlower = girlPickedForBoy
+        girl.crownFlower = boyPickedForGirl
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 2.6f
+            c.emotion = CharacterEmotion.LOVING
+            if (c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.JOY_JUMP
+            emote(c, EmoteType.HEART, 2.2f)
+        }
+        particles.spawnPetals(lastWorldW * 0.5f, lastWorldH * 0.40f, 8)
+        audio.playHeartChime()
+    }
+
+    /** The two lanterns are let go: they rise from the couple into the sky. */
+    fun releaseLanterns() {
+        lanternRise = 0.01f
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 4f
+            c.emotion = CharacterEmotion.LOVING
+            emote(c, EmoteType.SPARKLE, 2.4f)
+        }
+        audio.playStarTwinkle()
+    }
+
+    /** The gifts are opened together; Mochi makes off with a ribbon. */
+    fun openFestivalGifts() {
+        giftBoxesWaiting = false
+        for (c in charactersBoyGirl) {
+            c.reactionTimer = 3f
+            c.emotion = CharacterEmotion.LOVING
+            emote(c, EmoteType.HEART, 2.4f)
+        }
+        particles.spawnSparkles(lastWorldW * GiftTree.X, lastWorldH * GiftTree.FLOOR_Y - 20f, 10, Color(0xFFFFD166))
+        audio.playHeartChime()
+        if (currentScene != SceneType.COZY_LOFT && currentScene != SceneType.EVENING_RIDE) {
+            catTargetX = GiftTree.X + 0.06f
+            catTargetY = catWorldY
+            catFacingLeft = catTargetX < catWorldX
+            catSleeping = false
+            catState = CatState.WALK_FOLLOW
+            showMessage(GameText.get(Res.string.fest_gift_ribbon), duration = 3.5f)
+        }
+    }
+
+    /** Where the little tree stands in the living room. */
+    object GiftTree {
+        const val X = 0.13f
+        const val FLOOR_Y = 0.70f
     }
 
     // ── Birthday surprise (plan 09, A) ────────────────────────────────────

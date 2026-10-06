@@ -277,7 +277,7 @@ These are on the site and legal-pages side, not the app:
 | A. Birthday | The partner's sealed letter is hidden in the gift box; the party starts in the dark. *(Done.)* |
 | B. Tiny Games | Our Story Quiz asks about the couple's own life; a miss gets "Opposites attract!". *(Done.)* |
 | C. Couple life | The Dinner Decider spins only what survived both secret vetoes. The full Thank-You Jar is opened and one old thank-you is read aloud. "Open when..." letters choose their own moment. |
-| D. Festivals | Each partner secretly picks the other's flower crown. Lantern wishes come back a year later ("Last summer you wished..."). Gifts are chosen in secret and unwrapped together. |
+| D. Festivals | Each partner secretly picks the other's flower crown. Lantern wishes come back a year later ("Last summer you wished..."). Gifts are chosen in secret and unwrapped together. (No Harvest Fair: dropped by the user.) |
 | E. Garden to kitchen (GROWTH) | *Merged as #31. The user chose to keep it as it is, with no twists added.* |
 | F. Fishing (GROWTH) | Something lovely for her: a message in a bottle (a sealed note dropped at the pier comes up on the other's line on a later day), and little treasures he sometimes reels up for her (a pearl, a heart-shaped shell, a sea-glass heart), kept on the shelf. |
 | G. Mail | *Dropped by the user (2026-10-07).* |
@@ -371,14 +371,14 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 - [x] C-6. Opt-in reminders for anniversaries and month-iversaries. *(Shared `care/DateMornings.kt` and `CoupleMornings`, merged with the birthday morning; toggles in Settings > Our World. Android done; iOS switches over after this lands.)*
 - [x] C-7. Tests and renders for each. *(`CoupleLifeTest`, `CoupleLifeEngineTest`, `CoupleLifePreviewTest` (`COUPLE_LIFE_PREVIEW_DIR`), and `SCENE_PREVIEW_COUPLE=jar|bench|rainbow`.)*
 
-### D. Festivals
-- [ ] D-1. A `Festival` model: one per season, a 3-day window in mid-season (hemisphere-aware through `SeasonalWeather`), a poster 2 days before, and years recorded.
-- [ ] D-2. Blossom Picnic: secret flower picks, then the crown reveal, then a polaroid.
-- [ ] D-3. Lantern Night: private wishes that come back next year, and the lantern release at the pier.
-- [ ] D-4. Harvest Fair: a pie from the harvest (needs E), and a pumpkin face each.
-- [ ] D-5. Gift Exchange: each picks a gift from the keepsakes and adds a note; the boxes sit under the tree until opened together.
-- [ ] D-6. Decorations, Our Story entries, the "Every festival" first, and Diwali and Holi dates past 2030.
-- [ ] D-7. Tests and renders.
+### D. Festivals (branch `feature/plan09-d-festivals`)
+- [x] D-1. A `Festival` model: one per season, a 3-day window in mid-season (hemisphere-aware through `SeasonalWeather`), a poster 2 days before, and years recorded. *(14th to 16th of the season's middle month. Also a note on each festival's first morning at 9:00, always on (the user didn't want an off switch), through `CoupleMornings`.)*
+- [x] D-2. Blossom Picnic: secret flower picks, then the crown reveal, then a polaroid. *(The crowns are worn all day; the screen suggests a polaroid.)*
+- [x] D-3. Lantern Night: private wishes that come back next year, and the lantern release at the pier.
+- ~~D-4. Harvest Fair~~ *Dropped by the user (2026-10-07); autumn has no festival, and "Every festival" means the other three.*
+- [x] D-5. Gift Exchange: each picks a gift from the keepsakes and adds a note; the boxes sit under the tree until opened together.
+- [x] D-6. Decorations, Our Story entries, the "Every festival" first, and Diwali and Holi dates past 2030. *(Diwali 2031-2035 from drikpanchang, Holi from vedpanchang; plus a "first festival" first.)*
+- [x] D-7. Tests and renders. *(`FestivalsTest`, `FestivalNotesTest`, `FestivalEngineTest`, `FestivalPreviewTest` (`FESTIVAL_PREVIEW_DIR`), `SCENE_PREVIEW_FESTIVAL=...`.)*
 
 ### E. Garden to kitchen (GROWTH, merged as #31)
 - [x] E-1. A seed picker, seasonal crops, and the sunroom pots as the winter greenhouse. *(`Seeds` in `GardenPlots.kt`: flowers outside winter; strawberries and peas in spring, tomatoes and basil in summer, pumpkins and apples in autumn; nothing in the meadow in winter; mint and basil in the two sunroom pots all year. The picker is `SeedPickerCard` in `ui/CozyCards.kt`.)*

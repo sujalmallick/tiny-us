@@ -1328,4 +1328,53 @@
         <item>when you’re proud of yourself</item>
     </string-array>
     <string name="ow_letter_label">Open %1$s</string>
+
+    <!-- Plan 09 D: festivals -->
+    <string name="fest_blossom_picnic">Blossom Picnic</string>
+    <string name="fest_lantern_night">Lantern Night</string>
+    <string name="fest_gift_exchange">Gift Exchange</string>
+    <string name="fest_poster">%1$s in %2$d days. Mark the calendar!</string>
+    <string name="fest_poster_tomorrow">%1$s is tomorrow!</string>
+    <string name="fest_today">It’s %1$s today!</string>
+    <string name="fest_join">Join in</string>
+    <string name="fest_picnic_intro">A blanket under the blossoms. Each of you picks the flowers for the other’s crown, in secret.</string>
+    <string name="fest_picnic_pick">%1$s, pick the flowers for %2$s’s crown</string>
+    <string name="fest_picnic_reveal">%1$s picked %2$s for %3$s.</string>
+    <string name="fest_picnic_done">Wear them all day. A polaroid, maybe?</string>
+    <string name="fest_lantern_intro">At dusk, each of you writes a wish on a paper lantern. You let them go together. No one reads them, not even you, until next summer.</string>
+    <string name="fest_lantern_last_year">Last summer, %1$s wished:</string>
+    <string name="fest_lantern_write">%1$s, write your wish</string>
+    <string name="fest_lantern_hint">I wish…</string>
+    <string name="fest_lantern_release">Let them go</string>
+    <string name="fest_lantern_done">Two lanterns, drifting up. See you next summer.</string>
+    <string name="fest_gift_intro">A little tree, and a gift each, chosen in secret from your keepsakes. They stay wrapped until you open them together.</string>
+    <string name="fest_gift_pick">%1$s, choose a gift for %2$s</string>
+    <string name="fest_gift_handmade">A handmade card</string>
+    <string name="fest_gift_note_hint">Write a note to go with it…</string>
+    <string name="fest_gift_wrapped">Both gifts are under the tree.</string>
+    <string name="fest_gift_open">Open them together</string>
+    <string name="fest_gift_from">From %1$s: %2$s</string>
+    <string name="fest_gift_ribbon">Mochi made off with a ribbon!</string>
+    <string name="fest_story_picnic">Blossom Picnic: %1$s and %2$s</string>
+    <string name="fest_story_lantern">Lantern Night: two wishes, sealed for a year</string>
+    <string name="fest_story_gift">Gift Exchange: %1$s and %2$s</string>
+    <string name="fest_next">Next</string>
+    <string name="first_festival">Our first festival</string>
+    <string name="first_festival_hint">Watch the calendar: something is coming each season.</string>
+    <string name="every_festival">Every festival</string>
+    <string name="every_festival_hint">A picnic in spring, lanterns in summer, gifts in winter.</string>
+    <string name="keepsake_festival_picnic">A flower crown from the Blossom Picnic</string>
+    <string name="keepsake_festival_lantern">A paper lantern</string>
+    <string name="keepsake_festival_gift">A gift ribbon</string>
+    <string-array name="festival_flowers">
+        <item>forget-me-nots</item>
+        <item>lavender</item>
+        <item>sunflowers</item>
+        <item>tulips</item>
+        <item>daisies</item>
+        <item>roses</item>
+    </string-array>
+    <string name="fest_note_blossom_picnic">It’s the Blossom Picnic today! Bring your flowers.</string>
+    <string name="fest_note_lantern_night">It’s Lantern Night today. Come and make a wish together.</string>
+    <string name="fest_note_gift_exchange">It’s the Gift Exchange today! A little tree is waiting.</string>
 </resources>

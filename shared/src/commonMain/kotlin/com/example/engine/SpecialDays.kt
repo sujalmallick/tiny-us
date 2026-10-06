@@ -17,21 +17,27 @@ enum class SpecialDay { ANNIVERSARY, BOY_BIRTHDAY, GIRL_BIRTHDAY, NEW_YEAR, VALE
 object SpecialDays {
     /**
      * Diwali (Lakshmi Puja day). The world dresses up on Choti Diwali, the day before, too.
-     * Checked against two panchang sources in October 2026; add years before 2031.
+     * Checked against two panchang sources in October 2026; 2031 to 2035 from drikpanchang
+     * (October 2026). Add years before 2036.
      */
     private val DIWALI = listOf(
         LocalDate(2026, 11, 8), LocalDate(2027, 10, 29), LocalDate(2028, 10, 17),
-        LocalDate(2029, 11, 5), LocalDate(2030, 10, 26)
+        LocalDate(2029, 11, 5), LocalDate(2030, 10, 26),
+        LocalDate(2031, 11, 14), LocalDate(2032, 11, 2), LocalDate(2033, 10, 22),
+        LocalDate(2034, 11, 10), LocalDate(2035, 10, 30)
     )
 
     /**
      * Holi: the bonfire evening (Holika Dahan) and the next day's colours. Sources differ by a
      * day on which of the two they list, so each date opens a two-day window that covers both
-     * readings. Checked in October 2026; add years before 2031.
+     * readings. Checked in October 2026; 2031 to 2035 are Holika Dahan from vedpanchang
+     * (October 2026). Add years before 2036.
      */
     private val HOLI = listOf(
         LocalDate(2026, 3, 3), LocalDate(2027, 3, 22), LocalDate(2028, 3, 11),
-        LocalDate(2029, 2, 28), LocalDate(2030, 3, 20)
+        LocalDate(2029, 2, 28), LocalDate(2030, 3, 20),
+        LocalDate(2031, 3, 8), LocalDate(2032, 3, 26), LocalDate(2033, 3, 15),
+        LocalDate(2034, 3, 4), LocalDate(2035, 3, 23)
     )
 
     /** Shows one special day everywhere instead of today's; for previews and tests only. */

@@ -34,7 +34,13 @@ object BirthdayReminder {
         BirthdayMorning.nextMillis(store, nowMillis)
 
     private fun nextTrigger(context: Context): Long? =
-        CoupleMornings.nextMillis(store(context), com.example.data.CoupleLifeStore(storage(context)), start(context), System.currentTimeMillis())
+        CoupleMornings.nextMillis(
+            store(context), com.example.data.CoupleLifeStore(storage(context)), start(context), System.currentTimeMillis(),
+            festivals = com.example.data.FestivalStore(storage(context)), southern = southern()
+        )
+
+    /** Whether this phone's country has its seasons the other way round (for the festivals). */
+    private fun southern() = com.example.data.Festivals.isSouthern(java.util.Locale.getDefault().country)
 
     /** Sets (or clears) the alarm for the next birthday morning. Safe to call often. */
     fun schedule(context: Context) {
@@ -65,7 +71,8 @@ object BirthdayReminder {
 
     internal fun fire(context: Context) {
         val message = CoupleMornings.messageFor(
-            com.example.data.CoupleDates.today(), store(context), com.example.data.CoupleLifeStore(storage(context)), start(context)
+            com.example.data.CoupleDates.today(), store(context), com.example.data.CoupleLifeStore(storage(context)), start(context),
+            festivals = com.example.data.FestivalStore(storage(context)), southern = southern()
         )
         if (message != null) {
             TinyCareScheduler.createNotificationChannel(context)

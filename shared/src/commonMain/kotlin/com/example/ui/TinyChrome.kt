@@ -425,6 +425,7 @@ object TinyIcons {
         "phones_down" -> PixelIcons.Bedtime
         "make_up" -> PixelIcons.Favorite
         "jar" -> PixelIcons.VolunteerActivism
+        "festival" -> PixelIcons.Celebration
         "upcoming" -> PixelIcons.HourglassTop
         else -> PixelIcons.Favorite
     }

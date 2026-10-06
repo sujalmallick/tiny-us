@@ -84,11 +84,31 @@ object CoupleMornings {
         start: LocalDate?,
         nowMillis: Long,
         today: LocalDate = CoupleDates.today(),
-        zone: TimeZone = TimeZone.currentSystemDefault()
+        zone: TimeZone = TimeZone.currentSystemDefault(),
+        /** The festivals (plan 09, D): a little note on each one's first morning (always on). */
+        festivals: com.example.data.FestivalStore? = null,
+        southern: Boolean = false
     ): Long? {
         val birthday = BirthdayMorning.nextMillis(birthdays, nowMillis, today, zone)
         val dates = start?.let { DateMornings.nextMillis(it, life.anniversaryReminder, life.monthiversaryReminder, nowMillis, today, zone) }
-        return listOfNotNull(birthday, dates).minOrNull()
+        val festival = festivals?.let { nextFestivalMillis(southern, nowMillis, today, zone) }
+        return listOfNotNull(birthday, dates, festival).minOrNull()
+    }
+
+    /** 9:00 on the next festival's first day (this year's if still ahead, else next year's). */
+    fun nextFestivalMillis(southern: Boolean, nowMillis: Long, today: LocalDate, zone: TimeZone): Long? =
+        com.example.data.Festival.entries.flatMap { f ->
+            listOf(today.year, today.year + 1).map { y ->
+                LocalDateTime(y, com.example.data.Festivals.month(f, southern), com.example.data.Festivals.FIRST_DAY, DateMornings.HOUR, 0)
+                    .toInstant(zone).toEpochMilliseconds()
+            }
+        }.filter { it > nowMillis }.minOrNull()
+
+    /** The note for a festival's first morning. */
+    fun festivalNote(f: com.example.data.Festival): org.jetbrains.compose.resources.StringResource = when (f) {
+        com.example.data.Festival.BLOSSOM_PICNIC -> Res.string.fest_note_blossom_picnic
+        com.example.data.Festival.LANTERN_NIGHT -> Res.string.fest_note_lantern_night
+        com.example.data.Festival.GIFT_EXCHANGE -> Res.string.fest_note_gift_exchange
     }
 
     /** The reminder's text for [today], or null when nothing switched on falls today. */
@@ -96,11 +116,19 @@ object CoupleMornings {
         today: LocalDate,
         birthdays: com.example.data.BirthdayStore,
         life: com.example.data.CoupleLifeStore,
-        start: LocalDate?
+        start: LocalDate?,
+        festivals: com.example.data.FestivalStore? = null,
+        southern: Boolean = false
     ): org.jetbrains.compose.resources.StringResource? {
         if (birthdays.morningReminderEnabled &&
             birthdays.birthdays().values.filterNotNull().any { com.example.data.Birthdays.isToday(it, today) }
         ) return Res.string.bday_morning_reminder
+        // A festival's first day (a birthday still comes first).
+        if (festivals != null) {
+            com.example.data.Festival.entries.firstOrNull { f ->
+                today.month.ordinal + 1 == com.example.data.Festivals.month(f, southern) && today.day == com.example.data.Festivals.FIRST_DAY
+            }?.let { return festivalNote(it) }
+        }
         return when (start?.let { DateMornings.on(today, it) }) {
             DateMorning.ANNIVERSARY -> if (life.anniversaryReminder) Res.string.reminder_anniversary else null
             DateMorning.MONTHIVERSARY -> if (life.monthiversaryReminder) Res.string.reminder_monthiversary else null
