@@ -79,6 +79,7 @@ class BackupFormatCompatTest {
         val restoredPhoto = File(File(context.filesDir, "polaroids"), "pol_9.png")
         assertEquals(bigPhoto.size.toLong(), restoredPhoto.length())
         val list = context.getSharedPreferences("tiny_us_polaroids", Context.MODE_PRIVATE).getString("polaroids_json", null)!!
-        assertTrue("photo paths point at this phone", list.contains(restoredPhoto.absolutePath.replace("/", "\\/")) || list.contains(restoredPhoto.absolutePath))
+        val imagePath = org.json.JSONArray(list).getJSONObject(0).getString("imagePath")
+        assertEquals("photo paths point at this phone", restoredPhoto.absolutePath, imagePath)
     }
 }
