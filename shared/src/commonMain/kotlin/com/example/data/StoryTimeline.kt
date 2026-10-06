@@ -8,7 +8,7 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toLocalDateTime
 
-enum class StoryKind { MILESTONE, MEMORY, LETTER, PHOTO, DREAM, ADVENTURE, DAILY_MOMENT, GARDEN }
+enum class StoryKind { MILESTONE, MEMORY, LETTER, PHOTO, DREAM, ADVENTURE, DAILY_MOMENT, GARDEN, MOMENT_TOGETHER }
 
 data class StoryEntry(
     val id: String,
@@ -42,7 +42,9 @@ data class StoryInput(
     /** "Little firsts" the couple earned (id to date and title), shown as milestones. */
     val littleFirsts: List<Triple<String, LocalDate, String>> = emptyList(),
     /** Birthday parties (plan 09, A), from [StoryTimeline.birthdayEntries]. */
-    val birthdays: List<StoryEntry> = emptyList()
+    val birthdays: List<StoryEntry> = emptyList(),
+    /** Couple-life moments (plan 09, C), from [StoryTimeline.coupleLifeEntries]. */
+    val coupleLife: List<StoryEntry> = emptyList()
 )
 
 /**
@@ -115,6 +117,7 @@ object StoryTimeline {
             entries += StoryEntry(id = "first:$id", kind = StoryKind.MILESTONE, date = date, title = title, iconKey = "first")
         }
         entries += input.birthdays
+        entries += input.coupleLife
 
         // Chronological; undated entries last, keeping their original order.
         return entries.withIndex()
@@ -135,6 +138,32 @@ object StoryTimeline {
                 title = titleFor(r), body = r.letterId?.let { letters[it]?.body }.orEmpty(), iconKey = "birthday"
             )
         }
+    }
+
+    /**
+     * Phones Down sessions that ran their time, Make-Up Bench moments they chose to keep, and
+     * filled Thank-You Jars. Titles come from the caller (translated).
+     */
+    fun coupleLifeEntries(
+        store: CoupleLifeStore,
+        phonesDownTitle: (Int) -> String,
+        makeUpTitle: String,
+        jarTitle: String,
+        timeZone: TimeZone = TimeZone.currentSystemDefault()
+    ): List<StoryEntry> {
+        fun day(ms: Long) = Instant.fromEpochMilliseconds(ms).toLocalDateTime(timeZone).date
+        val list = ArrayList<StoryEntry>()
+        store.phonesDownSessions().forEach { s ->
+            list += StoryEntry("phones:${s.endedAt}", StoryKind.MOMENT_TOGETHER, day(s.endedAt), phonesDownTitle(s.minutes), iconKey = "phones_down")
+        }
+        store.keptMakeUps().forEach { m ->
+            val body = listOf(m.boyFelt, m.boyNeed, m.girlFelt, m.girlNeed).filter { it.isNotBlank() }.joinToString(separator = "\n")
+            list += StoryEntry("makeup:${m.id}", StoryKind.MOMENT_TOGETHER, day(m.createdAt), makeUpTitle, body, iconKey = "make_up")
+        }
+        store.filledJars().forEachIndexed { i, j ->
+            list += StoryEntry("jar:$i", StoryKind.MILESTONE, Birthdays.parse(j.filledOn), jarTitle, iconKey = "jar")
+        }
+        return list
     }
 
     fun groupByMonth(entries: List<StoryEntry>): List<StorySection> {

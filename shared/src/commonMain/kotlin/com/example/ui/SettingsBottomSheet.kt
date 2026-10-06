@@ -135,6 +135,8 @@ fun SettingsBottomSheet(
     onOpenMiniGames: () -> Unit = {},
     onOpenSharedMood: () -> Unit = {},
     onOpenLongDistance: () -> Unit = {},
+    /** The couple-life tools (plan 09, C). */
+    onOpenCoupleTool: (CoupleTool) -> Unit = {},
     onJumpToScene: (SceneType) -> Unit = {}
 ) {
     var boyName by remember { mutableStateOf(prefs.boyfriendName) }
@@ -145,6 +147,9 @@ fun SettingsBottomSheet(
     val birthdayStore = remember(prefs) { com.example.data.BirthdayStore(prefs.storage) }
     var letterHints by remember { mutableStateOf(birthdayStore.letterHintsEnabled) }
     var morningReminder by remember { mutableStateOf(birthdayStore.morningReminderEnabled) }
+    val coupleLifeStore = remember(prefs) { com.example.data.CoupleLifeStore(prefs.storage) }
+    var annivReminder by remember { mutableStateOf(coupleLifeStore.anniversaryReminder) }
+    var monthReminder by remember { mutableStateOf(coupleLifeStore.monthiversaryReminder) }
     var soundEnabled by remember { mutableStateOf(prefs.soundEnabled) }
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
     var glassIntensity by remember { mutableStateOf(prefs.buttonGlassIntensity) }
@@ -308,6 +313,26 @@ fun SettingsBottomSheet(
                         birthdayStore.letterHintsEnabled = it
                     },
                     testTag = "toggle_birthday_letter_hints"
+                )
+                SettingsToggleRow(
+                    text = stringResource(Res.string.reminder_anniversary_setting),
+                    checked = annivReminder,
+                    onCheckedChange = {
+                        annivReminder = it
+                        coupleLifeStore.anniversaryReminder = it
+                        onSettingsChanged()
+                    },
+                    testTag = "toggle_anniversary_reminder"
+                )
+                SettingsToggleRow(
+                    text = stringResource(Res.string.reminder_monthiversary_setting),
+                    checked = monthReminder,
+                    onCheckedChange = {
+                        monthReminder = it
+                        coupleLifeStore.monthiversaryReminder = it
+                        onSettingsChanged()
+                    },
+                    testTag = "toggle_monthiversary_reminder"
                 )
                 SettingsToggleRow(
                     text = stringResource(Res.string.bday_setting_morning),
@@ -547,6 +572,37 @@ fun SettingsBottomSheet(
                                 onOpenLongDistance()
                             },
                             testTag = "settings_long_distance_button"
+                        )
+                    }
+                }
+            }
+
+            // -- Us, day to day: the couple-life tools (plan 09, C) --
+            SettingsCategoryHeader(
+                icon = PixelIcons.Favorite,
+                title = stringResource(Res.string.cl_section),
+                subtitle = stringResource(Res.string.cl_section_sub)
+            )
+            SettingsSectionCard {
+                Column {
+                    val tools = listOf(
+                        Triple(CoupleTool.DECIDER, Res.string.cl_decider, Res.string.cl_decider_sub) to PixelIcons.Restaurant,
+                        Triple(CoupleTool.JAR, Res.string.cl_jar, Res.string.cl_jar_sub) to PixelIcons.VolunteerActivism,
+                        Triple(CoupleTool.OPEN_WHEN, Res.string.cl_open_when, Res.string.cl_open_when_sub) to PixelIcons.Mail,
+                        Triple(CoupleTool.BENCH, Res.string.cl_bench, Res.string.cl_bench_sub) to PixelIcons.Favorite,
+                        Triple(CoupleTool.PHONES_DOWN, Res.string.cl_phones_down, Res.string.cl_phones_down_sub) to PixelIcons.Bedtime
+                    )
+                    tools.forEachIndexed { i, (t, icon) ->
+                        if (i > 0) TinyDivider()
+                        SettingsNavRow(
+                            icon = icon,
+                            title = stringResource(t.second),
+                            subtitle = stringResource(t.third),
+                            onClick = {
+                                onDismiss()
+                                onOpenCoupleTool(t.first)
+                            },
+                            testTag = "settings_couple_${t.first.name.lowercase()}"
                         )
                     }
                 }

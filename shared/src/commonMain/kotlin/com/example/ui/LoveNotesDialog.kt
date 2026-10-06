@@ -37,7 +37,9 @@ fun LoveNotesDialog(
     boyfriendName: String,
     girlfriendName: String,
     onDismiss: () -> Unit,
-    onAddNote: (text: String, author: String) -> Unit
+    onAddNote: (text: String, author: String) -> Unit,
+    /** Opens the sealed "Open when..." letters (plan 09, C). */
+    onOpenWhen: (() -> Unit)? = null
 ) {
     var showWriteMode by remember { mutableStateOf(false) }
     var noteText by remember { mutableStateOf("") }
@@ -77,6 +79,16 @@ fun LoveNotesDialog(
                 icon = PixelIcons.Favorite,
                 testTag = "write_note_button"
             )
+            if (onOpenWhen != null) {
+                TinyButton(
+                    text = stringResource(Res.string.cl_open_when),
+                    onClick = onOpenWhen,
+                    modifier = Modifier.fillMaxWidth(),
+                    style = TinyButtonStyle.Outline,
+                    icon = PixelIcons.Mail,
+                    testTag = "open_when_button"
+                )
+            }
         } else {
             // Write note form
             Column(

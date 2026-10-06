@@ -76,7 +76,7 @@ private enum class StoryFilter(val labelRes: StringResource, val kinds: Set<Stor
     MEMORIES(Res.string.story_filter_memories, setOf(StoryKind.MEMORY)),
     LETTERS(Res.string.story_filter_letters, setOf(StoryKind.LETTER)),
     PHOTOS(Res.string.story_filter_photos, setOf(StoryKind.PHOTO)),
-    TOGETHER(Res.string.story_filter_together, setOf(StoryKind.ADVENTURE, StoryKind.DAILY_MOMENT, StoryKind.DREAM))
+    TOGETHER(Res.string.story_filter_together, setOf(StoryKind.ADVENTURE, StoryKind.DAILY_MOMENT, StoryKind.DREAM, StoryKind.MOMENT_TOGETHER))
 }
 
 /** Reads everything the app has stored and builds the story. Runs off the main thread. */
@@ -106,6 +106,12 @@ fun loadStory(
             Triple(id, kotlinx.datetime.LocalDate.fromEpochDays(day.toInt()), titleOf(first.title))
         },
         // Birthday parties (plan 09, A), with the sealed letter opened at each.
+        coupleLife = StoryTimeline.coupleLifeEntries(
+            com.example.data.CoupleLifeStore(prefs.storage),
+            phonesDownTitle = { com.example.engine.GameText.get(com.example.resources.Res.string.pd_story, it) },
+            makeUpTitle = com.example.engine.GameText.get(com.example.resources.Res.string.bench_story),
+            jarTitle = com.example.engine.GameText.get(com.example.resources.Res.string.first_thank_you_jar)
+        ),
         birthdays = StoryTimeline.birthdayEntries(com.example.data.BirthdayStore(prefs.storage)) { r ->
             val name = if (r.partner == com.example.data.Partner.BOY) prefs.boyfriendName else prefs.girlfriendName
             if (r.age != null) com.example.engine.GameText.get(com.example.resources.Res.string.bday_turned_age, name, r.age)
@@ -397,6 +403,7 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "HEART_SHELL" -> Res.string.keepsake_catch_heart_shell
     "SEA_GLASS_HEART" -> Res.string.keepsake_catch_sea_glass_heart
     "BOUQUET" -> Res.string.keepsake_bouquet
+    "THANK_YOU" -> Res.string.keepsake_thank_you_jar
     else -> Res.string.keepsake_something
 }
 

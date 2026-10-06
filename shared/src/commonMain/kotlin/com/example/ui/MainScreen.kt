@@ -141,6 +141,9 @@ fun MainScreen(
     var showOnboarding by remember { mutableStateOf(!prefs.isOnboardingCompleted) }
     // Birthdays, sealed letters and the surprise party (plan 09, A).
     val birthdayStore = remember(prefs) { com.example.data.BirthdayStore(prefs.storage) }
+    // The couple-life tools (plan 09, C) and whichever of them is open.
+    val coupleLifeStore = remember(prefs) { com.example.data.CoupleLifeStore(prefs.storage) }
+    var coupleTool by remember { mutableStateOf<CoupleTool?>(null) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
         mutableStateOf(
@@ -248,7 +251,12 @@ fun MainScreen(
     }
     // The birthday surprise waits until the couple has finished the first setup (and never in previews).
     LaunchedEffect(showOnboarding) {
-        if (!showOnboarding && previewEngine == null) engine.birthdayStore = birthdayStore
+        if (!showOnboarding && previewEngine == null) {
+            engine.birthdayStore = birthdayStore
+            engine.coupleLifeStore = coupleLifeStore
+            // A Phones Down session still running from before the app closed carries on.
+            if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()
+        }
     }
 
     var atmosphere by remember { mutableStateOf(prefs.atmosphereMode) }
@@ -566,8 +574,13 @@ fun MainScreen(
             onOpenDateAdventures = { showDateAdventures = true },
             onOpenDailyMoment = { showDailyMomentPrompt = true },
             onOpenMiniGames = { showMiniGames = true },
-            onOpenLongDistance = if (com.example.FeatureFlags.PARTNER_SYNC) ({ showLongDistance = true }) else null
+            onOpenLongDistance = if (com.example.FeatureFlags.PARTNER_SYNC) ({ showLongDistance = true }) else null,
+            onOpenThankYouJar = { coupleTool = CoupleTool.JAR }
         )
+        // Phones down (plan 09, C): a night-light over the world until the time is up.
+        if (engine.phonesDownActive) {
+            PhonesDownOverlay(engine.phonesDownSecondsLeft, onEnd = { engine.stopPhonesDown() }, modifier = Modifier.fillMaxSize())
+        }
 
         // 2. Glassmorphism Top Controls (Translucent frosted capsule design)
         // 2. Glassmorphism Top Controls (Translucent frosted capsule design)
@@ -1234,6 +1247,10 @@ fun MainScreen(
                     prefs.addLoveNote(text, author)
                     recordProgress(com.example.progress.ProgressEvent.LoveNote)
                     notesList = prefs.getLoveNotes()
+                },
+                onOpenWhen = {
+                    showLoveNotes = false
+                    coupleTool = CoupleTool.OPEN_WHEN
                 }
             )
         }
@@ -1339,6 +1356,10 @@ fun MainScreen(
                 onOpenSharedMood = {
                     showSettings = false
                     showSharedMood = true
+                },
+                onOpenCoupleTool = { tool ->
+                    showSettings = false
+                    coupleTool = tool
                 },
                 onOpenLongDistance = {
                     showSettings = false
@@ -1578,6 +1599,46 @@ fun MainScreen(
                 prefs = prefs,
                 onDismiss = { showDailyMomentPrompt = false }
             )
+        }
+
+        // Couple life (plan 09, C)
+        when (coupleTool) {
+            CoupleTool.DECIDER -> DinnerDeciderDialog(
+                store = coupleLifeStore,
+                boyName = prefs.boyfriendName,
+                girlName = prefs.girlfriendName,
+                canCook = engine.cozy.canCook,
+                onPicked = { pick, _ -> engine.reactToDinnerPick(pick) },
+                onCookIt = { engine.cozy.openRecipePicker() },
+                onDismiss = { coupleTool = null }
+            )
+            CoupleTool.JAR -> ThankYouJarDialog(
+                store = coupleLifeStore,
+                boyName = prefs.boyfriendName,
+                girlName = prefs.girlfriendName,
+                onDropped = { fromBoy, text, filled ->
+                    engine.onThankYou(fromBoy, text, filled)
+                    if (filled) recordProgress(com.example.progress.ProgressEvent.ThankYouJarFilled)
+                },
+                onDismiss = { coupleTool = null }
+            )
+            CoupleTool.OPEN_WHEN -> OpenWhenDialog(birthdayStore, prefs.boyfriendName, prefs.girlfriendName, onDismiss = { coupleTool = null })
+            CoupleTool.BENCH -> MakeUpBenchDialog(
+                store = coupleLifeStore,
+                boyName = prefs.boyfriendName,
+                girlName = prefs.girlfriendName,
+                onStart = { engine.startMakeUpBench() },
+                onFinish = { choice ->
+                    engine.finishMakeUpBench(choice)
+                    coupleTool = null
+                },
+                onCancel = {
+                    engine.cancelMakeUpBench()
+                    coupleTool = null
+                }
+            )
+            CoupleTool.PHONES_DOWN -> PhonesDownDialog(onStart = { engine.startPhonesDown(it) }, onDismiss = { coupleTool = null })
+            null -> Unit
         }
 
         if (showMiniGames) {

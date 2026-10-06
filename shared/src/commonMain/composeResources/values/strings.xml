@@ -1097,4 +1097,171 @@
         <item>How they feel most loved|Kind words|A warm touch|A thoughtful gift|Time together</item>
         <item>What they’d do with a free day together|Go somewhere new|Stay in bed|Cook a feast|Visit friends</item>
     </string-array>
+
+    <!-- Plan 09 C: couple life -->
+    <string name="cl_section">Us, day to day</string>
+    <string name="cl_section_sub">Little tools for real life together</string>
+    <string name="cl_decider">Dinner Decider</string>
+    <string name="cl_decider_sub">For “I don’t mind, you pick”</string>
+    <string name="cl_jar">Thank-You Jar</string>
+    <string name="cl_jar_sub">Little thanks, kept in a jar</string>
+    <string name="cl_open_when">Open when… letters</string>
+    <string name="cl_open_when_sub">Sealed for the moment they’re needed</string>
+    <string name="cl_bench">We need a moment</string>
+    <string name="cl_bench_sub">The Make-Up Bench, after a small fight</string>
+    <string name="cl_phones_down">Phones down</string>
+    <string name="cl_phones_down_sub">Time together, screens away</string>
+
+    <string name="decider_title">Dinner Decider</string>
+    <string name="decider_what">What are we deciding?</string>
+    <string name="decider_eat">Eat</string>
+    <string name="decider_watch">Watch</string>
+    <string name="decider_do">Do</string>
+    <string name="decider_add_hint">Add your own…</string>
+    <string name="decider_add">Add</string>
+    <string name="decider_veto_title">%1$s, cross out up to two</string>
+    <string name="decider_veto_body">In secret. The wheel only spins what you both let through.</string>
+    <string name="decider_veto_done">Done</string>
+    <string name="decider_spin">Spin</string>
+    <string name="decider_survivors">%1$d left on the wheel</string>
+    <string name="decider_none_left">You crossed out everything, so it’s all back on the wheel.</string>
+    <string name="decider_result">Tonight: %1$s</string>
+    <string name="decider_cook_it">Cook it together</string>
+    <string name="decider_again">Spin again</string>
+    <string name="decider_done">Sounds good</string>
+    <string name="decider_world_line">%1$s it is!</string>
+
+    <string name="jar_title">Thank-You Jar</string>
+    <string name="jar_count">%1$d of %2$d in this jar</string>
+    <string name="jar_from">From</string>
+    <string name="jar_text_hint">Or say it in your own words…</string>
+    <string name="jar_drop">Drop it in</string>
+    <string name="jar_full_title">The jar is full!</string>
+    <string name="jar_full_body">Twenty little thank-yous. It goes on the shelf, and a new one starts.</string>
+    <string name="jar_read_aloud">%1$s, a while ago: “%2$s”</string>
+    <string name="jar_thanks_line">Thank you for %1$s.</string>
+    <string name="jar_rainy_line">Rainy day. Remember when %1$s wrote: “%2$s”?</string>
+    <string name="jar_filled_count">Jars filled: %1$d</string>
+
+    <string name="ow_title">Open when…</string>
+    <string name="ow_for">For %1$s</string>
+    <string name="ow_write">Write one</string>
+    <string name="ow_custom_hint">Or your own moment: when…</string>
+    <string name="ow_body_hint">Write what they’ll need to hear…</string>
+    <string name="ow_seal">Seal it</string>
+    <string name="ow_sealed">Sealed. It waits until %1$s decides it’s time.</string>
+    <string name="ow_waiting">Waiting for you</string>
+    <string name="ow_none">No sealed letters yet.</string>
+    <string name="ow_open_q">Open the one for “%1$s” now?</string>
+    <string name="ow_open">Open</string>
+    <string name="ow_not_yet">Not yet</string>
+    <string name="ow_opened">Opened</string>
+
+    <string name="bench_title">The Make-Up Bench</string>
+    <string name="bench_intro">Take a breath. Each of you writes a little, in private. Nothing shows until you’re both done.</string>
+    <string name="bench_felt">I felt…</string>
+    <string name="bench_need">What would help is…</string>
+    <string name="bench_your_turn">%1$s, your turn</string>
+    <string name="bench_reveal">Read them together</string>
+    <string name="bench_choose">What now?</string>
+    <string name="bench_hug">A hug</string>
+    <string name="bench_tea">A cup of tea</string>
+    <string name="bench_talk_later">Talk later</string>
+    <string name="bench_keep">Keep this in Our Story</string>
+    <string name="bench_done">Done</string>
+    <string name="bench_world_line">The cloud is gone.</string>
+    <string name="bench_talk_later_line">Later, then. With tea.</string>
+    <string name="bench_story">We found our way back</string>
+
+    <string name="pd_title">Phones down</string>
+    <string name="pd_body">Put your phones away and just be together. The little ones will keep you company.</string>
+    <string name="pd_minutes">%1$d minutes</string>
+    <string name="pd_start">Start</string>
+    <string name="pd_left">%1$s left</string>
+    <string name="pd_end_early">We’re done</string>
+    <string name="pd_finished">%1$d minutes, just us.</string>
+    <string name="pd_ended_early">That counts too.</string>
+    <string name="pd_story">%1$d minutes, just us</string>
+
+    <string name="reminder_anniversary_setting">A morning reminder on our anniversary</string>
+    <string name="reminder_monthiversary_setting">A little one every month on our day</string>
+    <string name="reminder_anniversary">Happy anniversary. Something to celebrate today.</string>
+    <string name="reminder_monthiversary">Another month together today.</string>
+
+    <string name="first_thank_you_jar">A jar full of thanks</string>
+    <string name="first_thank_you_jar_hint">Twenty little thank-yous, one at a time.</string>
+    <string name="first_phones_down">Just us</string>
+    <string name="first_phones_down_hint">Put the phones away together, all the way to the end.</string>
+    <string name="keepsake_thank_you_jar">A jar of thank-yous</string>
+    <string-array name="decider_eat">
+        <item>Noodles</item>
+        <item>Pizza</item>
+        <item>Dumplings</item>
+        <item>Something spicy</item>
+        <item>Breakfast for dinner</item>
+        <item>Soup and bread</item>
+        <item>Tacos</item>
+        <item>Curry</item>
+        <item>Sushi</item>
+        <item>Pasta</item>
+        <item>A picnic on the floor</item>
+        <item>Leftovers, lovingly</item>
+        <item>Burgers</item>
+        <item>Something we cook together</item>
+        <item>Fried rice</item>
+        <item>Toast and tea, nothing more</item>
+    </string-array>
+    <string-array name="decider_watch">
+        <item>A cozy animation</item>
+        <item>A romantic comedy</item>
+        <item>A documentary about animals</item>
+        <item>An old favorite we know by heart</item>
+        <item>Something scary, with a blanket</item>
+        <item>A mystery</item>
+        <item>A cooking show</item>
+        <item>A movie from the year we met</item>
+        <item>A musical</item>
+        <item>A short series in one evening</item>
+        <item>Something neither of us has heard of</item>
+        <item>A nature show with no talking</item>
+    </string-array>
+    <string-array name="decider_do">
+        <item>A walk around the block</item>
+        <item>A board game</item>
+        <item>Bake something</item>
+        <item>Build a blanket fort</item>
+        <item>Read side by side</item>
+        <item>A bath with music</item>
+        <item>Write each other a note</item>
+        <item>Look at old photos</item>
+        <item>Learn a dance from a video</item>
+        <item>Stargaze from the window</item>
+        <item>Tidy one drawer together, then cake</item>
+        <item>A puzzle</item>
+        <item>Call someone we miss, together</item>
+        <item>Plan a little trip</item>
+        <item>Draw each other</item>
+        <item>Early night with a podcast</item>
+    </string-array>
+    <string-array name="thank_you_chips">
+        <item>made coffee</item>
+        <item>did the dishes</item>
+        <item>listened to me</item>
+        <item>made me laugh</item>
+        <item>cooked for us</item>
+        <item>let me sleep in</item>
+        <item>remembered something small</item>
+        <item>held my hand when I needed it</item>
+        <item>fixed something</item>
+        <item>was patient with me</item>
+    </string-array>
+    <string-array name="open_when_occasions">
+        <item>when you miss me</item>
+        <item>when you can’t sleep</item>
+        <item>when we’ve argued</item>
+        <item>when you’re having a bad day</item>
+        <item>when you need to laugh</item>
+        <item>when you’re proud of yourself</item>
+    </string-array>
+    <string name="ow_letter_label">Open %1$s</string>
 </resources>
