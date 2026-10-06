@@ -2,9 +2,15 @@ package com.example.care
 
 import com.example.data.BirthdayStore
 import com.example.data.CoupleLifeStore
+import com.example.data.FestivalStore
+import com.example.data.Festivals
 import com.example.data.PreferencesManager
 import com.example.engine.GameText
 import com.example.resources.Res
+import com.example.resources.discreet_notification_body
+import com.example.resources.discreet_notification_title
+import com.example.security.IosDiscreetIcon
+import com.example.security.IosLock
 import com.example.resources.ui_tiny_us
 import com.example.ui.Reminders
 import kotlin.time.Clock
@@ -17,16 +23,19 @@ import platform.darwin.dispatch_async
 import platform.darwin.dispatch_get_main_queue
 
 /**
- * Tiny Care and the couple's mornings (birthdays, the anniversary, the month-iversary) on iOS, through UNUserNotificationCenter. iOS runs no app code
- * in the background, so the reminders are planned a few days ahead ([TinyCarePlan]) and planned
- * again each time the app opens or a setting changes.
+ * Tiny Care and the couple's mornings (birthdays, festivals, the anniversary, the month-iversary)
+ * on iOS, through UNUserNotificationCenter. iOS runs no app code in the background, so the
+ * reminders are planned ahead ([TinyCarePlan.upcomingThinning]: a few days as usual, then one a
+ * day) and planned again each time the app opens or a setting changes.
  */
 object IosNotifications {
     private const val CARE_PREFIX = "tinycare."
-    private const val CARE_SLOTS = 40
+    // iOS keeps 64 waiting notifications: Tiny Care, the morning reminder, the preview, and room to spare.
+    private const val CARE_SLOTS = 58
     private const val PREVIEW_ID = "tinycare.preview"
     private const val BIRTHDAY_ID = "tinyus.birthday"
     private const val PLAN_DAYS = 3
+    private const val THIN_DAYS = 21
 
     private val center get() = UNUserNotificationCenter.currentNotificationCenter()
 
@@ -67,7 +76,7 @@ object IosNotifications {
     private var plannedFor: String? = null
 
     private fun planKey(prefs: PreferencesManager) =
-        "${prefs.tinyCareEnabled}|${prefs.tinyCareCategories.sorted()}|${prefs.tinyCareQuietStartHour}-${prefs.tinyCareQuietEndHour}"
+        "${prefs.tinyCareEnabled}|${prefs.tinyCareCategories.sorted()}|${prefs.tinyCareQuietStartHour}-${prefs.tinyCareQuietEndHour}|${isPrivate()}"
 
     /** Plans again only when the reminders' settings changed since the last plan. */
     fun planTinyCareIfChanged(prefs: PreferencesManager) {
@@ -80,9 +89,10 @@ object IosNotifications {
         center.removePendingNotificationRequestsWithIdentifiers(List(CARE_SLOTS) { "$CARE_PREFIX$it" })
         if (!prefs.tinyCareEnabled || !allowed()) return
         val now = Clock.System.now().toEpochMilliseconds()
-        val plan = TinyCarePlan.upcoming(
+        val plan = TinyCarePlan.upcomingThinning(
             fromMillis = now,
-            untilMillis = now + PLAN_DAYS * 24L * 60 * 60 * 1000,
+            denseDays = PLAN_DAYS,
+            sparseDays = THIN_DAYS,
             categoryIds = prefs.tinyCareCategories,
             recentIds = prefs.getTinyCareRecentMessageIds(),
             quietStartHour = prefs.tinyCareQuietStartHour,
@@ -105,9 +115,9 @@ object IosNotifications {
     }
 
     /**
-     * Sets (or clears) the next morning reminder: a birthday, the anniversary or the month-iversary,
-     * whichever is switched on and comes first. Android works out the text on the day; iOS has to
-     * write it now, so it is the text for that day.
+     * Sets (or clears) the next morning reminder: a birthday, a festival, the anniversary or the
+     * month-iversary, whichever is switched on and comes first. Android works out the text on the
+     * day; iOS has to write it now, so it is the text for that day.
      */
     fun planMornings(prefs: PreferencesManager) {
         center.removePendingNotificationRequestsWithIdentifiers(listOf(BIRTHDAY_ID))
@@ -116,9 +126,11 @@ object IosNotifications {
         val birthdays = BirthdayStore(prefs.storage)
         val life = CoupleLifeStore(prefs.storage)
         val start = runCatching { LocalDate.parse(prefs.anniversaryDate) }.getOrNull()
-        val at = CoupleMornings.nextMillis(birthdays, life, start, now) ?: return
+        val festivals = FestivalStore(prefs.storage)
+        val southern = Festivals.isSouthern(androidx.compose.ui.text.intl.Locale.current.region)
+        val at = CoupleMornings.nextMillis(birthdays, life, start, now, festivals = festivals, southern = southern) ?: return
         val day = Instant.fromEpochMilliseconds(at).toLocalDateTime(TimeZone.currentSystemDefault()).date
-        val message = CoupleMornings.messageFor(day, birthdays, life, start) ?: return
+        val message = CoupleMornings.messageFor(day, birthdays, life, start, festivals, southern) ?: return
         schedule(BIRTHDAY_ID, GameText.get(Res.string.ui_tiny_us), GameText.get(message), at, now)
     }
 
@@ -130,11 +142,18 @@ object IosNotifications {
         }
     }
 
+    /**
+     * With the app lock or the discreet icon on, reminders only say something neutral. Android
+     * hides the text on the lock screen; iOS writes it ahead of time, so it is neutral everywhere.
+     */
+    private fun isPrivate(): Boolean = IosLock.store.isEnabled || IosDiscreetIcon.isEnabled()
+
     private fun schedule(id: String, title: String, body: String, atMillis: Long, nowMillis: Long) {
         val seconds = ((atMillis - nowMillis) / 1000.0).coerceAtLeast(1.0)
         val content = UNMutableNotificationContent()
-        content.setTitle(title)
-        content.setBody(body)
+        val neutral = isPrivate()
+        content.setTitle(if (neutral) GameText.get(Res.string.discreet_notification_title) else title)
+        content.setBody(if (neutral) GameText.get(Res.string.discreet_notification_body) else body)
         content.setSound(UNNotificationSound.defaultSound)
         val trigger = UNTimeIntervalNotificationTrigger.triggerWithTimeInterval(seconds, repeats = false)
         center.addNotificationRequest(UNNotificationRequest.requestWithIdentifier(id, content, trigger), withCompletionHandler = null)

@@ -250,8 +250,9 @@ object TinyCareScheduler {
 
         val discreet = com.example.security.DiscreetMode.isEnabled(context)
         val locked = com.example.security.AppLockStore(context).isEnabled
-        val shownTitle = if (discreet) context.getString(R.string.discreet_notification_title) else title
-        val shownBody = if (discreet) context.getString(R.string.discreet_notification_body) else body
+        val neutralTitle = com.example.engine.GameText.get(com.example.resources.Res.string.discreet_notification_title)
+        val shownTitle = if (discreet) neutralTitle else title
+        val shownBody = if (discreet) com.example.engine.GameText.get(com.example.resources.Res.string.discreet_notification_body) else body
         val icon = if (discreet) R.mipmap.ic_launcher_discreet else R.mipmap.ic_launcher
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
@@ -269,7 +270,7 @@ object TinyCareScheduler {
                     setPublicVersion(
                         NotificationCompat.Builder(context, CHANNEL_ID)
                             .setSmallIcon(icon)
-                            .setContentTitle(context.getString(R.string.discreet_notification_title))
+                            .setContentTitle(neutralTitle)
                             .build()
                     )
                 }

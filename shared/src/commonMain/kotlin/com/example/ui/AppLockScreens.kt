@@ -293,7 +293,7 @@ fun PrivacyLockSettings(store: AppLockStore) {
         if (discreetMode != null) {
             SettingSwitchRow(
                 title = stringResource(Res.string.discreet_setting_title),
-                subtitle = stringResource(Res.string.discreet_setting_subtitle),
+                subtitle = stringResource(if (device.isApple) Res.string.discreet_setting_subtitle_ios else Res.string.discreet_setting_subtitle),
                 checked = discreet,
                 tag = "settings_discreet_switch"
             ) {

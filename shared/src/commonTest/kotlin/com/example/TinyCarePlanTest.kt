@@ -50,6 +50,27 @@ class TinyCarePlanTest {
     }
 
     @Test
+    fun afterTheFirstDaysOneADayThenNothingPastTheEnd() {
+        val all = TinyCareCategory.allIds()
+        val plan = TinyCarePlan.upcomingThinning(at(9), denseDays = 3, sparseDays = 14, categoryIds = all, recentIds = emptyList(), max = 58, random = Random(11), zone = zone)
+        val denseEnd = at(9) + 3 * 24 * 3600_000L
+        val tail = plan.filter { it.atMillis > denseEnd }
+        assertEquals(14, tail.size, "one a day for two weeks")
+        assertEquals(14, tail.map { Instant.fromEpochMilliseconds(it.atMillis).toLocalDateTime(zone).date }.toSet().size)
+        assertTrue(tail.all { hourOf(it.atMillis) in 14..15 }, "around the middle of 7:00 to 23:00")
+        assertTrue(plan.size <= 58)
+        assertTrue(plan.none { TinyCarePlan.isTimeInQuietWindow(hourOf(it.atMillis), 23, 7) })
+        assertTrue(plan.zipWithNext().all { (a, b) -> b.atMillis > a.atMillis })
+        assertTrue(plan.windowed(10).all { w -> w.map { it.message.id }.toSet().size == 10 }, "no repeats within ten")
+    }
+
+    @Test
+    fun theTailNeverPassesTheLimit() {
+        val plan = TinyCarePlan.upcomingThinning(at(9), denseDays = 3, sparseDays = 30, categoryIds = TinyCareCategory.allIds(), recentIds = emptyList(), max = 30, random = Random(5), zone = zone)
+        assertEquals(30, plan.size)
+    }
+
+    @Test
     fun onlyTheChosenCategories() {
         val plan = TinyCarePlan.upcoming(at(9), at(21), setOf("hydration"), emptyList(), random = Random(3), zone = zone)
         assertTrue(plan.isNotEmpty())

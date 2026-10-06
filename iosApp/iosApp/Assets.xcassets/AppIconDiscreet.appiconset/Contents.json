@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "idiom" : "universal",
+      "filename" : "TinyUsDiscreetIcon.png",
+      "platform" : "ios",
+      "size" : "1024x1024"
+    }
+  ],
+  "info" : {
+    "author" : "xcode",
+    "version" : 1
+  }
+}

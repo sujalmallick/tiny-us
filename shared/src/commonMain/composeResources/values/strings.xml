@@ -927,6 +927,9 @@
     <string name="lock_setting_change_pin">Change PIN</string>
     <string name="discreet_setting_title">Discreet icon</string>
     <string name="discreet_setting_subtitle">Shows a plain “Journal” icon and keeps reminders generic. Your launcher may take a moment to update.</string>
+    <string name="discreet_setting_subtitle_ios">Shows a plain notebook icon and keeps reminders generic. iOS shows a short note when the icon changes.</string>
+    <string name="discreet_notification_title">A gentle reminder</string>
+    <string name="discreet_notification_body">Take a small moment for yourself today.</string>
     <string name="lock_biometric_subtitle_ios">Use Face ID or Touch ID</string>
     <string name="lock_setting_biometrics_ios">Unlock with Face ID or Touch ID</string>
     <string name="lock_forgot_body_ios">Confirm it’s you with this device’s passcode. The app lock will turn off and you can choose a new PIN in Settings. Nothing inside is deleted.</string>
