@@ -1,22 +1,22 @@
 package com.example.data
 
-import android.content.Context
-import android.content.SharedPreferences
-import org.json.JSONArray
-import org.json.JSONObject
-import java.text.SimpleDateFormat
-import java.util.Calendar
-import java.util.Date
-import java.util.Locale
-import java.util.UUID
+import kotlin.time.Clock
+import kotlin.uuid.ExperimentalUuidApi
+import kotlin.uuid.Uuid
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.daysUntil
+import kotlinx.datetime.plus
 
-class PreferencesManager(
-    private val prefs: SharedPreferences,
-    val storage: KeyValueStorage = SharedPreferencesStorage(prefs)
-) {
-    constructor(context: Context) : this(
-        context.getSharedPreferences("tiny_us_prefs", Context.MODE_PRIVATE)
-    )
+/**
+ * Everything the app saves: names, dates, settings, the world's state and the couple's lists.
+ * Common code on top of [KeyValueStorage] (SharedPreferences on Android, NSUserDefaults on iOS),
+ * with the same keys and the same JSON as always, so existing installs keep their data. On Android
+ * `PreferencesManager(context)` opens the app's "tiny_us_prefs".
+ */
+@OptIn(ExperimentalUuidApi::class)
+class PreferencesManager(val storage: KeyValueStorage) {
+    private val prefs = storage
 
     private var cachedMemories: List<MemoryItem>? = null
     private var cachedLoveNotes: List<LoveNoteItem>? = null
@@ -27,114 +27,114 @@ class PreferencesManager(
             val defaultName = ProfileManager.getProfile().boyName
             return prefs.getString("bf_name", defaultName) ?: defaultName
         }
-        set(value) = prefs.edit().putString("bf_name", value.trim().ifEmpty { ProfileManager.getProfile().boyName }).apply()
+        set(value) = prefs.putString("bf_name", value.trim().ifEmpty { ProfileManager.getProfile().boyName })
 
     var girlfriendName: String
         get() {
             val defaultName = ProfileManager.getProfile().girlName
             return prefs.getString("gf_name", defaultName) ?: defaultName
         }
-        set(value) = prefs.edit().putString("gf_name", value.trim().ifEmpty { ProfileManager.getProfile().girlName }).apply()
+        set(value) = prefs.putString("gf_name", value.trim().ifEmpty { ProfileManager.getProfile().girlName })
 
     var soundEnabled: Boolean
         get() = prefs.getBoolean("sound_enabled", true)
-        set(value) = prefs.edit().putBoolean("sound_enabled", value).apply()
+        set(value) = prefs.putBoolean("sound_enabled", value)
 
     var atmosphereMode: String
         get() = prefs.getString("atmosphere_mode", "AUTO") ?: "AUTO"
-        set(value) = prefs.edit().putString("atmosphere_mode", value).apply()
+        set(value) = prefs.putString("atmosphere_mode", value)
 
     var lastSceneId: String
         get() = prefs.getString("last_scene_id", "") ?: ""
-        set(value) = prefs.edit().putString("last_scene_id", value).apply()
+        set(value) = prefs.putString("last_scene_id", value)
 
     var anniversaryDate: String
         get() {
             val defaultDate = ProfileManager.getProfile().anniversaryDate?.toString() ?: "2024-01-01"
             return prefs.getString("anniversary_date", defaultDate) ?: defaultDate
         }
-        set(value) = prefs.edit().putString("anniversary_date", value).apply()
+        set(value) = prefs.putString("anniversary_date", value)
 
     var isOnboardingCompleted: Boolean
         get() = prefs.getBoolean("onboarding_completed", false)
-        set(value) = prefs.edit().putBoolean("onboarding_completed", value).apply()
+        set(value) = prefs.putBoolean("onboarding_completed", value)
 
     /** Set once the couple has answered the one-time "Want to set your names?" prompt. */
     var namePromptAnswered: Boolean
         get() = prefs.getBoolean("name_prompt_answered", false)
-        set(value) = prefs.edit().putBoolean("name_prompt_answered", value).apply()
+        set(value) = prefs.putBoolean("name_prompt_answered", value)
 
     var secretCode: String
         get() = prefs.getString("secret_code", "LOVE") ?: "LOVE"
-        set(value) = prefs.edit().putString("secret_code", value.trim().uppercase()).apply()
+        set(value) = prefs.putString("secret_code", value.trim().uppercase())
 
     var secretCodeBody: String
         get() = prefs.getString("secret_code_body", ProfileManager.getProfile().secretCodeBody) ?: ProfileManager.getProfile().secretCodeBody
-        set(value) = prefs.edit().putString("secret_code_body", value.trim()).apply()
+        set(value) = prefs.putString("secret_code_body", value.trim())
 
     var boyfriendBirthday: String
         get() = prefs.getString("bf_birthday", "") ?: ""
-        set(value) = prefs.edit().putString("bf_birthday", value.trim()).apply()
+        set(value) = prefs.putString("bf_birthday", value.trim())
 
     var girlfriendBirthday: String
         get() = prefs.getString("gf_birthday", "") ?: ""
-        set(value) = prefs.edit().putString("gf_birthday", value.trim()).apply()
+        set(value) = prefs.putString("gf_birthday", value.trim())
 
     var firstOpenDate: String
         get() = prefs.getString("first_open_date", "") ?: ""
-        set(value) = prefs.edit().putString("first_open_date", value).apply()
+        set(value) = prefs.putString("first_open_date", value)
 
     var lastOpenedDate: String
         get() = prefs.getString("last_opened_date", "") ?: ""
-        set(value) = prefs.edit().putString("last_opened_date", value).apply()
+        set(value) = prefs.putString("last_opened_date", value)
 
     var uniqueDaysOpened: Int
         get() = prefs.getInt("unique_days_opened", 1)
-        set(value) = prefs.edit().putInt("unique_days_opened", value.coerceAtLeast(1)).apply()
+        set(value) = prefs.putInt("unique_days_opened", value.coerceAtLeast(1))
 
     var debugDayOffset: Int
         get() = prefs.getInt("debug_day_offset", 0)
-        set(value) = prefs.edit().putInt("debug_day_offset", value).apply()
+        set(value) = prefs.putInt("debug_day_offset", value)
 
     var gardenStage: Int
         get() = prefs.getInt("garden_stage", computeGardenStage(uniqueDaysOpened))
-        set(value) = prefs.edit().putInt("garden_stage", value.coerceIn(0, 6)).apply()
+        set(value) = prefs.putInt("garden_stage", value.coerceIn(0, 6))
 
     var catName: String
         get() = prefs.getString("cat_name", "Mochi") ?: "Mochi"
-        set(value) = prefs.edit().putString("cat_name", value.trim().ifEmpty { "Mochi" }).apply()
+        set(value) = prefs.putString("cat_name", value.trim().ifEmpty { "Mochi" })
 
     var catPositionState: String
         get() = prefs.getString("cat_pos_state", "MEADOW") ?: "MEADOW"
-        set(value) = prefs.edit().putString("cat_pos_state", value).apply()
+        set(value) = prefs.putString("cat_pos_state", value)
 
     var cottageRoomState: String
         get() = prefs.getString("cottage_room_state", "LIVING_ROOM") ?: "LIVING_ROOM"
-        set(value) = prefs.edit().putString("cottage_room_state", value).apply()
+        set(value) = prefs.putString("cottage_room_state", value)
 
     var roomThemeId: String
         get() = prefs.getString("room_theme_id", "WARM_AUTUMN_COTTAGE") ?: "WARM_AUTUMN_COTTAGE"
-        set(value) = prefs.edit().putString("room_theme_id", value).apply()
+        set(value) = prefs.putString("room_theme_id", value)
 
     var characterMoodState: String
         get() = prefs.getString("character_mood_state", "COZY") ?: "COZY"
-        set(value) = prefs.edit().putString("character_mood_state", value).apply()
+        set(value) = prefs.putString("character_mood_state", value)
 
     var girlOutfitIndex: Int
         get() = prefs.getInt("girl_outfit_index", 0)
-        set(value) = prefs.edit().putInt("girl_outfit_index", value.coerceIn(0, 20)).apply()
+        set(value) = prefs.putInt("girl_outfit_index", value.coerceIn(0, 20))
 
     var girlAccessoryIndex: Int
         get() = prefs.getInt("girl_accessory_index", 0)
-        set(value) = prefs.edit().putInt("girl_accessory_index", value.coerceIn(0, 10)).apply()
+        set(value) = prefs.putInt("girl_accessory_index", value.coerceIn(0, 10))
 
     var boyOutfitIndex: Int
         get() = prefs.getInt("boy_outfit_index", 0)
-        set(value) = prefs.edit().putInt("boy_outfit_index", value.coerceIn(0, 20)).apply()
+        set(value) = prefs.putInt("boy_outfit_index", value.coerceIn(0, 20))
 
     var boyAccessoryIndex: Int
         get() = prefs.getInt("boy_accessory_index", 0)
-        set(value) = prefs.edit().putInt("boy_accessory_index", value.coerceIn(0, 10)).apply()
+        set(value) = prefs.putInt("boy_accessory_index", value.coerceIn(0, 10))
 
     /**
      * Avatar look per character slot. Slot A is the "boy" slot and slot B the "girl" slot internally;
@@ -154,38 +154,35 @@ class PreferencesManager(
     fun setAvatarAppearance(isSlotB: Boolean, appearance: AvatarAppearance) {
         val prefix = if (isSlotB) "avatar_b_" else "avatar_a_"
         val a = appearance.normalized()
-        prefs.edit()
-            .putInt(prefix + "skin", a.skinTone)
-            .putInt(prefix + "hair_color", a.hairColor)
-            .putBoolean(prefix + "long_hair", a.longHair)
-            .putBoolean(prefix + "wears_dress", a.wearsDress)
-            .apply()
+        prefs.putInt(prefix + "skin", a.skinTone)
+        prefs.putInt(prefix + "hair_color", a.hairColor)
+        prefs.putBoolean(prefix + "long_hair", a.longHair)
+        prefs.putBoolean(prefix + "wears_dress", a.wearsDress)
     }
 
     var buttonGlassIntensity: Float
         get() = prefs.getFloat("button_glass_intensity", 0.65f)
-        set(value) = prefs.edit().putFloat("button_glass_intensity", value.coerceIn(0.10f, 1.0f)).apply()
+        set(value) = prefs.putFloat("button_glass_intensity", value.coerceIn(0.10f, 1.0f))
 
     var tinyCareEnabled: Boolean
         get() = prefs.getBoolean("tiny_care_enabled", false)
-        set(value) = prefs.edit().putBoolean("tiny_care_enabled", value).apply()
+        set(value) = prefs.putBoolean("tiny_care_enabled", value)
 
     var tinyCareCategories: Set<String>
         get() = prefs.getStringSet("tiny_care_categories", com.example.care.TinyCareCategory.allIds())
-            ?: com.example.care.TinyCareCategory.allIds()
-        set(value) = prefs.edit().putStringSet("tiny_care_categories", value).apply()
+        set(value) = prefs.putStringSet("tiny_care_categories", value)
 
     var tinyCareQuietStartHour: Int
         get() = prefs.getInt("tiny_care_quiet_start", 23)
-        set(value) = prefs.edit().putInt("tiny_care_quiet_start", value).apply()
+        set(value) = prefs.putInt("tiny_care_quiet_start", value)
 
     var tinyCareQuietEndHour: Int
         get() = prefs.getInt("tiny_care_quiet_end", 7)
-        set(value) = prefs.edit().putInt("tiny_care_quiet_end", value).apply()
+        set(value) = prefs.putInt("tiny_care_quiet_end", value)
 
     var tinyCareNextTriggerMillis: Long
         get() = prefs.getLong("tiny_care_next_trigger", 0L)
-        set(value) = prefs.edit().putLong("tiny_care_next_trigger", value).apply()
+        set(value) = prefs.putLong("tiny_care_next_trigger", value)
 
     fun getTinyCareRecentMessageIds(): List<String> {
         val raw = prefs.getString("tiny_care_recent_ids", "") ?: ""
@@ -197,18 +194,13 @@ class PreferencesManager(
         current.remove(id)
         current.add(0, id)
         val trimmed = current.take(10)
-        prefs.edit().putString("tiny_care_recent_ids", trimmed.joinToString(",")).apply()
+        prefs.putString("tiny_care_recent_ids", trimmed.joinToString(","))
     }
 
     fun computeGardenStage(days: Int): Int = GardenGrowth.stageFor(days)
 
-    private fun getEffectiveDateString(): String {
-        val calendar = Calendar.getInstance()
-        if (debugDayOffset != 0) {
-            calendar.add(Calendar.DAY_OF_YEAR, debugDayOffset)
-        }
-        return SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(calendar.time)
-    }
+    private fun getEffectiveDateString(): String =
+        CoupleDates.today().plus(debugDayOffset, DateTimeUnit.DAY).toString()
 
     fun markAppOpenedToday(): Boolean {
         val today = getEffectiveDateString()
@@ -235,9 +227,7 @@ class PreferencesManager(
     fun consumeDaysAway(): Int = pendingDaysAway.also { pendingDaysAway = 0 }
 
     private fun daysBetween(from: String, to: String): Int = runCatching {
-        val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US)
-        val ms = fmt.parse(to)!!.time - fmt.parse(from)!!.time
-        (ms / (24L * 60 * 60 * 1000)).toInt()
+        LocalDate.parse(from).daysUntil(LocalDate.parse(to))
     }.getOrDefault(0)
 
     /**
@@ -259,7 +249,7 @@ class PreferencesManager(
         val fresh = earned.filter { it.index !in known }
         if (fresh.isEmpty()) return
         val merged = known + fresh.associate { it.index to today }
-        prefs.edit().putString("garden_bloom_dates", merged.entries.sortedBy { it.key }.joinToString(",") { "${it.key}=${it.value}" }).apply()
+        prefs.putString("garden_bloom_dates", merged.entries.sortedBy { it.key }.joinToString(",") { "${it.key}=${it.value}" })
     }
 
     fun fastForwardDayForDebug(): Int {
@@ -279,12 +269,12 @@ class PreferencesManager(
         current.remove(sceneId)
         current.add(0, sceneId)
         val trimmed = current.take(3)
-        prefs.edit().putString("recent_scenes", trimmed.joinToString(",")).apply()
+        prefs.putString("recent_scenes", trimmed.joinToString(","))
         lastSceneId = sceneId
     }
 
     fun getDaysTogether(): Long {
-        return RelationshipTimeManager.calculateTinyUsDay()
+        return daysTogetherToday()
     }
 
     /**
@@ -361,7 +351,7 @@ class PreferencesManager(
             }
             val merged = defaults + existing
             saveMemories(merged)
-            prefs.edit().putInt("memories_version", 2).apply()
+            prefs.putInt("memories_version", 2)
             cachedMemories = merged
             return merged
         }
@@ -379,7 +369,7 @@ class PreferencesManager(
                 val obj = arr.getJSONObject(i)
                 list.add(
                     MemoryItem(
-                        id = obj.optString("id", UUID.randomUUID().toString()),
+                        id = obj.optString("id", Uuid.random().toString()),
                         title = obj.getString("title"),
                         date = obj.getString("date"),
                         note = obj.getString("note"),
@@ -399,12 +389,12 @@ class PreferencesManager(
     fun addMemory(title: String, note: String, date: String, iconType: String) {
         val current = getMemories().toMutableList()
         val newItem = MemoryItem(
-            id = UUID.randomUUID().toString(),
+            id = Uuid.random().toString(),
             title = title,
-            date = date.ifEmpty { SimpleDateFormat("MMM d, yyyy", Locale.getDefault()).format(Date()) },
+            date = date.ifEmpty { SavedDates.shortDate(withYear = true) },
             note = note,
             iconType = iconType,
-            createdAt = System.currentTimeMillis()
+            createdAt = nowMillis()
         )
         current.add(0, newItem)
         saveMemories(current)
@@ -424,7 +414,7 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("memories_json", arr.toString()).apply()
+        prefs.putString("memories_json", arr.toString())
     }
 
     private fun getDefaultMemories(): List<MemoryItem> = ProfileManager.getProfile().defaultMemories
@@ -464,7 +454,7 @@ class PreferencesManager(
             }
             val merged = defaults + existing
             saveLoveNotes(merged)
-            prefs.edit().putInt("notes_version", 2).apply()
+            prefs.putInt("notes_version", 2)
             cachedLoveNotes = merged
             return merged
         }
@@ -482,7 +472,7 @@ class PreferencesManager(
                 val obj = arr.getJSONObject(i)
                 list.add(
                     LoveNoteItem(
-                        id = obj.optString("id", UUID.randomUUID().toString()),
+                        id = obj.optString("id", Uuid.random().toString()),
                         text = obj.getString("text"),
                         author = obj.getString("author"),
                         date = obj.getString("date"),
@@ -502,12 +492,12 @@ class PreferencesManager(
     fun addLoveNote(text: String, author: String) {
         val current = getLoveNotes().toMutableList()
         val newItem = LoveNoteItem(
-            id = UUID.randomUUID().toString(),
+            id = Uuid.random().toString(),
             text = text,
             author = author,
-            date = SimpleDateFormat("MMM d", Locale.getDefault()).format(Date()),
+            date = SavedDates.shortDate(withYear = false),
             isCustom = true,
-            createdAt = System.currentTimeMillis()
+            createdAt = nowMillis()
         )
         current.add(0, newItem)
         saveLoveNotes(current)
@@ -527,7 +517,7 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("notes_json", arr.toString()).apply()
+        prefs.putString("notes_json", arr.toString())
     }
 
     private fun getDefaultNotes(): List<LoveNoteItem> = ProfileManager.getProfile().defaultNotes
@@ -602,7 +592,7 @@ class PreferencesManager(
     // Daily Tiny Moment pool calculated offline based on day of year
     fun getTodayTinyMoment(offset: Int = 0): TinyMoment {
         val moments = getAllMoments()
-        val dayOfYear = java.util.Calendar.getInstance().get(java.util.Calendar.DAY_OF_YEAR) + offset
+        val dayOfYear = CoupleDates.today().dayOfYear + offset
         val normalized = ((dayOfYear % moments.size) + moments.size) % moments.size
         return moments[normalized]
     }
@@ -613,7 +603,7 @@ class PreferencesManager(
         cachedDreamEntries?.let { return it }
         val raw = prefs.getString("dreams_json", null) ?: return emptyList<DreamEntry>().also { cachedDreamEntries = it }
         return try {
-            val arr = org.json.JSONArray(raw)
+            val arr = JSONArray(raw)
             val list = mutableListOf<DreamEntry>()
             for (i in 0 until arr.length()) {
                 val obj = arr.getJSONObject(i)
@@ -651,20 +641,20 @@ class PreferencesManager(
 
     private fun saveDreamEntries(list: List<DreamEntry>) {
         cachedDreamEntries = list
-        val arr = org.json.JSONArray()
+        val arr = JSONArray()
         list.forEach { entry ->
-            val obj = org.json.JSONObject().apply {
+            val obj = JSONObject().apply {
                 put("id", entry.id)
                 put("text", entry.text)
                 put("dreamTheme", entry.dreamTheme)
                 put("timestamp", entry.timestamp)
-                val kws = org.json.JSONArray()
+                val kws = JSONArray()
                 entry.matchedKeywords.forEach { kws.put(it) }
                 put("matchedKeywords", kws)
             }
             arr.put(obj)
         }
-        prefs.edit().putString("dreams_json", arr.toString()).apply()
+        prefs.putString("dreams_json", arr.toString())
     }
 
     // ── Tiny Date Adventures ──
@@ -717,7 +707,7 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("date_adventures_json", arr.toString()).apply()
+        prefs.putString("date_adventures_json", arr.toString())
     }
 
     fun updateAdventureStatus(
@@ -737,7 +727,7 @@ class PreferencesManager(
                 status = finalStatus,
                 completedByBoy = boyDone,
                 completedByGirl = girlDone,
-                completedTimestamp = if (finalStatus == AdventureStatus.COMPLETED) System.currentTimeMillis() else old.completedTimestamp
+                completedTimestamp = if (finalStatus == AdventureStatus.COMPLETED) nowMillis() else old.completedTimestamp
             )
             current[index] = updated
             saveDateAdventures(current)
@@ -745,8 +735,8 @@ class PreferencesManager(
             if (finalStatus == AdventureStatus.COMPLETED) {
                 WorldEventBus.post(
                     WorldEvent.DateAdventureCompleted(
-                        id = UUID.randomUUID().toString(),
-                        timestamp = System.currentTimeMillis(),
+                        id = Uuid.random().toString(),
+                        timestamp = nowMillis(),
                         adventureId = updated.id,
                         title = updated.title,
                         completedBy = if (boyDone && girlDone) "both" else if (boyDone) "boy" else "girl"
@@ -809,14 +799,14 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("daily_moment_responses_json", arr.toString()).apply()
+        prefs.putString("daily_moment_responses_json", arr.toString())
 
         if (response.isBothAnswered || response.isRevealed) {
             val prompt = DailyPromptCatalog.defaultPrompts.find { it.id == response.promptId }
             WorldEventBus.post(
                 WorldEvent.TinyMomentCompleted(
-                    id = UUID.randomUUID().toString(),
-                    timestamp = System.currentTimeMillis(),
+                    id = Uuid.random().toString(),
+                    timestamp = nowMillis(),
                     promptId = response.promptId,
                     promptText = prompt?.question ?: "Daily Tiny Moment",
                     isBothAnswered = response.isBothAnswered
@@ -892,13 +882,13 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("mini_games_json", arr.toString()).apply()
+        prefs.putString("mini_games_json", arr.toString())
 
         if (round.isBothAnswered || round.isRevealed) {
             WorldEventBus.post(
                 WorldEvent.MiniGameCompleted(
-                    id = UUID.randomUUID().toString(),
-                    timestamp = System.currentTimeMillis(),
+                    id = Uuid.random().toString(),
+                    timestamp = nowMillis(),
                     gameId = round.id,
                     gameTypeName = round.type.title,
                     summary = if (round.isMatch) "Sweet Match!" else "Shared Perspective"
@@ -928,21 +918,19 @@ class PreferencesManager(
     }
 
     fun setPartnerMood(partner: String, mood: SharedMoodType, isShared: Boolean) {
-        val editor = prefs.edit()
-        val now = System.currentTimeMillis()
+        val now = nowMillis()
         if (partner.equals("boy", ignoreCase = true)) {
-            editor.putString("boy_mood", mood.id)
-            editor.putBoolean("boy_mood_shared", isShared)
+            prefs.putString("boy_mood", mood.id)
+            prefs.putBoolean("boy_mood_shared", isShared)
         } else {
-            editor.putString("girl_mood", mood.id)
-            editor.putBoolean("girl_mood_shared", isShared)
+            prefs.putString("girl_mood", mood.id)
+            prefs.putBoolean("girl_mood_shared", isShared)
         }
-        editor.putLong("mood_last_updated", now)
-        editor.apply()
+        prefs.putLong("mood_last_updated", now)
 
         WorldEventBus.post(
             WorldEvent.SharedMoodChanged(
-                id = UUID.randomUUID().toString(),
+                id = Uuid.random().toString(),
                 timestamp = now,
                 partner = partner,
                 moodName = mood.displayName,
@@ -1019,13 +1007,13 @@ class PreferencesManager(
             }
             arr.put(obj)
         }
-        prefs.edit().putString("ld_signals_json", arr.toString()).apply()
+        prefs.putString("ld_signals_json", arr.toString())
     }
 
     // ── Widget Data Payload ──
     fun getWidgetData(currentWeather: String = "Sunny", timePhase: String = "Day", sceneName: String = "Living Room"): TinyUsWidgetData {
-        val todayStr = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date())
-        val dayIndex = RelationshipTimeManager.calculateTinyUsDay().toInt()
+        val todayStr = CoupleDates.today().toString()
+        val dayIndex = daysTogetherToday().toInt()
         val prompt = DailyPromptCatalog.getPromptForDay(dayIndex)
         val momentResp = getDailyMomentResponseForDate(todayStr, prompt.id)
         val mood = getPartnerMoodState()
@@ -1033,7 +1021,7 @@ class PreferencesManager(
 
         return TinyUsWidgetData(
             coupleNames = "$boyfriendName & $girlfriendName",
-            daysTogether = RelationshipTimeManager.calculateTinyUsDay(),
+            daysTogether = daysTogetherToday(),
             sceneName = sceneName,
             weatherName = currentWeather,
             timePhase = timePhase,
@@ -1041,7 +1029,13 @@ class PreferencesManager(
             dailyMomentAnswered = momentResp.isBothAnswered || momentResp.isRevealed,
             latestSignalText = latestSig?.type?.title,
             sharedMoodText = mood.boyMood.displayName,
-            lastUpdatedTimestamp = System.currentTimeMillis()
+            lastUpdatedTimestamp = nowMillis()
         )
     }
+
+    private fun nowMillis(): Long = Clock.System.now().toEpochMilliseconds()
+
+    /** Day N together, counting the anniversary as day 1 (as RelationshipTimeManager does). */
+    private fun daysTogetherToday(): Long =
+        RelationshipTimeCalculator.calculateTinyUsDay(CoupleDates.anniversary, CoupleDates.today())
 }
