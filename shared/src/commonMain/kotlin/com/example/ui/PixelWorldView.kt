@@ -359,6 +359,8 @@ fun PixelWorldView(
                                 if (cafeProp != null) return@detectTapGestures
                             }
                             EnvironmentType.SUNROOM -> {
+                                // The herb pots, the winter greenhouse (plan 09, E1).
+                                if (engine.cozy.onPotTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) return@detectTapGestures
                                 if (tapOffset.y < h * 0.25f) {
                                     engine.onTouchSunroomSkylight(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures

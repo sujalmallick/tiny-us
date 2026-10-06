@@ -2,16 +2,32 @@ package com.example.games
 
 import kotlin.random.Random
 
-/** Something on the kitchen counter or in the fridge. Where each one sits is the scene's business. */
+/**
+ * Something on the kitchen counter or in the fridge (always there), or from the garden (only what's
+ * in the pantry: see [isProduce]).
+ */
 enum class Ingredient {
-    FLOUR, EGG, MILK, BUTTER, SUGAR, WATER, CARROT, POTATO, ONION, CABBAGE, CHOCOLATE, TEA_LEAVES, HONEY
+    FLOUR, EGG, MILK, BUTTER, SUGAR, WATER, CARROT, POTATO, ONION, CABBAGE, CHOCOLATE, TEA_LEAVES, HONEY,
+    // Grown in the garden (plan 09, E3).
+    STRAWBERRY, PEAS, TOMATO, BASIL, PUMPKIN, APPLE, MINT;
+
+    /** Grown, not bought: it comes from the pantry and a dish uses it up. */
+    val isProduce: Boolean get() = ordinal >= STRAWBERRY.ordinal
 }
 
 /** A recipe card: [ingredients] go in this order. [id] names the dish (its text and its art). */
-class Recipe(val id: String, val ingredients: List<Ingredient>)
+class Recipe(val id: String, val ingredients: List<Ingredient>) {
+    /** What it needs from the pantry (nothing, for the five starting recipes). */
+    val pantry: List<Ingredient> get() = ingredients.filter { it.isProduce }
+
+    /** Whether [pantry] (ingredient to how many) has what this recipe needs. */
+    fun canCook(pantry: Map<Ingredient, Int>): Boolean =
+        this.pantry.groupingBy { it }.eachCount().all { (i, n) -> (pantry[i] ?: 0) >= n }
+}
 
 object Recipes {
-    val ALL: List<Recipe> = listOf(
+    /** The five recipes that are always open. */
+    val STARTERS: List<Recipe> = listOf(
         Recipe("pancakes", listOf(Ingredient.FLOUR, Ingredient.EGG, Ingredient.MILK, Ingredient.BUTTER)),
         Recipe("soup", listOf(Ingredient.WATER, Ingredient.CARROT, Ingredient.POTATO, Ingredient.ONION)),
         Recipe("dumplings", listOf(Ingredient.FLOUR, Ingredient.WATER, Ingredient.CABBAGE)),
@@ -19,12 +35,28 @@ object Recipes {
         Recipe("tea", listOf(Ingredient.WATER, Ingredient.TEA_LEAVES, Ingredient.HONEY))
     )
 
+    /** Recipes that need something from the garden (plan 09, E3). */
+    val GARDEN: List<Recipe> = listOf(
+        Recipe("tomato_soup", listOf(Ingredient.WATER, Ingredient.TOMATO, Ingredient.BASIL, Ingredient.ONION)),
+        Recipe("strawberry_pancakes", listOf(Ingredient.FLOUR, Ingredient.EGG, Ingredient.MILK, Ingredient.STRAWBERRY)),
+        Recipe("pumpkin_pie", listOf(Ingredient.FLOUR, Ingredient.BUTTER, Ingredient.PUMPKIN, Ingredient.SUGAR)),
+        Recipe("herb_tea", listOf(Ingredient.WATER, Ingredient.MINT, Ingredient.HONEY)),
+        Recipe("apple_crumble", listOf(Ingredient.APPLE, Ingredient.FLOUR, Ingredient.BUTTER, Ingredient.SUGAR)),
+        Recipe("pea_soup", listOf(Ingredient.WATER, Ingredient.PEAS, Ingredient.ONION))
+    )
+
+    val ALL: List<Recipe> = STARTERS + GARDEN
+
     fun byId(id: String): Recipe? = ALL.firstOrNull { it.id == id }
 
-    /** A recipe to suggest: one not cooked yet if there is one, otherwise any. */
-    fun suggest(cooked: Set<String>, random: Random = Random.Default): Recipe {
-        val fresh = ALL.filter { it.id !in cooked }
-        return (fresh.ifEmpty { ALL }).random(random)
+    /** What can be cooked now: the starters, and the garden recipes the pantry has enough for. */
+    fun available(pantry: Map<Ingredient, Int>): List<Recipe> = ALL.filter { it.canCook(pantry) }
+
+    /** A recipe to suggest from what's [available]: one not cooked yet if there is one, otherwise any. */
+    fun suggest(cooked: Set<String>, random: Random = Random.Default, pantry: Map<Ingredient, Int> = emptyMap()): Recipe {
+        val open = available(pantry)
+        val fresh = open.filter { it.id !in cooked }
+        return (fresh.ifEmpty { open }).random(random)
     }
 }
 
@@ -133,7 +165,7 @@ class CookingGame {
         const val SIMMER_SECONDS = 2.5f
         /** How long the finished dish shows on the table before the card goes away. */
         const val SERVED_SECONDS = 4f
-        /** Different dishes cooked that earn a little first (and the chef's apron). */
+        /** Different dishes cooked that earn a little first (and the chef's apron): the five starters. */
         const val GOOD_DISHES = 5
     }
 }

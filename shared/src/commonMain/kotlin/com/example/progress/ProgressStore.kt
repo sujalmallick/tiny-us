@@ -39,6 +39,10 @@ class ProgressStore(private val storage: KeyValueStorage) {
                             plot.flower?.let { put("flower", it) }
                             put("waterings", plot.waterings)
                             put("lastWatered", plot.lastWatered)
+                            if (plot.sharedBy.isNotEmpty()) {
+                                put("sharedBy", strings(plot.sharedBy.sorted()))
+                                put("sharedDay", plot.sharedDay)
+                            }
                         })
                     }
                 })
@@ -64,12 +68,15 @@ class ProgressStore(private val storage: KeyValueStorage) {
 
         private fun garden(o: JSONObject): com.example.games.GardenPlots {
             val saved = o.optJSONArray("plots")
-            val plots = List(com.example.games.GardenPlots.PLOTS) { i ->
+            // Older saves have only the meadow's three plots; the sunroom pots start empty.
+            val plots = List(com.example.games.GardenPlots.SPOTS) { i ->
                 val p = saved?.optJSONObject(i) ?: return@List com.example.games.Plot()
                 com.example.games.Plot(
                     flower = p.optString("flower").takeIf { it.isNotEmpty() },
                     waterings = p.optInt("waterings"),
-                    lastWatered = p.optLong("lastWatered", -1L)
+                    lastWatered = p.optLong("lastWatered", -1L),
+                    sharedBy = p.optJSONArray("sharedBy")?.let { a -> (0 until a.length()).map { a.optString(it) }.toSet() } ?: emptySet(),
+                    sharedDay = p.optLong("sharedDay", -1L)
                 )
             }
             val stems = o.optJSONArray("stems")?.let { a -> (0 until a.length()).map { a.optString(it) } } ?: emptyList()

@@ -377,6 +377,12 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "dumplings" -> Res.string.keepsake_dish_dumplings
     "cookies" -> Res.string.keepsake_dish_cookies
     "tea" -> Res.string.keepsake_dish_tea
+    "tomato_soup" -> Res.string.keepsake_dish_tomato_soup
+    "strawberry_pancakes" -> Res.string.keepsake_dish_strawberry_pancakes
+    "pumpkin_pie" -> Res.string.keepsake_dish_pumpkin_pie
+    "herb_tea" -> Res.string.keepsake_dish_herb_tea
+    "apple_crumble" -> Res.string.keepsake_dish_apple_crumble
+    "pea_soup" -> Res.string.keepsake_dish_pea_soup
     "MINNOW" -> Res.string.keepsake_catch_minnow
     "CARP" -> Res.string.keepsake_catch_carp
     "OLD_BOOT" -> Res.string.keepsake_catch_old_boot

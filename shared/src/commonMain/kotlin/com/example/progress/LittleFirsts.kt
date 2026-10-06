@@ -64,14 +64,16 @@ object LittleFirsts {
         LittleFirst("mochi_best_friend", Res.string.mochi_best_friend, Res.string.mochi_best_friend_hint, Rewards.MOCHI_HEADBAND) { MochiFondness.level(it.count(Counter.MOCHI_FONDNESS)) >= 3 },
         LittleFirst("first_gift", Res.string.first_gift, Res.string.first_gift_hint) { it.count(Counter.GIFTS) >= 1 },
         LittleFirst("first_dish", Res.string.first_dish, Res.string.first_dish_hint) { it.count(Counter.DISHES) >= 1 },
-        LittleFirst("all_recipes", Res.string.all_recipes, Res.string.all_recipes_hint, Rewards.CHEF_APRON) { it.seenSet(Seen.RECIPES).size >= com.example.games.CookingGame.GOOD_DISHES },
+        LittleFirst("all_recipes", Res.string.all_recipes, Res.string.all_recipes_hint, Rewards.CHEF_APRON) { s -> com.example.games.Recipes.STARTERS.all { it.id in s.seenSet(Seen.RECIPES) } },
         LittleFirst("first_fish", Res.string.first_fish, Res.string.first_fish_hint, Rewards.FISHER_HAT) { it.count(Counter.FISH) >= 1 },
         LittleFirst("golden_fish", Res.string.golden_fish, Res.string.golden_fish_hint) { it.count(Counter.GOLDEN_FISH) >= 1 },
         LittleFirst("first_bloom", Res.string.first_bloom, Res.string.first_bloom_hint) { it.count(Counter.BLOOMS_PICKED) >= 1 },
         LittleFirst("first_bouquet", Res.string.first_bouquet, Res.string.first_bouquet_hint, Rewards.FLOWER_CROWN) { it.count(Counter.BOUQUETS) >= 1 },
         LittleFirst("first_request", Res.string.first_request, Res.string.first_request_hint) { it.count(Counter.REQUESTS) >= 1 },
         LittleFirst("all_requests", Res.string.all_requests, Res.string.all_requests_hint) { it.seenSet(Seen.REQUEST_KINDS).size >= REQUEST_KIND_COUNT },
-        LittleFirst("birthday_surprise", Res.string.first_birthday_surprise, Res.string.first_birthday_surprise_hint, Rewards.PARTY_HAT) { it.count(Counter.BIRTHDAYS) >= 1 }
+        LittleFirst("birthday_surprise", Res.string.first_birthday_surprise, Res.string.first_birthday_surprise_hint, Rewards.PARTY_HAT) { it.count(Counter.BIRTHDAYS) >= 1 },
+        LittleFirst("first_harvest", Res.string.first_harvest, Res.string.first_harvest_hint) { it.count(Counter.HARVESTS) >= 1 },
+        LittleFirst("first_garden_dish", Res.string.first_garden_dish, Res.string.first_garden_dish_hint) { it.count(Counter.GARDEN_DISHES) >= 1 }
     )
 
     fun byId(id: String): LittleFirst? = ALL.firstOrNull { it.id == id }

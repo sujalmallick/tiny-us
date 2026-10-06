@@ -162,12 +162,12 @@ Each is a tiny ritual in the world for a real friction. None of them is therapy,
 - `CookingGame` has 5 recipes, all open from the start.
 - Harvests don't feed cooking.
 
-- [ ] **E1. Choose the seed,** with seasonal crops added: strawberries and peas in spring, tomatoes and basil in summer, pumpkins and apples in autumn. In winter, herbs grow in **sunroom pots**, so the sunroom becomes the winter greenhouse. Flowers stay.
-- [ ] **E2. A plot each and one shared.**
+- [x] **E1. Choose the seed,** with seasonal crops added: strawberries and peas in spring, tomatoes and basil in summer, pumpkins and apples in autumn. In winter, herbs grow in **sunroom pots**, so the sunroom becomes the winter greenhouse. Flowers stay.
+- [x] **E2. A plot each and one shared.**
   - Bean's plot, Sprout's plot, and a shared plot that wants both of them that day. A "who's watering?" tap on your own character shows "Bean watered. Waiting for Sprout".
   - It's a small reason for both to come back, not a duty: nothing wilts.
-- [ ] **E3. A pantry.** Harvests go to an ingredient pantry. New recipes need them (tomato soup, strawberry pancakes, pumpkin pie, herb tea). The 5 starting recipes stay free and open.
-- [ ] **E4. Sharing the meal.** After cooking, the dish is served and the couple sits at the kitchen table to eat together. One "dinner talk" question appears, from the Daily Moments deck. That's the payoff of the loop.
+- [x] **E3. A pantry.** Harvests go to an ingredient pantry. New recipes need them (tomato soup, strawberry pancakes, pumpkin pie, herb tea). The 5 starting recipes stay free and open.
+- [x] **E4. Sharing the meal.** After cooking, the dish is served and the couple sits at the kitchen table to eat together. One "dinner talk" question appears, from the Daily Moments deck. That's the payoff of the loop.
 - [ ] **E5. Recipes by mail.** Harvesting a new crop brings its recipe card in the next morning's mail (section G).
 
 ## F. Fishing by season, weather and time (from Stardew's fishing)
@@ -360,11 +360,11 @@ This is the working list; it is ticked as things land. The screens IOS moved to 
 - [ ] D-7. Tests and renders.
 
 ### E. Garden to kitchen
-- [ ] E-1. A seed picker, seasonal crops, and the sunroom pots as the winter greenhouse.
-- [ ] E-2. Plots for Bean, for Sprout and a shared one, with "who's watering?".
-- [ ] E-3. A pantry, plus recipes that use crops (the 5 starting recipes stay free).
-- [ ] E-4. Sharing the meal at the table, with a dinner-talk question.
-- [ ] E-5. Tests and renders.
+- [x] E-1. A seed picker, seasonal crops, and the sunroom pots as the winter greenhouse. *(`Seeds` in `GardenPlots.kt`: flowers outside winter; strawberries and peas in spring, tomatoes and basil in summer, pumpkins and apples in autumn; nothing in the meadow in winter; mint and basil in the two sunroom pots all year. The picker is `SeedPickerCard` in `ui/CozyCards.kt`.)*
+- [x] E-2. Plots for Bean, for Sprout and a shared one, with "who's watering?". *(Plot 0 is his (blue flag), 1 is shared (gold heart), 2 is hers (pink flag). The shared plot grows once both have watered that day; `WhoWatersCard` asks who it is, and the caption says "Bean watered. Waiting for Sprout".)*
+- [x] E-3. A pantry, plus recipes that use crops (the 5 starting recipes stay free). *(Harvests go to `ProgressState.pantry`; six garden recipes: tomato soup, strawberry pancakes, pumpkin pie, mint tea, apple crumble, pea soup. "Cook together" opens `RecipePickerCard`; a locked recipe says what it needs. Firsts: "Our first harvest", "From our garden". The chef's apron still means the five starters.)*
+- [x] E-4. Sharing the meal at the table, with a dinner-talk question. *(After a dish is served they walk to the table and sit; a Daily Moments question follows as the caption, "Over dinner: ...".)*
+- [x] E-5. Tests and renders. *(`GardenKitchenTest`, `GardenKitchenEngineTest`; `SCENE_PREVIEW_COZY=crops`, `STORE_SHOTS_COZY=picker|seeds|who`.)* E5 (recipes by mail) waits for section G.
 
 ### F. Seasonal fishing
 - [ ] F-1. Catches by season, weather and time; new fish art.

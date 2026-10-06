@@ -35,7 +35,10 @@ sealed class ProgressEvent {
     data class FishCaught(val kind: String) : ProgressEvent()
     /** Garden care (plan 07, C5): a seed planted, a plot watered, rain, a flower picked. */
     data class GardenPlanted(val plot: Int, val flower: String) : ProgressEvent()
-    data class GardenWatered(val plot: Int, val epochDay: Long) : ProgressEvent()
+    /** [by] is BOY or GIRL when it's said who watered (the shared plot needs both), else null. */
+    data class GardenWatered(val plot: Int, val epochDay: Long, val by: String? = null) : ProgressEvent()
+    /** A ripe crop or herb harvested into the pantry (plan 09, E3). */
+    data class CropHarvested(val plot: Int) : ProgressEvent()
     data class GardenRained(val epochDay: Long) : ProgressEvent()
     data class FlowerPicked(val plot: Int) : ProgressEvent()
     /** One of them asked for something and the player answered (plan 07, D1). */
@@ -65,13 +68,17 @@ object MochiFondness {
 }
 
 /** Keepsakes that can be given as gifts (Mochi's toy stays Mochi's). */
+/** Keepsake-box prefix for the pantry's produce (plan 09, E3); the Keepsakes page doesn't list it. */
+const val PANTRY = "pantry:"
+
 object Gifts {
     /** A bouquet from the garden, as a keepsake id. */
     const val BOUQUET = "garden:BOUQUET"
     val GIVEABLE = listOf(
         "discovery:WILDFLOWER", "discovery:RED_LEAF", "discovery:LOVE_NOTE", "discovery:SEASHELL", "discovery:STAR_PEBBLE",
         BOUQUET, "catch:SEASHELL", "catch:BOTTLE", "catch:GOLDEN_FISH",
-        "dish:pancakes", "dish:soup", "dish:dumplings", "dish:cookies", "dish:tea"
+        "dish:pancakes", "dish:soup", "dish:dumplings", "dish:cookies", "dish:tea",
+        "dish:tomato_soup", "dish:strawberry_pancakes", "dish:pumpkin_pie", "dish:herb_tea", "dish:apple_crumble", "dish:pea_soup"
     )
     const val SHELF = "shelf:"
 }
@@ -102,6 +109,8 @@ object Counter {
     const val BLOOMS_PICKED = "blooms_picked"
     const val BOUQUETS = "bouquets"
     const val REQUESTS = "requests"
+    const val HARVESTS = "harvests"
+    const val GARDEN_DISHES = "garden_dishes"
     const val BIRTHDAYS = "birthdays"
 }
 
@@ -116,6 +125,8 @@ object Seen {
     const val RECIPES = "recipes"
     /** The kinds of request granted at least once. */
     const val REQUEST_KINDS = "request_kinds"
+    /** The crops harvested at least once. */
+    const val CROPS = "crops"
 }
 
 data class ProgressState(
@@ -167,7 +178,22 @@ data class ProgressState(
             val add = event.points.coerceAtMost((MochiFondness.DAILY_CAP - fresh.count("mochi_care_today")).coerceAtLeast(0))
             if (add <= 0) fresh else fresh.plus("mochi_care_today", add).plus(Counter.MOCHI_FONDNESS, add)
         }
-        is ProgressEvent.DishCooked -> plus(Counter.DISHES).see(Seen.RECIPES, event.recipe).keep("dish:${event.recipe}")
+        is ProgressEvent.DishCooked -> {
+            // A garden recipe uses up what it took from the pantry (plan 09, E3).
+            val used = com.example.games.Recipes.byId(event.recipe)?.pantry.orEmpty()
+            var next = plus(Counter.DISHES).see(Seen.RECIPES, event.recipe).keep("dish:${event.recipe}")
+            for (i in used) {
+                val key = PANTRY + i.name
+                next = next.copy(keepsakes = next.keepsakes + (key to ((next.keepsakes[key] ?: 0) - 1).coerceAtLeast(0)))
+            }
+            if (used.isNotEmpty()) next = next.plus(Counter.GARDEN_DISHES)
+            next
+        }
+        is ProgressEvent.CropHarvested -> {
+            val (after, produce) = garden.harvest(event.plot)
+            if (produce == null) this
+            else copy(garden = after).keep(PANTRY + produce.name).plus(Counter.HARVESTS).see(Seen.CROPS, produce.name)
+        }
         is ProgressEvent.FishCaught -> {
             val kind = com.example.games.FishingCatch.entries.firstOrNull { it.name == event.kind }
             var next = keep("catch:${event.kind}").plus("games_${Game.FISHING}")
@@ -176,7 +202,9 @@ data class ProgressState(
             next
         }
         is ProgressEvent.GardenPlanted -> copy(garden = garden.plant(event.plot, event.flower))
-        is ProgressEvent.GardenWatered -> copy(garden = garden.water(event.plot, event.epochDay))
+        is ProgressEvent.GardenWatered -> copy(
+            garden = garden.water(event.plot, event.epochDay, event.by?.let { com.example.games.PlotOwner.valueOf(it) })
+        )
         is ProgressEvent.GardenRained -> copy(garden = garden.rain(event.epochDay))
         is ProgressEvent.FlowerPicked -> {
             val (after, bouquet) = garden.pick(event.plot)
@@ -194,6 +222,11 @@ data class ProgressState(
             else copy(keepsakes = keepsakes + (event.item to have - 1)).keep(Gifts.SHELF + event.item).plus(Counter.GIFTS)
         }
     }
+
+    /** What's in the pantry (plan 09, E3): garden produce and how many of each. */
+    val pantry: Map<com.example.games.Ingredient, Int>
+        get() = com.example.games.Ingredient.entries.filter { it.isProduce }
+            .associateWith { keepsakes[PANTRY + it.name] ?: 0 }.filterValues { it > 0 }
 
     /** The gifts on the home shelf, as keepsake ids, each once (newest kinds last). */
     val shelf: List<String>

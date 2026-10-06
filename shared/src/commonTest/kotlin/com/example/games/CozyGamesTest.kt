@@ -206,6 +206,12 @@ class CozyGamesTest {
         assertEquals(Recipes.ALL.map { it.id }.toSet(), CozySprites.DISHES.keys)
         assertEquals(FishingCatch.entries.toSet(), CozySprites.CATCHES.keys)
         assertEquals(PlotStage.entries.toSet(), CozySprites.PLOT.keys)
+        // Every crop and herb has its ripe plant, and every spot sprite is tidy too.
+        assertEquals(Seeds.ALL.filter { it.kind != SeedKind.FLOWER }.map { it.id }.toSet(), CozySprites.ripeCrops)
+        for (seed in Seeds.ALL) for (stage in PlotStage.entries) for (pot in listOf(false, true)) {
+            val s = CozySprites.spot(stage, seed.id, pot)
+            assertTrue(s.rows.all { it.length == s.width } && s.rows.joinToString("").all { it in known }, "${seed.id} $stage")
+        }
         // Every seed has its own colours from the meadow's plants.
         for (seed in GardenPlots.SEEDS) assertTrue(com.example.data.GardenGrowth.keepsakePlants.any { it.id == seed }, seed)
     }

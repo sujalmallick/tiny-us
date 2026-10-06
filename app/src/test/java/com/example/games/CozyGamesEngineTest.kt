@@ -93,7 +93,11 @@ class CozyGamesEngineTest {
         val p = com.example.engine.WorldViewport.pixelScale(w)
         val plot = e.cozy.plotBase(0, w, h)
         fun tap() = e.cozy.onGardenTap(plot.x, plot.y - 3f * p, w, h, p)
+        // An empty plot asks what to plant (plan 09, E1).
+        e.cozy.season = "SPRING"
         assertTrue(tap())
+        assertEquals(0, e.cozy.seedPickerSpot)
+        e.cozy.chooseSeed(Seeds.byId("tulip")!!)
         assertNotNull(events.filterIsInstance<ProgressEvent.GardenPlanted>().singleOrNull())
         assertTrue(tap())
         assertEquals(1, events.filterIsInstance<ProgressEvent.GardenWatered>().size)

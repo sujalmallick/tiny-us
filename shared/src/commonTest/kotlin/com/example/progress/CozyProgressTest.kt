@@ -51,7 +51,7 @@ class CozyProgressTest {
             for (d in 1..GardenPlots.WATERINGS_TO_BLOOM) events += ProgressEvent.GardenWatered(i, d.toLong())
         }
         val (grown, _) = run(*events.toTypedArray())
-        assertTrue(grown.garden.plots.all { it.stage == PlotStage.BLOOM })
+        assertTrue(grown.garden.plots.take(GardenPlots.PLOTS).all { it.stage == PlotStage.BLOOM })
         val (picked, earned) = run(ProgressEvent.FlowerPicked(0), ProgressEvent.FlowerPicked(1), ProgressEvent.FlowerPicked(2), start = grown)
         assertEquals(listOf("first_bloom", "first_bouquet"), earned)
         assertEquals(1, picked.keepsakes[Gifts.BOUQUET])

@@ -127,9 +127,27 @@ class StoreScreenshotTest {
             repeat(SIM_FRAMES) { update(1f / 60f, camera.worldW, camera.worldH) }
             // STORE_SHOTS_COZY=1 opens the recipe card in the kitchen (or casts a line at the pier);
             // STORE_SHOTS_MESSAGE="..." shows that caption, to check where it sits.
-            if (System.getenv("STORE_SHOTS_COZY") != null) {
-                cozy.startCooking(kotlin.random.Random(3))
-                cozy.startFishing()
+            // STORE_SHOTS_COZY=picker opens the recipe picker with a little in the pantry, =seeds the
+            // seed picker on the first meadow plot, =who the "who is watering?" card (plan 09, E).
+            when (System.getenv("STORE_SHOTS_COZY")) {
+                null -> Unit
+                "picker" -> {
+                    cozy.pantry = mapOf(com.example.games.Ingredient.TOMATO to 2, com.example.games.Ingredient.BASIL to 1)
+                    cozy.openRecipePicker()
+                }
+                "seeds", "who" -> {
+                    cozy.season = "SPRING"
+                    val shared = System.getenv("STORE_SHOTS_COZY") == "who"
+                    if (shared) cozy.garden = com.example.games.GardenPlots().plant(1, "peas")
+                    val i = if (shared) 1 else 0
+                    val p = com.example.engine.WorldViewport.pixelScale(camera.worldW)
+                    val base = cozy.plotBase(i, camera.worldW, camera.worldH)
+                    cozy.onGardenTap(base.x, base.y - 3f * p, camera.worldW, camera.worldH, p)
+                }
+                else -> {
+                    cozy.startCooking(kotlin.random.Random(3))
+                    cozy.startFishing()
+                }
             }
             System.getenv("STORE_SHOTS_MESSAGE")?.let { msg ->
                 showMessage(msg, duration = 10f)
