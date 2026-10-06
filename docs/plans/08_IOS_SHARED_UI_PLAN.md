@@ -57,8 +57,9 @@ Files (all pure today): `engine/` PixelCanvas, Sprites, LoftSprites, PierSprites
 
 ## S4. Screens, theme and saved data
 
-- [ ] Theme and chrome (`ui/theme/*`, `TinyTokens`, `PixelIcons`, `PixelShapes`, `TinyChrome`), then `MainScreen` and the dialogs, one group per PR. Platform actions (photo picking, saving a Polaroid, notification permission, backup, app lock) become callbacks the platform app provides.
-- [ ] `PreferencesManager` moves onto `KeyValueStorage` with kotlinx.serialization instead of org.json, keeping the same keys and JSON so existing Android installs keep their data (migration test on the JVM).
+- [ ] Theme and chrome (`ui/theme/*`, `TinyTokens`, `PixelIcons`, `PixelShapes`, `TinyChrome`), then `MainScreen` and the dialogs, one group per PR.
+  - *Theme and chrome done (branch `ios/s4-theme`): `Theme`, `TinyTokens`, `Type` and `TinyChrome` are common; the pixel font lives in `shared/src/androidMain/res/font` and the iOS app bundles the same file (`PixelFamily` is expect/actual). `MainScreen` and the dialogs wait until the cozy-games work that edits them is committed.* Platform actions (photo picking, saving a Polaroid, notification permission, backup, app lock) become callbacks the platform app provides.
+- [x] `PreferencesManager` moves onto `KeyValueStorage`, keeping the same keys and JSON so existing Android installs keep their data. *(Done on `ios/s4-theme`: instead of kotlinx.serialization, a small common `SavedJson` that writes exactly what org.json wrote; `SavedDataCompatTest` checks old data loads and new writes are byte-identical.)*
 - [ ] `PolaroidManager` splits: common model and list; platform image capture and gallery export.
 
 ## S5. Retire the SwiftUI duplicate
