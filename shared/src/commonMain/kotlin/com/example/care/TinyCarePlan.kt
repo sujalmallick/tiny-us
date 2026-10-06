@@ -18,7 +18,7 @@ data class PlannedReminder(val atMillis: Long, val message: TinyCareMessage)
  * minutes after turning them on, then every 90 to 150 minutes, and never in the quiet hours (a
  * reminder that would land there moves to 15 to 45 minutes after they end). Android rolls one
  * reminder at a time; iOS cannot run code in the background, so it plans a few days ahead with
- * [upcoming] and plans again whenever the app opens.
+ * [upcomingThinning] and plans again whenever the app opens.
  */
 object TinyCarePlan {
     fun isTimeInQuietWindow(hour: Int, startHour: Int, endHour: Int): Boolean =
@@ -80,4 +80,47 @@ object TinyCarePlan {
         }
         return plan
     }
+
+    /**
+     * For a platform that can only plan ahead (iOS keeps at most 64 waiting notifications): the
+     * usual reminders for [denseDays], then one a day around the middle of the waking hours for
+     * [sparseDays] more. When the app isn't opened for a while, the reminders thin out instead of
+     * stopping.
+     */
+    fun upcomingThinning(
+        fromMillis: Long,
+        denseDays: Int,
+        sparseDays: Int,
+        categoryIds: Set<String>,
+        recentIds: List<String>,
+        quietStartHour: Int = 23,
+        quietEndHour: Int = 7,
+        firstSoon: Boolean = false,
+        max: Int = 40,
+        random: Random = Random.Default,
+        zone: TimeZone = TimeZone.currentSystemDefault()
+    ): List<PlannedReminder> {
+        val denseUntil = fromMillis + denseDays * DAY_MILLIS
+        val plan = upcoming(fromMillis, denseUntil, categoryIds, recentIds, quietStartHour, quietEndHour, firstSoon, max, random, zone).toMutableList()
+        val recent = (plan.asReversed().map { it.message.id } + recentIds).distinct().take(10).toMutableList()
+        val awakeHours = ((quietStartHour - quietEndHour) % 24 + 24) % 24
+        val middayHour = (quietEndHour + (if (awakeHours == 0) 24 else awakeHours) / 2) % 24
+        val firstDay = Instant.fromEpochMilliseconds(denseUntil).toLocalDateTime(zone).date
+        for (i in 0 until sparseDays) {
+            if (plan.size >= max) break
+            val day = firstDay.plus(i, DateTimeUnit.DAY)
+            val at = LocalDateTime(day, LocalTime(middayHour, 0)).toInstant(zone).toEpochMilliseconds() +
+                random.nextInt(-45, 46) * 60_000L
+            if (at <= maxOf(denseUntil, plan.lastOrNull()?.atMillis ?: 0L)) continue
+            if (isTimeInQuietWindow(Instant.fromEpochMilliseconds(at).toLocalDateTime(zone).hour, quietStartHour, quietEndHour)) continue
+            val message = TinyCareMessagePool.pickMessage(categoryIds, recent) ?: break
+            plan += PlannedReminder(at, message)
+            recent.remove(message.id)
+            recent.add(0, message.id)
+            if (recent.size > 10) recent.removeAt(recent.lastIndex)
+        }
+        return plan
+    }
+
+    private const val DAY_MILLIS = 24L * 60 * 60 * 1000
 }

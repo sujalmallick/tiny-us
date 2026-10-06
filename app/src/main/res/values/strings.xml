@@ -14,8 +14,6 @@
 
     <!-- Discreet mode -->
     <string name="discreet_app_name">Journal</string>
-    <string name="discreet_notification_title">A gentle reminder</string>
-    <string name="discreet_notification_body">Take a small moment for yourself today.</string>
     <!-- UI text moved out of the code (tools/i18n/extract_ui_strings.py) -->
     <string name="ui_tiny_us">Tiny Us</string>
 

@@ -43,7 +43,7 @@ fun SharedMainViewController(): UIViewController {
         // A restore bumps the generation: every screen is rebuilt with freshly read data.
         key(IosAppShell.generation) {
             val platform = remember { IosMainPlatform() }
-            val actions = remember { IosPlatformActions(platform.prefs) }
+            val actions = remember { IosPlatformActions(platform.prefs, platform::refreshWidget) }
             val lockDevice = remember { IosLockDevice() }
             MyApplicationTheme {
                 CompositionLocalProvider(LocalPlatformActions provides actions, LocalLockDevice provides lockDevice) {

@@ -56,7 +56,16 @@ class IosMainPlatform : MainPlatform {
         IosNotifications.planMornings(prefs)
     }
 
+    /** The scene and weather the widget last showed, for [refreshWidget]. */
+    private var widgetShows: Pair<SceneType, WeatherType>? = null
+
+    /** Publishes the widget again, after the names, dates or a moment changed. */
+    fun refreshWidget() {
+        widgetShows?.let { (scene, weather) -> updateWidget(scene, weather) }
+    }
+
     override fun updateWidget(scene: SceneType, weather: WeatherType) {
+        widgetShows = scene to weather
         val publish = IosWidget.publish ?: return
         val data = prefs.getWidgetData(
             currentWeather = weather.displayName,
