@@ -20,8 +20,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.Spacer
@@ -61,6 +59,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.engine.FallenParticle
@@ -339,18 +338,25 @@ fun BubbleInnerRow(
     }
 }
 
+/**
+ * The scene's caption: a small pixel card just under the top buttons, over the sky or the wall,
+ * so it never covers the ground, the couple, the game buttons or the garden. It is only as wide as
+ * its words (at most three lines), and drops below a game's counter when one is showing
+ * ([belowHud]).
+ */
 @Composable
 fun BoxScope.PixelMessageBox(
     message: String,
     alpha: () -> Float,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    belowHud: Boolean = false
 ) {
     Box(
         modifier = modifier
-            .align(Alignment.BottomCenter)
-            .navigationBarsPadding()
-            .padding(bottom = 82.dp, start = 18.dp, end = 18.dp)
-            .fillMaxWidth(0.88f)
+            .align(Alignment.TopCenter)
+            .statusBarsPadding()
+            .padding(top = if (belowHud) 124.dp else 70.dp, start = 24.dp, end = 24.dp)
+            .widthIn(max = 360.dp)
             .graphicsLayer { this.alpha = alpha() }
             .drawBehind {
                 val w = size.width
@@ -381,18 +387,19 @@ fun BoxScope.PixelMessageBox(
                 drawRect(gemColor, Offset(2 * p, h - 3 * p), Size(p, p))
                 drawRect(gemColor, Offset(w - 3 * p, h - 3 * p), Size(p, p))
             }
-            .padding(horizontal = 18.dp, vertical = 12.dp)
+            .padding(horizontal = 14.dp, vertical = 9.dp)
     ) {
         Text(
             text = message,
-            fontSize = 13.5.sp,
+            fontSize = 12.5.sp,
             fontWeight = FontWeight.Bold,
             fontFamily = FontFamily.Monospace,
             color = Color(0xFF2B2D42),
             textAlign = TextAlign.Center,
-            letterSpacing = 0.5.sp,
-            lineHeight = 19.sp,
-            modifier = Modifier.fillMaxWidth()
+            letterSpacing = 0.3.sp,
+            lineHeight = 16.5.sp,
+            maxLines = 3,
+            overflow = TextOverflow.Ellipsis
         )
     }
 }

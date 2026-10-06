@@ -1030,7 +1030,8 @@ fun MainScreen(
                 )
             }
         } else if (engine.cozy.cookingActive) {
-            CookingCard(engine.cozy, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(horizontal = 12.dp, vertical = 16.dp))
+            // Above the heart button, which stays in the bottom-right corner.
+            CookingCard(engine.cozy, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 84.dp))
         } else if (engine.cozy.fishingActive) {
             // Fishing (plan 07, C4): a tap anywhere reels in when the bobber dips.
             Box(

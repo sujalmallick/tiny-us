@@ -125,6 +125,16 @@ class StoreScreenshotTest {
             weatherDriftEnabled = false
             weather = WeatherType.valueOf(shot.weather)
             repeat(SIM_FRAMES) { update(1f / 60f, camera.worldW, camera.worldH) }
+            // STORE_SHOTS_COZY=1 opens the recipe card in the kitchen (or casts a line at the pier);
+            // STORE_SHOTS_MESSAGE="..." shows that caption, to check where it sits.
+            if (System.getenv("STORE_SHOTS_COZY") != null) {
+                cozy.startCooking(kotlin.random.Random(3))
+                cozy.startFishing()
+            }
+            System.getenv("STORE_SHOTS_MESSAGE")?.let { msg ->
+                showMessage(msg, duration = 10f)
+                repeat(40) { update(1f / 60f, camera.worldW, camera.worldH) }
+            }
         }
         frameTickerPaused = true
         val view = ComposeView(activity)

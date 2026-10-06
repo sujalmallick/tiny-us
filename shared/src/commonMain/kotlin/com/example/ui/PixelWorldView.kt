@@ -1246,11 +1246,12 @@ fun PixelWorldView(
             )
         }
 
-        // Pixelated Subtitle message banner placed at bottom (never overlaps floating buttons or navigation bars!)
+        // The scene's caption, at the top so the ground and the couple stay clear.
         if (!engine.isDreamMode && !engine.sceneMessage.isNullOrEmpty()) {
             PixelMessageBox(
                 message = engine.sceneMessage!!,
-                alpha = { engine.messageAlpha }
+                alpha = { engine.messageAlpha },
+                belowHud = engine.catchActive || engine.cozy.fishingActive
             )
         }
 
