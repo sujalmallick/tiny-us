@@ -36,6 +36,9 @@ interface MainPlatform {
     /** The birthdays or their reminder setting changed: the platform reschedules its reminder (plan 09, A). */
     fun birthdaysChanged() {}
 
+    /** Something in the settings sheet changed (iOS plans its reminders again: their categories may have). */
+    fun settingsChanged() {}
+
     /** Loads a profile file shipped with the app, if there is one; true when it was found. */
     fun loadLocalProfile(): Boolean = false
 

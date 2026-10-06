@@ -1,11 +1,13 @@
 import SwiftUI
 import Shared
 import WidgetKit
+import UserNotifications
 
 @main
 struct iOSApp: App {
     init() {
         WidgetPublisher.install()
+        UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
     }
 
     var body: some Scene {
@@ -39,5 +41,18 @@ enum WidgetPublisher {
             TinyAppGroup.defaults.set(encoded, forKey: TinyAppGroup.payloadKey)
             WidgetCenter.shared.reloadTimelines(ofKind: TinyAppGroup.widgetKind)
         }
+    }
+}
+
+/// Shows Tiny Care reminders even while the app is open, as Android does.
+final class NotificationPresenter: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = NotificationPresenter()
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification,
+        withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
+    ) {
+        completionHandler([.banner, .sound])
     }
 }

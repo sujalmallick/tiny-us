@@ -7,6 +7,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import com.example.data.IosUserDefaultsStorage
 import com.example.data.PreferencesManager
+import com.example.care.IosNotifications
 import com.example.data.CoupleDates
 import com.example.engine.TimeOfDayPhase
 import com.example.engine.WorldAudio
@@ -33,6 +34,7 @@ class IosMainPlatform : MainPlatform {
     override val photos: PolaroidPhotos get() = polaroids
 
     init {
+        IosNotifications.planAll(prefs)
         // The classic app had its own welcome; a couple who went through it is not asked again.
         if (storage.getString("bf_name", null) != null && !prefs.isOnboardingCompleted) {
             prefs.isOnboardingCompleted = true
@@ -45,6 +47,10 @@ class IosMainPlatform : MainPlatform {
     override fun startWeather(): WeatherType = WeatherMemory.startWeather()
 
     override fun saveWeather(weather: WeatherType) = WeatherMemory.save(weather)
+
+    override fun birthdaysChanged() = IosNotifications.planBirthday(prefs)
+
+    override fun settingsChanged() = IosNotifications.planTinyCareIfChanged(prefs)
 
     override fun updateWidget(scene: SceneType, weather: WeatherType) {
         val publish = IosWidget.publish ?: return
