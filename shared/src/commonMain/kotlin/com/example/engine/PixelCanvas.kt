@@ -156,6 +156,17 @@ data class PixelCharacter(
      */
     var earbudAnchor: Offset = Offset.Unspecified
 
+    /**
+     * What this character is asking for (plan 07 D1), as a request icon name ("TEA", "MOCHI"...),
+     * or null. Set by the engine every frame; while it's set, the request bubble shows instead
+     * of an emote.
+     */
+    var requestIcon: String? = null
+    /** 1 while the request is fresh, falling to 0 over its last seconds. */
+    var requestFade: Float = 1f
+    /** Seconds since the request started, for the bubble's gentle bob. */
+    var requestSeconds: Float = 0f
+
     /** What is in their hand. Shown in standing and sitting poses, tucked away during hugs and sleep. */
     var heldItem: HeldItem = HeldItem.NONE
     /** Seconds the current item has been held; drives its little animations (steam, drips, glow). */
@@ -652,10 +663,14 @@ object PixelArtRenderer {
             drawEarphoneOnHead(drawScope, char, startX, startY + poseOffsetY, p, flip)
         }
 
-        // Draw emote bubble above head if active (suppressed when speaking so it doesn't overlap the speech bubble)
-        if (!char.isSpeaking && !isSpeaking && char.emote != EmoteType.NONE && char.emoteTimer > 0) {
-            // The tail stops just above the hair (or the umbrella canopy).
-            val bubbleBottom = if (isHoldingUmbrella) startY - 11 * p else startY - p
+        // Draw emote bubble above head if active (suppressed when speaking so it doesn't overlap the speech bubble).
+        // A request (plan 07 D1) takes the emote's place, so two bubbles never stack.
+        // The tail stops just above the hair (or the umbrella canopy); a seated or lying head is lower.
+        val bubbleBottom = if (isHoldingUmbrella) startY - 11 * p else startY + poseOffsetY - p
+        val request = char.requestIcon
+        if (!char.isSpeaking && !isSpeaking && request != null) {
+            drawRequestBubble(drawScope, request, centerX, bubbleBottom, p, char.requestFade, char.requestSeconds)
+        } else if (!char.isSpeaking && !isSpeaking && char.emote != EmoteType.NONE && char.emoteTimer > 0) {
             drawEmoteBubble(drawScope, char.emote, centerX, bubbleBottom, p)
         }
     }
@@ -2632,6 +2647,98 @@ object PixelArtRenderer {
             "......."
         ))
     )
+
+    /**
+     * Request icons (plan 07 D1) on the emote grid (7 x 6). 'X' is the main colour, 'o' the second
+     * and 'k' dark details.
+     */
+    private val REQUEST_ICONS: Map<String, Triple<Color, Color, List<String>>> = mapOf(
+        // A folded plaid blanket.
+        "WARM" to Triple(Color(0xFFE07A5F), Color(0xFFF3E3C3), listOf(
+            ".......",
+            "XXXXXXX",
+            "XoXoXoX",
+            "XXXXXXX",
+            "XoXoXoX",
+            "XXXXXXX"
+        )),
+        // A mug with steam.
+        "TEA" to Triple(Color(0xFF4A7FC1), Color(0xFFB8C2CC), listOf(
+            ".o.o...",
+            "o.o....",
+            "XXXXXX.",
+            "XXXXX.X",
+            "XXXXXX.",
+            ".XXXX.."
+        )),
+        // A music note.
+        "SONG" to Triple(Color(0xFF7B5EA7), Color(0xFF7B5EA7), listOf(
+            "..XXXXX",
+            "..X...X",
+            "..X...X",
+            "..X...X",
+            "XXX.XXX",
+            "XX..XX."
+        )),
+        // A chocolate-chip cookie.
+        "SNACK" to Triple(Color(0xFFD9A066), Color(0xFF5C3A21), listOf(
+            "..XXX..",
+            ".XoXXX.",
+            "XXXXoXX",
+            "XoXXXXX",
+            ".XXXoX.",
+            "..XXX.."
+        )),
+        // Mochi's face: orange, with a pink nose.
+        "MOCHI" to Triple(Color(0xFFF4A261), Color(0xFFFF8FAB), listOf(
+            "X.....X",
+            "XX...XX",
+            "XXXXXXX",
+            "XkXXXkX",
+            "XXXoXXX",
+            ".XXXXX."
+        ))
+    )
+
+    /**
+     * A request bubble (plan 07 D1): the emote bubble's shape with a gold outline and a gentle
+     * bob, so it reads as something to answer. It fades with [fade] (the bob stops then), and is
+     * drawn in half character pixels like the emotes. Public so the loft's sofa couple can use it.
+     */
+    fun drawRequestBubble(scope: DrawScope, icon: String, cx: Float, bottomY: Float, p: Float, fade: Float, seconds: Float) {
+        val (main, second, rows) = REQUEST_ICONS[icon] ?: return
+        val q = p * 0.5f
+        val a = fade.coerceIn(0f, 1f)
+        if (a <= 0f) return
+        val bob = if (a >= 1f && (seconds * 1.6f).toInt() % 2 == 1) -q else 0f
+        val outline = Color(0xFFE9A23B).copy(alpha = a)
+        val fill = Color(0xFFFFFDF7).copy(alpha = a)
+        val left = cx - 5f * q
+        val top = bottomY - 12f * q + bob
+        fun cell(x: Int, y: Int, w: Int, h: Int, c: Color) =
+            scope.drawRect(c, Offset(left + x * q, top + y * q), Size(w * q, h * q))
+
+        cell(1, 0, 9, 10, outline)
+        cell(0, 1, 11, 8, outline)
+        cell(1, 1, 9, 8, fill)
+        cell(4, 10, 3, 1, outline)
+        cell(5, 9, 1, 2, fill)
+        cell(5, 11, 1, 1, outline)
+        rows.forEachIndexed { y, row ->
+            row.forEachIndexed { x, ch ->
+                val c = when (ch) {
+                    'X' -> main
+                    'o' -> second
+                    'k' -> Color(0xFF2B2D42)
+                    else -> null
+                } ?: return@forEachIndexed
+                cell(2 + x, 2 + y, 1, 1, c.copy(alpha = a))
+            }
+        }
+    }
+
+    /** The request icon names, for tests and previews. */
+    val requestIconNames: Set<String> get() = REQUEST_ICONS.keys
 
     /**
      * A small speech-bubble icon centred on [cx] whose tail tip sits on [bottomY]. It is drawn

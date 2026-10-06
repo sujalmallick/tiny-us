@@ -793,6 +793,21 @@
     <string name="keepsake_catch_bottle">A message in a bottle</string>
     <string name="keepsake_catch_golden_fish">A golden fish</string>
     <string name="recipe_book">Recipe book: %1$d of %2$d</string>
+    <!-- Plan 07, D1: requests from the couple -->
+    <string name="request_warm">%1$s is a little chilly. Something warm?</string>
+    <string name="request_tea">%1$s would love a cup of tea.</string>
+    <string name="request_song">%1$s hums a tune. A song, maybe?</string>
+    <string name="request_snack">%1$s looks a little peckish.</string>
+    <string name="request_mochi">%1$s misses Mochi. Where is she?</string>
+    <string name="request_thanks_warm">Much better. Thank you!</string>
+    <string name="request_thanks_tea">Just how I like it.</string>
+    <string name="request_thanks_song">I love this one.</string>
+    <string name="request_thanks_snack">Shared, of course.</string>
+    <string name="request_thanks_mochi">Mochi! There you are.</string>
+    <string name="first_request">A request granted</string>
+    <string name="first_request_hint">Sometimes one of them asks for something small.</string>
+    <string name="all_requests">Every little wish</string>
+    <string name="all_requests_hint">Warmth, tea, a song, a snack, and Mochi.</string>
 
     <!-- Plan 09 A: the birthday surprise -->
     <string name="bday_dark">Hmm… why is it so dark in here?</string>

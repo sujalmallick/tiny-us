@@ -38,6 +38,8 @@ sealed class ProgressEvent {
     data class GardenWatered(val plot: Int, val epochDay: Long) : ProgressEvent()
     data class GardenRained(val epochDay: Long) : ProgressEvent()
     data class FlowerPicked(val plot: Int) : ProgressEvent()
+    /** One of them asked for something and the player answered (plan 07, D1). */
+    data class RequestGranted(val kind: String) : ProgressEvent()
     /** A birthday surprise was held (plan 09, A). */
     data class BirthdayCelebrated(val forBoy: Boolean, val belated: Boolean) : ProgressEvent()
 }
@@ -99,6 +101,7 @@ object Counter {
     const val GOLDEN_FISH = "golden_fish"
     const val BLOOMS_PICKED = "blooms_picked"
     const val BOUQUETS = "bouquets"
+    const val REQUESTS = "requests"
     const val BIRTHDAYS = "birthdays"
 }
 
@@ -111,6 +114,8 @@ object Seen {
     const val FULL_MOON_NIGHTS = "full_moon_nights"
     /** Recipes cooked at least once: the recipe book. */
     const val RECIPES = "recipes"
+    /** The kinds of request granted at least once. */
+    const val REQUEST_KINDS = "request_kinds"
 }
 
 data class ProgressState(
@@ -181,6 +186,7 @@ data class ProgressState(
                 if (bouquet == null) picked else picked.keep(Gifts.BOUQUET).plus(Counter.BOUQUETS)
             }
         }
+        is ProgressEvent.RequestGranted -> plus(Counter.REQUESTS).see(Seen.REQUEST_KINDS, event.kind)
         is ProgressEvent.BirthdayCelebrated -> plus(Counter.BIRTHDAYS)
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0

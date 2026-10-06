@@ -244,7 +244,11 @@ object LoftSprites {
         boyWearsGlasses: Boolean = true,
         boyLook: AvatarLook = AvatarLook.DEFAULT_A,
         girlLook: AvatarLook = AvatarLook.DEFAULT_B,
-        earphones: Boolean = false
+        earphones: Boolean = false,
+        boyRequest: String? = null,
+        girlRequest: String? = null,
+        requestFade: Float = 1f,
+        requestSeconds: Float = 0f
     ) {
         val seatY = floorY - 5 * p
 
@@ -277,6 +281,10 @@ object LoftSprites {
                 timeSeconds
             )
         }
+
+        // A request (plan 07 D1) floats over the asker's head, as it does over a standing character.
+        boyRequest?.let { PixelArtRenderer.drawRequestBubble(scope, it, boyXPos, boyYPos - 19f * p - p, p, requestFade, requestSeconds) }
+        girlRequest?.let { PixelArtRenderer.drawRequestBubble(scope, it, girlXPos, girlY - 18f * p - p, p, requestFade, requestSeconds) }
 
         // 3. Floating little cuddle heart
         if (isKissing || (boyEmotion == CharacterEmotion.LOVING && sin(timeSeconds * 2.5f) > 0.70f)) {

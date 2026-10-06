@@ -32,6 +32,9 @@ object Rewards {
 
 object LittleFirsts {
     /** The discovery kinds, all of which count toward "a little collector". */
+    /** The kinds of request the couple can make (plan 07 D1): warmth, tea, a song, a snack, Mochi. */
+    const val REQUEST_KIND_COUNT = 5
+
     val DISCOVERY_KINDS = listOf("WILDFLOWER", "RED_LEAF", "LOVE_NOTE", "MOCHI_TOY", "SEASHELL", "STAR_PEBBLE")
 
     val ALL: List<LittleFirst> = listOf(
@@ -66,6 +69,8 @@ object LittleFirsts {
         LittleFirst("golden_fish", Res.string.golden_fish, Res.string.golden_fish_hint) { it.count(Counter.GOLDEN_FISH) >= 1 },
         LittleFirst("first_bloom", Res.string.first_bloom, Res.string.first_bloom_hint) { it.count(Counter.BLOOMS_PICKED) >= 1 },
         LittleFirst("first_bouquet", Res.string.first_bouquet, Res.string.first_bouquet_hint, Rewards.FLOWER_CROWN) { it.count(Counter.BOUQUETS) >= 1 },
+        LittleFirst("first_request", Res.string.first_request, Res.string.first_request_hint) { it.count(Counter.REQUESTS) >= 1 },
+        LittleFirst("all_requests", Res.string.all_requests, Res.string.all_requests_hint) { it.seenSet(Seen.REQUEST_KINDS).size >= REQUEST_KIND_COUNT },
         LittleFirst("birthday_surprise", Res.string.first_birthday_surprise, Res.string.first_birthday_surprise_hint, Rewards.PARTY_HAT) { it.count(Counter.BIRTHDAYS) >= 1 }
     )
 

@@ -1442,7 +1442,11 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 boyWearsGlasses = engine.boy.wearsGlasses,
                 boyLook = engine.boy.look,
                 girlLook = engine.girl.look,
-                earphones = engine.earphonesActive
+                earphones = engine.earphonesActive,
+                boyRequest = engine.boy.requestIcon,
+                girlRequest = engine.girl.requestIcon,
+                requestFade = (engine.requestAsker ?: engine.boy).requestFade,
+                requestSeconds = (engine.requestAsker ?: engine.boy).requestSeconds
             )
         } else {
             val isHoldingUmbrella = engine.weather == com.example.scene.WeatherType.RAIN && isOutdoor

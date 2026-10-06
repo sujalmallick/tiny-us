@@ -131,11 +131,13 @@ The routine side is done on branch `feature/couple-requests`. A request starts, 
 | `engine.onRequestGranted: ((RequestKind) -> Unit)?` | Called on every grant: the place for `ProgressEvent.RequestGranted(kind)` and the thank-you line. Hearts, sparkles and the tea mug already play. |
 | `engine.startRequestForTest(kind, asker)` | Starts one at once, for previews, the filmstrip and bubble renders. |
 
-Still to do on GROWTH's side:
-- the five 7 x 6 icons, the bob and the gold outline;
-- hiding the asker's emote bubble while a request is up;
-- the loft drawing path;
-- strings, progress and the little firsts.
+GROWTH's side, done on branch `feature/d1-request-bubble`:
+- the five 7 x 6 icons (blanket, mug, note, cookie, Mochi), drawn by `PixelArtRenderer.drawRequestBubble` with a gold outline, a gentle bob and the fade;
+- the asker's emote hidden while a request is up (`PixelCharacter.requestIcon`, synced in `updateRequests`);
+- the loft path (`LoftSprites.drawCuddledCouple` draws it over the sofa heads);
+- the spoken line as the caption when the request starts, and the thanks in the asker's speech bubble;
+- `ProgressEvent.RequestGranted`, and the firsts "A request granted" and "Every little wish";
+- `RequestBubbleTest`, the progress test, and `SCENE_PREVIEW_REQUEST=TEA,girl` plus a bubble sheet (`COZY_SPRITES_DIR`) for renders.
 
 Tests: `CoupleRequestsTest` covers the timing, the brain's weight, granting at the right prop (and not at a wrong one), fading, a mini-game dropping the request, a request starting by itself in the loft (never in the first 90 s), and none on the scooter.
 
