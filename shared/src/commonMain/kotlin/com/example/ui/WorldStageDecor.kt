@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
@@ -161,6 +162,140 @@ fun drawSunroomFloorBelow(
     rect(Color(0xFF2B1A12).copy(alpha = 0.06f), 0f, bottom - floorH * 0.22f, cw, floorH * 0.22f)
     rect(Color(0xFF2B1A12).copy(alpha = 0.08f), 0f, bottom - floorH * 0.10f, cw, floorH * 0.10f)
     if (night) rect(Color(0x1A05070F), 0f, stageH, cw, floorH)
+}
+
+/**
+ * The cafe's floor continued below the stage on tall screens. The planks carry on, the bookcase
+ * at the right edge reaches its plinth, and the floor gets a chalkboard sign, a rug, sacks of
+ * coffee beans and wet footprints from the rainy door, so it never reads as a plain brown band.
+ */
+fun drawCafeFloorBelow(
+    scope: DrawScope,
+    cw: Float,
+    stageH: Float,
+    floorH: Float,
+    p: Float,
+    night: Boolean = false,
+    lampsBright: Boolean = false
+) {
+    if (floorH <= 0f) return
+    val bottom = stageH + floorH
+    drawCafePlanks(scope, cw, stageH * com.example.scene.CafeLayout.WALL_BOTTOM, stageH, bottom, p)
+
+    fun rect(c: Color, x: Float, y: Float, w: Float, h: Float) {
+        if (w > 0f && h > 0f) scope.drawRect(c, Offset(x, y), Size(w, h))
+    }
+    val shadow = Color(0x33000000)
+
+    // The bookcase stands on a plinth instead of running off the stage.
+    val caseBottom = stageH + minOf(floorH * 0.32f, 24f * p).coerceAtLeast(5f * p)
+    drawCafeBookcase(scope, cw, stageH * 0.74f, stageH, caseBottom, p)
+    rect(Color(0xFF3A2216), cw - 25f * p, caseBottom - 4f * p, 27f * p, 4f * p)
+    rect(shadow, cw - 27f * p, caseBottom, 29f * p, 2f * p)
+    if (floorH < 20f * p) {
+        if (night) rect(Color(0x1E05070F), 0f, stageH, cw, floorH)
+        return
+    }
+
+    // Wet footprints from the door on the left, drying as they go.
+    for (i in 0 until 6) {
+        val t = i / 5f
+        val fx = cw * (0.04f + t * 0.30f) + (if (i % 2 == 0) 0f else 3f * p)
+        val fy = bottom - floorH * (0.12f + t * 0.62f)
+        val c = Color(0xFFA8CBD8).copy(alpha = 0.30f - t * 0.18f) // wet sheen
+        rect(c, fx, fy, 3f * p, 4f * p)
+        rect(c, fx + 0.5f * p, fy - 2f * p, 2f * p, 1.5f * p)
+    }
+
+    // A-frame chalkboard sign: today's special and a doodled cup.
+    run {
+        val sx = cw * 0.20f
+        val base = stageH + floorH * 0.42f
+        val w = 20f * p
+        val h = 24f * p
+        rect(shadow, sx - 2f * p, base - p, w + 4f * p, 2f * p)
+        rect(Color(0xFF8B5A2B), sx, base - h, w, h) // frame
+        rect(Color(0xFF6B4423), sx + w * 0.5f - p, base - h - 2f * p, 2f * p, 2f * p) // hinge
+        rect(Color(0xFF26302B), sx + 2f * p, base - h + 2f * p, w - 4f * p, h - 6f * p) // board
+        val chalk = Color(0xFFEDEDE4)
+        rect(chalk, sx + 4f * p, base - h + 4f * p, 10f * p, p)
+        rect(chalk.copy(alpha = 0.7f), sx + 4f * p, base - h + 7f * p, 12f * p, p)
+        rect(chalk.copy(alpha = 0.7f), sx + 4f * p, base - h + 9f * p, 8f * p, p)
+        // Cup doodle with a heart of steam
+        rect(chalk, sx + 7f * p, base - h + 13f * p, 5f * p, 3f * p)
+        rect(chalk, sx + 12f * p, base - h + 13f * p, p, 2f * p)
+        rect(Color(0xFFF4A3B5), sx + 8f * p, base - h + 11f * p, p, p)
+        rect(Color(0xFFF4A3B5), sx + 10f * p, base - h + 11f * p, p, p)
+        rect(Color(0xFFF4A3B5), sx + 9f * p, base - h + 12f * p, p, p)
+        rect(Color(0xFF6B4423), sx + 2f * p, base - 4f * p, 2f * p, 4f * p) // legs
+        rect(Color(0xFF6B4423), sx + w - 4f * p, base - 4f * p, 2f * p, 4f * p)
+    }
+    if (floorH < 48f * p) {
+        if (night) rect(Color(0x1E05070F), 0f, stageH, cw, floorH)
+        return
+    }
+
+    // A worn rug in the middle of the near floor.
+    val rugTop = stageH + floorH * 0.52f
+    val rugH = minOf(28f * p, floorH * 0.28f)
+    val rugX = cw * 0.30f
+    val rugW = cw * 0.58f
+    rect(shadow, rugX, rugTop + rugH, rugW, 2f * p)
+    rect(Color(0xFF7A2E2E), rugX, rugTop, rugW, rugH)
+    rect(Color(0xFFC9A66B), rugX + 2f * p, rugTop + 2f * p, rugW - 4f * p, rugH - 4f * p)
+    rect(Color(0xFF8E3B3B), rugX + 4f * p, rugTop + 4f * p, rugW - 8f * p, rugH - 8f * p)
+    var dx = rugX + 8f * p
+    while (dx < rugX + rugW - 10f * p) { // diamonds down the middle
+        val my = rugTop + rugH * 0.5f
+        rect(Color(0xFFE9C46A), dx + 2f * p, my - 3f * p, 2f * p, 2f * p)
+        rect(Color(0xFFE9C46A), dx, my - p, 6f * p, 2f * p)
+        rect(Color(0xFFE9C46A), dx + 2f * p, my + p, 2f * p, 2f * p)
+        dx += 14f * p
+    }
+    var fx = rugX + p
+    while (fx < rugX + rugW - p) { // fringe
+        rect(Color(0xFFE9D8A6), fx, rugTop - 2f * p, p, 2f * p)
+        rect(Color(0xFFE9D8A6), fx, rugTop + rugH, p, 2f * p)
+        fx += 3f * p
+    }
+
+    // Burlap sacks of coffee beans in the near left corner, one spilling a few beans.
+    val sackBase = bottom - floorH * 0.08f
+    for ((i, sxFrac) in listOf(0.02f, 0.14f).withIndex()) {
+        val sx = cw * sxFrac
+        val w = (22f - i * 3f) * p
+        val h = (22f - i * 4f) * p
+        val burlap = Color(0xFFB08D5B)
+        val burlapDark = Color(0xFF8C6A3E)
+        rect(shadow, sx - p, sackBase - p, w + 2f * p, 3f * p)
+        // Round, slumped body narrowing to a tied neck with a floppy top
+        scope.drawRoundRect(burlap, Offset(sx, sackBase - h), Size(w, h), CornerRadius(6f * p, 6f * p))
+        rect(burlapDark, sx + w - 4f * p, sackBase - h + 6f * p, 3f * p, h - 9f * p) // shade
+        val neckW = w * 0.45f
+        val neckX = sx + (w - neckW) / 2f
+        rect(burlap, neckX, sackBase - h - 4f * p, neckW, 5f * p)
+        rect(Color(0xFF5B3A21), neckX - p, sackBase - h - 2f * p, neckW + 2f * p, 1.5f * p) // twine
+        rect(burlap, neckX - 2f * p, sackBase - h - 7f * p, neckW + 4f * p, 3f * p) // flared top
+        rect(burlapDark, neckX - 2f * p, sackBase - h - 5f * p, neckW + 4f * p, p)
+        // Stamped coffee bean
+        val bx = sx + w * 0.5f
+        val by = sackBase - h * 0.45f
+        scope.drawOval(Color(0xFF5B3A21), Offset(bx - 3f * p, by - 4f * p), Size(6f * p, 8f * p))
+        rect(burlap, bx - 0.5f * p, by - 3f * p, p, 6f * p)
+    }
+    for (b in 0 until 4) {
+        rect(Color(0xFF4A2C1A), cw * 0.26f + b * 4f * p, sackBase - (b % 2) * 2f * p - p, 2f * p, p)
+    }
+
+    // A warm pool from the pendant lamps once it's dark.
+    if (lampsBright) {
+        scope.drawOval(Color(0xFFFFD27A).copy(alpha = 0.05f), Offset(cw * 0.25f, stageH), Size(cw * 0.5f, floorH * 0.35f))
+    }
+
+    // The floor nearest the viewer falls into soft shade.
+    rect(Color(0xFF140C08).copy(alpha = 0.08f), 0f, bottom - floorH * 0.22f, cw, floorH * 0.22f)
+    rect(Color(0xFF140C08).copy(alpha = 0.10f), 0f, bottom - floorH * 0.10f, cw, floorH * 0.10f)
+    if (night) rect(Color(0x1E05070F), 0f, stageH, cw, floorH)
 }
 
 /** The cafe's ceiling above its brick wall: dark planks, rafters, and two hanging plants. */
