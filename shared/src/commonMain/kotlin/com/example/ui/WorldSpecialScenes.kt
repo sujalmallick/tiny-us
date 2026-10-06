@@ -909,23 +909,7 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     }
 
     // 6. Terracotta tile floor with a jute rug
-    scope.px(Color(0xFFE7D2BF), 0f, floorTop, cw, ch - floorTop) // grout shows between tiles
-    var ty = floorTop
-    var tr2 = 0
-    while (ty < ch) {
-        val rowH = (5f + tr2 * 1.1f) * p
-        val tileW = (11f + tr2 * 2.2f) * p
-        var tx = if (tr2 % 2 == 0) 0f else -tileW * 0.5f
-        var tc = 0
-        while (tx < cw) {
-            val v = nz(tr2 * 71 + tc, 83)
-            scope.px(if (v < 0.33f) Color(0xFFC7764E) else if (v < 0.7f) Color(0xFFB9694A) else Color(0xFFD08458), tx, ty, tileW - p, rowH - p)
-            tx += tileW
-            tc++
-        }
-        ty += rowH
-        tr2++
-    }
+    drawSunroomTiles(scope, cw, floorTop, floorTop, ch, p)
     if (sunny) {
         val fromLeft = hour < 13f
         for (b in 0..2) {
@@ -1083,6 +1067,34 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     drawCornerLeaves(scope, 0f, ch, p, time, mirror = false, night = night)
     drawCornerLeaves(scope, cw, ch, p, time, mirror = true, night = night)
     if (night) scope.px(Color(0x1A05070F), 0f, kneeTop, cw, ch - kneeTop)
+}
+
+/**
+ * The sunroom's terracotta tiles, rows growing toward the viewer from [floorTop], drawn between
+ * [fromY] and [toY]. The floor continued below the stage calls this too, so its rows carry on.
+ */
+internal fun drawSunroomTiles(scope: DrawScope, cw: Float, floorTop: Float, fromY: Float, toY: Float, p: Float) {
+    scope.px(Color(0xFFE7D2BF), 0f, fromY, cw, toY - fromY) // grout shows between tiles
+    var ty = floorTop
+    var tr2 = 0
+    while (ty < toY) {
+        val rowH = (5f + tr2 * 1.1f) * p
+        if (ty + rowH > fromY) {
+            val top = maxOf(ty, fromY)
+            val h = minOf(ty + rowH - p, toY) - top
+            val tileW = (11f + tr2 * 2.2f) * p
+            var tx = if (tr2 % 2 == 0) 0f else -tileW * 0.5f
+            var tc = 0
+            while (tx < cw && h > 0f) {
+                val v = nz(tr2 * 71 + tc, 83)
+                scope.px(if (v < 0.33f) Color(0xFFC7764E) else if (v < 0.7f) Color(0xFFB9694A) else Color(0xFFD08458), tx, top, tileW - p, h)
+                tx += tileW
+                tc++
+            }
+        }
+        ty += rowH
+        tr2++
+    }
 }
 
 /** Big monstera-like leaves poking in from a bottom corner, for depth. */

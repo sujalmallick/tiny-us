@@ -63,6 +63,14 @@ enum class EmoteType {
     KISS
 }
 
+/** Something a character carries in one hand. The engine hands them out; [PixelArtRenderer] draws them. */
+enum class HeldItem {
+    NONE, MUG, BOOK, WATERING_CAN, MISTER, FLOWER, LEAF, LOVE_NOTE, SEASHELL, STAR_PEBBLE, YARN_BALL, LANTERN;
+
+    /** Used at arm's length (pouring, spraying, lighting the way) rather than brought up to the chest. */
+    val isTool: Boolean get() = this == WATERING_CAN || this == MISTER || this == LANTERN
+}
+
 /** High-level behaviour state — wrapper layer only; CharacterPose values are never renamed. */
 enum class CharacterState {
     IDLE, LOOKING, WALKING, SITTING, INTERACTING, SLEEPING, SURPRISED, HAPPY, SLEEPY
@@ -107,7 +115,6 @@ data class PixelCharacter(
     var idleSwayOffset: Float = 0f,
     var reactionTimer: Float = 0f,
     var nextBlinkTime: Float = 3.0f,
-    var hasItem: String? = null,
     var wearsEarphone: Boolean = false,
     var outfitIndex: Int = 0,
     var accessoryIndex: Int = 0,
@@ -143,6 +150,30 @@ data class PixelCharacter(
      * own couple sprite) draws no loose cord.
      */
     var earbudAnchor: Offset = Offset.Unspecified
+
+    /** What is in their hand. Shown in standing and sitting poses, tucked away during hugs and sleep. */
+    var heldItem: HeldItem = HeldItem.NONE
+    /** Seconds the current item has been held; drives its little animations (steam, drips, glow). */
+    var heldItemAge: Float = 0f
+    /** Seconds until they put the item away. */
+    var heldItemTimeLeft: Float = 0f
+    /** While above 0 the item is raised and in use: sipping, reading, pouring. */
+    var heldItemUse: Float = 0f
+
+    /** Take [item] for [seconds], using it straight away for [useSeconds]. */
+    fun hold(item: HeldItem, seconds: Float, useSeconds: Float = 0f) {
+        heldItem = item
+        heldItemAge = 0f
+        heldItemTimeLeft = seconds
+        heldItemUse = useSeconds
+    }
+
+    fun putAwayHeldItem() {
+        heldItem = HeldItem.NONE
+        heldItemAge = 0f
+        heldItemTimeLeft = 0f
+        heldItemUse = 0f
+    }
 
     /**
      * Smoothly interpolates character to a new world position.
@@ -607,12 +638,9 @@ object PixelArtRenderer {
 
         // Draw emote bubble above head if active (suppressed when speaking so it doesn't overlap the speech bubble)
         if (!char.isSpeaking && !isSpeaking && char.emote != EmoteType.NONE && char.emoteTimer > 0) {
-            val bubbleY = if (isHoldingUmbrella) {
-                startY - 24 * p
-            } else {
-                startY - 14 * p
-            }
-            drawEmoteBubble(drawScope, char.emote, centerX, bubbleY, p)
+            // The tail stops just above the hair (or the umbrella canopy).
+            val bubbleBottom = if (isHoldingUmbrella) startY - 11 * p else startY - p
+            drawEmoteBubble(drawScope, char.emote, centerX, bubbleBottom, p)
         }
     }
 
@@ -1032,12 +1060,45 @@ object PixelArtRenderer {
                 fillRect(13, 11, 2, 3, sweaterColor)
                 fillRect(13, 9, 2, 2, handColor)
             }
-            else -> {
+            else -> if (char.heldItem != HeldItem.NONE && char.heldItemUse > 0f && !char.heldItem.isTool) {
+                // Both hands bring the item up to the chest: a sip, a read, a sniff
+                fillRect(5, 13, 2, 3, sweaterColor)
+                fillRect(11, 13, 2, 3, sweaterColor)
+                fillRect(7, 15, 4, 1, handColor)
+            } else {
                 // Natural relaxed arms at sides
                 fillRect(4, 13, 2, 4, sweaterColor)
                 fillRect(4, 17, 1, 1, handColor)
-                fillRect(12, 13, 2, 4, sweaterColor)
-                fillRect(13, 17, 1, 1, handColor)
+                if (char.heldItem != HeldItem.NONE && char.heldItemUse > 0f && char.heldItem.isTool) {
+                    // Front arm brought up to use the tool
+                    fillRect(12, 14, 3, 2, sweaterColor)
+                    fillRect(15, 14, 1, 2, handColor)
+                } else {
+                    fillRect(12, 13, 2, 4, sweaterColor)
+                    fillRect(13, 17, 1, 1, handColor)
+                }
+            }
+        }
+
+        // --- 7b. Held item ---
+        if (char.heldItem != HeldItem.NONE) {
+            val umbrellaArm = isHoldingUmbrella && !char.isGirl
+            when {
+                umbrellaArm || char.pose in BACK_HAND_POSES -> {
+                    fillRect(4, 17, 1, 1, handColor)
+                    drawHeldItem(scope, char, startX, startY - char.breathingOffset, p, flip, 4, 17, raised = false, backHand = true)
+                }
+                char.pose !in EMPTY_HAND_POSES -> {
+                    val y0 = startY - char.breathingOffset
+                    when {
+                        char.heldItemUse <= 0f ->
+                            // Carried in the outer hand, clear of whoever they're standing beside
+                            drawHeldItem(scope, char, startX, y0, p, flip, 4, 17, raised = false, backHand = true)
+                        char.heldItem.isTool ->
+                            drawHeldItem(scope, char, startX, y0, p, flip, 15, 14, raised = true, backHand = false)
+                        else -> drawHeldAtChest(scope, char, startX, y0, p, flip, bottomY = 14)
+                    }
+                }
             }
         }
 
@@ -1399,6 +1460,11 @@ object PixelArtRenderer {
         } else {
             // Hands resting on lap or holding hand
             fillRect(8, 16, 3, 1, handColor)
+        }
+
+        // Held item rests on the hands in the lap, raised a little while in use
+        if (char.heldItem != HeldItem.NONE) {
+            drawHeldAtChest(scope, char, startX, startY - char.breathingOffset, p, flip, bottomY = if (char.heldItemUse > 0f) 14 else 15)
         }
 
         // Sitting folded legs
@@ -2209,84 +2275,338 @@ object PixelArtRenderer {
         )
     }
 
+    /** Poses whose front hand is busy, so a held item moves to the other hand. */
+    private val BACK_HAND_POSES = setOf(
+        CharacterPose.WAVE, CharacterPose.GIVE_FLOWER, CharacterPose.HEAD_PAT, CharacterPose.HOLD_HANDS,
+        CharacterPose.COOK, CharacterPose.EAT_SNEAK, CharacterPose.EAT_MOMO, CharacterPose.FEED_MOMO
+    )
+
+    /** Standing poses with both hands taken; the item is tucked away until they're done. */
+    private val EMPTY_HAND_POSES = setOf(
+        CharacterPose.JOY_JUMP, CharacterPose.RECEIVE_FLOWER, CharacterPose.HEAD_PAT_RECEIVE
+    )
+
+    /**
+     * Sprite for a held item, facing right, in character pixels. 'h' marks the hand that grips
+     * it (left for the hand to draw), '.' is empty, every other letter is looked up in [colors].
+     */
+    private class ItemArt(val rows: List<String>, val colors: Map<Char, Color>) {
+        val handX: Int
+        val handY: Int
+        init {
+            val y = rows.indexOfFirst { 'h' in it }
+            handY = y
+            handX = rows[y].indexOf('h')
+        }
+    }
+
+    private val MUG_COLORS = mapOf(
+        'M' to Color(0xFFF2C14E), 'm' to Color(0xFFC9962E), 'r' to Color(0xFF6F4E37), 'H' to Color(0xFFE63946)
+    )
+    private val BOOK_COLORS = mapOf(
+        'B' to Color(0xFF4A7C9B), 'b' to Color(0xFF35607A), 't' to Color(0xFFFFD166), 'W' to Color(0xFFFFF8E7)
+    )
+    private val CAN_COLORS = mapOf('C' to Color(0xFF7FB069), 'c' to Color(0xFF5E8C4F))
+    private val MISTER_COLORS = mapOf('B' to Color(0xFFE0F2F1), 'b' to Color(0xFFA8D5CF), 'n' to Color(0xFF4A4E69))
+
+    /** Carried at the side, hanging from the hand. */
+    private val CARRY_ART: Map<HeldItem, ItemArt> = mapOf(
+        HeldItem.MUG to ItemArt(listOf(
+            ".rrr",
+            "hMHM",
+            ".mmm"
+        ), MUG_COLORS),
+        HeldItem.BOOK to ItemArt(listOf(
+            ".BBB",
+            "hBtB",
+            ".BBB",
+            ".WWW"
+        ), BOOK_COLORS),
+        HeldItem.WATERING_CAN to ItemArt(listOf(
+            ".h...",
+            "CCC..",
+            "CCC.C",
+            "cccC."
+        ), CAN_COLORS),
+        HeldItem.MISTER to ItemArt(listOf(
+            ".nn",
+            ".n.",
+            "hBB",
+            ".bb"
+        ), MISTER_COLORS),
+        HeldItem.FLOWER to ItemArt(listOf(
+            ".R.",
+            "RYR",
+            ".RG",
+            ".G.",
+            ".h."
+        ), mapOf('R' to Color(0xFFFF758F), 'Y' to Color(0xFFFFD166), 'G' to Color(0xFF55A630))),
+        HeldItem.LEAF to ItemArt(listOf(
+            "..LL",
+            ".LlL",
+            ".LL.",
+            "h..."
+        ), mapOf('L' to Color(0xFFD9480F), 'l' to Color(0xFFF08C00))),
+        HeldItem.LOVE_NOTE to ItemArt(listOf(
+            ".EEEE",
+            "hEeeE",
+            ".EErE"
+        ), mapOf('E' to Color(0xFFFFF1E6), 'e' to Color(0xFFD9B99B), 'r' to Color(0xFFE63946))),
+        HeldItem.SEASHELL to ItemArt(listOf(
+            ".SS.",
+            "SsSs",
+            "hSS."
+        ), mapOf('S' to Color(0xFFFFC6B3), 's' to Color(0xFFE89A84))),
+        HeldItem.STAR_PEBBLE to ItemArt(listOf(
+            ".PP",
+            "hPp"
+        ), mapOf('P' to Color(0xFFBDE0FE), 'p' to Color(0xFF8EC5FC))),
+        HeldItem.YARN_BALL to ItemArt(listOf(
+            ".YY",
+            "hyY",
+            ".YY"
+        ), mapOf('Y' to Color(0xFFFF8FAB), 'y' to Color(0xFFE5677F))),
+        HeldItem.LANTERN to ItemArt(listOf(
+            ".h.",
+            "FFF",
+            "FgF",
+            "FgF",
+            "FFF"
+        ), mapOf('F' to Color(0xFF3D2C2E), 'g' to Color(0xFFFFD166)))
+    )
+
+    /** Held up in front while in use; items without an entry are just raised as carried. */
+    private val USE_ART: Map<HeldItem, ItemArt> = mapOf(
+        HeldItem.BOOK to ItemArt(listOf(
+            "WWbWW",
+            "WWbWW",
+            "BBhBB"
+        ), BOOK_COLORS),
+        HeldItem.WATERING_CAN to ItemArt(listOf(
+            "h....",
+            "CCC..",
+            "CCCC.",
+            "ccc.C"
+        ), CAN_COLORS)
+    )
+
+    /**
+     * Draws the held item centred in front of the chest (or lap) with its lowest row on [bottomY],
+     * resting on both hands.
+     */
+    private fun drawHeldAtChest(
+        scope: DrawScope,
+        char: PixelCharacter,
+        startX: Float,
+        startY: Float,
+        p: Float,
+        flip: Boolean,
+        bottomY: Int
+    ) {
+        val art = USE_ART[char.heldItem] ?: CARRY_ART[char.heldItem] ?: return
+        var minX = Int.MAX_VALUE
+        var maxX = Int.MIN_VALUE
+        var maxY = Int.MIN_VALUE
+        art.rows.forEachIndexed { y, row ->
+            row.forEachIndexed { x, ch ->
+                if (ch != '.' && ch != 'h') {
+                    minX = minOf(minX, x)
+                    maxX = maxOf(maxX, x)
+                    maxY = maxOf(maxY, y)
+                }
+            }
+        }
+        val left = 9 - (maxX - minX + 1) / 2
+        val gripX = left + (art.handX - minX)
+        val gripY = bottomY - (maxY - art.handY)
+        drawHeldItem(scope, char, startX, startY, p, flip, gripX, gripY, raised = true, backHand = false)
+    }
+
+    /**
+     * Draws [PixelCharacter.heldItem] gripped at sprite cell ([gripX], [gripY]). In the [backHand]
+     * the art is mirrored so it hangs outward instead of over the body. [startY] already includes
+     * the breathing offset, so the item rises and falls with the hand.
+     */
+    private fun drawHeldItem(
+        scope: DrawScope,
+        char: PixelCharacter,
+        startX: Float,
+        startY: Float,
+        p: Float,
+        flip: Boolean,
+        gripX: Int,
+        gripY: Int,
+        raised: Boolean,
+        backHand: Boolean
+    ) {
+        val item = char.heldItem
+        val art = (if (raised) USE_ART[item] else null) ?: CARRY_ART[item] ?: return
+        val dir = if (backHand) -1 else 1
+        fun dot(dx: Int, dy: Int, color: Color) {
+            val gx = gripX + dx * dir
+            val actualX = if (flip) 17 - gx else gx
+            scope.drawRect(color, Offset(startX + actualX * p, startY + (gripY + dy) * p), Size(p, p))
+        }
+
+        val age = char.heldItemAge
+        val flicker = ((age * 4f).toInt() and 1) == 0
+        art.rows.forEachIndexed { y, row ->
+            row.forEachIndexed { x, ch ->
+                if (ch == '.' || ch == 'h') return@forEachIndexed
+                var color = art.colors[ch] ?: return@forEachIndexed
+                if (item == HeldItem.LANTERN && ch == 'g' && !flicker) color = Color(0xFFFFB703)
+                dot(x - art.handX, y - art.handY, color)
+            }
+        }
+
+        // Little signs of use
+        val using = char.heldItemUse > 0f
+        val beat = (age * 6f).toInt()
+        when (item) {
+            HeldItem.MUG -> if (using || beat % 12 < 4) {
+                val steam = Color(0xFFE3ECF2).copy(alpha = 0.9f)
+                val sway = (age * 3f).toInt() and 1
+                dot(2 + sway, -3, steam)
+                dot(3 - sway, -4, steam)
+            }
+            HeldItem.WATERING_CAN -> if (using) {
+                val water = Color(0xFF90E0EF)
+                dot(4, 4 + beat % 3, water)
+                dot(5, 5 + (beat + 1) % 3, water)
+            }
+            HeldItem.MISTER -> if (using) {
+                val mist = Color(0xFFE8F8FF).copy(alpha = 0.85f)
+                dot(3 + beat % 3, -2 - beat % 2, mist)
+                dot(4 + (beat + 1) % 2, -3 + beat % 2, mist)
+            }
+            HeldItem.STAR_PEBBLE -> if (flicker) dot(3, -2, Color(0xFFFFF3B0))
+            HeldItem.LOVE_NOTE, HeldItem.FLOWER -> if (using && beat % 6 < 3) {
+                dot(1, if (item == HeldItem.FLOWER) -6 else -2, Color(0xFFFF758F))
+            }
+            else -> Unit
+        }
+    }
+
+    /**
+     * Emote icons on a 7 x 6 grid, drawn at half a character pixel so the bubble stays small
+     * next to the head ('X' = icon colour, '.' = bubble fill).
+     */
+    private val EMOTE_ICONS: Map<EmoteType, Pair<Color, List<String>>> = mapOf(
+        EmoteType.HEART to (Color(0xFFFF3366) to listOf(
+            ".XX.XX.",
+            "XXXXXXX",
+            "XXXXXXX",
+            ".XXXXX.",
+            "..XXX..",
+            "...X..."
+        )),
+        EmoteType.KISS to (Color(0xFFFF3366) to listOf(
+            ".XX.XX.",
+            "XXXXXXX",
+            "XXXXXXX",
+            ".XXXXX.",
+            "..XXX..",
+            "...X..."
+        )),
+        EmoteType.EXCLAMATION to (Color(0xFFFF5722) to listOf(
+            "..XX...",
+            "..XX...",
+            "..XX...",
+            "..XX...",
+            ".......",
+            "..XX..."
+        )),
+        EmoteType.SWEAT to (Color(0xFF48CAE4) to listOf(
+            "...X...",
+            "..XXX..",
+            ".XXXXX.",
+            ".XXXXX.",
+            "..XXX..",
+            "......."
+        )),
+        EmoteType.BLUSH to (Color(0xFFFF758F) to listOf(
+            ".......",
+            ".X...X.",
+            "X.X.X.X",
+            ".......",
+            "XX...XX",
+            "......."
+        )),
+        EmoteType.MUSIC_NOTE to (Color(0xFF4361EE) to listOf(
+            "..XXXXX",
+            "..X...X",
+            "..X...X",
+            "..X...X",
+            "XXX.XXX",
+            "XX..XX."
+        )),
+        EmoteType.QUESTION to (Color(0xFF2B2D42) to listOf(
+            "..XXX..",
+            ".X...X.",
+            "....X..",
+            "...X...",
+            ".......",
+            "...X..."
+        )),
+        EmoteType.DOTS to (Color(0xFF4A4E69) to listOf(
+            ".......",
+            ".......",
+            ".X.X.X.",
+            ".......",
+            ".......",
+            "......."
+        )),
+        EmoteType.SPARKLE to (Color(0xFFFFB703) to listOf(
+            "...X...",
+            "...X..X",
+            ".XXXXX.",
+            "...X...",
+            "...X...",
+            "X......"
+        )),
+        EmoteType.SLEEP_Z to (Color(0xFF5E9FD0) to listOf(
+            ".XXXXX.",
+            "....X..",
+            "...X...",
+            "..X....",
+            ".XXXXX.",
+            "......."
+        ))
+    )
+
+    /**
+     * A small speech-bubble icon centred on [cx] whose tail tip sits on [bottomY]. It is drawn
+     * in half character pixels (one game pixel in the low-res renderer): 11 x 10 with a 2 high tail.
+     */
     private fun drawEmoteBubble(
         scope: DrawScope,
         emote: EmoteType,
         cx: Float,
-        topY: Float,
+        bottomY: Float,
         p: Float
     ) {
-        val bw = 14 * p
-        val bh = 11 * p
-        val bx = cx - bw / 2f
-        val by = topY
+        val (iconColor, rows) = EMOTE_ICONS[emote] ?: return
+        val q = p * 0.5f
+        val outline = Color(0xFF2B2D42)
+        val fill = Color(0xFFFFFDF7)
+        val left = cx - 5f * q
+        val top = bottomY - 12f * q
+        fun cell(x: Int, y: Int, w: Int, h: Int, c: Color) =
+            scope.drawRect(c, Offset(left + x * q, top + y * q), Size(w * q, h * q))
 
-        // Retro pixel bubble outline
-        scope.drawRect(Color(0xFF2B2D42), Offset(bx - p, by - p), Size(bw + 2 * p, bh + 2 * p))
-        scope.drawRect(Color.White, Offset(bx, by), Size(bw, bh))
-        // Bubble tail pointing downward to character
-        scope.drawRect(Color(0xFF2B2D42), Offset(cx - 2 * p, by + bh), Size(4 * p, 2 * p))
-        scope.drawRect(Color.White, Offset(cx - p, by + bh - p), Size(2 * p, 2 * p))
+        // Outline with clipped corners, then the fill.
+        cell(1, 0, 9, 10, outline)
+        cell(0, 1, 11, 8, outline)
+        cell(1, 1, 9, 8, fill)
+        // Tail, pointing down to the head.
+        cell(4, 10, 3, 1, outline)
+        cell(5, 9, 1, 2, fill)
+        cell(5, 11, 1, 1, outline)
 
-        // Emote icon inside
-        when (emote) {
-            EmoteType.HEART, EmoteType.KISS -> {
-                val red = Color(0xFFFF3366)
-                scope.drawRect(red, Offset(cx - 4 * p, by + 2 * p), Size(3 * p, 2 * p))
-                scope.drawRect(red, Offset(cx + 1 * p, by + 2 * p), Size(3 * p, 2 * p))
-                scope.drawRect(red, Offset(cx - 5 * p, by + 4 * p), Size(10 * p, 2 * p))
-                scope.drawRect(red, Offset(cx - 4 * p, by + 6 * p), Size(8 * p, 2 * p))
-                scope.drawRect(red, Offset(cx - 2 * p, by + 8 * p), Size(4 * p, 1.5f * p))
-                scope.drawRect(red, Offset(cx - 1 * p, by + 9.5f * p), Size(2 * p, 1 * p))
+        rows.forEachIndexed { y, row ->
+            row.forEachIndexed { x, ch ->
+                if (ch == 'X') cell(2 + x, 2 + y, 1, 1, iconColor)
             }
-            EmoteType.EXCLAMATION -> {
-                val orange = Color(0xFFFF5722)
-                scope.drawRect(orange, Offset(cx - 1.5f * p, by + 2 * p), Size(3 * p, 5 * p))
-                scope.drawRect(orange, Offset(cx - 1.5f * p, by + 8 * p), Size(3 * p, 2 * p))
-            }
-            EmoteType.SWEAT -> {
-                val blue = Color(0xFF48CAE4)
-                scope.drawRect(blue, Offset(cx - 1 * p, by + 3 * p), Size(2 * p, 2 * p))
-                scope.drawRect(blue, Offset(cx - 2 * p, by + 5 * p), Size(4 * p, 4 * p))
-            }
-            EmoteType.BLUSH -> {
-                val pink = Color(0xFFFF758F)
-                scope.drawRect(pink, Offset(cx - 4 * p, by + 4 * p), Size(3 * p, 3 * p))
-                scope.drawRect(pink, Offset(cx + 1 * p, by + 4 * p), Size(3 * p, 3 * p))
-            }
-            EmoteType.MUSIC_NOTE -> {
-                val note = Color(0xFF4361EE)
-                scope.drawRect(note, Offset(cx - 3 * p, by + 6 * p), Size(3 * p, 2 * p))
-                scope.drawRect(note, Offset(cx + 1 * p, by + 4 * p), Size(3 * p, 2 * p))
-                scope.drawRect(note, Offset(cx - p, by + 3 * p), Size(1.5f * p, 4 * p))
-                scope.drawRect(note, Offset(cx + 3 * p, by + 2 * p), Size(1.5f * p, 3 * p))
-                scope.drawRect(note, Offset(cx - p, by + 2 * p), Size(5 * p, 1.5f * p))
-            }
-            EmoteType.QUESTION -> {
-                val dark = Color(0xFF2B2D42)
-                scope.drawRect(dark, Offset(cx - 3 * p, by + 2 * p), Size(6 * p, 2 * p))
-                scope.drawRect(dark, Offset(cx + 2 * p, by + 4 * p), Size(2 * p, 2 * p))
-                scope.drawRect(dark, Offset(cx - 1 * p, by + 5 * p), Size(3 * p, 2 * p))
-                scope.drawRect(dark, Offset(cx - 1 * p, by + 8 * p), Size(2 * p, 2 * p))
-            }
-            EmoteType.DOTS -> {
-                val dark = Color(0xFF4A4E69)
-                scope.drawRect(dark, Offset(cx - 4 * p, by + 5 * p), Size(2 * p, 2 * p))
-                scope.drawRect(dark, Offset(cx - 1 * p, by + 5 * p), Size(2 * p, 2 * p))
-                scope.drawRect(dark, Offset(cx + 2 * p, by + 5 * p), Size(2 * p, 2 * p))
-            }
-            EmoteType.SPARKLE -> {
-                val gold = Color(0xFFFFD166)
-                scope.drawRect(gold, Offset(cx - 0.5f * p, by + 2 * p), Size(1.5f * p, 7 * p))
-                scope.drawRect(gold, Offset(cx - 3 * p, by + 4.5f * p), Size(7 * p, 1.5f * p))
-            }
-            EmoteType.SLEEP_Z -> {
-                val blue = Color(0xFF90E0EF)
-                scope.drawRect(blue, Offset(cx - 3 * p, by + 3 * p), Size(6 * p, 1.5f * p))
-                scope.drawRect(blue, Offset(cx - p, by + 4.5f * p), Size(2 * p, 2 * p))
-                scope.drawRect(blue, Offset(cx - 3 * p, by + 6.5f * p), Size(6 * p, 1.5f * p))
-            }
-            EmoteType.NONE -> {}
         }
     }
 }

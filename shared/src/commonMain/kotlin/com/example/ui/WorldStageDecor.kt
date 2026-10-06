@@ -11,53 +11,156 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
  * units with the stage's own origin: above the stage y is negative, below it y passes worldH.
  */
 
-/** The sunroom's larger floor: potted plants along the front and a woven basket. */
-fun drawSunroomFloorBelow(scope: DrawScope, cw: Float, stageH: Float, floorH: Float, p: Float) {
-    if (floorH < 24f * p) return
-    val terracotta = Color(0xFFC7764E)
-    val terracottaDark = Color(0xFFA5603E)
-    val leafDark = Color(0xFF3F7A4A)
-    val leaf = Color(0xFF5E9C61)
-    val leafLight = Color(0xFF86BE7E)
-    val base = stageH + minOf(floorH * 0.55f, 26f * p)
+/**
+ * The sunroom's floor continued below the stage on tall screens. The tiles carry on in
+ * perspective, the corner leaves at the stage's edge get the planters they grow from, and the
+ * floor holds a basket, a runner rug with seed trays and a few fallen leaves, so it never reads
+ * as a plain orange band.
+ */
+fun drawSunroomFloorBelow(
+    scope: DrawScope,
+    cw: Float,
+    stageH: Float,
+    floorH: Float,
+    p: Float,
+    night: Boolean = false,
+    sunny: Boolean = true
+) {
+    if (floorH <= 0f) return
+    val bottom = stageH + floorH
+    // Same rows as the stage's floor (it starts at 0.645 of the stage height).
+    drawSunroomTiles(scope, cw, stageH * 0.645f, stageH, bottom, p)
+    if (floorH < 16f * p) return
 
-    fun pot(cx: Float, size: Float) {
-        val w = 10f * size * p
-        val h = 8f * size * p
-        scope.drawRect(Color(0x33000000), Offset(cx - w / 2f - p, base - p), Size(w + 2 * p, 2 * p)) // shadow
-        scope.drawRect(terracotta, Offset(cx - w / 2f, base - h), Size(w, h))
-        scope.drawRect(terracottaDark, Offset(cx - w / 2f - p, base - h), Size(w + 2 * p, 2 * p)) // rim
-        scope.drawRect(terracottaDark, Offset(cx + w / 2f - 2 * p, base - h + 2 * p), Size(2 * p, h - 2 * p))
-        // A round, leafy plant.
-        val r = 7f * size * p
-        val top = base - h - r * 1.6f
-        scope.drawRect(leafDark, Offset(cx - r, top + r * 0.6f), Size(2 * r, r))
-        scope.drawRect(leaf, Offset(cx - r * 0.8f, top + r * 0.2f), Size(r * 1.6f, r))
-        scope.drawRect(leaf, Offset(cx - r * 0.4f, top), Size(r * 0.8f, r * 0.5f))
-        scope.drawRect(leafLight, Offset(cx - r * 0.5f, top + r * 0.3f), Size(r * 0.4f, r * 0.3f))
+    val shadow = Color(0x33000000)
+    fun rect(c: Color, x: Float, y: Float, w: Float, h: Float) {
+        if (w > 0f && h > 0f) scope.drawRect(c, Offset(x, y), Size(w, h))
     }
-    pot(cw * 0.12f, 1.1f)
-    pot(cw * 0.86f, 0.9f)
 
-    // Woven basket with a folded throw.
-    val bx = cw * 0.52f
-    val bw = 18f * p
-    val bh = 9f * p
-    scope.drawRect(Color(0x33000000), Offset(bx - p, base - p), Size(bw + 2 * p, 2 * p))
-    scope.drawRect(Color(0xFFC9A36B), Offset(bx, base - bh), Size(bw, bh))
-    var row = 0
-    var y = base - bh + 2 * p
-    while (y < base - p) {
-        var x = bx + (if (row % 2 == 0) p else 3 * p)
-        while (x < bx + bw - 2 * p) {
-            scope.drawRect(Color(0xFFA9824C), Offset(x, y), Size(2 * p, p)) // weave
-            x += 4 * p
+    // Sunlight from the glass falls across the near floor too.
+    if (sunny) {
+        // Slanted bands, stepped like the light through the glass panes.
+        val glow = Color(0xFFFFF2B2).copy(alpha = 0.12f)
+        val stepH = 4f * p
+        val steps = (floorH * 0.24f / stepH).toInt()
+        for (b in 0..2) {
+            val x0 = cw * (0.08f + b * 0.30f)
+            for (k in 0 until steps) {
+                rect(glow, x0 + k * 2f * p, stageH + floorH * 0.16f + k * stepH, cw * 0.14f, stepH)
+            }
         }
-        y += 2 * p
-        row++
     }
-    scope.drawRect(Color(0xFFE8B4BC), Offset(bx + 2 * p, base - bh - 3 * p), Size(bw - 4 * p, 3 * p)) // throw
-    scope.drawRect(Color(0xFFF5D3D8), Offset(bx + 3 * p, base - bh - 3 * p), Size(bw - 8 * p, p))
+
+    // Planters under the big corner leaves, so the leaves grow from something.
+    val planterH = minOf(24f * p, floorH * 0.42f)
+    for (right in listOf(false, true)) {
+        val w = 56f * p
+        val x = if (right) cw - w + 4f * p else -4f * p
+        rect(shadow, x - p, stageH + planterH - p, w + 2f * p, 3f * p)
+        rect(Color(0xFFB9694A), x, stageH, w, planterH)
+        rect(Color(0xFF8E4E33), x, stageH, w, 3f * p) // rim
+        rect(Color(0xFFD08458), x + 2f * p, stageH + 5f * p, w - 4f * p, p) // highlight band
+        rect(Color(0xFF9D5A3C), x, stageH + planterH - 3f * p, w, 3f * p) // foot
+        // Pressed pattern of little diamonds on the front
+        var dx = x + 6f * p
+        while (dx < x + w - 4f * p) {
+            rect(Color(0xFFA5603E), dx, stageH + planterH * 0.55f, 2f * p, 2f * p)
+            dx += 9f * p
+        }
+    }
+
+    // Woven basket with a folded throw, between the planters.
+    val basketBase = stageH + minOf(floorH * 0.30f, 20f * p)
+    run {
+        val bw = 20f * p
+        val bh = 10f * p
+        val bx = cw * 0.5f - bw / 2f
+        rect(shadow, bx - p, basketBase - p, bw + 2f * p, 2f * p)
+        rect(Color(0xFFC9A36B), bx, basketBase - bh, bw, bh)
+        var row = 0
+        var y = basketBase - bh + 2f * p
+        while (y < basketBase - p) {
+            var x = bx + (if (row % 2 == 0) p else 3f * p)
+            while (x < bx + bw - 2f * p) {
+                rect(Color(0xFFA9824C), x, y, 2f * p, p) // weave
+                x += 4f * p
+            }
+            y += 2f * p
+            row++
+        }
+        rect(Color(0xFFE8B4BC), bx + 2f * p, basketBase - bh - 3f * p, bw - 4f * p, 3f * p) // throw
+        rect(Color(0xFFF5D3D8), bx + 3f * p, basketBase - bh - 3f * p, bw - 8f * p, p)
+    }
+    if (floorH < 48f * p) {
+        if (night) rect(Color(0x1A05070F), 0f, stageH, cw, floorH)
+        return
+    }
+
+    // A striped runner rug across the near floor.
+    val rugTop = stageH + floorH * 0.50f
+    val rugH = minOf(26f * p, floorH * 0.26f)
+    val rugX = cw * 0.10f
+    val rugW = cw * 0.80f
+    rect(shadow, rugX, rugTop + rugH, rugW, 2f * p)
+    rect(Color(0xFFD9C29A), rugX, rugTop, rugW, rugH)
+    rect(Color(0xFFB98B5E), rugX, rugTop + 2f * p, rugW, 2f * p)
+    rect(Color(0xFFB98B5E), rugX, rugTop + rugH - 4f * p, rugW, 2f * p)
+    rect(Color(0xFF84A59D), rugX, rugTop + rugH * 0.5f - p, rugW, 2f * p)
+    var fx = rugX
+    while (fx < rugX + rugW) { // fringe at both ends
+        rect(Color(0xFFE9D8A6), fx, rugTop - 2f * p, p, 2f * p)
+        rect(Color(0xFFE9D8A6), fx, rugTop + rugH, p, 2f * p)
+        fx += 3f * p
+    }
+
+    // Seed trays with sprouts on the rug.
+    for ((i, tx) in listOf(cw * 0.20f, cw * 0.20f + 22f * p).withIndex()) {
+        val ty = rugTop + rugH * 0.5f - (if (i == 0) 2f else 1f) * p
+        rect(shadow, tx - p, ty + 7f * p, 20f * p, 2f * p)
+        rect(Color(0xFF5B4636), tx, ty, 18f * p, 7f * p)
+        rect(Color(0xFF7A5C45), tx, ty, 18f * p, p)
+        var sx = tx + 2f * p
+        var n = 0
+        while (sx < tx + 16f * p) {
+            val h = (2f + (n * 7 % 3)) * p
+            rect(Color(0xFF6BAA5E), sx, ty - h + p, p, h)
+            rect(Color(0xFF8FCB7A), sx - p, ty - h + p, p, p)
+            rect(Color(0xFF8FCB7A), sx + p, ty - h + 2f * p, p, p)
+            sx += 4f * p
+            n++
+        }
+    }
+
+    // A stack of garden books with a trowel resting on top.
+    run {
+        val bx = cw * 0.62f
+        val by = rugTop + rugH * 0.5f + 4f * p
+        rect(shadow, bx - p, by, 22f * p, 2f * p)
+        rect(Color(0xFF4A7C9B), bx, by - 4f * p, 20f * p, 4f * p)
+        rect(Color(0xFFFFF8E7), bx + 18f * p, by - 3f * p, 2f * p, 2f * p)
+        rect(Color(0xFFE76F51), bx + 2f * p, by - 8f * p, 17f * p, 4f * p)
+        rect(Color(0xFFFFF8E7), bx + 17f * p, by - 7f * p, 2f * p, 2f * p)
+        rect(Color(0xFFFFD166), bx + 5f * p, by - 7f * p, 6f * p, p) // title
+        rect(Color(0xFF8B5A2B), bx + 4f * p, by - 10f * p, 7f * p, 2f * p) // trowel handle
+        rect(Color(0xFF9DB4BC), bx + 11f * p, by - 11f * p, 6f * p, 3f * p) // blade
+    }
+
+    // Fallen leaves and petals scattered nearer the viewer.
+    val scatter = listOf(
+        0.08f to 0.80f, 0.27f to 0.88f, 0.45f to 0.83f, 0.58f to 0.93f, 0.74f to 0.86f, 0.90f to 0.80f, 0.36f to 0.42f, 0.70f to 0.40f
+    )
+    for ((i, xy) in scatter.withIndex()) {
+        val c = when (i % 3) { 0 -> Color(0xFF6BAA5E); 1 -> Color(0xFFE9C46A); else -> Color(0xFFF4A3B5) }
+        val lx = cw * xy.first
+        val ly = stageH + floorH * xy.second
+        rect(c, lx, ly, 3f * p, 2f * p)
+        rect(c, lx + 2f * p, ly - p, 2f * p, p)
+    }
+
+    // The floor nearest the viewer falls into soft shade.
+    rect(Color(0xFF2B1A12).copy(alpha = 0.06f), 0f, bottom - floorH * 0.22f, cw, floorH * 0.22f)
+    rect(Color(0xFF2B1A12).copy(alpha = 0.08f), 0f, bottom - floorH * 0.10f, cw, floorH * 0.10f)
+    if (night) rect(Color(0x1A05070F), 0f, stageH, cw, floorH)
 }
 
 /** The cafe's ceiling above its brick wall: dark planks, rafters, and two hanging plants. */

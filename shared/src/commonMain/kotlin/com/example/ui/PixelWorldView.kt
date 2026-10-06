@@ -1847,7 +1847,16 @@ fun DrawScope.drawWorld(engine: SceneEngine, lowResBuffer: LowResWorldBuffer, ca
             }
         } else null
         val floorBelow: (DrawScope.(Float) -> Unit)? = if (engine.currentScene == com.example.scene.SceneType.SUNROOM) {
-            { floorH -> drawSunroomFloorBelow(this, camera.worldW, camera.worldH, floorH, p) }
+            { floorH ->
+                val sunny = !phase.isNight &&
+                    engine.weather != com.example.scene.WeatherType.RAIN && engine.weather != com.example.scene.WeatherType.SNOW
+                drawSunroomFloorBelow(this, camera.worldW, camera.worldH, floorH, p, night = phase.isNight, sunny = sunny)
+                // Light it like the room, so the continued floor matches the stage's floor.
+                drawIndoorLight(engine.timeOfDayPhase, Offset(0f, camera.worldH), Size(camera.worldW, floorH))
+                if (engine.ambientDimming > 0f) {
+                    drawRect(Color(0xFF0D1117).copy(alpha = engine.ambientDimming), Offset(0f, camera.worldH), Size(camera.worldW, floorH))
+                }
+            }
         } else if (engine.currentScene == com.example.scene.SceneType.COZY_LOFT) {
             { belowH ->
                 com.example.engine.LoftSprites.drawLoftBelowStage(this, camera.worldW, camera.worldH, belowH, p)

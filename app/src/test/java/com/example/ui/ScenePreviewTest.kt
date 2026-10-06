@@ -107,6 +107,17 @@ class ScenePreviewTest {
             System.getenv("SCENE_PREVIEW_THEME")?.let { setRoomTheme(com.example.engine.RoomTheme.valueOf(it), announce = false) }
             // SCENE_PREVIEW_RAINBOW=1 shows the after-rain rainbow, part way through.
             if (System.getenv("SCENE_PREVIEW_RAINBOW") != null) rainbowTimer = com.example.scene.WeatherLayout.RAINBOW_SECONDS * 0.6f
+            // SCENE_PREVIEW_HELD=MUG,BOOK:use puts those in the girl's and the boy's hands (":use" raises it).
+            System.getenv("SCENE_PREVIEW_HELD")?.split(',')?.zip(listOf(girl, boy))?.forEach { (spec, who) ->
+                val parts = spec.trim().split(':')
+                who.hold(com.example.engine.HeldItem.valueOf(parts[0]), 60f, useSeconds = if (parts.size > 1) 30f else 0f)
+                who.heldItemAge = 0.3f
+            }
+            // SCENE_PREVIEW_EMOTE=HEART,MUSIC_NOTE shows those emote bubbles over the girl and the boy.
+            System.getenv("SCENE_PREVIEW_EMOTE")?.split(',')?.zip(listOf(girl, boy))?.forEach { (name, who) ->
+                who.emote = com.example.engine.EmoteType.valueOf(name.trim())
+                who.emoteTimer = 5f
+            }
         }
 
     private fun render(cw: Float = this.cw, ch: Float = this.ch, block: DrawScope.() -> Unit): Bitmap {
