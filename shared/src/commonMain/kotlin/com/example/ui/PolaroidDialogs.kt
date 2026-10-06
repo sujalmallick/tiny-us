@@ -28,11 +28,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.DeleteOutline
-import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.Check
-import com.example.engine.AmbientAudio
+import com.example.engine.WorldAudio
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
@@ -55,27 +51,20 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
-import com.example.data.PolaroidManager
 import com.example.data.PolaroidMemory
-import android.graphics.Bitmap
+import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.animation.core.animateIntAsState
 import androidx.compose.animation.core.Spring
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.layout.ContentScale
 import com.example.ui.theme.PixelCornerShape
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
 
-import androidx.compose.material.icons.rounded.Check
-import androidx.compose.material.icons.rounded.DeleteOutline
-import androidx.compose.material.icons.rounded.Download
-import androidx.compose.material.icons.rounded.PhotoCamera
-import androidx.compose.material.icons.automirrored.rounded.ArrowBack
 import androidx.compose.ui.semantics.contentDescription
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinyRadius
@@ -99,10 +88,10 @@ import org.jetbrains.compose.resources.pluralStringResource
  */
 @Composable
 fun PolaroidCaptureOverlay(
-    bitmap: Bitmap,
+    bitmap: ImageBitmap,
     memory: PolaroidMemory,
-    polaroidManager: PolaroidManager,
-    audio: AmbientAudio? = null,
+    photos: PolaroidPhotos,
+    audio: WorldAudio? = null,
     onDismiss: () -> Unit,
     onOpenGallery: () -> Unit
 ) {
@@ -203,7 +192,7 @@ fun PolaroidCaptureOverlay(
                         TinyButton(
                             text = if (savedToDevice) stringResource(Res.string.ui_saved_to_photos) else stringResource(Res.string.ui_save_to_device),
                             onClick = {
-                                val success = polaroidManager.saveToDeviceGallery(bitmap, memory.title)
+                                val success = photos.saveToGallery(bitmap, memory.title)
                                 if (success) {
                                     savedToDevice = true
                                     audio?.playHeartChime()
@@ -254,13 +243,13 @@ fun PolaroidCaptureOverlay(
  */
 @Composable
 fun PolaroidCard(
-    bitmap: Bitmap,
+    bitmap: ImageBitmap,
     memory: PolaroidMemory,
     modifier: Modifier = Modifier,
     showDeleteButton: Boolean = false,
     onDelete: (() -> Unit)? = null
 ) {
-    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
+    val imageBitmap = bitmap
     val isCompleteCard = remember(bitmap) {
         val ratio = bitmap.height.toFloat() / bitmap.width.toFloat()
         ratio in 1.2f..1.55f
@@ -401,13 +390,13 @@ fun PolaroidCard(
  */
 @Composable
 fun PolaroidGalleryDialog(
-    polaroidManager: PolaroidManager,
-    audio: AmbientAudio? = null,
+    photos: PolaroidPhotos,
+    audio: WorldAudio? = null,
     onDismiss: () -> Unit
 ) {
-    var polaroids by remember { mutableStateOf(polaroidManager.getPolaroids()) }
+    var polaroids by remember { mutableStateOf(photos.getPolaroids()) }
     var selectedMemory by remember { mutableStateOf<PolaroidMemory?>(null) }
-    var selectedBitmap by remember { mutableStateOf<Bitmap?>(null) }
+    var selectedBitmap by remember { mutableStateOf<ImageBitmap?>(null) }
 
     // Full-screen single card inspection
     if (selectedMemory != null && selectedBitmap != null) {
@@ -464,7 +453,7 @@ fun PolaroidGalleryDialog(
                         TinyButton(
                             text = if (savedInInspector) stringResource(Res.string.ui_saved) else stringResource(Res.string.ui_save_to_device),
                             onClick = {
-                                val success = polaroidManager.saveToDeviceGallery(
+                                val success = photos.saveToGallery(
                                     selectedBitmap!!,
                                     selectedMemory!!.title
                                 )
@@ -483,8 +472,8 @@ fun PolaroidGalleryDialog(
                         // 3. Delete button
                         Surface(
                             onClick = {
-                                polaroidManager.deletePolaroid(selectedMemory!!.id)
-                                polaroids = polaroidManager.getPolaroids()
+                                photos.deletePolaroid(selectedMemory!!.id)
+                                polaroids = photos.getPolaroids()
                                 selectedMemory = null
                                 selectedBitmap = null
                             },
@@ -559,7 +548,7 @@ fun PolaroidGalleryDialog(
             ) {
                 items(polaroids, key = { it.id }) { memory ->
                     val bmp = remember(memory.imagePath) {
-                        polaroidManager.loadPolaroidBitmap(memory)
+                        photos.loadCard(memory)
                     }
                     if (bmp != null) {
                         PolaroidGridTile(
@@ -570,8 +559,8 @@ fun PolaroidGalleryDialog(
                                 selectedBitmap = bmp
                             },
                             onDelete = {
-                                polaroidManager.deletePolaroid(memory.id)
-                                polaroids = polaroidManager.getPolaroids()
+                                photos.deletePolaroid(memory.id)
+                                polaroids = photos.getPolaroids()
                             }
                         )
                     }
@@ -583,12 +572,12 @@ fun PolaroidGalleryDialog(
 
 @Composable
 internal fun PolaroidGridTile(
-    bitmap: Bitmap,
+    bitmap: ImageBitmap,
     memory: PolaroidMemory,
     onTap: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val imageBitmap = remember(bitmap) { bitmap.asImageBitmap() }
+    val imageBitmap = bitmap
     val isCompleteCard = remember(bitmap) {
         val ratio = bitmap.height.toFloat() / bitmap.width.toFloat()
         ratio in 1.2f..1.55f

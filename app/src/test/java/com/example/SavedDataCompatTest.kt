@@ -81,6 +81,25 @@ class SavedDataCompatTest {
     }
 
     @Test
+    fun polaroidListIsWhatOrgJsonWrote() {
+        val polaroidPrefs = context.getSharedPreferences("tiny_us_polaroids", Context.MODE_PRIVATE)
+        polaroidPrefs.edit().clear().commit()
+        val old = JSONArray().put(
+            JSONObject().put("id", "p-1").put("title", "Salt and Sunset").put("date", "Oct 6, 2026")
+                .put("time", "6:42 PM").put("sceneName", "Seaside Pier").put("sceneEnvKey", "SEASIDE_PIER")
+                .put("imagePath", "/data/polaroids/pol_1.png")
+        )
+        polaroidPrefs.edit().putString("polaroids_json", old.toString()).commit()
+
+        val manager = com.example.data.PolaroidManager(context)
+        assertEquals("Salt and Sunset", manager.getPolaroids().single().title)
+        manager.savePolaroid(com.example.data.PolaroidMemory("p-2", "Boardwalk Us", "Oct 7, 2026", "7:00 PM", "Seaside Pier", "SEASIDE_PIER", "/data/polaroids/pol_2.png"))
+        val saved = polaroidPrefs.getString("polaroids_json", null)!!
+        assertEquals(JSONArray(saved).toString(), saved)
+        assertEquals(listOf("p-2", "p-1"), manager.getPolaroids().map { it.id })
+    }
+
+    @Test
     fun simpleSettingsUseTheSameKeys() {
         val prefs = PreferencesManager(context)
         prefs.boyfriendName = "Bean"
