@@ -19,6 +19,7 @@ import com.example.engine.CharacterPose
 import com.example.engine.CharacterState
 import com.example.engine.Direction
 import com.example.engine.EmoteType
+import com.example.engine.HeldItem
 import com.example.engine.ParticleSystem
 import com.example.engine.ParticleType
 import com.example.engine.SnowPrintKind
@@ -97,6 +98,8 @@ class SceneEngine(
         /** Rest between a character's activities: min + up to range seconds. */
         const val AUTONOMY_REST_MIN = 2.5f
         const val AUTONOMY_REST_RANGE = 4f
+        /** How long a mug, book or find is carried about before it is put away. */
+        const val CARRIED_ITEM_SECONDS = 22f
         /** Give up on a walk that hasn't arrived after this long. */
         const val AUTONOMY_WALK_TIMEOUT = 12f
         /** Rare surprises: none in the first minute or so, then at least this far apart. */
@@ -716,6 +719,9 @@ class SceneEngine(
     fun loadScene(type: SceneType) {
         currentScene = type
         cozy.stopAll()
+        boy.putAwayHeldItem()
+        girl.putAwayHeldItem()
+        flowerHandoverFrom = null
         onProgress?.invoke(com.example.progress.ProgressEvent.SceneVisited(type.name))
         particles.placePuddles(WeatherLayout.puddleSpotsFor(type))
         audio.setIndoor(!isCurrentSceneOutdoor, smooth = true)
@@ -1953,6 +1959,10 @@ class SceneEngine(
         girl.idleSwayOffset = if (isGirlStandingIdle && !girl.isMovingOrTransitioning) {
             sin(sceneTime * 0.90f + 1.3f) * 0.6f
         } else 0f
+
+        tickHeldItem(boy, deltaSeconds)
+        tickHeldItem(girl, deltaSeconds)
+        tickFlowerHandover(deltaSeconds)
 
         // Emote timers
         if (boy.emoteTimer > 0) {
@@ -4652,6 +4662,7 @@ class SceneEngine(
             boySpeechTimer = 3.0f
             return
         }
+        if (useHeldItem(boy, cw, ch)) return
         boy.reactionTimer = 2.8f
         val idx = boyTapPicker.pick()
         when (idx) {
@@ -4723,6 +4734,7 @@ class SceneEngine(
             girlSpeechTimer = 3.0f
             return
         }
+        if (useHeldItem(girl, cw, ch)) return
         girl.reactionTimer = 2.8f
         val idx = girlTapPicker.pick()
         when (idx) {
@@ -7250,6 +7262,7 @@ class SceneEngine(
             }
             Behavior.VISIT_PROP -> {
                 if (agent.spot?.pose != CharacterPose.IDLE) c.transitionPoseTo(CharacterPose.IDLE)
+                if (agent.spot?.action == SpotAction.PICK_FLOWER) c.hold(HeldItem.FLOWER, CARRIED_ITEM_SECONDS)
             }
             Behavior.REST, Behavior.SIT_TOGETHER, Behavior.RARE_DOZE_OFF -> {
                 // Stand up again unless this is where they sit at home.
@@ -7301,13 +7314,13 @@ class SceneEngine(
             SpotAction.SMELL_FLOWERS -> { particles.spawnPetals(x, y - 30f, 3); emote(c, EmoteType.HEART, 1.8f); audio.playStarTwinkle() }
             SpotAction.PICK_FLOWER -> { flowerWiggleTimer = 1.2f; particles.spawnPetals(x, y - 20f, 2); emote(c, EmoteType.SPARKLE, 1.8f) }
             SpotAction.LISTEN_CHIMES -> { windChimeSwayTimer = 2.5f; audio.playWindChime(); emote(c, EmoteType.MUSIC_NOTE, 2f) }
-            SpotAction.LOOK_UP_TREE -> { particles.spawnPetals(x, ch * 0.40f, 3); emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
+            SpotAction.LOOK_UP_TREE -> { if (weather == WeatherType.AUTUMN) c.hold(HeldItem.LEAF, CARRIED_ITEM_SECONDS, useSeconds = 1.6f); particles.spawnPetals(x, ch * 0.40f, 3); emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
             SpotAction.SIT_GRASS -> { c.emotion = CharacterEmotion.HAPPY; emote(c, EmoteType.HEART, 1.4f) }
             SpotAction.STIR_POT -> { repeat(3) { particles.spawnSteam(x + 20f, y - 90f) }; audio.playCookingBubbles() }
             SpotAction.RINSE_DISHES -> { particles.spawnSparkles(x - 20f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
             SpotAction.PEEK_OVEN -> { cabinetOpenTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f); audio.playWoodKnock() }
             SpotAction.SIT_TABLE -> { c.emotion = CharacterEmotion.HAPPY }
-            SpotAction.WATER_PLANT -> { plantWaterTimer = 2.4f; sunroomMistTimer = 1.6f; particles.spawnSparkles(x - 30f, y - 60f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
+            SpotAction.WATER_PLANT -> { c.hold(HeldItem.WATERING_CAN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f); plantWaterTimer = 2.4f; sunroomMistTimer = 1.6f; particles.spawnSparkles(x - 30f, y - 60f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
             SpotAction.PEEK_BOX -> { cardboardBoxTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f) }
             SpotAction.SIT_POUF -> { poufBounceTimer = 0.8f; audio.playBubblePop() }
             SpotAction.LIGHT_CANDLE -> { tableCandleTimer = 3f; audio.playCandleFlicker(); emote(c, EmoteType.SPARKLE, 1.6f) }
@@ -7320,7 +7333,7 @@ class SceneEngine(
             SpotAction.CHECK_CRATE -> { bambooCrateTimer = 1.6f; audio.playWoodKnock() }
             SpotAction.FILL_SAUCER -> { milkSaucerTimer = 2.4f; emote(c, EmoteType.HEART, 1.6f) }
             SpotAction.LOOK_WINDOW -> { loftWindowTimer = 3f; emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
-            SpotAction.BROWSE_BOOKS -> { loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
+            SpotAction.BROWSE_BOOKS -> { c.hold(HeldItem.BOOK, CARRIED_ITEM_SECONDS, useSeconds = spot.dwellSeconds); loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
             SpotAction.ADMIRE_FAIRY_LIGHTS -> { loftFairyLightsTimer = 3f; emote(c, EmoteType.SPARKLE, 1.6f) }
             SpotAction.FOG_WINDOW -> {
                 cafeWindowHeartTimer = 2.8f
@@ -7330,12 +7343,12 @@ class SceneEngine(
                 emote(c, EmoteType.HEART, 1.6f)
             }
             SpotAction.PET_PUP -> { cafePupPetTimer = 2.4f; audio.playBubblePop(); particles.spawnHeart(x + 40f, y - 30f, Color(0xFFFFCAD4)) }
-            SpotAction.ORDER_COFFEE -> { cafeBaristaBrewTimer = 2.5f; audio.playSteamHiss(); emote(c, EmoteType.HEART, 1.6f) }
-            SpotAction.MIST_PLANTS -> { sunroomMistTimer = 2f; particles.spawnSparkles(x + 30f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
+            SpotAction.ORDER_COFFEE -> { c.hold(HeldItem.MUG, CARRIED_ITEM_SECONDS); cafeBaristaBrewTimer = 2.5f; audio.playSteamHiss(); emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.MIST_PLANTS -> { c.hold(HeldItem.MISTER, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f); sunroomMistTimer = 2f; particles.spawnSparkles(x + 30f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
             SpotAction.LOOK_SKYLIGHT -> { sunroomSkylightTimer = 2f; emote(c, EmoteType.SPARKLE, 1.6f) }
             SpotAction.WARM_HANDS -> { campfireEmbersTimer = 2.2f; c.emotion = CharacterEmotion.LOVING; audio.playCandleFlicker() }
             SpotAction.STRUM_GUITAR -> { campGuitarStrumTimer = 3f; audio.playStarArpeggio(); emote(c, EmoteType.MUSIC_NOTE, 2.4f) }
-            SpotAction.TEND_LANTERN -> { emote(c, EmoteType.SPARKLE, 1.6f); audio.playWoodKnock() }
+            SpotAction.TEND_LANTERN -> { c.hold(HeldItem.LANTERN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f); emote(c, EmoteType.SPARKLE, 1.6f); audio.playWoodKnock() }
             SpotAction.SPOT_DOLPHINS -> {
                 if (pierDolphinTimer <= 0f) pierDolphinTimer = PIER_DOLPHIN_SECONDS
                 c.emotion = CharacterEmotion.SURPRISED
@@ -7385,6 +7398,80 @@ class SceneEngine(
     private fun faceEachOther(a: PixelCharacter, b: PixelCharacter) {
         a.direction = if (b.worldX < a.worldX) Direction.LEFT else Direction.RIGHT
         b.direction = if (a.worldX < b.worldX) Direction.LEFT else Direction.RIGHT
+    }
+
+    private fun heldItemFor(kind: DiscoveryKind): HeldItem = when (kind) {
+        DiscoveryKind.WILDFLOWER -> HeldItem.FLOWER
+        DiscoveryKind.RED_LEAF -> HeldItem.LEAF
+        DiscoveryKind.LOVE_NOTE -> HeldItem.LOVE_NOTE
+        DiscoveryKind.MOCHI_TOY -> HeldItem.YARN_BALL
+        DiscoveryKind.SEASHELL -> HeldItem.SEASHELL
+        DiscoveryKind.STAR_PEBBLE -> HeldItem.STAR_PEBBLE
+    }
+
+    /** Ages the item in [c]'s hand, puts it away when its time is up, and now and then uses it. */
+    private fun tickHeldItem(c: PixelCharacter, dt: Float) {
+        if (c.heldItem == HeldItem.NONE) return
+        c.heldItemAge += dt
+        if (c.heldItemUse > 0f) c.heldItemUse -= dt
+        c.heldItemTimeLeft -= dt
+        if (c.heldItemTimeLeft <= 0f && c.heldItemUse <= 0f) {
+            c.putAwayHeldItem()
+            return
+        }
+        // A sip of coffee or a sniff of the flower while they stand about.
+        val sipping = c.heldItem == HeldItem.MUG || c.heldItem == HeldItem.FLOWER
+        if (sipping && c.heldItemUse <= 0f && !c.isMovingOrTransitioning && rng.nextFloat() < dt / 7f) {
+            c.heldItemUse = 1.4f
+        }
+    }
+
+    /** A found flower changes hands a moment after it's found. */
+    private var flowerHandoverFrom: PixelCharacter? = null
+    private var flowerHandoverTimer = 0f
+
+    private fun tickFlowerHandover(dt: Float) {
+        val from = flowerHandoverFrom ?: return
+        flowerHandoverTimer -= dt
+        if (flowerHandoverTimer > 0f) return
+        flowerHandoverFrom = null
+        if (from.heldItem != HeldItem.FLOWER) return
+        val to = if (from === boy) girl else boy
+        from.putAwayHeldItem()
+        to.hold(HeldItem.FLOWER, CARRIED_ITEM_SECONDS, useSeconds = 1.6f)
+        to.emotion = CharacterEmotion.LOVING
+        emote(to, EmoteType.HEART, 2f)
+        audio.playHeartChime()
+    }
+
+    /**
+     * A tap on someone holding something has them use it: a sip, a page, a sniff. Returns false
+     * when their hands are empty, so the usual tap reaction plays instead.
+     */
+    private fun useHeldItem(c: PixelCharacter, cw: Float, ch: Float): Boolean {
+        val item = c.heldItem
+        if (item == HeldItem.NONE) return false
+        c.heldItemUse = 1.8f
+        c.heldItemTimeLeft = maxOf(c.heldItemTimeLeft, 8f)
+        c.reactionTimer = 1.8f
+        if (c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.IDLE
+        c.emotion = CharacterEmotion.HAPPY
+        val x = cw * c.worldX
+        val y = ch * c.worldY
+        when (item) {
+            HeldItem.MUG -> { emote(c, EmoteType.HEART, 1.6f); audio.playBubblePop() }
+            HeldItem.BOOK -> { emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
+            HeldItem.FLOWER -> { emote(c, EmoteType.HEART, 1.6f); particles.spawnPetals(x, y - 60f, 2) }
+            HeldItem.LEAF -> { emote(c, EmoteType.SPARKLE, 1.4f); particles.spawnLeaf(x, y - 60f) }
+            HeldItem.LOVE_NOTE -> { emote(c, EmoteType.BLUSH, 1.8f); audio.playPaperFlip() }
+            HeldItem.SEASHELL -> { emote(c, EmoteType.MUSIC_NOTE, 1.6f); audio.playWaterDrip() }
+            HeldItem.STAR_PEBBLE -> { emote(c, EmoteType.SPARKLE, 1.6f); audio.playStarTwinkle(); particles.spawnSparkles(x, y - 60f, 3, Color(0xFFFFF3B0)) }
+            HeldItem.YARN_BALL -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playBubblePop() }
+            HeldItem.WATERING_CAN, HeldItem.MISTER -> { audio.playWaterDrip(); particles.spawnSparkles(x + 30f, y - 50f, 3, Color(0xFFBFE6FF)) }
+            HeldItem.LANTERN -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playCandleFlicker() }
+            HeldItem.NONE -> Unit
+        }
+        return true
     }
 
     private fun emote(c: PixelCharacter, e: EmoteType, seconds: Float) {
@@ -7504,7 +7591,8 @@ class SceneEngine(
         val x = cw * discovery.x
         val y = ch * discovery.y
         c.direction = if (discovery.x < c.worldX) Direction.LEFT else Direction.RIGHT
-        c.transitionPoseTo(CharacterPose.GIVE_FLOWER)
+        c.transitionPoseTo(CharacterPose.IDLE)
+        c.hold(heldItemFor(discovery.kind), CARRIED_ITEM_SECONDS, useSeconds = 2.4f)
         c.emotion = CharacterEmotion.SURPRISED
         audio.playStarTwinkle()
         particles.spawnSparkles(x, y - 20f, 5)
@@ -7517,7 +7605,12 @@ class SceneEngine(
                     else GameText.get(Res.string.scene_auto_found_flower, c.name),
                     duration = 3f
                 )
-                if (closeToPartner) emote(partner, EmoteType.BLUSH, 2f)
+                if (closeToPartner) {
+                    emote(partner, EmoteType.BLUSH, 2f)
+                    // Show it off for a moment, then hand it over.
+                    flowerHandoverFrom = c
+                    flowerHandoverTimer = 2.6f
+                }
             }
             DiscoveryKind.RED_LEAF -> {
                 emote(c, EmoteType.SPARKLE, 2f)
