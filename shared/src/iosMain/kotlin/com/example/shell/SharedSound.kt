@@ -10,23 +10,11 @@ import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSUserDefaults
 import kotlin.time.Clock
 
-/**
- * The shared world's sound for SwiftUI (`SharedSound.shared`): Settings' sound switch and volume,
- * pausing in the background, and stopping when the world is closed.
- */
+/** The app's one sound system (`SharedSound.shared` from Swift), stopped when the app's view goes away. */
 object SharedSound {
     val audio: IosWorldAudio by lazy { IosWorldAudio() }
 
-    fun configure(enabled: Boolean, volume: Float) {
-        audio.volume = volume
-        audio.isEnabled = enabled
-    }
-
-    fun pauseAll() = audio.pauseAll()
-
-    fun resumeAll() = audio.resumeAll()
-
-    /** The world view went away: silence it (a new world starts its own music). */
+    /** The app's view went away: silence it (a new screen starts its own music). */
     fun stop() = audio.release()
 }
 

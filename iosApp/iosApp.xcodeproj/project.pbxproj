@@ -21,10 +21,6 @@
 		A10000000000000000000040 /* TinyWidgetPayload.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
 		A10000000000000000000042 /* TinyWidgetPayload.swift in Widget Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000041 /* TinyWidgetPayload.swift */; };
 		A10000000000000000000045 /* TinyUsWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000046 /* TinyUsWidget.appex */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
-		A10000000000000000000060 /* TinySoundFX.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000061 /* TinySoundFX.swift */; };
-		A10000000000000000000062 /* TinyWorldStage.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000063 /* TinyWorldStage.swift */; };
-		A10000000000000000000064 /* TinyWorldPainter.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000065 /* TinyWorldPainter.swift */; };
-		A10000000000000000000066 /* TinyOverlays.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000067 /* TinyOverlays.swift */; };
 		A10000000000000000000068 /* SharedComposeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000069 /* SharedComposeView.swift */; };
 /* End PBXBuildFile section */
 
@@ -46,10 +42,6 @@
 		A10000000000000000000043 /* iosApp.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = iosApp.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000044 /* TinyUsWidget.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = TinyUsWidget.entitlements; sourceTree = "<group>"; };
 		A10000000000000000000046 /* TinyUsWidget.appex */ = {isa = PBXFileReference; explicitFileType = wrapper.app-extension; includeInIndex = 0; path = TinyUsWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000000000000000000061 /* TinySoundFX.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinySoundFX.swift; sourceTree = "<group>"; };
-		A10000000000000000000063 /* TinyWorldStage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWorldStage.swift; sourceTree = "<group>"; };
-		A10000000000000000000065 /* TinyWorldPainter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyWorldPainter.swift; sourceTree = "<group>"; };
-		A10000000000000000000067 /* TinyOverlays.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TinyOverlays.swift; sourceTree = "<group>"; };
 		A10000000000000000000069 /* SharedComposeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedComposeView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -81,10 +73,6 @@
 				A1000000000000000000000D /* iOSApp.swift */,
 				A1000000000000000000000F /* ContentView.swift */,
 				A10000000000000000000069 /* SharedComposeView.swift */,
-				A10000000000000000000061 /* TinySoundFX.swift */,
-				A10000000000000000000063 /* TinyWorldStage.swift */,
-				A10000000000000000000065 /* TinyWorldPainter.swift */,
-				A10000000000000000000067 /* TinyOverlays.swift */,
 				A10000000000000000000011 /* Assets.xcassets */,
 				A10000000000000000000013 /* Info.plist */,
 				A10000000000000000000039 /* WidgetExtension.swift */,
@@ -239,10 +227,6 @@
 				A1000000000000000000000E /* iOSApp.swift in Sources */,
 				A10000000000000000000010 /* ContentView.swift in Sources */,
 				A10000000000000000000068 /* SharedComposeView.swift in Sources */,
-				A10000000000000000000060 /* TinySoundFX.swift in Sources */,
-				A10000000000000000000062 /* TinyWorldStage.swift in Sources */,
-				A10000000000000000000064 /* TinyWorldPainter.swift in Sources */,
-				A10000000000000000000066 /* TinyOverlays.swift in Sources */,
 				A10000000000000000000040 /* TinyWidgetPayload.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

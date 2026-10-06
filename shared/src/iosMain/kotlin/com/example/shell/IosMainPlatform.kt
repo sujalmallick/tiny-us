@@ -7,7 +7,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import com.example.data.IosUserDefaultsStorage
 import com.example.data.PreferencesManager
+import com.example.data.CoupleDates
+import com.example.engine.TimeOfDayPhase
 import com.example.engine.WorldAudio
+import com.example.scene.SceneType
 import com.example.scene.WeatherType
 import com.example.ui.IosPolaroidPhotos
 import com.example.ui.MainPlatform
@@ -42,6 +45,27 @@ class IosMainPlatform : MainPlatform {
     override fun startWeather(): WeatherType = WeatherMemory.startWeather()
 
     override fun saveWeather(weather: WeatherType) = WeatherMemory.save(weather)
+
+    override fun updateWidget(scene: SceneType, weather: WeatherType) {
+        val publish = IosWidget.publish ?: return
+        val data = prefs.getWidgetData(
+            currentWeather = weather.displayName,
+            timePhase = TimeOfDayPhase.resolve(prefs.atmosphereMode).displayName,
+            sceneName = scene.title
+        )
+        publish(
+            IosWidgetSnapshot(
+                coupleNames = data.coupleNames,
+                daysTogether = data.daysTogether,
+                anniversary = CoupleDates.anniversary.toString(),
+                sceneName = data.sceneName,
+                weatherName = data.weatherName,
+                timePhase = data.timePhase,
+                dailyMomentPrompt = data.dailyMomentPrompt ?: "",
+                latestSignalText = data.latestSignalText ?: ""
+            )
+        )
+    }
 
     @Composable
     override fun OnAppPauseResume(onPause: () -> Unit, onResume: () -> Unit) {
