@@ -167,18 +167,22 @@ class CoupleRequestsTest {
         var firstAt = -1f
         var t = 0f
         var asked: RequestKind? = null
+        var logged = false
         run(600f) {
             t += dt
             if (firstAt < 0f && engine.requests.active) {
                 firstAt = t
                 asked = engine.requests.kind
+                // Checked now: the log keeps only the latest 64 behaviors, so by the end of ten
+                // minutes this one may have scrolled out.
+                logged = engine.autonomyLog.contains(Behavior.ASK_FOR_SOMETHING)
             }
         }
         assertTrue("A request should start within ten minutes", firstAt > 0f)
         assertTrue("None in the first ${CoupleRequests.FIRST_DELAY}s: $firstAt", firstAt >= CoupleRequests.FIRST_DELAY)
         assertNotNull(asked)
         assertTrue("Loft at sunset asks for warmth, tea or a song: $asked", asked != RequestKind.SNACK && asked != RequestKind.MOCHI)
-        assertTrue(engine.autonomyLog.contains(Behavior.ASK_FOR_SOMETHING))
+        assertTrue(logged)
     }
 
     @Test

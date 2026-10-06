@@ -59,6 +59,10 @@ class ScenePreviewTest {
             // SCENE_PREVIEW_FRAMES overrides the count (for example to let the birds arrive).
             // SCENE_PREVIEW_CATCH=1 starts a round of Catch together (with falling weather).
             if (System.getenv("SCENE_PREVIEW_CATCH") != null) startCatchGame()
+            // SCENE_PREVIEW_REQUEST=TEA,girl starts that request at once (plan 07 D1), to see its bubble.
+            System.getenv("SCENE_PREVIEW_REQUEST")?.split(',')?.let { (kind, who) ->
+                startRequestForTest(com.example.scene.autonomy.RequestKind.valueOf(kind.trim()), if (who.trim() == "girl") girl else boy)
+            }
             // SCENE_PREVIEW_COZY=cook (a dish served, in the kitchen), fish (the couple's line out at
             // the pier) or garden (the meadow's plots growing, one in bloom, a picked flower held).
             // Several at once, comma-separated; each only shows in its own scene.

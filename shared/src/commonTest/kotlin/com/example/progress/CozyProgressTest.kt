@@ -77,4 +77,14 @@ class CozyProgressTest {
         assertEquals(setOf("cookies"), given.seenSet(Seen.RECIPES))
         assertTrue(Gifts.BOUQUET in Gifts.GIVEABLE)
     }
+
+    @Test
+    fun grantedRequestsEarnTheirFirstsOnce() {
+        val (one, first) = run(ProgressEvent.RequestGranted("TEA"), ProgressEvent.RequestGranted("TEA"))
+        assertEquals(listOf("first_request"), first)
+        assertEquals(2, one.count(Counter.REQUESTS))
+        val rest = listOf("WARM", "SONG", "SNACK", "MOCHI").map { ProgressEvent.RequestGranted(it) }
+        val (_, earned) = run(*rest.toTypedArray(), start = one)
+        assertEquals(listOf("all_requests"), earned)
+    }
 }

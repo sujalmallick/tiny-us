@@ -47,4 +47,25 @@ class CozySpritesPreviewTest {
         }
         File(out, "cozy_sprites.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
     }
+
+    /** With COZY_SPRITES_DIR set, also a sheet of the five request bubbles (plan 07 D1), fresh and fading. */
+    @Test
+    fun writesTheRequestBubblesWhenAsked() {
+        val out = File(System.getenv("COZY_SPRITES_DIR") ?: return).apply { mkdirs() }
+        val kinds = com.example.engine.PixelArtRenderer.requestIconNames.toList()
+        val p = 16f
+        val cell = 10 * p
+        val w = (kinds.size * cell).toInt()
+        val h = (2 * cell).toInt()
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        val canvas = androidx.compose.ui.graphics.Canvas(android.graphics.Canvas(bmp))
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, canvas, Size(w.toFloat(), h.toFloat())) {
+            drawRect(Color(0xFF9AD1F5), Offset.Zero, Size(w.toFloat(), h.toFloat()))
+            kinds.forEachIndexed { i, k ->
+                com.example.engine.PixelArtRenderer.drawRequestBubble(this, k, i * cell + cell / 2f, cell * 0.85f, p, 1f, 0f)
+                com.example.engine.PixelArtRenderer.drawRequestBubble(this, k, i * cell + cell / 2f, cell * 1.85f, p, 0.4f, 0f)
+            }
+        }
+        File(out, "request_bubbles.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+    }
 }

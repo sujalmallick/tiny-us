@@ -7561,6 +7561,18 @@ class SceneEngine(
         if (requests.active && (isMiniGameActive() || currentScene == SceneType.EVENING_RIDE)) requests.interrupt(rng)
         // An unanswered request just fades; nothing else happens, and nothing counts it.
         requests.tick(dt)
+        // The asker carries the bubble (drawn by the renderer, or over the loft's sofa couple).
+        val asker = requestAsker
+        for (c in listOf(boy, girl)) {
+            if (c === asker) {
+                if (c.requestIcon != requests.kind.name) c.requestSeconds = 0f
+                c.requestIcon = requests.kind.name
+                c.requestFade = requests.fade
+                c.requestSeconds += dt
+            } else {
+                c.requestIcon = null
+            }
+        }
     }
 
     /** Whether a request may start now: its timing allows it, nothing else is going on, and some kind fits. */
@@ -7602,6 +7614,15 @@ class SceneEngine(
             if (abs(x - c.worldX) > 0.02f) c.direction = if (x < c.worldX) Direction.LEFT else Direction.RIGHT
         }
         c.emotion = CharacterEmotion.SHY
+        // Said once, as the caption, so screen readers hear it too.
+        val line = when (kind) {
+            RequestKind.WARM -> Res.string.request_warm
+            RequestKind.TEA -> Res.string.request_tea
+            RequestKind.SONG -> Res.string.request_song
+            RequestKind.SNACK -> Res.string.request_snack
+            RequestKind.MOCHI -> Res.string.request_mochi
+        }
+        showMessage(GameText.get(line, c.name), duration = 3.5f)
     }
 
     /**
@@ -7619,6 +7640,23 @@ class SceneEngine(
         particles.spawnSparkles(lastCanvasW * asker.worldX, lastCanvasH * asker.worldY - 90f, 6)
         audio.playHeartChime()
         if (kind == RequestKind.TEA) asker.hold(HeldItem.MUG, CARRIED_ITEM_SECONDS, useSeconds = 1.6f)
+        asker.requestIcon = null
+        val thanks = when (kind) {
+            RequestKind.WARM -> Res.string.request_thanks_warm
+            RequestKind.TEA -> Res.string.request_thanks_tea
+            RequestKind.SONG -> Res.string.request_thanks_song
+            RequestKind.SNACK -> Res.string.request_thanks_snack
+            RequestKind.MOCHI -> Res.string.request_thanks_mochi
+        }
+        // Said by the asker in their own speech bubble; the prop's usual caption still plays.
+        if (asker === boy) {
+            boySpeechText = GameText.get(thanks)
+            boySpeechTimer = 3f
+        } else {
+            girlSpeechText = GameText.get(thanks)
+            girlSpeechTimer = 3f
+        }
+        onProgress?.invoke(com.example.progress.ProgressEvent.RequestGranted(kind.name))
         onRequestGranted?.invoke(kind)
     }
 
