@@ -2,13 +2,11 @@ package com.example.ui.theme
 
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontSynthesis
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.R
 
 /**
  * "Cozy Frame" design tokens for all UI chrome (dialogs, sheets, buttons, cards).
@@ -72,7 +70,7 @@ object TinyRadius {
  * The Tiny Us pixel font (built by tools/pixelfont/build_tiny_pixel_font.py): one weight, and
  * Compose must not fake a bold, which would smear the pixels.
  */
-val PixelFamily = FontFamily(Font(R.font.tiny_pixel))
+expect val PixelFamily: FontFamily
 
 /**
  * Titles, headings, labels and buttons use the pixel font, so the chrome matches the pixel world.
