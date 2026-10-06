@@ -1,6 +1,6 @@
 # Plan 07 D1: requests from the couple (design for FEATURES)
 
-Written 2026-10-06 by GROWTH. Status: **proposal, waiting for FEATURES**. Nothing is built yet.
+Written 2026-10-06 by GROWTH. Status: **reviewed by FEATURES on 2026-10-06; agreed, with the changes in "FEATURES review" at the end**. Nothing is built yet.
 
 ## The idea
 
@@ -83,3 +83,31 @@ Notes:
 3. Is a 25 s window and a 240 to 360 s gap right for how often the routine runs?
 4. Can requests be added to the filmstrip test so we can see one happen?
 5. Any scenes where the routine is too busy for this (the scooter ride is already excluded)?
+
+## FEATURES review (2026-10-06)
+
+Agreed overall: it is rare, has no pressure, and reuses existing props. Answers first, then the changes.
+
+### Answers
+
+1. **Use one `Behavior.ASK_FOR_SOMETHING`.** The director picks the kind from a small table: whether the kind fits, times a per-character bias (the girl for SONG, the boy for SNACK), skipping the last kind used. Five separate behaviors would each get their own recency penalty in the brain and fight over a cooldown they share anyway. The `requestAvailable` context flag is right as proposed.
+2. **Stay where they are, turned toward the prop.** Walking adds ways to fail (a blocked path, the partner already standing at the spot). The record player and the guitar are off-limits to the routine. And in the loft the couple doesn't walk freely at all (see below).
+3. **The 25 s window and the 240 to 360 s gap are right** (480 s after an ignored request). Also: don't start a request in the 20 s after a cinematic or scene message, or while either of them is asleep or dozing (`SLEEP`, `RARE_DOZE_OFF`).
+4. **Yes, add requests to the filmstrip.** Add an internal hook such as `startRequestForTest(kind, asker)`, so neither the filmstrip nor the engine tests depend on chance. The grant, fade and limit tests seed `behaviorBrain.random` like `AutonomyEngineTest` does.
+5. **Scenes to exclude or handle:**
+   - **The scooter ride:** already excluded.
+   - **The loft:** the couple is drawn by `LoftSprites.drawCuddledCouple`, not `PixelArtRenderer.drawCharacter`, so no emote bubble or held item shows there. The request bubble needs its own drawing call in that path, anchored over the cuddled sprite's heads. Mochi isn't drawn in the loft either (`isCatInScene` excludes it), so MOCHI never fits there.
+   - **Mini-games and other modes:** the ones already listed (dreams, watch scenes, catch, stars, cooking, fishing).
+
+### Changes to the proposal
+
+- **Bubble size.** PR #20 redrew `drawEmoteBubble`. It is now 11 x 10 at half a character pixel, with **7 x 6** icons in `EMOTE_ICONS` (`PixelCanvas.kt`). Draw the five request icons on that grid, not 9 x 7.
+- **Tell requests apart from emotes.** Emotes are static and over in a couple of seconds. Give the request bubble a gentle bob and a gold outline so players learn it's tappable.
+- **One bubble at a time.** While a request is up, the asker's emotes are suppressed (the request wins), and like emotes the bubble hides while that character is speaking. Otherwise two bubbles stack in the same spot.
+- **Granting uses held items** (PR #20). A granted TEA puts a mug in the asker's hand (`hold(HeldItem.MUG, ...)` with a sip), so the thanks reads without any text. SNACK keeps the `EAT_MOMO` pose; WARM and SONG need no item.
+- **Handler names.** The treat jar is `onTouchKitchenTreatJar()` and the pier cart is `onTouchPierIceCream(cw, ch)`. The others exist as named.
+
+### Ownership
+
+As proposed: FEATURES does the `Behavior`, the brain's weights, the director and `ActiveRequest`, and the `requests.onUsed(...)` lines. GROWTH does the bubble and icons (including the loft path), strings, progress events and the little firsts. Each side writes the tests for its part.
+
