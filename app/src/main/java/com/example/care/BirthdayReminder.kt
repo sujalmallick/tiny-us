@@ -7,12 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import com.example.data.BirthdayStore
-import com.example.data.Birthdays
-import com.example.data.CoupleDates
 import com.example.data.SharedPreferencesStorage
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toInstant
 import com.example.resources.*
 
 /**
@@ -24,25 +19,13 @@ object BirthdayReminder {
     const val ACTION = "com.tinyus.app.ACTION_BIRTHDAY_MORNING"
     private const val REQUEST_CODE = 7720
     private const val NOTIFICATION_ID = 7721
-    private const val HOUR = 9
 
     private fun store(context: Context) =
         BirthdayStore(SharedPreferencesStorage(context.getSharedPreferences("tiny_us_prefs", Context.MODE_PRIVATE)))
 
     /** When the next reminder should go off, or null when it's off or no birthday is set. */
-    @OptIn(kotlin.time.ExperimentalTime::class)
-    fun nextTriggerMillis(store: BirthdayStore, nowMillis: Long = System.currentTimeMillis()): Long? {
-        if (!store.morningReminderEnabled) return null
-        val zone = TimeZone.currentSystemDefault()
-        val today = CoupleDates.today()
-        return store.birthdays().values.filterNotNull()
-            .flatMap { b -> listOf(Birthdays.next(b, today), Birthdays.next(b, today.plusYear())) }
-            .map { day -> LocalDateTime(day.year, day.month, day.day, HOUR, 0).toInstant(zone).toEpochMilliseconds() }
-            .filter { it > nowMillis }
-            .minOrNull()
-    }
-
-    private fun kotlinx.datetime.LocalDate.plusYear() = kotlinx.datetime.LocalDate(year + 1, month, if (month.ordinal == 1 && day == 29) 28 else day)
+    fun nextTriggerMillis(store: BirthdayStore, nowMillis: Long = System.currentTimeMillis()): Long? =
+        BirthdayMorning.nextMillis(store, nowMillis)
 
     /** Sets (or clears) the alarm for the next birthday morning. Safe to call often. */
     fun schedule(context: Context) {

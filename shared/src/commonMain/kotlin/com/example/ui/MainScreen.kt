@@ -1212,6 +1212,7 @@ fun MainScreen(
                     syncCoupleDates(prefs)
         com.example.engine.SpecialDays.refresh()
                     platform.birthdaysChanged()
+                    platform.settingsChanged()
                 },
                 onReplayScene = {
                     engine.loadScene(engine.currentScene)
