@@ -240,22 +240,7 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     scope.px(Color(0xFF2E1D15), 0f, wallBottom - 2.5f * p, cw, 2.5f * p)
 
     // 3. Warm plank floor; rows widen toward the viewer for depth
-    var fy = wallBottom
-    var r = 0
-    while (fy < ch) {
-        val rowH = (4.5f + r * 0.9f) * p
-        scope.px(if (r % 2 == 0) Color(0xFF6B4630) else Color(0xFF5E3D29), 0f, fy, cw, rowH)
-        scope.px(Color(0xFF3B2618), 0f, fy + rowH - 0.7f * p, cw, 0.7f * p)
-        val seamGap = (26f + r * 5f) * p
-        var sx = nz(r, 11) * seamGap
-        while (sx < cw) {
-            scope.px(Color(0xFF3B2618), sx, fy, 0.7f * p, rowH)
-            sx += seamGap
-        }
-        scope.px(Color(0x14FFFFFF), cw * nz(r, 5), fy + rowH * 0.35f, cw * 0.18f, 0.6f * p)
-        fy += rowH
-        r++
-    }
+    drawCafePlanks(scope, cw, wallBottom, wallBottom, ch, p)
 
     // 4. The big window onto a rainy street (sky follows the real time of day)
     val glass = CafeLayout.glass(cw, ch, p)
@@ -607,34 +592,74 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     if (lampsBright) scope.pOval(Color(0xFFFFD27A).copy(alpha = 0.07f), Offset(cw * 0.5f - 60f * p, feetY + 2f * p), Size(120f * p, 22f * p))
     drawCafeTableSet(scope, cw * 0.70f, ch * 0.88f, p * 1.7f, time, lampsBright, reserved = true)
     drawCafeTableSet(scope, cw * 0.22f, ch * 0.80f, p * 1.45f, time, lampsBright, reserved = false)
-    val bcX = cw - 24f * p
-    val bcTop = ch * 0.74f
-    scope.px(Color(0xFF4A2D1D), bcX, bcTop, 26f * p, ch - bcTop)
-    var shelfRow = 0
-    var sY = bcTop + 4f * p
-    while (sY < ch - 6f * p) {
-        var bkX = bcX + 2f * p
-        var bk = 0
-        while (bkX < cw) {
-            val h = (9f + nz(shelfRow * 13 + bk, 191) * 5f) * p
-            val c = when ((shelfRow + bk) % 5) {
-                0 -> Color(0xFF9C6644)
-                1 -> Color(0xFF457B9D)
-                2 -> Color(0xFFE9C46A)
-                3 -> Color(0xFF6B9080)
-                else -> Color(0xFFB5838D)
-            }
-            scope.px(c, bkX, sY + 14f * p - h, 3.2f * p, h)
-            bkX += 3.6f * p
-            bk++
-        }
-        scope.px(Color(0xFF6B4423), bcX, sY + 14f * p, 26f * p, 2.5f * p)
-        sY += 17f * p
-        shelfRow++
-    }
+    drawCafeBookcase(scope, cw, ch * 0.74f, ch * 0.74f, ch, p)
 
     // Evening: the room dims a touch so the lamps and candle carry the light
     if (night) scope.px(Color(0x1E05070F), 0f, 0f, cw, ch)
+}
+
+/**
+ * The cafe's plank floor, rows widening toward the viewer from [wallBottom], drawn between
+ * [fromY] and [toY]. The floor continued below the stage calls this too, so its rows carry on.
+ */
+internal fun drawCafePlanks(scope: DrawScope, cw: Float, wallBottom: Float, fromY: Float, toY: Float, p: Float) {
+    var fy = wallBottom
+    var r = 0
+    while (fy < toY) {
+        val rowH = (4.5f + r * 0.9f) * p
+        if (fy + rowH > fromY) {
+            val top = maxOf(fy, fromY)
+            val h = minOf(fy + rowH, toY) - top
+            scope.px(if (r % 2 == 0) Color(0xFF6B4630) else Color(0xFF5E3D29), 0f, top, cw, h)
+            val seamY = fy + rowH - 0.7f * p
+            if (seamY >= fromY && seamY < toY) scope.px(Color(0xFF3B2618), 0f, seamY, cw, 0.7f * p)
+            val seamGap = (26f + r * 5f) * p
+            var sx = nz(r, 11) * seamGap
+            while (sx < cw) {
+                scope.px(Color(0xFF3B2618), sx, top, 0.7f * p, h)
+                sx += seamGap
+            }
+            val sheenY = fy + rowH * 0.35f
+            if (sheenY >= fromY && sheenY < toY) scope.px(Color(0x14FFFFFF), cw * nz(r, 5), sheenY, cw * 0.18f, 0.6f * p)
+        }
+        fy += rowH
+        r++
+    }
+}
+
+/**
+ * The tall bookcase at the cafe's right edge, starting at [top], drawn between [fromY] and
+ * [toY]. Below the stage it carries on with the same shelves.
+ */
+internal fun drawCafeBookcase(scope: DrawScope, cw: Float, top: Float, fromY: Float, toY: Float, p: Float) {
+    val bcX = cw - 24f * p
+    scope.px(Color(0xFF4A2D1D), bcX, fromY, 26f * p, toY - fromY)
+    var shelfRow = 0
+    var sY = top + 4f * p
+    while (sY < toY - 6f * p) {
+        if (sY + 17f * p > fromY) {
+            var bkX = bcX + 2f * p
+            var bk = 0
+            while (bkX < cw) {
+                val h = (9f + nz(shelfRow * 13 + bk, 191) * 5f) * p
+                val c = when ((shelfRow + bk) % 5) {
+                    0 -> Color(0xFF9C6644)
+                    1 -> Color(0xFF457B9D)
+                    2 -> Color(0xFFE9C46A)
+                    3 -> Color(0xFF6B9080)
+                    else -> Color(0xFFB5838D)
+                }
+                val bookTop = maxOf(sY + 14f * p - h, fromY)
+                scope.px(c, bkX, bookTop, 3.2f * p, sY + 14f * p - bookTop)
+                bkX += 3.6f * p
+                bk++
+            }
+            val boardTop = maxOf(sY + 14f * p, fromY)
+            scope.px(Color(0xFF6B4423), bcX, boardTop, 26f * p, sY + 16.5f * p - boardTop)
+        }
+        sY += 17f * p
+        shelfRow++
+    }
 }
 
 /** Brass pendant lamp; its pool of light is stronger once it's dark outside. */
