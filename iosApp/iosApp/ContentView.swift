@@ -65,6 +65,8 @@ enum TinyScene: String, CaseIterable, Codable, Identifiable {
 enum TinyWeather: String, CaseIterable, Codable, Identifiable {
     case sunny, rain, sakura, autumn, snow
     var id: String { rawValue }
+    /// The shared world's name for it (WeatherType: SUNNY, RAIN, ...).
+    var sharedName: String { rawValue.uppercased() }
     var label: String {
         switch self {
         case .sunny: return "Sunny breeze"
@@ -106,6 +108,8 @@ struct TinySong: Identifiable, Hashable {
     private var oldWeatherPlayers: [AVAudioPlayer] = []
     private var weather: TinyWeather = .sunny
     private var currentAmbience: TinyWeather?
+    /// True while the shared world plays its own weather music (the music box and chimes still play here).
+    var weatherSilenced = false
     private var isIndoor = false
     private var soundEnabled = true
     private var masterVolume: Float = 0.72
@@ -134,6 +138,7 @@ struct TinySong: Identifiable, Hashable {
         masterVolume = Float(min(max(volume,0),1))
         guard soundEnabled else { stopAll(); return }
         guard isForeground else { return }
+        if weatherSilenced { stopWeather(); return }
         configureSession()
         let filename = "bgm_\(weather.rawValue)"
         if let current = weatherPlayer, current.url?.deletingPathExtension().lastPathComponent == filename || (current.url == nil && currentAmbience == weather) {
@@ -273,6 +278,12 @@ struct TinySong: Identifiable, Hashable {
             weatherWasPlayingBeforeInterruption = false
             chimeWasPlayingBeforeInterruption = false
         }
+    }
+
+    private func stopWeather() {
+        weatherPlayer?.stop(); weatherPlayer = nil; currentAmbience = nil
+        oldWeatherPlayers.forEach { $0.stop() }
+        oldWeatherPlayers.removeAll()
     }
 
     private func stopAll() {
@@ -532,6 +543,16 @@ struct TinySave: Codable {
         save.weatherDriftStartedAt = date
         save.weather = weather
     }
+    /// A weather picked by hand: the classic world shows it, and the shared world changes to it too.
+    func pickWeather(_ weather: TinyWeather) {
+        setWeather(weather)
+        SharedWorldBridge.shared.pickWeather(weatherName: weather.sharedName)
+    }
+    /// Follows the shared world's weather (it drifts with the season on its own), for the labels.
+    func followSharedWeather() {
+        guard let weather = TinyWeather(rawValue: SharedWorldBridge.shared.weatherName().lowercased()) else { return }
+        setWeather(weather)
+    }
     func resumeWeatherDriftClock(at date: Date = Date()) { save.weatherDriftStartedAt = date }
     func interactWithScene() {
         let moments: [String]
@@ -680,12 +701,17 @@ struct ContentView: View {
             }
             .onReceive(clock) { date in
                 tick = date
-                if date.timeIntervalSince(world.save.weatherDriftStartedAt) >= 360 {
+                if sharedWorldOn {
+                    // The shared world keeps its own weather, following the season like Android.
+                    world.followSharedWeather()
+                } else if date.timeIntervalSince(world.save.weatherDriftStartedAt) >= 360 {
                     let choices = TinyWeather.allCases.filter { $0 != world.save.weather }
                     world.setWeather(choices.randomElement() ?? .sunny, at: date)
                 }
             }
             .onAppear { updateAudio(); world.resumeWeatherDriftClock(); syncSharedWorld() }
+            .onChange(of: classicWorld) { _ in updateAudio() }
+            .onChange(of: sharedProblem) { _ in updateAudio() }
             .onChange(of: world.save.nameOne) { _ in syncSharedWorld() }
             .onChange(of: world.save.nameTwo) { _ in syncSharedWorld() }
             .onChange(of: world.save.weather) { _ in updateAudio() }
@@ -693,8 +719,8 @@ struct ContentView: View {
             .onChange(of: world.save.soundOn) { _ in updateAudio() }
             .onChange(of: world.save.soundVolume) { _ in updateAudio() }
             .onChange(of: scenePhase) { phase in
-                if phase == .background { audio.pauseForBackground(); world.persist() }
-                if phase == .active { audio.resumeFromBackground(); world.resumeWeatherDriftClock() }
+                if phase == .background { audio.pauseForBackground(); SharedSound.shared.pauseAll(); world.persist() }
+                if phase == .active { audio.resumeFromBackground(); SharedSound.shared.resumeAll(); world.resumeWeatherDriftClock() }
             }
             .preferredColorScheme(.dark)
         }
@@ -789,7 +815,12 @@ struct ContentView: View {
         SharedWorldBridge.shared.setNames(first: world.save.nameOne, second: world.save.nameTwo)
         SharedWorldBridge.shared.showScene(sceneName: world.save.scene.sharedScene.name)
     }
+    /// True when the shared Android world is showing (not the classic SwiftUI world).
+    private var sharedWorldOn: Bool { !classicWorld && sharedProblem == nil }
     private func updateAudio() {
+        // The shared world plays its own weather music and sounds; the classic one keeps TinyAudio's.
+        audio.weatherSilenced = sharedWorldOn
+        SharedSound.shared.configure(enabled: world.save.soundOn, volume: Float(world.save.soundVolume))
         audio.update(weather: world.save.weather, indoor: world.save.scene.isIndoor, soundEnabled: world.save.soundOn, volume: world.save.soundVolume)
         TinySoundBoard.shared.configure(enabled: world.save.soundOn, volume: world.save.soundVolume)
     }
@@ -806,7 +837,10 @@ struct ContentView: View {
     private var weatherSheet: some View {
         NavigationStack {
             List(TinyWeather.allCases) { weather in
-                Button { world.setWeather(weather); showWeather = false; world.showToast("The sky is changing gently") } label: {
+                Button {
+                    world.pickWeather(weather); showWeather = false
+                    if !sharedWorldOn { world.showToast("The sky is changing gently") } // the shared world says it itself
+                } label: {
                     Label(weather.label, systemImage: weather.icon).foregroundStyle(.primary)
                         .overlay(alignment: .trailing) { if weather == world.save.weather { Image(systemName: "checkmark").foregroundStyle(.tint) } }
                 }
@@ -1029,7 +1063,7 @@ private struct SettingsSheet: View {
                         HStack { Text("World volume"); Spacer(); Text("\(Int(world.save.soundVolume*100))%").foregroundStyle(.secondary) }
                         Slider(value:$world.save.soundVolume,in:0...1).tint(.pink).accessibilityLabel("World volume")
                     }
-                    Picker("Weather",selection:Binding(get:{world.save.weather},set:{world.setWeather($0)})) { ForEach(TinyWeather.allCases) { Text($0.label).tag($0) } }
+                    Picker("Weather",selection:Binding(get:{world.save.weather},set:{world.pickWeather($0)})) { ForEach(TinyWeather.allCases) { Text($0.label).tag($0) } }
                 }
                 Section("Gentle reminders") {
                     Toggle("Daily tiny moment reminder",isOn:Binding(get:{world.save.notificationsOn},set:{ value in Task { await setReminders(value) } }))

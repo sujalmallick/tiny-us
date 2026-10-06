@@ -18,4 +18,9 @@ struct SharedWorldView: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIViewController, context: Context) {}
+
+    /// Switching to the classic world: the shared world's music stops with it.
+    static func dismantleUIViewController(_ uiViewController: UIViewController, coordinator: ()) {
+        SharedSound.shared.stop()
+    }
 }

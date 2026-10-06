@@ -24,10 +24,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import java.util.Collections
 import kotlin.coroutines.coroutineContext
-import kotlin.math.sin
-import kotlin.math.cos
-import kotlin.math.exp
-import kotlin.math.tanh
 
 class AmbientAudio(var context: Context? = null) : WorldAudio {
     private val scope = CoroutineScope(Dispatchers.Default)
@@ -206,67 +202,8 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
 
     private val sampleRate = 22050
 
-    // Offline music box: original chiptune melodies (no licensed songs or melodies are bundled)
-    override val playlist: List<Song> = listOf(
-        Song(
-            id = "heartbeat",
-            title = "Heartbeat",
-            artist = "Cozy Love Pulse",
-            vibe = "Acoustic Warmth • Gentle",
-            notes = listOf(
-                MusicalNote(146.83, 130, 180), // bass thump
-                MusicalNote(146.83, 130, 260), // double thump
-                MusicalNote(587.33, 250, 290), // D5
-                MusicalNote(739.99, 250, 290), // F#5
-                MusicalNote(880.00, 360, 420), // A5
-                MusicalNote(987.77, 330, 370), // B5
-                MusicalNote(880.00, 310, 350), // A5
-                MusicalNote(739.99, 270, 310), // F#5
-                MusicalNote(659.25, 270, 310), // E5
-                MusicalNote(587.33, 500, 750)  // D5
-            )
-        ),
-        Song(
-            id = "lullaby_theme",
-            title = "Tiny Us Lullaby",
-            artist = "Our Theme Song",
-            vibe = "Cozy Music Box • Original",
-            notes = listOf(
-                MusicalNote(523.25, 380, 500), // C5
-                MusicalNote(659.25, 380, 500), // E5
-                MusicalNote(783.99, 380, 500), // G5
-                MusicalNote(880.00, 380, 500), // A5
-                MusicalNote(1046.50, 420, 550),// C6
-                MusicalNote(880.00, 380, 500), // A5
-                MusicalNote(783.99, 380, 500), // G5
-                MusicalNote(659.25, 380, 500), // E5
-                MusicalNote(587.33, 380, 500), // D5
-                MusicalNote(659.25, 380, 500), // E5
-                MusicalNote(783.99, 380, 500), // G5
-                MusicalNote(523.25, 550, 800)  // C5
-            )
-        ),
-        Song(
-            id = "midnight_slumber",
-            title = "Midnight Slumber",
-            artist = "Cozy Lullaby",
-            vibe = "Dreamy Midnight • Soothing",
-            notes = listOf(
-                MusicalNote(440.00, 480, 620), // A4
-                MusicalNote(523.25, 480, 620), // C5
-                MusicalNote(659.25, 650, 850), // E5
-                MusicalNote(587.33, 480, 620), // D5
-                MusicalNote(523.25, 480, 620), // C5
-                MusicalNote(493.88, 550, 750), // B4
-                MusicalNote(440.00, 700, 950), // A4
-                MusicalNote(392.00, 480, 620), // G4
-                MusicalNote(440.00, 480, 620), // A4
-                MusicalNote(523.25, 650, 850), // C5
-                MusicalNote(659.25, 500, 650), // E5
-                MusicalNote(783.99, 750, 1000) // G5
-            )
-        )
-    )
+    // Offline music box: original chiptune melodies, shared with iOS
+    override val playlist: List<Song> = MusicBoxSongs.playlist
 
     override var currentSong: Song by mutableStateOf(playlist[0])
         private set
@@ -369,7 +306,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
         if (!isEnabled) return
 
         val numSamples = (sampleRate * durationMs / 1000).coerceAtLeast(64)
-        val buffer = generateToneSamples(freq, numSamples, volume, isMusicBox)
+        val buffer = ToneSynth.tone(freq, numSamples, volume, isMusicBox, sampleRate)
         val bufferBytes = buffer.size * 2
         val minBufBytes = AudioTrack.getMinBufferSize(
             sampleRate,
@@ -610,7 +547,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
                     val note = notes[i]
                     if (note.freq > 0.0) {
                         val numSamples = (sampleRate * note.durationMs / 1000).coerceAtLeast(64)
-                        val tone = generateToneSamples(note.freq, numSamples, volume = 0.65f, isMusicBox = true)
+                        val tone = ToneSynth.tone(note.freq, numSamples, MusicBoxSongs.NOTE_VOLUME, isMusicBox = true, sampleRate = sampleRate)
                         var written = 0
                         while (written < tone.size && coroutineContext.isActive && musicBoxState == MusicBoxState.PLAYING) {
                             val chunk = (tone.size - written).coerceAtMost(512)
@@ -622,7 +559,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
                     if (!coroutineContext.isActive || musicBoxState != MusicBoxState.PLAYING) break
 
                     // Responsive silence gap between notes
-                    val gapMs = (note.delayAfterMs - note.durationMs).coerceAtLeast(20L)
+                    val gapMs = MusicBoxSongs.gapAfterMs(note)
                     val gapSamples = (sampleRate * gapMs / 1000).toInt()
                     var gapWritten = 0
                     while (gapWritten < gapSamples && coroutineContext.isActive && musicBoxState == MusicBoxState.PLAYING) {
@@ -640,7 +577,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
                 // Peaceful silence between full loops
                 if (coroutineContext.isActive && musicBoxState == MusicBoxState.PLAYING) {
                     currentNoteIndex = 0
-                    val loopGapSamples = (sampleRate * 1200L / 1000).toInt()
+                    val loopGapSamples = (sampleRate * MusicBoxSongs.LOOP_GAP_MS / 1000).toInt()
                     var loopWritten = 0
                     while (loopWritten < loopGapSamples && coroutineContext.isActive && musicBoxState == MusicBoxState.PLAYING) {
                         val chunk = (loopGapSamples - loopWritten).coerceAtMost(512)
@@ -1048,61 +985,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
         cachedThunderBuffer?.let { return it }
         synchronized(thunderLock) {
             cachedThunderBuffer?.let { return it }
-            val durationMs = 2600
-            val numSamples = (sampleRate * durationMs / 1000)
-            val buffer = ShortArray(numSamples)
-
-            // Multi-stage echo reflections: strike clap followed by cloud reverberations
-            val echoes = listOf(
-                Triple(0.10, 1.00, 0.15),  // Concussive strike clap
-                Triple(0.45, 0.85, 0.25),  // First cloud echo wave
-                Triple(1.00, 0.70, 0.35),  // Second rolling boom
-                Triple(1.80, 0.50, 0.40)   // Lingering rolling echo
-            )
-
-            var lp1 = 0.0
-            var lp2 = 0.0
-            var bassPhase = 0.0
-
-            for (i in 0 until numSamples) {
-                val tSec = i.toDouble() / sampleRate
-                val progress = tSec / 2.6
-
-                // 1. Initial lightning strike crack (crisp electrical snap in first 80ms)
-                val snapEnv = if (tSec < 0.015) tSec / 0.015 else exp(-(tSec - 0.015) * 28.0)
-                val snapWhite = (kotlin.random.Random.nextDouble() * 2.0 - 1.0)
-                val snapNoise = snapWhite * snapEnv * 0.55
-
-                // 2. Multi-stage rolling thunder envelope
-                var rumbleGain = 0.0
-                for ((center, gain, width) in echoes) {
-                    val dt = tSec - center
-                    val w = if (dt < 0) width * 0.4 else width
-                    val bell = exp(-(dt * dt) / (2.0 * w * w))
-                    rumbleGain += bell * gain
-                }
-                val masterEnv = exp(-progress * 1.8) * (1.0 - exp(-tSec * 40.0))
-                val totalRumble = (rumbleGain * masterEnv).coerceAtMost(1.2)
-
-                // 3. Resonant bass sweep from 130 Hz down to 68 Hz with rich harmonics
-                val bassFreq = 130.0 - progress * 62.0
-                bassPhase += 2.0 * Math.PI * bassFreq / sampleRate
-                val bassWave = sin(bassPhase) * 0.45 + sin(bassPhase * 1.5) * 0.30 + sin(bassPhase * 2.0) * 0.15
-
-                // 4. Low-pass roar noise (thunder rumbling through clouds: cutoff ~350Hz)
-                val white = (kotlin.random.Random.nextDouble() * 2.0 - 1.0)
-                lp1 += 0.09 * (white - lp1)
-                lp2 += 0.09 * (lp1 - lp2)
-
-                // 5. Combine strike snap + deep resonant bass + rolling roar
-                val combined = (bassWave * 0.50 + lp2 * 1.8) * totalRumble + snapNoise
-
-                // Soft saturation for explosive acoustic body
-                val saturated = tanh(combined * 1.5) * 0.92
-
-                buffer[i] = (saturated * Short.MAX_VALUE).toInt()
-                    .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-            }
+            val buffer = ToneSynth.thunder(sampleRate)
             cachedThunderBuffer = buffer
             return buffer
         }
@@ -1117,78 +1000,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
                 scope.launch { getOrCreateThunderBuffer() }
 
                 // 2 seconds of soothing rain ambient with seamless loop
-                val durationSec = 2
-                val numSamples = sampleRate * durationSec
-                val rawSamples = DoubleArray(numSamples)
-
-                // 1. Layer 1: Warm low-pass filtered bed (rain on grass, leaves, and cottage roof)
-                var b0 = 0.0
-                var b1 = 0.0
-                var b2 = 0.0
-                var brown = 0.0
-                var lp1 = 0.0
-                var lp2 = 0.0
-
-                for (i in 0 until numSamples) {
-                    val white = kotlin.random.Random.nextDouble() * 2.0 - 1.0
-                    // Pink noise generation
-                    b0 = 0.99765 * b0 + white * 0.055
-                    b1 = 0.96300 * b1 + white * 0.115
-                    b2 = 0.57000 * b2 + white * 0.220
-                    val pink = (b0 + b1 + b2) * 0.35
-                    brown = (brown + 0.06 * white) / 1.06
-
-                    // Warm blend
-                    val rainBed = pink * 0.45 + brown * 0.55
-
-                    // Dual-pole low pass filter (cutoff ~700 Hz: removes all harsh rushing flood hiss)
-                    lp1 += 0.18 * (rainBed - lp1)
-                    lp2 += 0.18 * (lp1 - lp2)
-
-                    // Gentle natural swell (soft breeze undulating rain against window)
-                    val tSec = i.toDouble() / sampleRate
-                    val breeze = 0.88 + 0.12 * sin(2.0 * Math.PI * tSec / 4.2)
-                    rawSamples[i] = lp2 * breeze
-                }
-
-                // 2. Layer 2: Soft, gentle individual raindrop patter (cozy muffled plinks)
-                val numDrops = 35
-                for (d in 0 until numDrops) {
-                    val dropStart = kotlin.random.Random.nextInt(numSamples - 1000)
-                    val dropDur = kotlin.random.Random.nextInt(250, 550) // ~11ms - 25ms
-                    val dropFreq = kotlin.random.Random.nextDouble(420.0, 880.0) // warm soothing frequencies
-                    val dropVol = kotlin.random.Random.nextDouble(0.04, 0.09) // soft gentle patter
-                    for (j in 0 until dropDur) {
-                        val progress = j.toDouble() / dropDur
-                        val decay = exp(-progress * 8.0)
-                        val dropTone = sin(2.0 * Math.PI * j * dropFreq / sampleRate)
-                        rawSamples[dropStart + j] += dropTone * decay * dropVol
-                    }
-                }
-
-                // 3. Seamless crossfade at buffer boundaries (0.3s)
-                val fadeLen = (sampleRate * 0.30).toInt()
-                for (i in 0 until fadeLen) {
-                    val t = i.toDouble() / fadeLen
-                    val wIn = sin(t * Math.PI * 0.5)
-                    val wOut = cos(t * Math.PI * 0.5)
-                    val blended = rawSamples[i] * wIn + rawSamples[numSamples - fadeLen + i] * wOut
-                    rawSamples[i] = blended
-                    rawSamples[numSamples - fadeLen + i] = blended
-                }
-
-                // 4. Normalized master gain (gentle, clearly audible volume)
-                var maxAmp = 0.0
-                for (i in 0 until numSamples) {
-                    val a = kotlin.math.abs(rawSamples[i])
-                    if (a > maxAmp) maxAmp = a
-                }
-                val scale = if (maxAmp > 0.001) (0.60 / maxAmp) else 1.0
-                val buffer = ShortArray(numSamples)
-                for (i in 0 until numSamples) {
-                    buffer[i] = (rawSamples[i] * scale * Short.MAX_VALUE).toInt()
-                        .coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-                }
+                val buffer = ToneSynth.rainLoop(sampleRate)
 
                 val minBuf = AudioTrack.getMinBufferSize(
                     sampleRate,
@@ -1275,77 +1087,16 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
         }
     }
 
-    override fun playHeartChime() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(
-                    Triple(1046.50, 110, 0.45f), // C6
-                    Triple(1318.51, 140, 0.45f), // E6
-                    Triple(1567.98, 190, 0.45f)  // G6
-                )
-                for ((freq, dur, vol) in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(freq, dur, vol, isMusicBox = true)
-                    delay(20)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playHeartChime() = playCue(SoundCue.HEART_CHIME)
 
     /** Procedural mechanical instant camera shutter click with warm chime. */
-    override fun playCameraShutter() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                // Mechanical shutter click
-                playSfxNoteStatic(1760.0, 25, 0.45f, isMusicBox = false)
-                delay(35)
-                playSfxNoteStatic(880.0, 40, 0.40f, isMusicBox = false)
-                delay(55)
-                // Gentle starlight chime
-                playSfxNoteStatic(1318.51, 90, 0.35f, isMusicBox = true) // E6
-                delay(25)
-                playSfxNoteStatic(1760.00, 140, 0.40f, isMusicBox = true) // A6
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playCameraShutter() = playCue(SoundCue.CAMERA_SHUTTER)
 
-    override fun playBubblePop() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(784.0, 60, 0.38f, isMusicBox = false)
-                delay(15)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1174.6, 85, 0.38f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playBubblePop() = playCue(SoundCue.BUBBLE_POP)
 
-    override fun playStarTwinkle() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(
-                    Triple(1318.5, 75, 0.38f),
-                    Triple(1567.98, 105, 0.38f),
-                    Triple(2093.0, 140, 0.38f)
-                )
-                for ((freq, dur, vol) in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(freq, dur, vol, isMusicBox = true)
-                    delay(15)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playStarTwinkle() = playCue(SoundCue.STAR_TWINKLE)
 
-    override fun playLeafRustle() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) { playNoise(140, 0.22f) }
-    }
+    override fun playLeafRustle() = playCue(SoundCue.LEAF_RUSTLE)
 
     override fun playFootstep() {
         if (!isEnabled) return
@@ -1365,89 +1116,30 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
         }
     }
 
-    override fun playBirdChirp() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(2349.32, 60, 0.35f, isMusicBox = true)
-                delay(15)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(2793.83, 80, 0.35f, isMusicBox = true)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playBirdChirp() = playCue(SoundCue.BIRD_CHIRP)
 
-    override fun playCookingBubbles() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(587.33, 40, 0.30f, isMusicBox = false)
-                delay(10)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(783.99, 45, 0.30f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playCookingBubbles() = playCue(SoundCue.COOKING_BUBBLES)
 
-    override fun playScooterHorn() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(880.0, 60, 0.40f, isMusicBox = false)
-                delay(20)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1174.66, 90, 0.45f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playScooterHorn() = playCue(SoundCue.SCOOTER_HORN)
 
-    override fun playCatPurr() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                repeat(4) {
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(140.0, 55, 0.28f, isMusicBox = false)
-                    delay(30)
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(115.0, 75, 0.24f, isMusicBox = false)
-                    delay(60)
-                }
-                if (isEnabled) {
-                    playSfxNoteStatic(880.0, 45, 0.22f, isMusicBox = true)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playCatPurr() = playCue(SoundCue.CAT_PURR)
 
-    override fun playWindChime() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1046.50, 80, 0.25f, isMusicBox = true)
-                delay(40)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1318.51, 90, 0.28f, isMusicBox = true)
-                delay(40)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1567.98, 120, 0.30f, isMusicBox = true)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playWindChime() = playCue(SoundCue.WIND_CHIME)
 
-    override fun playThinkingOfYouChime() {
+    override fun playThinkingOfYouChime() = playCue(SoundCue.THINKING_OF_YOU)
+
+    /** Plays a shared sound recipe note by note, exactly as the world's sounds always played. */
+    private fun playCue(cue: SoundCue) {
         if (!isEnabled) return
         scope.launch(Dispatchers.IO) {
             try {
-                val notes = listOf(523.25, 659.25, 783.99, 1046.50)
-                for (f in notes) {
+                for (step in cue.steps) {
                     if (!isEnabled) break
-                    playSfxNoteStatic(f, 70, 0.35f, isMusicBox = true)
-                    delay(50)
+                    when (step) {
+                        is SoundStep.Note -> playSfxNoteStatic(step.freq, step.ms, step.volume, step.musicBox)
+                        is SoundStep.Gap -> delay(step.ms.toLong())
+                        is SoundStep.Noise -> playNoise(step.ms, step.volume)
+                    }
                 }
             } catch (_: Exception) {}
         }
@@ -1456,14 +1148,7 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
     private fun playNoise(durationMs: Int, volume: Float) {
         if (!isEnabled) return
         val numSamples = (sampleRate * durationMs / 1000).coerceAtLeast(50)
-        val buffer = ShortArray(numSamples)
-        var last = 0f
-        for (i in 0 until numSamples) {
-            val white = (Math.random() * 2.0 - 1.0).toFloat()
-            last = (last + (0.05f * white)) / 1.05f
-            val env = 1.0 - (i.toDouble() / numSamples)
-            buffer[i] = (last * env * volume * Short.MAX_VALUE).toInt().toShort()
-        }
+        val buffer = ToneSynth.noise(numSamples, volume)
         val bufferBytes = buffer.size * 2
         val minBuf = AudioTrack.getMinBufferSize(
             sampleRate,
@@ -1517,392 +1202,73 @@ class AmbientAudio(var context: Context? = null) : WorldAudio {
         }
     }
 
-    private fun generateToneSamples(
-        frequency: Double,
-        numSamples: Int,
-        volume: Float = 0.55f,
-        isMusicBox: Boolean = true
-    ): ShortArray {
-        val buffer = ShortArray(numSamples)
-        val decaySamples = (numSamples * 0.85).toInt().coerceAtLeast(1)
-        val attackSamples = (numSamples * 0.05).toInt().coerceIn(120, 360)
-        val releaseSamples = 160.coerceAtMost(numSamples / 4)
+    // Kitchen: the clock ticking
+    override fun playTickTick() = playCue(SoundCue.TICK_TICK)
 
-        for (i in 0 until numSamples) {
-            val t = 2.0 * Math.PI * i / (sampleRate / frequency)
-            var sample = sin(t)
-
-            if (isMusicBox) {
-                // Rich harmonic celesta/music box timbre (fundamental + 2nd + 3rd + detuned chime)
-                sample += 0.35 * sin(2.0 * t)
-                sample += 0.18 * sin(3.0 * t)
-                sample += 0.08 * sin(4.004 * t)
-                sample /= 1.61
-            }
-
-            // Smooth cosine attack ramp to eliminate starting clicks
-            val attackGain = if (i < attackSamples) {
-                0.5 * (1.0 - cos(Math.PI * i / attackSamples))
-            } else {
-                1.0
-            }
-
-            // Exponential musical ring decay
-            val decayGain = if (i >= attackSamples) {
-                val progress = ((i - attackSamples).toDouble() / decaySamples).coerceIn(0.0, 1.0)
-                exp(-2.6 * progress)
-            } else {
-                1.0
-            }
-
-            // Smooth cosine release fade to zero on buffer tail to eliminate ending pops
-            val releaseGain = if (i >= numSamples - releaseSamples) {
-                val relIdx = i - (numSamples - releaseSamples)
-                0.5 * (1.0 + cos(Math.PI * relIdx / releaseSamples))
-            } else {
-                1.0
-            }
-
-            val envelope = attackGain * decayGain * releaseGain
-            val finalSample = (sample * envelope * volume * Short.MAX_VALUE).toInt()
-            buffer[i] = finalSample.coerceIn(Short.MIN_VALUE.toInt(), Short.MAX_VALUE.toInt()).toShort()
-        }
-        return buffer
-    }
-
-    // Kitchen: clock tick sound — two short high sine pulses like clock hands
-    override fun playTickTick() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1200.0, 35, 0.28f, isMusicBox = false)
-                delay(80)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1200.0, 35, 0.22f, isMusicBox = false)
-                delay(80)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1200.0, 35, 0.16f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
-
-    // Kitchen: wooden knock — short low square-ish burst for crate rattle
     // Seaside Pier: Pip's cheeky two-note squawk, twice
-    override fun playSeagullCall() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                repeat(2) {
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(1318.51, 70, 0.26f, isMusicBox = false)
-                    delay(20)
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(987.77, 110, 0.22f, isMusicBox = false)
-                    delay(90)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSeagullCall() = playCue(SoundCue.SEAGULL_CALL)
 
     // Seaside Pier: soft, low lighthouse foghorn (root and fifth)
-    override fun playFoghorn() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(110.0, 520, 0.30f, isMusicBox = false)
-                delay(60)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(164.81, 420, 0.20f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playFoghorn() = playCue(SoundCue.FOGHORN)
 
     // Seaside Pier: the little sailboat's cheerful "toot toot"
-    override fun playBoatHorn() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                repeat(2) {
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(261.63, 160, 0.24f, isMusicBox = false)
-                    delay(110)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playBoatHorn() = playCue(SoundCue.BOAT_HORN)
 
     // Seaside Pier: Grandpa Bao's fishing reel ticking
-    override fun playReelClick() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                repeat(6) {
-                    if (!isEnabled) return@launch
-                    playSfxNoteStatic(1760.0, 18, 0.16f, isMusicBox = false)
-                    delay(38)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playReelClick() = playCue(SoundCue.REEL_CLICK)
 
-    override fun playWoodKnock() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(220.0, 55, 0.32f, isMusicBox = false)
-                delay(40)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(196.0, 50, 0.26f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playWoodKnock() = playCue(SoundCue.WOOD_KNOCK)
 
     // Kitchen: gentle water drip — 4 descending soft sine pings for planter watering
-    override fun playWaterDrip() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val freqs = listOf(1200.0, 1000.0, 880.0, 740.0)
-                for (f in freqs) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(f, 70, 0.20f, isMusicBox = true)
-                    delay(55)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playWaterDrip() = playCue(SoundCue.WATER_DRIP)
 
     // Kitchen: wood creak — pitched-down burst for step-stool wobble
-    override fun playWoodCreak() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(320.0, 110, 0.28f, isMusicBox = false)
-                delay(40)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(280.0, 80, 0.20f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playWoodCreak() = playCue(SoundCue.WOOD_CREAK)
 
     // Living Room: gentle candle flicker chime
-    override fun playCandleFlicker() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(659.25, 60, 0.22f, isMusicBox = true)
-                delay(50)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(783.99, 70, 0.20f, isMusicBox = true)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playCandleFlicker() = playCue(SoundCue.CANDLE_FLICKER)
 
     // Living Room: soft pillow thud for pouf bounce
-    override fun playSoftThud() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(110.0, 70, 0.32f, isMusicBox = false)
-                delay(30)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(95.0, 50, 0.22f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSoftThud() = playCue(SoundCue.SOFT_THUD)
 
     // Living Room: cute cat chirp for Mochi's box peek
-    override fun playCatChirp() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1760.0, 45, 0.30f, isMusicBox = true)
-                delay(65)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(2093.0, 55, 0.28f, isMusicBox = true)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playCatChirp() = playCue(SoundCue.CAT_CHIRP)
 
     // Living Room: soft rolling sound for yarn ball
-    override fun playSoftRoll() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(261.63, 246.94, 220.00)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 40, 0.24f, isMusicBox = false)
-                    delay(45)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSoftRoll() = playCue(SoundCue.SOFT_ROLL)
 
     // Living Room: paper flip sound for magazine/record rack
-    override fun playPaperFlip() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1567.98, 30, 0.24f, isMusicBox = false)
-                delay(35)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(1760.00, 40, 0.22f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playPaperFlip() = playCue(SoundCue.PAPER_FLIP)
 
     // Lantern Stroll: pagoda crystal chime
-    override fun playPagodaChime() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(1318.51, 1567.98, 1760.00)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 65, 0.24f, isMusicBox = true)
-                    delay(55)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playPagodaChime() = playCue(SoundCue.PAGODA_CHIME)
 
     // Lantern Stroll: soft wind & lavender rustle
-    override fun playLavenderRustle() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(440.00, 392.00, 349.23)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 80, 0.18f, isMusicBox = false)
-                    delay(60)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playLavenderRustle() = playCue(SoundCue.LAVENDER_RUSTLE)
 
     // Lantern Stroll: bioluminescent mushroom chime
-    override fun playMushroomChime() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(523.25, 659.25, 783.99, 1046.50)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 50, 0.22f, isMusicBox = true)
-                    delay(45)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playMushroomChime() = playCue(SoundCue.MUSHROOM_CHIME)
 
     // Celestial: glowing constellation connect arpeggio
-    override fun playStarArpeggio() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(880.00, 1108.73, 1318.51, 1760.00)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 70, 0.26f, isMusicBox = true)
-                    delay(60)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playStarArpeggio() = playCue(SoundCue.STAR_ARPEGGIO)
 
     // Momo Stall: neon sign hum/buzz flicker
-    override fun playNeonBuzz() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(220.0, 246.94, 220.0)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 50, 0.24f, isMusicBox = false)
-                    delay(45)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playNeonBuzz() = playCue(SoundCue.NEON_BUZZ)
 
     // Momo Stall: escaping steam hiss
-    override fun playSteamHiss() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(2800.0, 2400.0, 2000.0)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 45, 0.20f, isMusicBox = false)
-                    delay(40)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSteamHiss() = playCue(SoundCue.STEAM_HISS)
 
     // Momo Stall: spicy zing chime
-    override fun playSpiceZing() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                playSfxNoteStatic(2093.0, 50, 0.25f, isMusicBox = true)
-                delay(40)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(2637.0, 60, 0.22f, isMusicBox = true)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSpiceZing() = playCue(SoundCue.SPICE_ZING)
 
     // Momo Stall: chalk squeak on chalkboard menu
-    override fun playChalkSqueak() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                val notes = listOf(1975.5, 2093.0, 2217.4)
-                for (n in notes) {
-                    if (!isEnabled) break
-                    playSfxNoteStatic(n, 35, 0.20f, isMusicBox = false)
-                    delay(35)
-                }
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playChalkSqueak() = playCue(SoundCue.CHALK_SQUEAK)
 
     // Momo Stall: hollow bamboo crate knock
-    override fun playBambooKnock() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                playSfxNoteStatic(392.0, 50, 0.26f, isMusicBox = false)
-                delay(45)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(329.63, 45, 0.22f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playBambooKnock() = playCue(SoundCue.BAMBOO_KNOCK)
 
     // Momo Stall: milk saucer sip click
-    override fun playSaucerSip() {
-        if (!isEnabled) return
-        scope.launch(Dispatchers.IO) {
-            try {
-                playSfxNoteStatic(880.0, 30, 0.22f, isMusicBox = false)
-                delay(35)
-                if (!isEnabled) return@launch
-                playSfxNoteStatic(987.77, 35, 0.20f, isMusicBox = false)
-            } catch (_: Exception) {}
-        }
-    }
+    override fun playSaucerSip() = playCue(SoundCue.SAUCER_SIP)
 }
 
 
