@@ -1,6 +1,6 @@
 # Plan 07 D1: requests from the couple (design for FEATURES)
 
-Written 2026-10-06 by GROWTH. Status: **reviewed by FEATURES on 2026-10-06; agreed, with the changes in "FEATURES review" at the end**. Nothing is built yet.
+Written 2026-10-06 by GROWTH. Status: **reviewed by FEATURES on 2026-10-06; agreed, with the changes in "FEATURES review" below. FEATURES' side is built (see "Built so far" at the end); GROWTH's side is next.**
 
 ## The idea
 
@@ -110,4 +110,32 @@ Agreed overall: it is rare, has no pressure, and reuses existing props. Answers 
 ### Ownership
 
 As proposed: FEATURES does the `Behavior`, the brain's weights, the director and `ActiveRequest`, and the `requests.onUsed(...)` lines. GROWTH does the bubble and icons (including the loft path), strings, progress events and the little firsts. Each side writes the tests for its part.
+
+## Built so far (FEATURES, 2026-10-06)
+
+The routine side is done on branch `feature/couple-requests`. A request starts, waits and is granted or fades; nothing shows on screen yet.
+
+- `scene/autonomy/CoupleRequests.kt`: `RequestKind` (WARM, TEA, SONG, SNACK, MOCHI) and the timing, as in the review.
+- `Behavior.ASK_FOR_SOMETHING` (category `REQUEST`) and `BehaviorContext.requestAvailable`.
+- `SceneEngine` (in its "Requests (plan 07 D1)" section):
+  - `requestFits`: which kinds fit where, as in the table, except that the kitchen's SNACK is the fridge (it already has snack lines) and the treat jar grants MOCHI, since it is Mochi's.
+  - `grantRequest(kind)`: added as the first line of each granting tap handler.
+
+### What GROWTH can build on
+
+| API | Use |
+|---|---|
+| `engine.requests.active`, `.kind`, `.fade` (1, falling to 0 over the last 5 s) | Draw the bubble: which icon, and how faded. |
+| `engine.requestAsker` | The character to put it over (null when there's no request). In the loft, place it over the cuddled sprite. |
+| `announceRequest(c, kind)` (private, in `SceneEngine`) | Where the asker turns toward the prop. Add the spoken line here. |
+| `engine.onRequestGranted: ((RequestKind) -> Unit)?` | Called on every grant: the place for `ProgressEvent.RequestGranted(kind)` and the thank-you line. Hearts, sparkles and the tea mug already play. |
+| `engine.startRequestForTest(kind, asker)` | Starts one at once, for previews, the filmstrip and bubble renders. |
+
+Still to do on GROWTH's side:
+- the five 7 x 6 icons, the bob and the gold outline;
+- hiding the asker's emote bubble while a request is up;
+- the loft drawing path;
+- strings, progress and the little firsts.
+
+Tests: `CoupleRequestsTest` covers the timing, the brain's weight, granting at the right prop (and not at a wrong one), fading, a mini-game dropping the request, a request starting by itself in the loft (never in the first 90 s), and none on the scooter.
 
