@@ -7,6 +7,7 @@ import UIKit
 struct ContentView: View {
     /// What stopped the shared app last time (read once at launch), if anything.
     @State private var problem: String? = LaunchDiagnostics.shared.lastProblem()
+    @Environment(\.scenePhase) private var scenePhase
 
     var body: some View {
         if let problem = problem {
@@ -18,6 +19,12 @@ struct ContentView: View {
             SharedMainView()
                 .ignoresSafeArea()
                 .preferredColorScheme(.light)
+                .overlay {
+                    // With the app lock's "Hide in recent apps", the app switcher sees a plain cover.
+                    if scenePhase != .active && IosLock.shared.shouldHidePreview() {
+                        PrivacyCover()
+                    }
+                }
         }
     }
 }
@@ -45,6 +52,16 @@ private struct ProblemView: View {
             }
             .padding(20)
             .navigationTitle("Something went wrong").navigationBarTitleDisplayMode(.inline)
+        }
+    }
+}
+
+/// What the app switcher shows while the app lock hides the app.
+private struct PrivacyCover: View {
+    var body: some View {
+        ZStack {
+            Color(red: 1.0, green: 0.976, blue: 0.961).ignoresSafeArea()
+            Image(systemName: "lock.fill").font(.system(size: 44)).foregroundStyle(Color(red: 0.89, green: 0.45, blue: 0.53))
         }
     }
 }

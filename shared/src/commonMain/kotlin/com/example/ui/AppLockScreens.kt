@@ -1,8 +1,5 @@
 package com.example.ui
 
-import android.content.Context
-import android.content.ContextWrapper
-import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -20,10 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.rounded.Backspace
-import androidx.compose.material.icons.rounded.Fingerprint
-import androidx.compose.material.icons.rounded.Lock
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
@@ -37,22 +30,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.pluralStringResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.fragment.app.FragmentActivity
-import com.example.R
 import com.example.data.AppLockPolicy
 import com.example.security.AppLock
 import com.example.security.AppLockStore
-import com.example.security.DiscreetMode
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
@@ -60,32 +47,29 @@ import kotlinx.coroutines.delay
 import com.example.ui.theme.PixelCircleShape
 import com.example.ui.theme.PixelIcons
 import com.example.resources.*
-
-internal tailrec fun Context.findFragmentActivity(): FragmentActivity? = when (this) {
-    is FragmentActivity -> this
-    is ContextWrapper -> baseContext.findFragmentActivity()
-    else -> null
-}
+import com.example.security.LocalLockDevice
+import com.example.security.LockDevice
+import kotlin.time.Clock
+import org.jetbrains.compose.resources.pluralStringResource
+import org.jetbrains.compose.resources.stringResource
 
 /** Full-screen lock shown instead of the app while [AppLock.isLocked]. */
 @Composable
 fun AppLockScreen(store: AppLockStore) {
-    val context = LocalContext.current
-    val activity = remember(context) { context.findFragmentActivity() }
+    val device = LocalLockDevice.current
     var pin by remember { mutableStateOf("") }
     var message by remember { mutableStateOf<String?>(null) }
     var cooldownLeft by remember { mutableIntStateOf(0) }
     var showForgotHelp by remember { mutableStateOf(false) }
 
-    val biometricsReady = activity != null && store.biometricsEnabled && AppLock.canUseBiometrics(activity)
-    val unlockTitle = stringResource(R.string.lock_biometric_title)
-    val unlockSubtitle = stringResource(R.string.lock_biometric_subtitle)
-    val usePin = stringResource(R.string.lock_use_pin)
-    val wrongPin = stringResource(R.string.lock_wrong_pin)
+    val biometricsReady = store.biometricsEnabled && device.biometricsAvailable()
+    val unlockTitle = stringResource(Res.string.lock_biometric_title)
+    val unlockSubtitle = stringResource(if (device.isApple) Res.string.lock_biometric_subtitle_ios else Res.string.lock_biometric_subtitle)
+    val usePin = stringResource(Res.string.lock_use_pin)
+    val wrongPin = stringResource(Res.string.lock_wrong_pin)
 
     fun promptBiometric() {
-        if (activity == null) return
-        AppLock.promptBiometric(activity, unlockTitle, unlockSubtitle, usePin, allowDeviceCredential = false) {
+        device.promptBiometric(unlockTitle, unlockSubtitle, usePin, allowDeviceCredential = false) {
             store.recordSuccess()
             AppLock.unlock()
         }
@@ -93,7 +77,8 @@ fun AppLockScreen(store: AppLockStore) {
 
     LaunchedEffect(Unit) {
         val until = store.lockedOutUntil
-        if (until > System.currentTimeMillis()) cooldownLeft = ((until - System.currentTimeMillis()) / 1000).toInt() + 1
+        val now = Clock.System.now().toEpochMilliseconds()
+        if (until > now) cooldownLeft = ((until - now) / 1000).toInt() + 1
         if (biometricsReady) promptBiometric()
     }
     LaunchedEffect(cooldownLeft) {
@@ -122,14 +107,14 @@ fun AppLockScreen(store: AppLockStore) {
         ) {
             TinyIconBadge(icon = PixelIcons.Lock, size = 64.dp, iconSize = 28.dp)
             Spacer(Modifier.height(TinySpace.lg))
-            Text(stringResource(R.string.lock_title), style = TinyType.Display, textAlign = TextAlign.Center)
+            Text(stringResource(Res.string.lock_title), style = TinyType.Display, textAlign = TextAlign.Center)
             Spacer(Modifier.height(TinySpace.xs))
-            Text(stringResource(R.string.lock_subtitle), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
+            Text(stringResource(Res.string.lock_subtitle), style = TinyType.Body.copy(color = TinyColors.InkMuted), textAlign = TextAlign.Center)
             Spacer(Modifier.height(TinySpace.xl))
             PinDots(pin.length)
             Spacer(Modifier.height(10.dp))
             val status = when {
-                cooldownLeft > 0 -> stringResource(R.string.lock_cooldown, cooldownLeft)
+                cooldownLeft > 0 -> stringResource(Res.string.lock_cooldown, cooldownLeft)
                 else -> message
             }
             Text(
@@ -147,14 +132,14 @@ fun AppLockScreen(store: AppLockStore) {
             )
             Spacer(Modifier.height(TinySpace.xl))
             PrimaryPill(
-                text = stringResource(R.string.lock_unlock),
+                text = stringResource(Res.string.lock_unlock),
                 enabled = cooldownLeft == 0 && pin.length >= AppLockPolicy.MIN_PIN_LENGTH,
                 tag = "lock_unlock_button",
                 onClick = ::submit
             )
             Spacer(Modifier.height(TinySpace.sm))
             TinyButton(
-                text = stringResource(R.string.lock_forgot),
+                text = stringResource(Res.string.lock_forgot),
                 onClick = { showForgotHelp = true },
                 style = TinyButtonStyle.Ghost
             )
@@ -162,30 +147,37 @@ fun AppLockScreen(store: AppLockStore) {
     }
 
     if (showForgotHelp) {
-        ForgotPinDialog(activity = activity, store = store, onDismiss = { showForgotHelp = false })
+        ForgotPinDialog(device = device, store = store, onDismiss = { showForgotHelp = false })
     }
 }
 
 @Composable
-private fun ForgotPinDialog(activity: FragmentActivity?, store: AppLockStore, onDismiss: () -> Unit) {
-    val context = LocalContext.current
-    val canReset = activity != null && AppLock.hasDeviceCredential(activity)
-    val title = stringResource(R.string.lock_reset_prompt_title)
-    val subtitle = stringResource(R.string.lock_reset_prompt_subtitle)
-    val resetDone = stringResource(R.string.lock_reset_done)
+private fun ForgotPinDialog(device: LockDevice, store: AppLockStore, onDismiss: () -> Unit) {
+    val canReset = device.hasDeviceCredential()
+    val apple = device.isApple
+    val title = stringResource(Res.string.lock_reset_prompt_title)
+    val subtitle = stringResource(Res.string.lock_reset_prompt_subtitle)
+    val resetDone = stringResource(Res.string.lock_reset_done)
     LockDialogCard(onDismiss) {
-        TinyDialogHeader(title = stringResource(R.string.lock_forgot), icon = PixelIcons.Lock)
+        TinyDialogHeader(title = stringResource(Res.string.lock_forgot), icon = PixelIcons.Lock)
         Text(
-            stringResource(if (canReset) R.string.lock_forgot_body else R.string.lock_forgot_no_screen_lock),
+            stringResource(
+                when {
+                    canReset && apple -> Res.string.lock_forgot_body_ios
+                    canReset -> Res.string.lock_forgot_body
+                    apple -> Res.string.lock_forgot_no_screen_lock_ios
+                    else -> Res.string.lock_forgot_no_screen_lock
+                }
+            ),
             style = TinyType.Body.copy(color = TinyColors.InkMuted)
         )
         if (canReset) {
-            PrimaryPill(stringResource(R.string.lock_reset_with_phone), enabled = true, tag = "lock_reset_button") {
-                AppLock.promptBiometric(activity!!, title, subtitle, "", allowDeviceCredential = true) {
+            PrimaryPill(stringResource(if (apple) Res.string.lock_reset_with_phone_ios else Res.string.lock_reset_with_phone), enabled = true, tag = "lock_reset_button") {
+                device.promptBiometric(title, subtitle, "", allowDeviceCredential = true) {
                     store.disable()
-                    AppLock.applyWindowPrivacy(activity, store)
+                    device.privacyChanged(store)
                     AppLock.unlock()
-                    Toast.makeText(context, resetDone, Toast.LENGTH_LONG).show()
+                    device.showMessage(resetDone)
                 }
                 onDismiss()
             }
@@ -205,12 +197,12 @@ fun PinSetupDialog(onPinChosen: (String) -> Unit, onDismiss: () -> Unit) {
     var first by remember { mutableStateOf<String?>(null) }
     var pin by remember { mutableStateOf("") }
     var error by remember { mutableStateOf<String?>(null) }
-    val mismatch = stringResource(R.string.lock_setup_mismatch)
+    val mismatch = stringResource(Res.string.lock_setup_mismatch)
 
     LockDialogCard(onDismiss) {
         TinyDialogHeader(
-            title = stringResource(if (first == null) R.string.lock_setup_choose else R.string.lock_setup_confirm),
-            subtitle = stringResource(R.string.lock_setup_hint),
+            title = stringResource(if (first == null) Res.string.lock_setup_choose else Res.string.lock_setup_confirm),
+            subtitle = stringResource(Res.string.lock_setup_hint),
             icon = PixelIcons.Lock
         )
         Box(Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) { PinDots(pin.length) }
@@ -228,7 +220,7 @@ fun PinSetupDialog(onPinChosen: (String) -> Unit, onDismiss: () -> Unit) {
             )
         }
         PrimaryPill(
-            text = stringResource(if (first == null) R.string.action_next else R.string.lock_setup_turn_on),
+            text = stringResource(if (first == null) Res.string.action_next else Res.string.lock_setup_turn_on),
             enabled = AppLockPolicy.isValidPin(pin),
             tag = "lock_setup_next"
         ) {
@@ -244,24 +236,23 @@ fun PinSetupDialog(onPinChosen: (String) -> Unit, onDismiss: () -> Unit) {
 
 /** Settings card: PIN lock, biometrics, grace period, preview hiding and discreet mode. */
 @Composable
-fun PrivacyLockSettings() {
-    val context = LocalContext.current
-    val activity = remember(context) { context.findFragmentActivity() }
-    val store = remember(context) { AppLockStore(context) }
+fun PrivacyLockSettings(store: AppLockStore) {
+    val device = LocalLockDevice.current
+    val discreetMode = device.discreetMode
     var enabled by remember { mutableStateOf(store.isEnabled) }
     var biometrics by remember { mutableStateOf(store.biometricsEnabled) }
     var grace by remember { mutableIntStateOf(store.graceSeconds) }
     var hidePreview by remember { mutableStateOf(store.hidePreview) }
-    var discreet by remember { mutableStateOf(DiscreetMode.isEnabled(context)) }
+    var discreet by remember { mutableStateOf(discreetMode?.isEnabled() == true) }
     var showSetup by remember { mutableStateOf(false) }
-    val biometricsAvailable = activity != null && AppLock.canUseBiometrics(activity)
+    val biometricsAvailable = device.biometricsAvailable()
 
-    fun refreshWindow() { activity?.let { AppLock.applyWindowPrivacy(it, store) } }
+    fun refreshWindow() = device.privacyChanged(store)
 
     Column(verticalArrangement = Arrangement.spacedBy(TinySpace.md)) {
         SettingSwitchRow(
-            title = stringResource(R.string.lock_setting_title),
-            subtitle = stringResource(R.string.lock_setting_subtitle),
+            title = stringResource(Res.string.lock_setting_title),
+            subtitle = stringResource(Res.string.lock_setting_subtitle),
             checked = enabled,
             tag = "settings_app_lock_switch"
         ) { on ->
@@ -271,16 +262,16 @@ fun PrivacyLockSettings() {
         }
         if (enabled) {
             if (biometricsAvailable) {
-                SettingSwitchRow(stringResource(R.string.lock_setting_biometrics), null, biometrics, "settings_biometrics_switch") {
+                SettingSwitchRow(stringResource(if (device.isApple) Res.string.lock_setting_biometrics_ios else Res.string.lock_setting_biometrics), null, biometrics, "settings_biometrics_switch") {
                     store.biometricsEnabled = it; biometrics = it
                 }
             }
-            Text(stringResource(R.string.lock_setting_grace), style = TinyType.Caption)
+            Text(stringResource(Res.string.lock_setting_grace), style = TinyType.Caption)
             Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
                 AppLockPolicy.GRACE_PERIOD_OPTIONS_SECONDS.forEach { seconds ->
                     val label = when (seconds) {
-                        0 -> stringResource(R.string.lock_grace_immediately)
-                        else -> stringResource(R.string.lock_grace_minutes, seconds / 60)
+                        0 -> stringResource(Res.string.lock_grace_immediately)
+                        else -> stringResource(Res.string.lock_grace_minutes, seconds / 60)
                     }
                     TinyChip(
                         text = label,
@@ -289,23 +280,25 @@ fun PrivacyLockSettings() {
                     )
                 }
             }
-            SettingSwitchRow(stringResource(R.string.lock_setting_hide_preview), stringResource(R.string.lock_setting_hide_preview_sub), hidePreview, "settings_hide_preview_switch") {
+            SettingSwitchRow(stringResource(Res.string.lock_setting_hide_preview), stringResource(if (device.isApple) Res.string.lock_setting_hide_preview_sub_ios else Res.string.lock_setting_hide_preview_sub), hidePreview, "settings_hide_preview_switch") {
                 store.hidePreview = it; hidePreview = it; refreshWindow()
             }
             TinyButton(
-                text = stringResource(R.string.lock_setting_change_pin),
+                text = stringResource(Res.string.lock_setting_change_pin),
                 onClick = { showSetup = true },
                 style = TinyButtonStyle.Ghost,
                 compact = true
             )
         }
-        SettingSwitchRow(
-            title = stringResource(R.string.discreet_setting_title),
-            subtitle = stringResource(R.string.discreet_setting_subtitle),
-            checked = discreet,
-            tag = "settings_discreet_switch"
-        ) {
-            DiscreetMode.setEnabled(context, it); discreet = it
+        if (discreetMode != null) {
+            SettingSwitchRow(
+                title = stringResource(Res.string.discreet_setting_title),
+                subtitle = stringResource(Res.string.discreet_setting_subtitle),
+                checked = discreet,
+                tag = "settings_discreet_switch"
+            ) {
+                discreetMode.setEnabled(it); discreet = it
+            }
         }
     }
 
@@ -338,7 +331,7 @@ private fun SettingSwitchRow(title: String, subtitle: String?, checked: Boolean,
 
 @Composable
 private fun PinDots(filled: Int) {
-    val dotsDescription = pluralStringResource(R.plurals.ui_pin_digits_entered, filled, filled)
+    val dotsDescription = pluralStringResource(Res.plurals.ui_pin_digits_entered, filled, filled)
     Row(horizontalArrangement = Arrangement.spacedBy(TinySpace.md), modifier = Modifier.semantics { contentDescription = dotsDescription }) {
         repeat(AppLockPolicy.MAX_PIN_LENGTH) { i ->
             val on = i < filled
@@ -363,14 +356,14 @@ private fun PinPad(enabled: Boolean, onDigit: (String) -> Unit, onBackspace: () 
         Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
             if (leftKey != null) {
                 PadKey(true, "pin_key_biometric", onClick = leftKey) {
-                    Icon(PixelIcons.Fingerprint, contentDescription = stringResource(R.string.lock_biometric_title), tint = TinyColors.Rose)
+                    Icon(PixelIcons.Fingerprint, contentDescription = stringResource(Res.string.lock_biometric_title), tint = TinyColors.Rose)
                 }
             } else {
                 Spacer(Modifier.size(64.dp))
             }
             PadKey(enabled, "pin_key_0", onClick = { onDigit("0") }) { PadDigit("0") }
             PadKey(enabled, "pin_key_back", onClick = onBackspace) {
-                Icon(PixelIcons.Backspace, contentDescription = stringResource(R.string.lock_backspace), tint = TinyColors.InkMuted)
+                Icon(PixelIcons.Backspace, contentDescription = stringResource(Res.string.lock_backspace), tint = TinyColors.InkMuted)
             }
         }
     }
@@ -406,7 +399,7 @@ private fun PrimaryPill(text: String, enabled: Boolean, tag: String, onClick: ()
 }
 
 @Composable
-internal fun LockDialogCard(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
+fun LockDialogCard(onDismiss: () -> Unit, content: @Composable ColumnScope.() -> Unit) {
     TinyDialog(
         onDismissRequest = onDismiss,
         verticalSpacing = TinySpace.md,

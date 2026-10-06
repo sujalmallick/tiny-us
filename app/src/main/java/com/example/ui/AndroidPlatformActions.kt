@@ -13,6 +13,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import com.example.care.TinyCareScheduler
+import com.example.security.AndroidLockDevice
+import com.example.security.AppLockStore
+import com.example.security.LocalLockDevice
 import com.example.ui.theme.MyApplicationTheme
 import com.example.widget.TinyUsWidgetProvider
 
@@ -30,7 +33,7 @@ class AndroidPlatformActions(private val context: Context) : PlatformActions {
         return reminders
     }
 
-    override val privacySettings: (@Composable () -> Unit) = { PrivacyLockSettings() }
+    override val privacySettings: (@Composable () -> Unit) = { PrivacyLockSettings(remember { AppLockStore(context) }) }
 
     override val backupSettings: (@Composable () -> Unit) = { BackupRestoreSettings() }
 }
@@ -66,7 +69,8 @@ private class AndroidReminders(private val context: Context) : Reminders {
 fun AndroidAppRoot(content: @Composable () -> Unit) {
     val context = LocalContext.current
     val actions = remember { AndroidPlatformActions(context.applicationContext) }
+    val lockDevice = remember(context) { AndroidLockDevice(context) }
     MyApplicationTheme {
-        CompositionLocalProvider(LocalPlatformActions provides actions, content = content)
+        CompositionLocalProvider(LocalPlatformActions provides actions, LocalLockDevice provides lockDevice, content = content)
     }
 }

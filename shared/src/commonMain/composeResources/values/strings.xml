@@ -893,4 +893,47 @@
     <string name="first_harvest_hint">Plant something for the kitchen and look after it.</string>
     <string name="first_garden_dish">From our garden</string>
     <string name="first_garden_dish_hint">Cook something you grew yourselves.</string>
+    <!-- App lock (moved from the Android app with the lock screen; _ios variants name Apple's features) -->
+    <string name="lock_title">Welcome back</string>
+    <string name="lock_subtitle">Enter your PIN to open your tiny world</string>
+    <string name="lock_unlock">Unlock</string>
+    <string name="lock_wrong_pin">That’s not it — try again.</string>
+    <string name="lock_cooldown">Too many tries. Try again in %1$d s.</string>
+    <string name="lock_forgot">Forgot PIN?</string>
+    <string name="lock_forgot_body">Confirm it’s you with your phone’s own screen lock. The app lock will turn off and you can choose a new PIN in Settings. Nothing inside is deleted.</string>
+    <string name="lock_forgot_no_screen_lock">Your phone has no screen lock, so the PIN can’t be reset here. Tiny Us has no account or server, so the only other way is clearing the app’s data in Android Settings — which also erases everything inside.</string>
+    <string name="lock_reset_with_phone">Use my phone’s screen lock</string>
+    <string name="lock_reset_prompt_title">Reset Tiny Us lock</string>
+    <string name="lock_reset_prompt_subtitle">Confirm with your phone’s screen lock</string>
+    <string name="lock_reset_done">App lock turned off. Set a new PIN in Settings → Privacy.</string>
+    <string name="lock_biometric_title">Unlock Tiny Us</string>
+    <string name="lock_biometric_subtitle">Use your fingerprint or face</string>
+    <string name="lock_use_pin">Use PIN</string>
+    <string name="lock_backspace">Delete digit</string>
+    <string name="lock_setup_choose">Choose a PIN</string>
+    <string name="lock_setup_confirm">Enter it once more</string>
+    <string name="lock_setup_hint">4–6 digits. Your PIN never leaves this phone.</string>
+    <string name="lock_setup_mismatch">Those didn’t match. Let’s start again.</string>
+    <string name="lock_setup_turn_on">Turn on lock</string>
+    <string name="lock_setting_title">Lock with PIN</string>
+    <string name="lock_setting_subtitle">Keep your letters and memories just for you two</string>
+    <string name="lock_setting_biometrics">Unlock with fingerprint or face</string>
+    <string name="lock_setting_grace">Lock again after leaving the app</string>
+    <string name="lock_grace_immediately">Right away</string>
+    <string name="lock_grace_minutes">%1$d min</string>
+    <string name="lock_setting_hide_preview">Hide in recent apps</string>
+    <string name="lock_setting_hide_preview_sub">Also blocks screenshots while the lock is on</string>
+    <string name="lock_setting_change_pin">Change PIN</string>
+    <string name="discreet_setting_title">Discreet icon</string>
+    <string name="discreet_setting_subtitle">Shows a plain “Journal” icon and keeps reminders generic. Your launcher may take a moment to update.</string>
+    <string name="lock_biometric_subtitle_ios">Use Face ID or Touch ID</string>
+    <string name="lock_setting_biometrics_ios">Unlock with Face ID or Touch ID</string>
+    <string name="lock_forgot_body_ios">Confirm it’s you with this device’s passcode. The app lock will turn off and you can choose a new PIN in Settings. Nothing inside is deleted.</string>
+    <string name="lock_forgot_no_screen_lock_ios">This device has no passcode, so the PIN can’t be reset here. Tiny Us has no account or server, so the only other way is deleting the app, which also erases everything inside.</string>
+    <string name="lock_reset_with_phone_ios">Use this device’s passcode</string>
+    <string name="lock_setting_hide_preview_sub_ios">Shows a plain cover in the app switcher</string>
+    <plurals name="ui_pin_digits_entered">
+        <item quantity="one">%d digit entered</item>
+        <item quantity="other">%d digits entered</item>
+    </plurals>
 </resources>

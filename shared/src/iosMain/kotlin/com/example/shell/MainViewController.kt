@@ -7,6 +7,11 @@ import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.ComposeUIViewController
 import com.example.engine.GameText
 import com.example.engine.WorldViewport
+import com.example.security.AppLock
+import com.example.security.IosLock
+import com.example.security.IosLockDevice
+import com.example.security.LocalLockDevice
+import com.example.ui.AppLockScreen
 import com.example.ui.LocalPlatformActions
 import com.example.ui.MainScreen
 import com.example.ui.theme.MyApplicationTheme
@@ -23,13 +28,16 @@ fun SharedMainViewController(): UIViewController {
     LaunchDiagnostics.install()
     loadSharedText()
     limitWorldZoom()
+    IosLock.install()
     LaunchDiagnostics.stage("starting the app")
     return ComposeUIViewController {
         val platform = remember { IosMainPlatform() }
         val actions = remember { IosPlatformActions(platform.prefs) }
+        val lockDevice = remember { IosLockDevice() }
         MyApplicationTheme {
-            CompositionLocalProvider(LocalPlatformActions provides actions) {
-                MainScreen(platform = platform)
+            CompositionLocalProvider(LocalPlatformActions provides actions, LocalLockDevice provides lockDevice) {
+                // While locked, the lock screen replaces the whole app (dialogs included).
+                if (AppLock.isLocked) AppLockScreen(IosLock.store) else MainScreen(platform = platform)
             }
         }
         LaunchedEffect(Unit) {

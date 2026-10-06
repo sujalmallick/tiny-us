@@ -1,66 +1,59 @@
+@file:OptIn(kotlin.io.encoding.ExperimentalEncodingApi::class)
+
 package com.example.security
 
-import android.content.Context
-import android.content.SharedPreferences
-import android.util.Base64
 import com.example.data.AppLockPolicy
-import java.security.MessageDigest
-import java.security.SecureRandom
-import javax.crypto.SecretKeyFactory
-import javax.crypto.spec.PBEKeySpec
+import com.example.data.KeyValueStorage
+import kotlin.io.encoding.Base64
+import kotlin.time.Clock
 
 /**
  * Persistent privacy-lock settings. The PIN itself is never stored: only a salted
- * PBKDF2-HMAC-SHA256 hash, compared in constant time.
+ * PBKDF2-HMAC-SHA256 hash ([PinHasher]), compared in constant time. Common code on
+ * [KeyValueStorage]; Android keeps it in "tiny_us_lock" with the keys it always used.
  */
-class AppLockStore(context: Context) {
-    private val prefs: SharedPreferences =
-        context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
+class AppLockStore(private val storage: KeyValueStorage) {
 
     val isEnabled: Boolean
-        get() = prefs.getBoolean(KEY_ENABLED, false) && prefs.contains(KEY_PIN_HASH)
+        get() = storage.getBoolean(KEY_ENABLED, false) && storage.getString(KEY_PIN_HASH, null) != null
 
     var biometricsEnabled: Boolean
-        get() = prefs.getBoolean(KEY_BIOMETRICS, false)
-        set(value) = prefs.edit().putBoolean(KEY_BIOMETRICS, value).apply()
+        get() = storage.getBoolean(KEY_BIOMETRICS, false)
+        set(value) = storage.putBoolean(KEY_BIOMETRICS, value)
 
     var graceSeconds: Int
-        get() = prefs.getInt(KEY_GRACE, 0)
-        set(value) = prefs.edit().putInt(KEY_GRACE, value.coerceAtLeast(0)).apply()
+        get() = storage.getInt(KEY_GRACE, 0)
+        set(value) = storage.putInt(KEY_GRACE, value.coerceAtLeast(0))
 
-    /** Hide the app preview in Recents and block screenshots while the lock is on. */
+    /** Hide the app preview (Recents, the app switcher) while the lock is on; Android also blocks screenshots. */
     var hidePreview: Boolean
-        get() = prefs.getBoolean(KEY_HIDE_PREVIEW, true)
-        set(value) = prefs.edit().putBoolean(KEY_HIDE_PREVIEW, value).apply()
+        get() = storage.getBoolean(KEY_HIDE_PREVIEW, true)
+        set(value) = storage.putBoolean(KEY_HIDE_PREVIEW, value)
 
-    val failedAttempts: Int get() = prefs.getInt(KEY_FAILED, 0)
+    val failedAttempts: Int get() = storage.getInt(KEY_FAILED, 0)
 
     /** Epoch millis until which PIN entry is paused after too many wrong guesses. */
-    val lockedOutUntil: Long get() = prefs.getLong(KEY_LOCKOUT_UNTIL, 0L)
+    val lockedOutUntil: Long get() = storage.getLong(KEY_LOCKOUT_UNTIL, 0L)
 
     /** Turns the lock on with [pin]. Returns false if the PIN is not 4–6 digits. */
     fun enable(pin: String): Boolean {
         if (!AppLockPolicy.isValidPin(pin)) return false
-        val salt = ByteArray(16).also { SecureRandom().nextBytes(it) }
-        prefs.edit()
-            .putString(KEY_PIN_SALT, encode(salt))
-            .putString(KEY_PIN_HASH, encode(hash(pin, salt)))
-            .putBoolean(KEY_ENABLED, true)
-            .putInt(KEY_FAILED, 0)
-            .putLong(KEY_LOCKOUT_UNTIL, 0L)
-            .apply()
+        val salt = PinHasher.randomBytes(16)
+        storage.putString(KEY_PIN_SALT, encode(salt))
+        storage.putString(KEY_PIN_HASH, encode(PinHasher.hash(pin, salt, ITERATIONS)))
+        storage.putBoolean(KEY_ENABLED, true)
+        storage.putInt(KEY_FAILED, 0)
+        storage.putLong(KEY_LOCKOUT_UNTIL, 0L)
         return true
     }
 
     fun disable() {
-        prefs.edit()
-            .remove(KEY_PIN_SALT)
-            .remove(KEY_PIN_HASH)
-            .putBoolean(KEY_ENABLED, false)
-            .putBoolean(KEY_BIOMETRICS, false)
-            .putInt(KEY_FAILED, 0)
-            .putLong(KEY_LOCKOUT_UNTIL, 0L)
-            .apply()
+        storage.remove(KEY_PIN_SALT)
+        storage.remove(KEY_PIN_HASH)
+        storage.putBoolean(KEY_ENABLED, false)
+        storage.putBoolean(KEY_BIOMETRICS, false)
+        storage.putInt(KEY_FAILED, 0)
+        storage.putLong(KEY_LOCKOUT_UNTIL, 0L)
     }
 
     sealed interface PinResult {
@@ -69,42 +62,40 @@ class AppLockStore(context: Context) {
         data class CoolingDown(val secondsLeft: Int) : PinResult
     }
 
-    fun checkPin(pin: String, nowMs: Long = System.currentTimeMillis()): PinResult {
+    fun checkPin(pin: String, nowMs: Long = Clock.System.now().toEpochMilliseconds()): PinResult {
         val until = lockedOutUntil
         if (until > nowMs) return PinResult.CoolingDown(((until - nowMs + 999) / 1000).toInt())
 
-        val salt = prefs.getString(KEY_PIN_SALT, null)?.let(::decode)
-        val expected = prefs.getString(KEY_PIN_HASH, null)?.let(::decode)
-        if (salt != null && expected != null && MessageDigest.isEqual(hash(pin, salt), expected)) {
+        val salt = storage.getString(KEY_PIN_SALT, null)?.let(::decode)
+        val expected = storage.getString(KEY_PIN_HASH, null)?.let(::decode)
+        if (salt != null && expected != null && sameBytes(PinHasher.hash(pin, salt, ITERATIONS), expected)) {
             recordSuccess()
             return PinResult.Correct
         }
 
         val failed = failedAttempts + 1
         val cooldown = AppLockPolicy.cooldownSecondsAfter(failed)
-        prefs.edit()
-            .putInt(KEY_FAILED, failed)
-            .putLong(KEY_LOCKOUT_UNTIL, if (cooldown > 0) nowMs + cooldown * 1000L else 0L)
-            .apply()
+        storage.putInt(KEY_FAILED, failed)
+        storage.putLong(KEY_LOCKOUT_UNTIL, if (cooldown > 0) nowMs + cooldown * 1000L else 0L)
         return PinResult.Wrong(cooldown)
     }
 
     /** Biometric or device-credential unlock also clears the wrong-guess counter. */
     fun recordSuccess() {
-        prefs.edit().putInt(KEY_FAILED, 0).putLong(KEY_LOCKOUT_UNTIL, 0L).apply()
+        storage.putInt(KEY_FAILED, 0)
+        storage.putLong(KEY_LOCKOUT_UNTIL, 0L)
     }
 
-    private fun hash(pin: String, salt: ByteArray): ByteArray {
-        val spec = PBEKeySpec(pin.toCharArray(), salt, ITERATIONS, 256)
-        try {
-            return SecretKeyFactory.getInstance("PBKDF2WithHmacSHA256").generateSecret(spec).encoded
-        } finally {
-            spec.clearPassword()
-        }
+    /** Compares every byte, so the time taken doesn't hint at how much of a guess was right. */
+    private fun sameBytes(a: ByteArray, b: ByteArray): Boolean {
+        if (a.size != b.size) return false
+        var diff = 0
+        for (i in a.indices) diff = diff or (a[i].toInt() xor b[i].toInt())
+        return diff == 0
     }
 
-    private fun encode(bytes: ByteArray) = Base64.encodeToString(bytes, Base64.NO_WRAP)
-    private fun decode(text: String) = Base64.decode(text, Base64.NO_WRAP)
+    private fun encode(bytes: ByteArray) = Base64.encode(bytes)
+    private fun decode(text: String) = Base64.decode(text)
 
     companion object {
         const val PREFS_NAME = "tiny_us_lock"
@@ -118,4 +109,10 @@ class AppLockStore(context: Context) {
         private const val KEY_FAILED = "failed_attempts"
         private const val KEY_LOCKOUT_UNTIL = "lockout_until"
     }
+}
+
+/** PBKDF2-HMAC-SHA256 and secure random bytes from the platform's crypto. */
+expect object PinHasher {
+    fun hash(pin: String, salt: ByteArray, iterations: Int): ByteArray
+    fun randomBytes(count: Int): ByteArray
 }

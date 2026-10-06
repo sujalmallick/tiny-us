@@ -31,6 +31,7 @@ import com.example.R
 import com.example.data.backup.BackupCryptoException
 import com.example.data.backup.TinyBackup
 import com.example.security.AppLock
+import com.example.security.findFragmentActivity
 import com.example.ui.theme.TinyColors
 import com.example.ui.theme.TinySpace
 import com.example.ui.theme.TinyType
