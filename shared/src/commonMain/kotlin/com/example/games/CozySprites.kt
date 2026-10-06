@@ -46,7 +46,9 @@ object CozySprites {
         't' to Color(0xFF9C7A3C), // tea
         'n' to Color(0xFF7A5230), // soil
         'N' to Color(0xFF5A3A20), // dark soil
-        'v' to Color(0x66FFFFFF)  // steam
+        'v' to Color(0x66FFFFFF), // steam
+        'L' to Color(0xFFA7D86E), // light green: peas, mint, green tea
+        'O' to Color(0xFFD9822B)  // deep orange: pumpkin ribs, terracotta
     )
 
     // --- Ingredients (on the counter and in the fridge) ---
@@ -163,6 +165,64 @@ object CozySprites {
             "ehhhhhe",
             "ehhhhhe",
             ".eeeee."
+        )),
+        // From the garden (plan 09, E3).
+        Ingredient.STRAWBERRY to Sprite(listOf(
+            "..gG..",
+            ".gggg.",
+            "rrrrrr",
+            "rryrrr",
+            ".rrrr.",
+            ".ryrr.",
+            "..rr.."
+        )),
+        Ingredient.PEAS to Sprite(listOf(
+            "......gG",
+            ".GGGGGG.",
+            "GLgLgLgG",
+            ".GGGGGG."
+        )),
+        Ingredient.TOMATO to Sprite(listOf(
+            "..gGg..",
+            ".rrgrr.",
+            "rrrrrrr",
+            "rwrrrrr",
+            "rrrrrrr",
+            ".rrrrr.",
+            "..rrr.."
+        )),
+        Ingredient.BASIL to Sprite(listOf(
+            "...g...",
+            "..gGg..",
+            ".gGgGg.",
+            "gGgGgGg",
+            "..gGg..",
+            "...G..."
+        )),
+        Ingredient.PUMPKIN to Sprite(listOf(
+            "...dG...",
+            ".oooooo.",
+            "oOooOooO",
+            "oOooOooO",
+            "oOooOooO",
+            ".oooooo."
+        )),
+        Ingredient.APPLE to Sprite(listOf(
+            "...dg..",
+            "..d.gg.",
+            ".rrrrr.",
+            "rrrrwrr",
+            "rrrrrrr",
+            "rrrrrrr",
+            ".rr.rr."
+        )),
+        Ingredient.MINT to Sprite(listOf(
+            "..L.L..",
+            ".LgLgL.",
+            "LgLgLgL",
+            ".LgLgL.",
+            "..LgL..",
+            "...g..."
         ))
     )
 
@@ -211,6 +271,57 @@ object CozySprites {
             ".ewwwwwe.e",
             "..ewwweee.",
             "eeeeeeeeee"
+        )),
+        // Garden recipes (plan 09, E3).
+        "tomato_soup" to Sprite(listOf(
+            "...v..v...",
+            "....v..v..",
+            "errrrgrrre",
+            "ewwwwwwwwe",
+            ".ewwwwwwe.",
+            "..eeeeee.."
+        )),
+        "strawberry_pancakes" to Sprite(listOf(
+            "...rr.rr..",
+            "..oooooo..",
+            "..bbbbbb..",
+            "..oooooo..",
+            "..bbbbbb..",
+            ".wwwwwwww.",
+            "..eeeeee.."
+        )),
+        "pumpkin_pie" to Sprite(listOf(
+            "...aaaa...",
+            ".aaOoOoaa.",
+            "aOoooooOoa",
+            "aaaaaaaaaa",
+            ".wwwwwwww.",
+            "..eeeeee.."
+        )),
+        "herb_tea" to Sprite(listOf(
+            "...v.v....",
+            "....v.v...",
+            ".eeeeeee..",
+            ".eLLLLLeee",
+            ".ewwwwwe.e",
+            "..ewwweee.",
+            "eeeeeeeeee"
+        )),
+        "apple_crumble" to Sprite(listOf(
+            "...aAaa...",
+            ".aaAaaAaa.",
+            "brrbrrbrrb",
+            "bbbbbbbbbb",
+            ".wwwwwwww.",
+            "..eeeeee.."
+        )),
+        "pea_soup" to Sprite(listOf(
+            "...v..v...",
+            "....v..v..",
+            "eLLgLLgLLe",
+            "ewwwwwwwwe",
+            ".ewwwwwwe.",
+            "..eeeeee.."
         ))
     )
 
@@ -279,6 +390,40 @@ object CozySprites {
         PlotStage.BUD to Sprite(listOf("........", "...P....", "..gPg...", "...g....", "..gg....", "...g....") + SOIL),
         PlotStage.BLOOM to Sprite(listOf("..PPP...", ".PPCPP..", "..PPP...", "...g.g..", "..gg....", "...gg...") + SOIL)
     )
+
+    /** A crop's bud: all leaves, no petals. */
+    private val CROP_BUD = listOf("........", "...g....", "..gGg...", "...g....", "..gg....", "...g....")
+
+    /** Each crop and herb when it's ripe (plan 09, E1), above its soil or pot. */
+    private val RIPE: Map<String, List<String>> = mapOf(
+        "strawberry" to listOf("........", "........", "..g..g..", ".gGggGg.", "grgGgrg.", ".gr.gr.."),
+        "peas" to listOf("...d....", "..gdL...", ".gLdg...", "..gdgL..", ".Lgdg...", "..gdg..."),
+        "tomato" to listOf("..d.....", ".gdgr...", "gGdrrg..", ".gdgrr..", "rrdgG...", ".gdg...."),
+        "basil" to listOf("........", "...g....", "..gGg...", ".gGgGg..", "gGgGgGg.", "..gGg..."),
+        "pumpkin" to listOf("........", "........", ".g.dG...", "goooooo.", "oOooOoo.", ".oooooo."),
+        "apple" to listOf("..GgG...", ".GgrgG..", "GgGgGrg.", ".rgGgG..", "...d....", "...d...."),
+        "mint" to listOf("........", "...L....", "..LgL...", ".LgLgL..", "LgLgLgL.", "..LgL...")
+    )
+
+    /** A sunroom pot, in place of the meadow soil. */
+    private val POT = listOf(".OOOOOO.", "..oOoo..", "..OOOO..")
+
+    /**
+     * The sprite for a spot at [stage] with [seed] planted (null when empty): flowers use [PLOT]
+     * (coloured when drawn), crops their own bud and ripe plant. [pot] puts it in a sunroom pot.
+     */
+    fun spot(stage: PlotStage, seed: String?, pot: Boolean): Sprite {
+        val crop = Seeds.byId(seed)?.let { it.kind != SeedKind.FLOWER } == true
+        val top = when {
+            crop && stage == PlotStage.BLOOM -> RIPE[seed] ?: CROP_BUD
+            crop && stage == PlotStage.BUD -> CROP_BUD
+            else -> PLOT.getValue(stage).rows.take(6)
+        }
+        return Sprite(top + if (pot) POT else SOIL)
+    }
+
+    /** The ripe crops, for tests and previews. */
+    val ripeCrops: Set<String> get() = RIPE.keys
 
     /** Three flowers tied with a ribbon: P, Q and R are the three flowers picked. */
     val BOUQUET = Sprite(listOf(

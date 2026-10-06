@@ -8,6 +8,8 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import com.example.data.CoupleDates
 import com.example.engine.CharacterEmotion
+import com.example.engine.CharacterPose
+import com.example.engine.Direction
 import com.example.engine.EmoteType
 import com.example.engine.GameText
 import com.example.games.CookingGame
@@ -15,9 +17,13 @@ import com.example.games.FishingCatch
 import com.example.games.FishingGame
 import com.example.games.GardenPlots
 import com.example.games.Ingredient
+import com.example.games.PlotOwner
 import com.example.games.PlotStage
 import com.example.games.Recipe
 import com.example.games.Recipes
+import com.example.games.Seed
+import com.example.games.SeedKind
+import com.example.games.Seeds
 import com.example.progress.ProgressEvent
 import com.example.resources.*
 import org.jetbrains.compose.resources.StringResource
@@ -52,6 +58,21 @@ class CozyGames(private val engine: SceneEngine) {
     var garden: GardenPlots = GardenPlots()
     var cookedRecipes: Set<String> = emptySet()
     var hasCaughtFish = false
+    /** The season (WINTER, SPRING, SUMMER, AUTUMN) and the pantry's produce, also kept up to date by the screen. */
+    var season: String = "SPRING"
+    var pantry: Map<Ingredient, Int> = emptyMap()
+
+    /** The recipe picker is open (plan 09, E3). */
+    var cookingPicking by mutableStateOf(false)
+        private set
+    /** The garden spot whose seed is being chosen (plan 09, E1), or null. */
+    var seedPickerSpot by mutableStateOf<Int?>(null)
+        private set
+    /** The shared plot asking who is watering (plan 09, E2), or null. */
+    var whoWatersSpot by mutableStateOf<Int?>(null)
+        private set
+    /** Seconds until the dinner-talk question after a meal (plan 09, E4). */
+    private var dinnerTalkIn = 0f
 
     private var steamTimer = 0f
     private var lastRainDay = -1L
@@ -68,9 +89,27 @@ class CozyGames(private val engine: SceneEngine) {
 
     // ── Cooking ──
 
+    /** "Cook together": the recipe picker opens (the starters, plus what the pantry allows). */
+    fun openRecipePicker() {
+        if (!canCook || cookingActive) return
+        cookingPicking = true
+        engine.audio.playPaperFlip()
+    }
+
+    fun closeRecipePicker() {
+        cookingPicking = false
+    }
+
+    /** Starts a suggested recipe straight away (previews and tests). */
     fun startCooking(random: Random = Random.Default) {
         if (!canCook || cookingActive) return
-        val recipe = Recipes.suggest(cookedRecipes, random)
+        chooseRecipe(Recipes.suggest(cookedRecipes, random, pantry), random)
+    }
+
+    /** Starts [recipe], if the pantry has what it needs. */
+    fun chooseRecipe(recipe: Recipe, random: Random = Random.Default) {
+        if (!canCook || cookingActive || !recipe.canCook(pantry)) return
+        cookingPicking = false
         val others = Ingredient.entries.filter { it !in recipe.ingredients }.shuffled(random)
         cookingChoices = (recipe.ingredients.distinct() + others.take(6 - recipe.ingredients.distinct().size)).shuffled(random)
         cooking.start(recipe)
@@ -135,7 +174,10 @@ class CozyGames(private val engine: SceneEngine) {
             cheer()
             engine.showMessage(GameText.get(Res.string.cooking_served, GameText.get(recipeName(served.id))), duration = 4f)
             cookedRecipes = cookedRecipes + served.id
+            // What it took from the pantry is used up (the progress does the same).
+            for (i in served.pantry) pantry = pantry + (i to ((pantry[i] ?: 1) - 1).coerceAtLeast(0))
             report(ProgressEvent.DishCooked(served.id))
+            sitDownToEat()
             cookingTick++
         }
         if (cooking.phase == CookingGame.Phase.IDLE) {
@@ -144,6 +186,29 @@ class CozyGames(private val engine: SceneEngine) {
         } else if (wiggling != cooking.wiggling) {
             cookingTick++
         }
+    }
+
+    /** Sharing the meal (plan 09, E4): they sit together at the table, then talk over dinner. */
+    private fun sitDownToEat() {
+        val boy = engine.boy
+        val girl = engine.girl
+        // They walk over and sit down when they get there, facing each other.
+        boy.moveTo(TABLE_BOY_X, arrivePose = CharacterPose.SIT)
+        girl.moveTo(TABLE_GIRL_X, arrivePose = CharacterPose.SIT)
+        boy.direction = Direction.RIGHT
+        girl.direction = Direction.LEFT
+        boy.reactionTimer = MEAL_SECONDS
+        girl.reactionTimer = MEAL_SECONDS
+        dinnerTalkIn = DINNER_TALK_AFTER
+    }
+
+    private fun updateDinnerTalk(dt: Float) {
+        if (dinnerTalkIn <= 0f) return
+        dinnerTalkIn -= dt
+        if (dinnerTalkIn > 0f) return
+        if (engine.currentScene != SceneType.COOKING) return
+        val prompt = com.example.data.DailyPromptCatalog.getPromptForDay(Random.nextInt(0, 10_000))
+        engine.showMessage(GameText.get(Res.string.dinner_talk, prompt.question), duration = 8f)
     }
 
     // ── Fishing ──
@@ -210,31 +275,52 @@ class CozyGames(private val engine: SceneEngine) {
 
     // ── Garden ──
 
-    /** The centre of the base of plot [index] in the meadow. */
-    fun plotBase(index: Int, cw: Float, ch: Float) = Offset(cw * PLOT_XS[index], ch * PLOT_Y)
+    /** The centre of the base of meadow plot [index] (0-2), or of sunroom pot [index] (3-4). */
+    fun plotBase(index: Int, cw: Float, ch: Float) =
+        if (GardenPlots.isPot(index)) Offset(cw * POT_XS[index - GardenPlots.PLOTS], ch * POTS_Y)
+        else Offset(cw * PLOT_XS[index], ch * PLOT_Y)
 
     /** Handles a tap in the meadow; true if it was on a plot. */
     fun onGardenTap(x: Float, y: Float, cw: Float, ch: Float, p: Float, random: Random = Random.Default): Boolean {
         if (engine.currentScene != SceneType.FLOWER || engine.isDreamMode) return false
+        return tapSpots(0 until GardenPlots.PLOTS, x, y, cw, ch, p, random)
+    }
+
+    /** Handles a tap in the sunroom; true if it was on one of the herb pots. */
+    fun onPotTap(x: Float, y: Float, cw: Float, ch: Float, p: Float, random: Random = Random.Default): Boolean {
+        if (engine.currentScene != SceneType.SUNROOM || engine.isDreamMode) return false
+        return tapSpots(GardenPlots.PLOTS until GardenPlots.SPOTS, x, y, cw, ch, p, random)
+    }
+
+    private fun tapSpots(spots: IntRange, x: Float, y: Float, cw: Float, ch: Float, p: Float, random: Random): Boolean {
         val q = p * PLOT_SCALE
-        val index = PLOT_XS.indices.firstOrNull { i ->
+        val index = spots.firstOrNull { i ->
             val base = plotBase(i, cw, ch)
             kotlin.math.abs(x - base.x) < 6f * q && y > base.y - 11f * q && y < base.y + 3f * q
         } ?: return false
+        lastTapP = p
+        onSpot(index, plotBase(index, cw, ch), p)
+        return true
+    }
+
+    /** The game-pixel size from the last garden tap, for the sparkles of a later choice. */
+    private var lastTapP = 5f
+
+    private fun onSpot(index: Int, base: Offset, p: Float) {
         val plot = garden.plots[index]
         val day = today()
-        val base = plotBase(index, cw, ch)
+        val owner = GardenPlots.ownerOf(index)
         when {
             plot.stage == PlotStage.EMPTY -> {
-                val seed = GardenPlots.SEEDS.random(random)
-                garden = garden.plant(index, seed)
-                report(ProgressEvent.GardenPlanted(index, seed))
-                engine.audio.playLeafRustle()
-                engine.particles.spawnGrassPuff(base.x, base.y, 4)
-                val gardener = if (random.nextBoolean()) engine.boy.name else engine.girl.name
-                engine.showMessage(GameText.get(Res.string.garden_planted, gardener, GameText.get(flowerName(seed))), duration = 3f)
+                val seeds = if (GardenPlots.isPot(index)) Seeds.forPots() else Seeds.forMeadow(season)
+                if (seeds.isEmpty()) {
+                    engine.showMessage(GameText.get(Res.string.garden_winter), duration = 3.5f)
+                } else {
+                    whoWatersSpot = null
+                    seedPickerSpot = index
+                }
             }
-            plot.stage == PlotStage.BLOOM -> {
+            plot.stage == PlotStage.BLOOM && plot.seed?.kind == SeedKind.FLOWER -> {
                 val held = garden.stems.size + 1
                 garden = garden.pick(index).first
                 report(ProgressEvent.FlowerPicked(index))
@@ -247,17 +333,82 @@ class CozyGames(private val engine: SceneEngine) {
                     engine.showMessage(GameText.get(Res.string.garden_picked, GardenPlots.BOUQUET_SIZE - held), duration = 2.5f)
                 }
             }
-            garden.needsWater(index, day) -> {
-                garden = garden.water(index, day)
-                report(ProgressEvent.GardenWatered(index, day))
-                engine.audio.playWaterDrip()
-                engine.particles.spawnSparkles(base.x, base.y - 4f * p, 6, Color(0xFF9AD1F5))
-                engine.showMessage(GameText.get(Res.string.garden_watered), duration = 2.5f)
+            plot.stage == PlotStage.BLOOM -> {
+                val (after, produce) = garden.harvest(index)
+                if (produce != null) {
+                    garden = after
+                    pantry = pantry + (produce to (pantry[produce] ?: 0) + 1)
+                    report(ProgressEvent.CropHarvested(index))
+                    engine.audio.playLeafRustle()
+                    engine.particles.spawnSparkles(base.x, base.y - 6f * p, 8, Color(0xFFFFD166))
+                    engine.showMessage(GameText.get(Res.string.garden_harvested, GameText.get(ingredientName(produce))), duration = 3f)
+                }
             }
+            owner == PlotOwner.SHARED && (garden.needsWater(index, day, PlotOwner.BOY) || garden.needsWater(index, day, PlotOwner.GIRL)) -> {
+                // The shared plot wants both of them today: ask who this is.
+                seedPickerSpot = null
+                whoWatersSpot = index
+            }
+            garden.needsWater(index, day) -> waterSpot(index, day, owner.takeIf { it == PlotOwner.BOY || it == PlotOwner.GIRL }, base, p)
             else -> engine.showMessage(GameText.get(Res.string.garden_already_watered), duration = 2f)
         }
-        return true
     }
+
+    /** Plants [seed] in the spot the picker is open for. */
+    fun chooseSeed(seed: Seed, random: Random = Random.Default) {
+        val index = seedPickerSpot ?: return
+        seedPickerSpot = null
+        val before = garden
+        garden = garden.plant(index, seed.id)
+        if (garden == before) return
+        report(ProgressEvent.GardenPlanted(index, seed.id))
+        engine.audio.playLeafRustle()
+        val base = plotBase(index, engine.lastWorldW, engine.lastWorldH)
+        engine.particles.spawnGrassPuff(base.x, base.y, 4)
+        val gardener = when (GardenPlots.ownerOf(index)) {
+            PlotOwner.BOY -> engine.boy.name
+            PlotOwner.GIRL -> engine.girl.name
+            else -> if (random.nextBoolean()) engine.boy.name else engine.girl.name
+        }
+        engine.showMessage(GameText.get(Res.string.garden_planted, gardener, GameText.get(seedName(seed.id))), duration = 3f)
+    }
+
+    /** "Who is watering?" on the shared plot: [who] waters it. */
+    fun waterAs(who: PlotOwner) {
+        val index = whoWatersSpot ?: return
+        whoWatersSpot = null
+        val day = today()
+        if (!garden.needsWater(index, day, who)) {
+            engine.showMessage(GameText.get(Res.string.garden_already_watered), duration = 2f)
+            return
+        }
+        waterSpot(index, day, who, plotBase(index, engine.lastWorldW, engine.lastWorldH), lastTapP)
+    }
+
+    fun closeGardenCards() {
+        seedPickerSpot = null
+        whoWatersSpot = null
+    }
+
+    private fun waterSpot(index: Int, day: Long, who: PlotOwner?, base: Offset, p: Float) {
+        garden = garden.water(index, day, who)
+        report(ProgressEvent.GardenWatered(index, day, who?.name))
+        engine.audio.playWaterDrip()
+        engine.particles.spawnSparkles(base.x, base.y - 4f * p, 6, Color(0xFF9AD1F5))
+        val waiting = garden.waitingOnOther(index, day)
+        val line = when {
+            waiting != null -> GameText.get(
+                Res.string.garden_waiting_for,
+                nameOf(waiting),
+                nameOf(if (waiting == PlotOwner.BOY) PlotOwner.GIRL else PlotOwner.BOY)
+            )
+            GardenPlots.ownerOf(index) == PlotOwner.SHARED -> GameText.get(Res.string.garden_watered_together)
+            else -> GameText.get(Res.string.garden_watered)
+        }
+        engine.showMessage(line, duration = 3f)
+    }
+
+    private fun nameOf(owner: PlotOwner) = if (owner == PlotOwner.GIRL) engine.girl.name else engine.boy.name
 
     private fun updateGarden() {
         // Rain waters the garden, once a day, wherever the two of them are.
@@ -265,7 +416,7 @@ class CozyGames(private val engine: SceneEngine) {
         val day = today()
         if (day == lastRainDay) return
         lastRainDay = day
-        if (garden.plots.indices.none { garden.needsWater(it, day) }) return
+        if ((0 until GardenPlots.PLOTS).none { garden.needsWater(it, day) }) return
         garden = garden.rain(day)
         report(ProgressEvent.GardenRained(day))
         if (engine.currentScene == SceneType.FLOWER) engine.showMessage(GameText.get(Res.string.garden_rained), duration = 3f)
@@ -277,12 +428,15 @@ class CozyGames(private val engine: SceneEngine) {
         updateCooking(dt, cw, ch)
         updateFishing(dt, cw, ch)
         updateGarden()
+        updateDinnerTalk(dt)
     }
 
     /** Puts everything away (a new scene, a dream). */
     fun stopAll() {
         if (cookingActive) stopCooking()
         if (fishingActive) stopFishing()
+        cookingPicking = false
+        closeGardenCards()
     }
 
     private fun cheer() {
@@ -304,12 +458,26 @@ class CozyGames(private val engine: SceneEngine) {
         const val PLOT_Y = 0.80f
         /** Plots are drawn at this many game pixels per sprite pixel. */
         const val PLOT_SCALE = 2f
+        /** The two herb pots on the sunroom floor (the winter greenhouse). */
+        val POT_XS = listOf(0.34f, 0.46f)
+        const val POTS_Y = 0.74f
+        /** Where they sit at the kitchen table to eat (plan 09, E4). */
+        const val TABLE_BOY_X = 0.42f
+        const val TABLE_GIRL_X = 0.58f
+        const val MEAL_SECONDS = 9f
+        const val DINNER_TALK_AFTER = 4.3f
 
         fun recipeName(id: String): StringResource = when (id) {
             "pancakes" -> Res.string.recipe_pancakes
             "soup" -> Res.string.recipe_soup
             "dumplings" -> Res.string.recipe_dumplings
             "cookies" -> Res.string.recipe_cookies
+            "tomato_soup" -> Res.string.recipe_tomato_soup
+            "strawberry_pancakes" -> Res.string.recipe_strawberry_pancakes
+            "pumpkin_pie" -> Res.string.recipe_pumpkin_pie
+            "herb_tea" -> Res.string.recipe_herb_tea
+            "apple_crumble" -> Res.string.recipe_apple_crumble
+            "pea_soup" -> Res.string.recipe_pea_soup
             else -> Res.string.recipe_tea
         }
 
@@ -327,7 +495,18 @@ class CozyGames(private val engine: SceneEngine) {
             Ingredient.CHOCOLATE -> Res.string.ingredient_chocolate
             Ingredient.TEA_LEAVES -> Res.string.ingredient_tea_leaves
             Ingredient.HONEY -> Res.string.ingredient_honey
+            Ingredient.STRAWBERRY -> Res.string.ingredient_strawberry
+            Ingredient.PEAS -> Res.string.ingredient_peas
+            Ingredient.TOMATO -> Res.string.ingredient_tomato
+            Ingredient.BASIL -> Res.string.ingredient_basil
+            Ingredient.PUMPKIN -> Res.string.ingredient_pumpkin
+            Ingredient.APPLE -> Res.string.ingredient_apple
+            Ingredient.MINT -> Res.string.ingredient_mint
         }
+
+        /** A seed's name: a flower, or the crop it grows. */
+        fun seedName(id: String): StringResource =
+            Seeds.byId(id)?.produce?.let { ingredientName(it) } ?: flowerName(id)
 
         fun catchName(c: FishingCatch): StringResource = when (c) {
             FishingCatch.MINNOW -> Res.string.catch_minnow

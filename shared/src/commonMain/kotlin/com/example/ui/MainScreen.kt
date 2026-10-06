@@ -450,6 +450,11 @@ fun MainScreen(
         engine.cozy.garden = progress.garden
         engine.cozy.cookedRecipes = progress.seenSet(com.example.progress.Seen.RECIPES)
         engine.cozy.hasCaughtFish = progress.count(com.example.progress.Counter.FISH) > 0
+        engine.cozy.pantry = progress.pantry
+        // Which seeds the meadow takes (plan 09, E1), turned around south of the equator.
+        engine.cozy.season = com.example.engine.SeasonalWeather.seasonOf(
+            CoupleDates.today().month.ordinal + 1, androidx.compose.ui.text.intl.Locale.current.region
+        )
     }
     // Celebrate new firsts one at a time; a burst (say, on the first launch with this feature)
     // shows two and points to Our Story for the rest.
@@ -985,6 +990,26 @@ fun MainScreen(
                     style = TinyType.Label
                 )
             }
+        } else if (engine.cozy.cookingPicking) {
+            // Garden to kitchen (plan 09, E): choose a recipe, then the seed or who is watering.
+            RecipePickerCard(
+                engine.cozy,
+                onLocked = { engine.showMessage(it, duration = 3f) },
+                modifier = Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 84.dp)
+            )
+        } else if (engine.cozy.seedPickerSpot != null) {
+            SeedPickerCard(
+                engine.cozy,
+                engine.cozy.seedPickerSpot ?: 0,
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 84.dp)
+            )
+        } else if (engine.cozy.whoWatersSpot != null) {
+            WhoWatersCard(
+                engine.cozy,
+                engine.boy.name,
+                engine.girl.name,
+                Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 84.dp)
+            )
         } else if (engine.cozy.cookingActive) {
             // Above the heart button, which stays in the bottom-right corner.
             CookingCard(engine.cozy, Modifier.align(Alignment.BottomCenter).navigationBarsPadding().padding(start = 12.dp, end = 12.dp, bottom = 84.dp))
@@ -1018,7 +1043,7 @@ fun MainScreen(
         } else if (engine.cozy.canCook) {
             TinyButton(
                 text = stringResource(Res.string.cooking_start),
-                onClick = { engine.cozy.startCooking() },
+                onClick = { engine.cozy.openRecipePicker() },
                 icon = PixelIcons.VolunteerActivism,
                 compact = true,
                 testTag = "cooking_start_button",

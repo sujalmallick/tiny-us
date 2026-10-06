@@ -78,6 +78,9 @@ class ScenePreviewTest {
                     .plant(1, "sunflower").water(1, 1)
                     .plant(2, "lavender")
                     .copy(stems = listOf("daisy"))
+                // Crops ripe in all three plots and herbs in both sunroom pots (plan 09, E).
+                "crops" -> cozy.garden = listOf(0 to "tomato", 1 to "pumpkin", 2 to "strawberry", 3 to "mint", 4 to "basil")
+                    .fold(com.example.games.GardenPlots()) { g, (i, seed) -> g.plant(i, seed).water(i, 1).water(i, 2).water(i, 3) }
             }
             val frames = System.getenv("SCENE_PREVIEW_FRAMES")?.toInt() ?: if (System.getenv("SCENE_PREVIEW_WEATHER") != null) 600 else 120
             repeat(frames) { update(1f / 60f, cw, ch) }
