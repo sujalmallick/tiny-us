@@ -1,11 +1,13 @@
 package com.example.shell
 
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.ComposeUIViewController
 import com.example.engine.GameText
 import com.example.engine.WorldViewport
+import com.example.ui.LocalPlatformActions
 import com.example.ui.MainScreen
 import com.example.ui.theme.MyApplicationTheme
 import kotlin.math.floor
@@ -24,8 +26,11 @@ fun SharedMainViewController(): UIViewController {
     LaunchDiagnostics.stage("starting the app")
     return ComposeUIViewController {
         val platform = remember { IosMainPlatform() }
+        val actions = remember { IosPlatformActions(platform.prefs) }
         MyApplicationTheme {
-            MainScreen(platform = platform)
+            CompositionLocalProvider(LocalPlatformActions provides actions) {
+                MainScreen(platform = platform)
+            }
         }
         LaunchedEffect(Unit) {
             withFrameNanos { }
