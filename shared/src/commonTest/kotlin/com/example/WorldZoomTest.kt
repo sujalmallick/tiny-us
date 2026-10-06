@@ -5,7 +5,6 @@ import com.example.engine.WorldViewport
 import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class WorldZoomTest {
     @AfterTest
@@ -27,8 +26,8 @@ class WorldZoomTest {
         val camera = WorldCamera.forScreen(2048f, 2732f, pixelRenderer = true)
         assertEquals(8, camera.zoom)
         assertEquals(256, camera.gameW)
-        assertTrue(camera.stageH >= camera.stageW, "a portrait iPad still gets a tall stage")
-        assertTrue(camera.stageH * camera.zoom <= 2732)
+        // A tall stage still (partial pixels at the edge round up: 2732 / 8 is 341.5).
+        assertEquals(342, camera.stageH)
     }
 
     @Test
