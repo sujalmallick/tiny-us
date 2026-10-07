@@ -18,6 +18,9 @@ import com.example.ui.MainPlatform
 import com.example.ui.PolaroidCamera
 import com.example.ui.PolaroidPhotos
 import platform.Foundation.NSNotificationCenter
+import platform.darwin.dispatch_async
+import platform.darwin.dispatch_queue_create
+import platform.darwin.dispatch_get_main_queue
 import platform.Foundation.NSOperationQueue
 import platform.UIKit.UIApplicationDidEnterBackgroundNotification
 import platform.UIKit.UIApplicationWillEnterForegroundNotification
@@ -56,6 +59,8 @@ class IosMainPlatform : MainPlatform {
         IosNotifications.planMornings(prefs)
     }
 
+    private val widgetQueue = dispatch_queue_create("tinyus.widget", null)
+
     /** The scene and weather the widget last showed, for [refreshWidget]. */
     private var widgetShows: Pair<SceneType, WeatherType>? = null
 
@@ -72,18 +77,25 @@ class IosMainPlatform : MainPlatform {
             timePhase = TimeOfDayPhase.resolve(prefs.atmosphereMode).displayName,
             sceneName = scene.title
         )
-        publish(
-            IosWidgetSnapshot(
-                coupleNames = data.coupleNames,
-                daysTogether = data.daysTogether,
-                anniversary = CoupleDates.anniversary.toString(),
-                sceneName = data.sceneName,
-                weatherName = data.weatherName,
-                timePhase = data.timePhase,
-                dailyMomentPrompt = data.dailyMomentPrompt ?: "",
-                latestSignalText = data.latestSignalText ?: ""
-            )
+        val snapshot = IosWidgetSnapshot(
+            coupleNames = data.coupleNames,
+            daysTogether = data.daysTogether,
+            anniversary = CoupleDates.anniversary.toString(),
+            sceneName = data.sceneName,
+            weatherName = data.weatherName,
+            timePhase = data.timePhase,
+            dailyMomentPrompt = data.dailyMomentPrompt ?: "",
+            latestSignalText = data.latestSignalText ?: ""
         )
+        // The scene picture takes a moment to draw: off the main thread (one at a time, in order),
+        // then the widget reloads.
+        val atmosphere = prefs.atmosphereMode
+        val boy = prefs.boyfriendName
+        val girl = prefs.girlfriendName
+        dispatch_async(widgetQueue) {
+            runCatching { IosWidgetPictures.save(scene, weather, atmosphere, boy, girl) }
+            dispatch_async(dispatch_get_main_queue()) { publish(snapshot) }
+        }
     }
 
     @Composable
