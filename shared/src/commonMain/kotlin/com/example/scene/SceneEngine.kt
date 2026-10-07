@@ -104,6 +104,10 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** Other pets (plan 10, E): when a visitor turns up, and how the fox and Boba come to stay. */
+        const val PET_VISITOR_AFTER = 6f
+        const val FOX_STAYS_AFTER = 3
+        const val PUP_COMES_HOME_AFTER = 3
         /** The Friday fox (plan 10, D): the scenes it visits, when it turns up, where the ball is left. */
         val FOX_SCENES = setOf(SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING, SceneType.WALK)
         const val FOX_ARRIVES_AFTER = 8f
@@ -406,6 +410,26 @@ class SceneEngine(
     var tableCandleTimer: Float by mutableFloatStateOf(0f)     // drives candle flicker & warm glow (1.5 s)
     var poufBounceTimer: Float by mutableFloatStateOf(0f)      // drives knitted pouf squish-bounce (0.8 s)
     var cardboardBoxTimer: Float by mutableFloatStateOf(0f)    // drives Mochi peeking out of box (1.3 s)
+    /** Who lives with them (plan 10, E): Mochi unless they chose another pet. Declared early. */
+    var petKind: com.example.data.PetKind by mutableStateOf(com.example.data.PetKind.CAT)
+        private set
+    var petStore: com.example.data.PetStore? = null
+        set(value) {
+            field = value
+            value?.let { setPet(it.chosen) }
+        }
+    /** Mochi's own name, which they can change. */
+    var catName: String = "Mochi"
+        set(value) {
+            field = value
+            GameText.petName = petName
+        }
+    /** A pet they haven't met yet, out in the world for a little moment. */
+    var petVisitor: PetVisitor? by mutableStateOf(null)
+        private set
+    private var petHabitTimer = 0f
+    private var hedgehogCurled = false
+
     /** The Friday fox (plan 10, D), declared early: loadScene resets it. */
     val foxVisit = FoxVisit()
     var foxStore: com.example.data.FoxStore? by mutableStateOf(null)
@@ -815,6 +839,7 @@ class SceneEngine(
         poufBounceTimer = 0f
         cardboardBoxTimer = 0f
         foxVisit.stop()
+        petVisitor = null
         foxCheckedScene = null
         foxBallFriday = null
         mochiInBox = false
@@ -2018,6 +2043,7 @@ class SceneEngine(
         tickFlowerHandover(deltaSeconds)
         tickSharing(deltaSeconds)
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
+        updatePets(deltaSeconds)
         if (loftBookAutoClose > 0f) {
             loftBookAutoClose -= deltaSeconds
             if (loftBookAutoClose <= 0f) loftBookReading = false
@@ -5309,6 +5335,10 @@ class SceneEngine(
     fun onTouchCat(cw: Float, ch: Float) {
         grantRequest(RequestKind.MOCHI)
         careForMochi(1)
+        if (petKind != com.example.data.PetKind.CAT) {
+            onTouchPet(cw, ch)
+            return
+        }
         // A best friend sometimes answers with a slow blink: cat for "I love you".
         if (com.example.progress.MochiFondness.level(mochiFondness) >= 3 && Random.nextFloat() < 0.3f) {
             boy.emote = EmoteType.HEART
@@ -5660,6 +5690,15 @@ class SceneEngine(
         val pup = CafeLayout.pup(cw, ch, WorldViewport.pixelScale(cw))
         particles.spawnHeart(pup.x, pup.y - 30f, Color(0xFFFFCAD4))
         particles.spawnSparkles(pup.x, pup.y - 10f, 4, Color(0xFFFFD166))
+        // Petted on three different days, Boba wants to come home with them (plan 10, E)
+        petStore?.let { store ->
+            store.notePupPetted(com.example.data.CoupleDates.today().toString())
+            if (store.pupDays().size >= PUP_COMES_HOME_AFTER && store.meet(com.example.data.PetKind.PUPPY)) {
+                audio.playHeartChime()
+                showMessage(GameText.get(Res.string.pet_met_puppy), duration = 4.5f)
+                return
+            }
+        }
         showMessage(GameText.get(Res.string.scene_boba_the_cafe_pup_wags_his_tail_and_naps), duration = 2.8f)
     }
 
@@ -7699,7 +7738,9 @@ class SceneEngine(
                 }
                 FoxVisit.Event.LEAVING -> {
                     catState = CatState.SITTING_PURR
-                    showMessage(GameText.get(Res.string.fox_leaves), duration = 3.5f)
+                    // After its third Friday, the fox would rather stay (plan 10, E)
+                    val stays = (foxStore?.visits() ?: 0) >= FOX_STAYS_AFTER && petStore?.meet(com.example.data.PetKind.FOX) == true
+                    showMessage(GameText.get(if (stays) Res.string.pet_met_fox else Res.string.fox_leaves), duration = 4.5f)
                 }
                 FoxVisit.Event.GONE, null -> Unit
             }
@@ -7708,6 +7749,8 @@ class SceneEngine(
         if (!com.example.data.FridayFox.isFriday(today) || store.visited(today)) return
         if (currentScene !in FOX_SCENES || timeOfDayPhase.isNight || sceneTime < FOX_ARRIVES_AFTER) return
         if (isWatchSceneActive || mochiInBox || mochiErrand != null) return
+        // Once Ember lives with them, there's no fox left to come visiting (plan 10, E)
+        if (petKind == com.example.data.PetKind.FOX) return
         store.markVisited(today)
         // It comes to Mochi wherever she is; she wakes up and sits to watch it come
         mochiMatchmakerActive = false
@@ -7719,6 +7762,189 @@ class SceneEngine(
         catFacingLeft = foxVisit.x < catWorldX
         showMessage(GameText.get(Res.string.fox_arrives), duration = 3.5f)
         onProgress?.invoke(com.example.progress.ProgressEvent.FoxVisited)
+    }
+
+    /** The pet's name: Mochi's own, or the name of whoever lives with them now. */
+    val petName: String
+        get() = if (petKind == com.example.data.PetKind.CAT) catName else petKind.defaultName
+
+    private fun setPet(kind: com.example.data.PetKind) {
+        petKind = kind
+        hedgehogCurled = false
+        petHabitTimer = 0f
+        GameText.petName = petName
+    }
+
+    /**
+     * Has [kind] come to live with them (plan 10, E); Mochi goes on a sleepover at Grandpa Bao's
+     * (or comes home again). Only pets they've met can be chosen; returns whether it changed.
+     */
+    fun choosePet(kind: com.example.data.PetKind): Boolean {
+        val store = petStore ?: return false
+        if (!store.hasMet(kind) || kind == petKind) return false
+        store.chosen = kind
+        setPet(kind)
+        catState = CatState.SITTING_PURR
+        catSleeping = false
+        mochiInBox = false
+        mochiErrand = null
+        return true
+    }
+
+    /**
+     * Pets' habits (plan 10, E): the owl naps all day, the hedgehog uncurls when it feels safe.
+     * And now and then, a pet they haven't met turns up in its own place and time.
+     */
+    private fun updatePets(dt: Float) {
+        if (petHabitTimer > 0f) petHabitTimer = (petHabitTimer - dt).coerceAtLeast(0f)
+        when (petKind) {
+            com.example.data.PetKind.OWL ->
+                if (!timeOfDayPhase.isNight && petHabitTimer <= 0f && catState != CatState.SLEEPING && catState != CatState.WALK_FOLLOW && !foxVisit.active) {
+                    catState = CatState.SLEEPING
+                    catSleeping = true
+                }
+            com.example.data.PetKind.HEDGEHOG ->
+                if (hedgehogCurled && petHabitTimer <= 0f) {
+                    hedgehogCurled = false
+                    catState = CatState.SITTING_PURR
+                    catSleeping = false
+                }
+            else -> Unit
+        }
+
+        val store = petStore ?: return
+        petVisitor?.let { v ->
+            v.update(dt)
+            if (v.gone) petVisitor = null
+            return
+        }
+        if (sceneTime < PET_VISITOR_AFTER || isWatchSceneActive || foxVisit.active) return
+        val kind = visitorHere() ?: return
+        if (store.hasMet(kind)) return
+        val (x, y) = when (kind) {
+            com.example.data.PetKind.BUNNY -> 0.84f to 0.77f
+            com.example.data.PetKind.HEDGEHOG -> 0.16f to 0.77f
+            com.example.data.PetKind.DUCK -> 0.66f to 0.77f
+            com.example.data.PetKind.OWL -> 0.86f to 0.73f
+            else -> return
+        }
+        petVisitor = PetVisitor(kind, x, y)
+        showMessage(GameText.get(Res.string.pet_visitor_rustle), duration = 3f)
+    }
+
+    /** Who might turn up here, now: each pet has its own place and time. */
+    private fun visitorHere(): com.example.data.PetKind? = when (currentScene) {
+        SceneType.FLOWER -> com.example.data.PetKind.BUNNY.takeIf {
+            !timeOfDayPhase.isNight && weather != WeatherType.RAIN && weather != WeatherType.SNOW
+        }
+        SceneType.UNDER_TREE -> com.example.data.PetKind.HEDGEHOG.takeIf {
+            weather == WeatherType.AUTUMN || timeOfDayPhase.isSunset || timeOfDayPhase.isNight
+        }
+        SceneType.WALK -> com.example.data.PetKind.DUCK.takeIf { weather == WeatherType.RAIN }
+        SceneType.LOOKING -> com.example.data.PetKind.OWL.takeIf { timeOfDayPhase.isNight }
+        else -> null
+    }
+
+    /** A tap on a pet they haven't met: they meet it. Returns whether it hit. */
+    fun onPetVisitorTap(x: Float, y: Float, cw: Float, ch: Float, p: Float): Boolean {
+        val v = petVisitor ?: return false
+        if (v.met) return false
+        val vx = cw * v.x
+        val vy = ch * v.y - 7f * p
+        if (kotlin.math.abs(x - vx) > 18f * p || kotlin.math.abs(y - vy) > 16f * p) return false
+        val store = petStore ?: return false
+        store.meet(v.kind)
+        v.meet()
+        repeat(3) { particles.spawnHeart(vx + (it - 1) * 8f * p, vy - 10f * p, Color(0xFFFF8FA3)) }
+        audio.playHeartChime()
+        for (c in charactersBoyGirl) {
+            c.direction = if (v.x < c.worldX) Direction.LEFT else Direction.RIGHT
+            emote(c, EmoteType.HEART, 2f)
+        }
+        showMessage(GameText.get(Res.string.pet_met, v.kind.defaultName), duration = 4.5f)
+        return true
+    }
+
+    /** A tap on whoever lives with them, when it isn't Mochi: each has its own ways. */
+    private fun onTouchPet(cw: Float, ch: Float) {
+        val x = cw * catWorldX
+        val y = ch * catWorldY
+        particles.spawnHeart(x, y - 20f, Color(0xFFFF8FA3))
+        audio.playBubblePop()
+        when (petKind) {
+            com.example.data.PetKind.HEDGEHOG -> {
+                // Shy: a tap and it's a prickly little ball for a moment
+                catState = CatState.SLEEPING
+                catSleeping = true
+                hedgehogCurled = true
+                petHabitTimer = 2.2f
+                showMessage(GameText.get(Res.string.pet_hedgehog_curls, petName), duration = 2.5f)
+                return
+            }
+            com.example.data.PetKind.OWL -> {
+                petHabitTimer = 8f
+                if (catState == CatState.SLEEPING) {
+                    catState = CatState.SITTING_PURR
+                    catSleeping = false
+                    showMessage(GameText.get(Res.string.pet_owl_wakes, petName), duration = 2.5f)
+                    return
+                }
+            }
+            else -> Unit
+        }
+        if (currentScene == SceneType.COZY_LOFT) {
+            showMessage(GameText.get(petLine(CatState.SLEEPING), petName), duration = 2.5f)
+            return
+        }
+        catState = when (catState) {
+            CatState.SLEEPING -> CatState.SITTING_PURR
+            CatState.SITTING_PURR -> CatState.BELLY_ROLL
+            CatState.BELLY_ROLL -> CatState.PLAYFUL_POUNCE
+            CatState.PLAYFUL_POUNCE -> CatState.SLEEPING
+            CatState.WALK_FOLLOW -> CatState.SITTING_PURR
+        }
+        catTargetX = catWorldX
+        catSleeping = catState == CatState.SLEEPING
+        if (catState == CatState.BELLY_ROLL || catState == CatState.PLAYFUL_POUNCE) particles.spawnSparkles(x, y - 20f, 5)
+        showMessage(GameText.get(petLine(catState), petName), duration = 2.5f)
+    }
+
+    /** What the pet who lives with them does in [state], as a line with its name. */
+    private fun petLine(state: CatState): org.jetbrains.compose.resources.StringResource {
+        return when (petKind) {
+            com.example.data.PetKind.PUPPY -> when (state) {
+                CatState.BELLY_ROLL -> Res.string.pet_puppy_belly
+                CatState.PLAYFUL_POUNCE -> Res.string.pet_puppy_play
+                CatState.SLEEPING -> Res.string.pet_puppy_sleep
+                else -> Res.string.pet_puppy_happy
+            }
+            com.example.data.PetKind.BUNNY -> when (state) {
+                CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE -> Res.string.pet_bunny_play
+                CatState.SLEEPING -> Res.string.pet_bunny_sleep
+                else -> Res.string.pet_bunny_happy
+            }
+            com.example.data.PetKind.FOX -> when (state) {
+                CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE -> Res.string.pet_fox_play
+                CatState.SLEEPING -> Res.string.pet_fox_sleep
+                else -> Res.string.pet_fox_happy
+            }
+            com.example.data.PetKind.HEDGEHOG -> when (state) {
+                CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE -> Res.string.pet_hedgehog_play
+                CatState.SLEEPING -> Res.string.pet_hedgehog_curls
+                else -> Res.string.pet_hedgehog_happy
+            }
+            com.example.data.PetKind.DUCK -> when (state) {
+                CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE -> Res.string.pet_duck_play
+                CatState.SLEEPING -> Res.string.pet_duck_sleep
+                else -> Res.string.pet_duck_happy
+            }
+            com.example.data.PetKind.OWL -> when (state) {
+                CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE -> Res.string.pet_owl_play
+                CatState.SLEEPING -> Res.string.pet_owl_sleep
+                else -> Res.string.pet_owl_wakes
+            }
+            com.example.data.PetKind.CAT -> Res.string.scene_mochi_is_purring_happily
+        }
     }
 
     /** A tap on the fox (a happy hop) or on the ball it left (picked up). Returns whether it hit. */

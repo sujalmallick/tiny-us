@@ -134,6 +134,7 @@ fun MainScreen(
     var showMusicBox by remember { mutableStateOf(false) }
     var showSpecialCalendar by remember { mutableStateOf(false) }
     var showWardrobe by remember { mutableStateOf(false) }
+    var showPets by remember { mutableStateOf(false) }
     var showDreamJournal by remember { mutableStateOf(false) }
     var showRoomCustomizer by remember { mutableStateOf(false) }
     var showAvatarCustomizer by remember { mutableStateOf(false) }
@@ -147,6 +148,7 @@ fun MainScreen(
     // The festivals (plan 09, D) and whether one's screen is open.
     val festivalStore = remember(prefs) { com.example.data.FestivalStore(prefs.storage) }
     val foxStore = remember(prefs) { com.example.data.FoxStore(prefs.storage) }
+    val petStore = remember(prefs) { com.example.data.PetStore(prefs.storage) }
     var showFestival by remember { mutableStateOf(false) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
@@ -260,6 +262,8 @@ fun MainScreen(
             engine.coupleLifeStore = coupleLifeStore
             engine.festivalStore = festivalStore
             engine.foxStore = foxStore
+            engine.catName = prefs.catName
+            engine.petStore = petStore
             engine.refreshFestival()
             // A Phones Down session still running from before the app closed carries on.
             if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()
@@ -1359,6 +1363,10 @@ fun MainScreen(
                     showSettings = false
                     showWardrobe = true
                 },
+                onOpenPets = {
+                    showSettings = false
+                    showPets = true
+                },
                 onOpenAvatarCustomizer = {
                     showSettings = false
                     showAvatarCustomizer = true
@@ -1527,6 +1535,16 @@ fun MainScreen(
                     if (isSlotB) engine.girl.look = look else engine.boy.look = look
                 },
                 onDismiss = { showAvatarCustomizer = false }
+            )
+        }
+
+        if (showPets) {
+            OurPetsDialog(
+                store = petStore,
+                current = engine.petKind,
+                catName = prefs.catName,
+                onChoose = { kind -> engine.choosePet(kind) },
+                onDismiss = { showPets = false }
             )
         }
 

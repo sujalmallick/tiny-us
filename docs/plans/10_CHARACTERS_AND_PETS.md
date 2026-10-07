@@ -55,7 +55,7 @@ the milk saucer doesn't make Mochi walk to it; ice-cream cones on the pier sit a
 Candidates from the website footer (tiny-us-site `src/components/FooterPlayground.tsx`): bunny, fox cub with
 ball, hedgehog that curls up, duck with ducklings, owl; and the puppy from `RoamingDog.tsx`.
 
-- [ ] E-1. Pixel sprites and habits for each.
-- [ ] E-2. Meeting them (the unlock, with a twist rather than a grind).
-- [ ] E-3. The tab: pick who lives with you instead of Mochi.
-- [ ] E-4. Tests and renders.
+- [x] E-1. Pixel sprites and habits for each. *(`PetSprites` in `WorldPets.kt`, from the website footer art: Boba the puppy (sits with a wagging tail, flops over for belly rubs), Clover the bunny (hops, jumps for joy), Ember the fox cub (pounces on its ball, sleeps tail over nose), Hazel the hedgehog (curls into a ball when tapped), Puddle the duck (three ducklings always behind her), Olive the owl (naps all day, awake at night). Each has its own lines with its name.)*
+- [x] E-2. Meeting them (the unlock, with a twist rather than a grind). *(Each is met once, in its own place and time: Clover in the meadow on a fair day, Hazel under the tree when the leaves turn or at dusk, Puddle and her ducklings on the walk in the rain, Olive on a post on the hill at night; tap to meet. Ember stays after its third Friday visit; Boba comes home after being petted at the cafe on three different days.)*
+- [x] E-3. The tab: pick who lives with you instead of Mochi. *("Our pets" in Settings, under Characters: every pet, who lives with you, hints for the ones not met. Choosing another sends Mochi on a sleepover at Grandpa Bao's; "Come home" brings her back. The chosen pet takes Mochi's place everywhere, the loft too, and the scene's lines use its name.)*
+- [x] E-4. Tests and renders. *(`PetsTest`, `PetsEngineTest` (meeting, places and times, choosing, the owl's naps, the hedgehog's curl, Boba and Ember coming to stay), `PetsPreviewTest` (every pet in every state, the meetings, Our pets).)*

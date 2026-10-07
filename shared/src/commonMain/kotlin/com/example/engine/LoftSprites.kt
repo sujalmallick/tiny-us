@@ -586,7 +586,9 @@ object LoftSprites {
         lampLit: Boolean,
         isSnow: Boolean = false,
         drawCat: () -> Unit = {},
-        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE
+        roomTheme: RoomTheme = RoomTheme.WARM_AUTUMN_COTTAGE,
+        /** Draws another pet asleep at (x, y) in Mochi's place on the blanket (plan 10, E). */
+        drawSleepingPet: ((Float, Float) -> Unit)? = null
     ) {
         val floorY = ch * 0.55f
 
@@ -597,7 +599,7 @@ object LoftSprites {
         val sofaStartX = cw * 0.38f
         val mochiX = sofaStartX + 14 * p
         val mochiY = floorY - 3 * p
-        drawLoftSleepingCat(scope, mochiX, mochiY, p, timeSeconds, isSnow)
+        if (drawSleepingPet != null) drawSleepingPet(mochiX, mochiY) else drawLoftSleepingCat(scope, mochiX, mochiY, p, timeSeconds, isSnow)
 
         // 3. Coffee Table with flower vase, books, lantern, mugs, and cookies
         drawCoffeeTable(scope, cw, floorY, p, timeSeconds, lampLit, roomTheme)

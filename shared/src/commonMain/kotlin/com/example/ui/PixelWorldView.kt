@@ -276,6 +276,11 @@ fun PixelWorldView(
                             flushPendingTap()
                             return@detectTapGestures
                         }
+                        // A pet they haven't met yet (plan 10, E)
+                        if (engine.onPetVisitorTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) {
+                            flushPendingTap()
+                            return@detectTapGestures
+                        }
 
                         // Dedicated touch targets for Evening Scooter Ride
                         if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
@@ -1511,7 +1516,13 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
 
             fun drawMochi() {
                 // In her cardboard box only her peeking head shows, drawn with the box (plan 10, C).
-                if (isCatInScene && !engine.mochiInBox) {
+                if (isCatInScene && !engine.mochiInBox && PetSprites.drawsKind(engine.petKind)) {
+                    // Whoever lives with them now (plan 10, E)
+                    PetSprites.drawPet(
+                        this, engine.petKind, cw * engine.catWorldX, catY, pixelScale, engine.sceneTime,
+                        engine.catState, engine.catFacingLeft, night = engine.timeOfDayPhase.isNight
+                    )
+                } else if (isCatInScene && !engine.mochiInBox) {
                     WorldSprites.drawCat(
                         scope = this,
                         cx = cw * engine.catWorldX,
@@ -1622,7 +1633,11 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 timeSeconds = engine.sceneTime,
                 lampLit = engine.lampLit,
                 isSnow = engine.weather == com.example.scene.WeatherType.SNOW,
-                roomTheme = engine.roomTheme
+                roomTheme = engine.roomTheme,
+                // Whoever lives with them sleeps on the blanket instead of Mochi (plan 10, E)
+                drawSleepingPet = if (PetSprites.drawsKind(engine.petKind)) { { x: Float, y: Float ->
+                    PetSprites.drawPet(this, engine.petKind, x, y + 3f * pixelScale, pixelScale, engine.sceneTime, com.example.scene.CatState.SLEEPING, facingLeft = false)
+                } } else null
             )
 
             val p = pixelScale
@@ -1722,6 +1737,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
 
         // Cooking, fishing and garden care (plan 07, C3-C5).
         drawFridayFox(this, engine, cw, ch, pixelScale)
+        drawPetVisitor(this, engine, cw, ch, pixelScale)
         drawCozyGames(this, engine, cw, ch, pixelScale, engine.sceneTime)
 
         // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.
