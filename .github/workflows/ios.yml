@@ -3,8 +3,10 @@ name: Tiny Us iOS Build & IPA Package
 on:
   workflow_dispatch:
   # Builds iOS work branches on every push, and any pull request that touches iOS or shared code.
+  # Master is built too: a branch can only restore caches saved on itself or on master, so this
+  # keeps a warm cache for every new branch's first build.
   push:
-    branches: [ 'ios/**' ]
+    branches: [ 'ios/**', 'master' ]
     paths:
       - 'iosApp/**'
       - 'shared/**'
