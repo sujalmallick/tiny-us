@@ -470,10 +470,11 @@ fun drawEnvironment(
                 scope.drawRect(Color(0xFF526456), androidx.compose.ui.geometry.Offset(sqLeft + sqW * 0.75f, sqTop + 2 * p), Size(1.2f * p, sqH - 4 * p))
             }
 
-            // 3. Mochi's Cozy Cardboard Box: Cat head & paws peeking out!
-            if (engine.cardboardBoxTimer > 0f) {
+            // 3. Mochi's Cozy Cardboard Box: Mochi herself, in it, peeking out now and then (plan 10, C)
+            if (engine.mochiInBox) {
                 val dur = 1.3f
-                val t = ((dur - engine.cardboardBoxTimer) / dur).coerceIn(0f, 1f)
+                // A peek every couple of seconds while she's in there, ducking down between
+                val t = ((engine.sceneTime % 2.2f) / dur).coerceIn(0f, 1f)
                 val cBoxX = cw * 0.17f
                 val cBoxY = lrFloorY + lrFloorH * 0.75f
                 val cBoxW = 20 * p

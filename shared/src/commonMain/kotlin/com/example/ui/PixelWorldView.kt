@@ -1505,7 +1505,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             }
 
             fun drawMochi() {
-                if (isCatInScene) {
+                // In her cardboard box only her peeking head shows, drawn with the box (plan 10, C).
+                if (isCatInScene && !engine.mochiInBox) {
                     WorldSprites.drawCat(
                         scope = this,
                         cx = cw * engine.catWorldX,

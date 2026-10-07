@@ -321,6 +321,44 @@ class ScenePreviewTest {
         }
     }
 
+    /**
+     * Plan 10, C: Mochi in every scene where she is, then in her box and at her saucer after
+     * walking over. MOCHI_PREVIEW_DIR=dir.
+     */
+    @Test
+    fun writesMochiSheetWhenAsked() {
+        val out = File(System.getenv("MOCHI_PREVIEW_DIR") ?: return).apply { mkdirs() }
+        val frames = mutableListOf<Pair<String, Bitmap>>()
+        fun frame(scene: SceneType, label: String, setup: (SceneEngine, Float, Float) -> Unit) {
+            val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
+            reallocateNightStars(42L)
+            val engine = engineFor(scene, TimeOfDayPhase.AFTERNOON, camera.worldW, camera.worldH)
+            engine.autonomyEnabled = false
+            setup(engine, camera.worldW, camera.worldH)
+            frames += label to render(cw, ch) { drawWorld(engine, LowResWorldBuffer(), camera) }
+        }
+        fun SceneEngine.runFor(seconds: Float, w: Float, h: Float, until: () -> Boolean = { false }) {
+            var t = 0f
+            while (t < seconds && !until()) { update(1f / 30f, w, h); t += 1f / 30f }
+        }
+        for (scene in SceneType.values()) frame(scene, scene.name.lowercase()) { _, _, _ -> }
+        frame(SceneType.SLEEP, "in_the_box") { e, w, h ->
+            e.onTouchCardboardBox(0f, 0f)
+            e.runFor(30f, w, h) { e.mochiInBox }
+            e.runFor(0.6f, w, h)
+        }
+        frame(SceneType.MOMO_STALL, "at_the_saucer") { e, w, h ->
+            e.onTouchMilkSaucer(0f, 0f)
+            e.runFor(30f, w, h) { e.catState != com.example.scene.CatState.WALK_FOLLOW }
+        }
+        val top = (ch * 0.30f).toInt()
+        val hh = (ch * 0.58f).toInt()
+        for ((label, f) in frames) {
+            save(Bitmap.createBitmap(f, 0, top, cw.toInt(), hh), File(out, "mochi_$label.png"))
+            f.recycle()
+        }
+    }
+
     @Test
     fun writesDissolvePreviewWhenAsked() {
         val out = File(System.getenv("SCENE_PREVIEW_DIR") ?: return).apply { mkdirs() }
