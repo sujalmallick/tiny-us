@@ -6,6 +6,9 @@
 	<string>Tiny Us can unlock with Face ID when you turn on the app lock.</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
 	<string>Tiny Us saves your Polaroids to Photos when you ask it to.</string>
+	<!-- The only encryption is the backup file, through Apple's CryptoKit and CommonCrypto: exempt. -->
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleExecutable</key>
