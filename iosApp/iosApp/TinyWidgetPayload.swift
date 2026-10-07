@@ -4,6 +4,9 @@ import Foundation
 enum TinyAppGroup {
     static let suiteName = "group.com.example.tinyus.shared"
     static let payloadKey = "tiny-us.widget.payload"
+    /// The scene pictures (PNG, one game pixel per pixel), written by the shared app (IosWidgetPictures).
+    static let smallSceneKey = "tiny-us.widget.scene.small"
+    static let mediumSceneKey = "tiny-us.widget.scene.medium"
     static let widgetKind = "TinyUsWidget"
     /// Without the entitlement (unsigned sideloads) iOS keeps this suite app-local, so it still persists.
     static var defaults: UserDefaults { UserDefaults(suiteName: suiteName) ?? .standard }

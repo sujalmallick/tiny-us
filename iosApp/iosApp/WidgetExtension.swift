@@ -4,12 +4,15 @@ import WidgetKit
 private struct TinyUsEntry: TimelineEntry {
     let date: Date
     let payload: TinyWidgetPayload
+    /// The couple's scene for each widget shape, once the app has drawn it.
+    var smallScene: UIImage? = nil
+    var mediumScene: UIImage? = nil
 }
 
 private struct TinyUsProvider: TimelineProvider {
     func placeholder(in context: Context) -> TinyUsEntry { TinyUsEntry(date: .now, payload: .empty) }
     func getSnapshot(in context: Context, completion: @escaping (TinyUsEntry) -> Void) {
-        completion(TinyUsEntry(date: .now, payload: load()))
+        completion(TinyUsEntry(date: .now, payload: load(), smallScene: scene(TinyAppGroup.smallSceneKey), mediumScene: scene(TinyAppGroup.mediumSceneKey)))
     }
     func getTimeline(in context: Context, completion: @escaping (Timeline<TinyUsEntry>) -> Void) {
         let now = Date()
@@ -18,13 +21,22 @@ private struct TinyUsProvider: TimelineProvider {
         let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: today) ?? now.addingTimeInterval(86_400)
         var tomorrowPayload = current
         tomorrowPayload.daysTogether = refreshed(current, at: tomorrow).daysTogether
-        let entries = [TinyUsEntry(date: now, payload: current), TinyUsEntry(date: tomorrow, payload: tomorrowPayload)]
+        let small = scene(TinyAppGroup.smallSceneKey)
+        let medium = scene(TinyAppGroup.mediumSceneKey)
+        let entries = [
+            TinyUsEntry(date: now, payload: current, smallScene: small, mediumScene: medium),
+            TinyUsEntry(date: tomorrow, payload: tomorrowPayload, smallScene: small, mediumScene: medium)
+        ]
         completion(Timeline(entries: entries, policy: .after(tomorrow.addingTimeInterval(300))))
     }
     private func load() -> TinyWidgetPayload {
         guard let data = TinyAppGroup.defaults.data(forKey: TinyAppGroup.payloadKey),
               let payload = try? JSONDecoder().decode(TinyWidgetPayload.self, from: data) else { return .empty }
         return payload
+    }
+    private func scene(_ key: String) -> UIImage? {
+        guard let data = TinyAppGroup.defaults.data(forKey: key) else { return nil }
+        return UIImage(data: data)
     }
     private func refreshed(_ payload: TinyWidgetPayload, at date: Date) -> TinyWidgetPayload {
         var result = payload
@@ -43,6 +55,15 @@ private struct TinyUsWidgetView: View {
     private let cream = Color(red: 1, green: 0.86, blue: 0.67)
 
     var body: some View {
+        if let picture = family == .systemSmall ? entry.smallScene : entry.mediumScene {
+            SceneWidgetView(payload: entry.payload, picture: picture, small: family == .systemSmall)
+        } else {
+            classic
+        }
+    }
+
+    /// Before the app has drawn a scene: the gradient card with the little pixel couple.
+    private var classic: some View {
         ZStack {
             LinearGradient(colors: [Color(red: 0.18, green: 0.2, blue: 0.31), Color(red: 0.35, green: 0.26, blue: 0.34)], startPoint: .topLeading, endPoint: .bottomTrailing)
             VStack(alignment: .leading, spacing: 7) {
@@ -74,6 +95,64 @@ private struct TinyUsWidgetView: View {
         .widgetBackground()
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Tiny Us. \(entry.payload.coupleNames), \(entry.payload.daysTogether) days together. \(entry.payload.dailyMomentPrompt)")
+    }
+}
+
+/// The couple's real scene (as on Android): the picture fills the widget, with the names, a status
+/// line and the day count on a strip along the top, which is usually sky or ceiling.
+private struct SceneWidgetView: View {
+    let payload: TinyWidgetPayload
+    let picture: UIImage
+    let small: Bool
+    private let dayPink = Color(red: 0.79, green: 0.09, blue: 0.29)
+
+    private var status: String {
+        payload.latestSignalText == TinyWidgetPayload.empty.latestSignalText ? payload.dailyMomentPrompt : payload.latestSignalText
+    }
+
+    var body: some View {
+        ZStack(alignment: .top) {
+            GeometryReader { geo in
+                Image(uiImage: picture)
+                    .resizable()
+                    .interpolation(.none)
+                    .scaledToFill()
+                    .frame(width: geo.size.width, height: geo.size.height, alignment: .bottom)
+                    .clipped()
+            }
+            HStack(alignment: .center, spacing: 8) {
+                VStack(alignment: .leading, spacing: 1) {
+                    Text(payload.coupleNames).font(.system(size: 13, weight: .bold, design: .rounded)).lineLimit(1)
+                    Text(status).font(.system(size: 11, weight: .medium, design: .rounded)).lineLimit(1).opacity(0.95)
+                }
+                .foregroundStyle(.white)
+                .shadow(color: .black.opacity(0.6), radius: 2, y: 1)
+                Spacer(minLength: 0)
+                if !small {
+                    dayPill
+                }
+            }
+            .padding(.horizontal, 12)
+            .padding(.top, 9)
+            .padding(.bottom, 14)
+            .frame(maxWidth: .infinity)
+            .background(LinearGradient(colors: [.black.opacity(0.45), .clear], startPoint: .top, endPoint: .bottom))
+            if small {
+                VStack { Spacer(); HStack { Spacer(); dayPill } }.padding(8)
+            }
+        }
+        .widgetBackground()
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Tiny Us. \(payload.coupleNames) in the \(payload.sceneName), day \(payload.daysTogether). \(status)")
+    }
+
+    private var dayPill: some View {
+        Text("Day \(payload.daysTogether)")
+            .font(.system(size: 11, weight: .bold, design: .rounded))
+            .foregroundStyle(dayPink)
+            .padding(.horizontal, 8)
+            .padding(.vertical, 3)
+            .background(Capsule().fill(Color.white.opacity(0.92)))
     }
 }
 

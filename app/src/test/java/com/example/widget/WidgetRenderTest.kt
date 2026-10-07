@@ -10,6 +10,7 @@ import com.example.data.PreferencesManager
 import com.example.scene.SceneType
 import com.example.scene.WeatherType
 import com.example.ui.WidgetSceneRenderer
+import androidx.compose.ui.graphics.asAndroidBitmap
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -40,6 +41,26 @@ class WidgetRenderTest {
             if (picture.getPixel(x, y) ushr 24 == 0) transparent++
         }
         assertEquals("transparent pixels in the picture", 0, transparent)
+    }
+
+    /** iOS draws one game pixel per pixel and lets the widget scale it up: the same shared picture, small. */
+    @Test
+    fun iosPicturesAreOneGamePixelPerPixel() {
+        for ((shape, height) in listOf("small" to 144, "medium" to 67)) {
+            val picture = com.example.ui.WidgetScene.render(SceneType.FLOWER, WeatherType.SUNNY, "DAY", "Leo", "Mia", 144, height)
+                .asAndroidBitmap()
+            assertEquals(144, picture.width)
+            assertEquals(height, picture.height)
+            var transparent = 0
+            for (y in 0 until picture.height) for (x in 0 until picture.width) {
+                if (picture.getPixel(x, y) ushr 24 == 0) transparent++
+            }
+            assertEquals("transparent pixels in the $shape picture", 0, transparent)
+            System.getenv("WIDGET_PREVIEW_DIR")?.let { dir ->
+                File(dir).mkdirs()
+                File(dir, "ios_widget_$shape.png").outputStream().use { picture.compress(Bitmap.CompressFormat.PNG, 100, it) }
+            }
+        }
     }
 
     @Test

@@ -96,25 +96,25 @@ class IosPolaroidPhotos(storage: KeyValueStorage) : PolaroidPhotos {
     }
 
     private fun decode(path: String): ImageBitmap? = decodeSkia(path)?.toComposeImageBitmap()
-
-    /** The image's pixels as PNG bytes (read back and encoded by Skia, as the pixel buffer does). */
-    private fun encodePng(image: ImageBitmap): ByteArray? = runCatching {
-        val pixels = IntArray(image.width * image.height)
-        image.readPixels(pixels)
-        val bytes = ByteArray(pixels.size * 4)
-        for (i in pixels.indices) {
-            val c = pixels[i]
-            val b = i * 4
-            bytes[b] = c.toByte()
-            bytes[b + 1] = (c shr 8).toByte()
-            bytes[b + 2] = (c shr 16).toByte()
-            bytes[b + 3] = (c ushr 24).toByte()
-        }
-        // Pixels are little-endian ARGB ints, which is BGRA byte order.
-        val raster = SkiaImage.makeRaster(ImageInfo(image.width, image.height, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL), bytes, image.width * 4)
-        raster.encodeToData(EncodedImageFormat.PNG)?.bytes
-    }.getOrNull()
 }
+
+/** The image's pixels as PNG bytes (read back and encoded by Skia, as the pixel buffer does). */
+internal fun encodePng(image: ImageBitmap): ByteArray? = runCatching {
+    val pixels = IntArray(image.width * image.height)
+    image.readPixels(pixels)
+    val bytes = ByteArray(pixels.size * 4)
+    for (i in pixels.indices) {
+        val c = pixels[i]
+        val b = i * 4
+        bytes[b] = c.toByte()
+        bytes[b + 1] = (c shr 8).toByte()
+        bytes[b + 2] = (c shr 16).toByte()
+        bytes[b + 3] = (c ushr 24).toByte()
+    }
+    // Pixels are little-endian ARGB ints, which is BGRA byte order.
+    val raster = SkiaImage.makeRaster(ImageInfo(image.width, image.height, ColorType.BGRA_8888, ColorAlphaType.UNPREMUL), bytes, image.width * 4)
+    raster.encodeToData(EncodedImageFormat.PNG)?.bytes
+}.getOrNull()
 
 private fun NSData.toByteArray(): ByteArray {
     val size = length.toInt()
