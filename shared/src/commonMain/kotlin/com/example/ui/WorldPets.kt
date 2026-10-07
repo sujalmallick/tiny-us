@@ -5,8 +5,10 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.data.PetKind
+import com.example.engine.drawContactShadow
 import com.example.scene.CatState
 import kotlin.math.abs
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /*
@@ -81,7 +83,7 @@ object PetSprites {
     }
 
     private fun shadow(scope: DrawScope, cx: Float, groundY: Float, width: Float, p: Float) =
-        scope.drawOval(Color(0xFF151820).copy(alpha = 0.22f), Offset(cx - width / 2f, groundY - 1.2f * p), Size(width, 2.4f * p))
+        drawContactShadow(scope, cx, groundY, (width / p).roundToInt(), p)
 
     /**
      * Draws [kind] (not the cat: she has her own [com.example.engine.WorldSprites.drawCat]) in

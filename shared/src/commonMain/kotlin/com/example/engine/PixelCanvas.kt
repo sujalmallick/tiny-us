@@ -6,6 +6,7 @@ import androidx.compose.ui.geometry.isUnspecified
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import kotlin.math.sin
+import kotlin.math.roundToInt
 
 enum class Direction {
     LEFT, RIGHT
@@ -623,22 +624,23 @@ object PixelArtRenderer {
         val startX = place(centerX - (w * p) / 2f + char.idleSwayOffset)
         val startY = place(bottomY - (h * p) - char.bounceOffset)
 
-        // Grounding contact drop-shadow beneath character's feet
-        val shadowW = when (char.pose) {
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 19f * p
-            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 17f * p
-            CharacterPose.HUG, CharacterPose.KISS -> 16f * p
-            else -> 14f * p
+        // Grounding contact shadow beneath the character's feet: a flat pixel ellipse on the same
+        // grid as the sprite. It stays on the ground (bottomY) and shrinks a little when they jump.
+        val baseShadowWidth = when (char.pose) {
+            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 19
+            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 17
+            CharacterPose.HUG, CharacterPose.KISS -> 16
+            else -> 14
         }
-        val shadowH = 4.2f * p
-        val shadowAlpha = when (char.pose) {
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 0.18f
-            else -> 0.25f
-        }
-        drawScope.drawOval(
-            color = Color(0xFF151820).copy(alpha = shadowAlpha),
-            topLeft = Offset(centerX - shadowW / 2f + char.idleSwayOffset * 0.5f, bottomY - shadowH * 0.55f),
-            size = Size(shadowW, shadowH)
+        val risenPx = (char.bounceOffset / p).coerceAtLeast(0f)
+        val shadowWidth = (baseShadowWidth * (1f - (risenPx * 0.06f).coerceAtMost(0.35f)))
+            .roundToInt().coerceAtLeast(4)
+        drawContactShadow(
+            scope = drawScope,
+            centerX = centerX + char.idleSwayOffset * 0.5f,
+            groundY = bottomY,
+            widthPx = shadowWidth,
+            p = p
         )
 
         when (char.pose) {

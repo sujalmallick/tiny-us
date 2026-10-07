@@ -9,11 +9,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.engine.PierSprites
+import com.example.engine.drawContactShadow
 import com.example.scene.GullState
 import com.example.scene.PierLayout
 import com.example.scene.SceneEngine
 import com.example.scene.WeatherType
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 /**
@@ -200,6 +202,7 @@ fun drawSeasidePierScene(
 
     // 6. Bench the couple sits on (drawn behind them).
     val benchY = ch * 0.74f - 9f * p
+    drawContactShadow(scope, cw * 0.49f, benchY + 9f * p, (cw * 0.30f / p).roundToInt(), p)
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY), Size(cw * 0.30f, 2.5f * p))
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY - 8f * p), Size(cw * 0.30f, 2f * p))
     scope.drawRect(Color(0xFF3E2A1D), Offset(cw * 0.36f, benchY), Size(1.8f * p, 9f * p))
@@ -207,6 +210,8 @@ fun drawSeasidePierScene(
 
     // 7. Ice-cream cart with a striped awning.
     val cart = PierLayout.cart(cw, ch)
+    drawContactShadow(scope, cart.x - 7f * p, cart.y, 8, p)
+    drawContactShadow(scope, cart.x + 7f * p, cart.y, 8, p)
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x - 7f * p, cart.y - 3f * p))
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x + 7f * p, cart.y - 3f * p))
     scope.drawRoundRect(Color(0xFFF7F3E8), Offset(cart.x - 11f * p, cart.y - 16f * p), Size(22f * p, 12f * p), CornerRadius(2f * p, 2f * p))
@@ -225,6 +230,7 @@ fun drawSeasidePierScene(
 
     // 8. Bait bucket by Mochi's spot.
     val bucket = PierLayout.bucket(cw, ch)
+    drawContactShadow(scope, bucket.x, bucket.y, 10, p)
     scope.drawRect(Color(0xFF8E9AA6), Offset(bucket.x - 3.5f * p, bucket.y - 6f * p), Size(7f * p, 6f * p))
     scope.drawRect(Color(0xFF6B7783), Offset(bucket.x - 4f * p, bucket.y - 6.5f * p), Size(8f * p, 1.2f * p))
     scope.drawRect(Color(0xFFB0C4DE), Offset(bucket.x + 1f * p, bucket.y - 9f * p), Size(1.5f * p, 3f * p))

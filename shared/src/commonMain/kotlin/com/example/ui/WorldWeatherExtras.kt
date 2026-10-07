@@ -65,7 +65,7 @@ private fun drawSnowman(scope: DrawScope, cw: Float, ch: Float, p: Float, stage:
     val snow = Color(0xFFF7FBFF)
     val shade = Color(0xFFD6E4F0)
 
-    scope.drawOval(Color(0x33000000), Offset(base.x - 10f * p, base.y - 1.5f * p), Size(20f * p, 3f * p))
+    com.example.engine.drawContactShadow(scope, base.x, base.y, 20, p)
     // Base
     scope.drawCircle(shade, 7.5f * p, Offset(base.x, base.y - 6.5f * p))
     scope.drawCircle(snow, 7f * p, Offset(base.x - 0.6f * p, base.y - 7f * p))

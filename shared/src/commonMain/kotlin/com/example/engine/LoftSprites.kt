@@ -642,7 +642,7 @@ object LoftSprites {
         val y = cy - catH / 2f
 
         // Soft shadow under cat on the blanket
-        scope.drawRect(Color(0x35000000), Offset(x + p, cy + 3 * p), Size(catW - 2 * p, 2.5f * p))
+        drawContactShadow(scope, cx, cy + 4 * p, 12, p)
 
         // Fur colors
         val furWhite = Color(0xFFFDFBF7)
@@ -1599,6 +1599,10 @@ object LoftSprites {
         val sofaH = 26 * p
         val sofaY = floorY - sofaH + 6 * p
 
+        // Contact shadow grounding the daybed on the floor. The cuddled couple are part of this
+        // sofa sprite, so the shadow belongs to the sofa, not to their feet.
+        drawContactShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p)
+
         // Sofa wooden turned legs
         scope.drawRect(DarkWoodBeam, Offset(sofaStartX + 4 * p, floorY - 2.5f * p), Size(3 * p, 2.5f * p))
         scope.drawRect(DarkWoodBeam, Offset(sofaEndX - 7 * p, floorY - 2.5f * p), Size(3 * p, 2.5f * p))
@@ -1709,6 +1713,9 @@ object LoftSprites {
         val tableX = cw * 0.55f - tableW / 2f
         val tableY = floorY + 4 * p
 
+        // Contact shadow grounding the coffee table on the floor
+        drawContactShadow(scope, cw * 0.55f, tableY + tableH, 36, p)
+
         // Table wooden legs
         scope.drawRect(DarkWoodBeam, Offset(tableX + 2.5f * p, tableY + tableH - 4 * p), Size(2.5f * p, 4 * p))
         scope.drawRect(DarkWoodBeam, Offset(tableX + tableW - 5 * p, tableY + tableH - 4 * p), Size(2.5f * p, 4 * p))
@@ -1775,6 +1782,9 @@ object LoftSprites {
         val stoolX = cw * 0.67f
         val stoolY = floorY + 8 * p
 
+        // Contact shadow grounding the footstool on the floor
+        drawContactShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p)
+
         scope.drawRect(DarkWoodBeam, Offset(stoolX + p, stoolY + 3.5f * p), Size(2f * p, 5.5f * p))
         scope.drawRect(DarkWoodBeam, Offset(stoolX + stoolW - 3f * p, stoolY + 3.5f * p), Size(2f * p, 5.5f * p))
 
@@ -1801,6 +1811,7 @@ object LoftSprites {
         val cushY = nookBaseY
         val cushW = 18 * p
         val cushH = 9 * p
+        drawContactShadow(scope, cushX, cushY + cushH, 19, p)
         scope.drawRect(Color(0xFFBC6C25), Offset(cushX - cushW / 2f, cushY + 2 * p), Size(cushW, cushH - 2 * p))
         scope.drawRect(Color(0xFFE9C46A), Offset(cushX - cushW / 2f + p, cushY), Size(cushW - 2 * p, cushH - 2 * p))
         scope.drawRect(Color(0xFFF4A261), Offset(cushX - cushW / 2f + 2 * p, cushY + p), Size(cushW - 4 * p, 2.5f * p))
@@ -1809,6 +1820,7 @@ object LoftSprites {
         // 2. Stack of Vintage Hardcover Books & Leaning Vinyl propped right beside cushion (cw * 0.31f)
         val stackX = cw * 0.31f
         val stackY = nookBaseY - p
+        drawContactShadow(scope, stackX, stackY + 8 * p, 15, p)
         // Book 1 (bottom): Burgundy
         scope.drawRect(Color(0xFF6B1D2F), Offset(stackX - 7 * p, stackY + 4 * p), Size(14 * p, 4 * p))
         scope.drawRect(Color(0xFFE9C46A), Offset(stackX + 5.5f * p, stackY + 4.5f * p), Size(1.5f * p, 3 * p))
@@ -1827,6 +1839,7 @@ object LoftSprites {
         val lantY = nookBaseY + 2 * p
         val lantW = 8 * p
         val lantH = 13 * p
+        drawContactShadow(scope, lantX, lantY + lantH, 10, p)
         scope.drawRect(Color(0xFFB08968), Offset(lantX - lantW / 2f, lantY), Size(lantW, lantH))
         scope.drawRect(Color(0xFF58311B), Offset(lantX - lantW / 2f + p, lantY + p), Size(lantW - 2 * p, lantH - 2 * p))
         // Glowing candle inside illuminating the books
@@ -1844,6 +1857,7 @@ object LoftSprites {
         val bskY = nookBaseY
         val bskW = 16 * p
         val bskH = 12 * p
+        drawContactShadow(scope, bskX, bskY + bskH, 17, p)
         val bLeft = bskX - bskW / 2f
         scope.drawRect(Color(0xFFB08968), Offset(bLeft, bskY), Size(bskW, bskH))
         scope.drawRect(Color(0xFFD4A373), Offset(bLeft + 1.5f * p, bskY + 1.5f * p), Size(bskW - 3 * p, bskH - 3 * p))
@@ -1868,6 +1882,7 @@ object LoftSprites {
         val standY = floorY - standH + 4 * p
 
         // Tiered wooden nightstand / audio rack
+        drawContactShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p)
         scope.drawRect(Color(0xFF45240F), Offset(standX, standY), Size(standW, standH))
         scope.drawRect(Color(0xFF6B3A19), Offset(standX - p, standY), Size(standW + 2 * p, 2 * p))
         scope.drawRect(DarkWoodBeam, Offset(standX, standY + 8 * p), Size(standW, 1.5f * p))
@@ -1918,6 +1933,7 @@ object LoftSprites {
         // Potted houseplant on the floor beside the audio rack
         val plantX = standX + standW + 1.5f * p
         val plantY = floorY
+        drawContactShadow(scope, plantX + 2.75f * p, plantY, 7, p)
         scope.drawRect(Color(0xFFB07D62), Offset(plantX, plantY - 5.5f * p), Size(5.5f * p, 5.5f * p))
         scope.drawRect(Color(0xFF2D6A4F), Offset(plantX - 1.5f * p, plantY - 10 * p), Size(8.5f * p, 5 * p))
         scope.drawRect(Color(0xFF52B788), Offset(plantX, plantY - 13 * p), Size(5.5f * p, 3.5f * p))
