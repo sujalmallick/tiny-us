@@ -108,6 +108,11 @@ class SceneEngine(
         const val LOFT_BOY_SEAT_X = 0.58f
         const val LOFT_GIRL_SEAT_X = 0.65f
         const val LOFT_SEAT_Y = 0.575f
+        /** Plan 11: when visitors may turn up in a scene, and where the painter's easel stands. */
+        const val VISITOR_AFTER = 6f
+        val PAINTER_SCENES = setOf(SceneType.FLOWER, SceneType.WALK)
+        const val EASEL_X = 0.84f
+        const val EASEL_Y = 0.77f
         /** How close Pip dares to perch to the couple around noon (plan 09, I). */
         const val PIP_BOLD_GAP = 0.09f
         /** How long a friend's thank-you line shows before their secret opens. */
@@ -418,6 +423,17 @@ class SceneEngine(
     var tableCandleTimer: Float by mutableFloatStateOf(0f)     // drives candle flicker & warm glow (1.5 s)
     var poufBounceTimer: Float by mutableFloatStateOf(0f)      // drives knitted pouf squish-bounce (0.8 s)
     var cardboardBoxTimer: Float by mutableFloatStateOf(0f)    // drives Mochi peeking out of box (1.3 s)
+    /** Plan 11's visitors, declared early: loadScene resets them. */
+    val painter = PainterVisit()
+    val oldCouple = OldCoupleVisit()
+    var visitorStore: com.example.data.VisitorStore? = null
+    /** The day they got together (yyyy-MM-dd), for the old couple's anniversary visit. */
+    var togetherSince: String? = null
+    /** A painting to show (just finished, or opened from the book). */
+    var shownPainting: com.example.data.Painting? by mutableStateOf(null)
+    /** The old couple's anniversary note is open on screen. */
+    var shownNote: Boolean by mutableStateOf(false)
+
     /** The hour the friends keep their routines by (plan 09, I); tests set [clockHourOverride]. */
     var clockHourOverride: Int? = null
     val clockHour: Int get() = clockHourOverride ?: TimeOfDayPhase.currentHour()
@@ -862,6 +878,9 @@ class SceneEngine(
         poufBounceTimer = 0f
         cardboardBoxTimer = 0f
         foxVisit.stop()
+        painter.stop()
+        oldCouple.stop()
+        oldCouple.noteWaiting = false
         petVisitor = null
         foxCheckedScene = null
         foxBallFriday = null
@@ -2067,6 +2086,7 @@ class SceneEngine(
         tickSharing(deltaSeconds)
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         updatePets(deltaSeconds)
+        updateVisitors(deltaSeconds)
         if (secretRevealIn > 0f) {
             secretRevealIn -= deltaSeconds
             if (secretRevealIn <= 0f) {
@@ -7863,6 +7883,138 @@ class SceneEngine(
     /** Opens [friend]'s secret again (from the collection book). */
     fun showSecret(friend: com.example.data.Friend) {
         if (friendsStore?.secretOpen(friend) == true) shownSecret = friend
+    }
+
+    /**
+     * Plan 11: the visitors. The painter by day in the meadow or on the walk, about once a week;
+     * Billionaire and The Great on the pier at sunset or on a dry evening, a few times a week, and
+     * always on the couple's anniversary. At most one visitor a day.
+     */
+    private fun updateVisitors(dt: Float) {
+        val store = visitorStore ?: return
+        val today = com.example.data.Visitors.today()
+        if (painter.active) {
+            when (painter.update(dt)) {
+                PainterVisit.Event.ARRIVED -> showMessage(GameText.get(Res.string.painter_sets_up), duration = 3.5f)
+                PainterVisit.Event.FINISHED -> {
+                    val painting = paintThemNow(today)
+                    store.addPainting(painting)
+                    shownPainting = painting
+                    for (c in charactersBoyGirl) emote(c, EmoteType.HEART, 2.2f)
+                    audio.playHeartChime()
+                    showMessage(GameText.get(Res.string.painter_done), duration = 4f)
+                    onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:PAINTING"))
+                }
+                PainterVisit.Event.GONE, null -> Unit
+            }
+        }
+        if (oldCouple.active) {
+            if (oldCouple.update(dt, coupleMood())) {
+                showMessage(GameText.get(Res.string.old_couple_note_left), duration = 4f)
+            }
+        }
+        if (painter.active || oldCouple.active || oldCouple.noteWaiting) return
+        if (sceneTime < VISITOR_AFTER || isWatchSceneActive || foxVisit.active) return
+        val day = today.toEpochDays().toLong()
+        if (currentScene in PAINTER_SCENES && !timeOfDayPhase.isNight &&
+            com.example.data.Visitors.mayCome(com.example.data.VisitorKind.PAINTER, store, today)
+        ) {
+            store.noteVisit(com.example.data.VisitorKind.PAINTER, day)
+            painter.start(EASEL_X, EASEL_Y)
+            return
+        }
+        if (currentScene == SceneType.SEASIDE_PIER) {
+            val anniversary = com.example.data.Visitors.isAnniversary(togetherSince, today) && today.year !in store.noteYears()
+            val evening = timeOfDayPhase.isSunset || (timeOfDayPhase.isNight && weather != WeatherType.RAIN)
+            if (anniversary || (evening && com.example.data.Visitors.mayCome(com.example.data.VisitorKind.OLD_COUPLE, store, today))) {
+                store.noteVisit(com.example.data.VisitorKind.OLD_COUPLE, day)
+                oldCouple.start(anniversary)
+                showMessage(GameText.get(Res.string.old_couple_arrive), duration = 3.5f)
+                onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:OLD_COUPLE"))
+            }
+        }
+    }
+
+    /** What the two of them are doing together right now, for the old couple to echo. */
+    fun coupleMood(): OldCoupleVisit.Mood {
+        val poses = listOf(boy.pose, girl.pose)
+        return when {
+            CharacterPose.HUG in poses || CharacterPose.KISS in poses -> OldCoupleVisit.Mood.HUG
+            CharacterPose.HOLD_HANDS in poses -> OldCoupleVisit.Mood.HOLD_HANDS
+            CharacterPose.SIT_SNUGGLE in poses -> OldCoupleVisit.Mood.SNUGGLE
+            poses.any { it == CharacterPose.EAT_MOMO || it == CharacterPose.EAT_SNEAK || it == CharacterPose.FEED_MOMO } ||
+                boy.heldItem == HeldItem.MUG || girl.heldItem == HeldItem.MUG || pierIceCreamTimer > 0f -> OldCoupleVisit.Mood.SNACK
+            else -> OldCoupleVisit.Mood.APART
+        }
+    }
+
+    /** The painting of this exact moment: where they are, the light, the weather, what they wear. */
+    private fun paintThemNow(today: kotlinx.datetime.LocalDate): com.example.data.Painting = com.example.data.Painting(
+        epochDay = today.toEpochDays().toLong(),
+        scene = currentScene.name,
+        weather = weather.name,
+        phase = timeOfDayPhase.name,
+        boyOutfit = boy.outfitIndex,
+        girlOutfit = girl.outfitIndex,
+        together = when (coupleMood()) {
+            OldCoupleVisit.Mood.HUG -> "HUG"
+            OldCoupleVisit.Mood.HOLD_HANDS -> "HOLD_HANDS"
+            OldCoupleVisit.Mood.SNUGGLE -> "SNUGGLE"
+            else -> "APART"
+        },
+        mochi = !mochiInBox && currentScene != SceneType.EVENING_RIDE
+    )
+
+    /** A tap on the painter, the easel, the old couple or their note. Returns whether it hit. */
+    fun onVisitorTap(x: Float, y: Float, cw: Float, ch: Float, p: Float): Boolean {
+        if (painter.active) {
+            val nearEasel = kotlin.math.abs(x - cw * painter.easelX) < 16f * p && kotlin.math.abs(y - (ch * EASEL_Y - 14f * p)) < 20f * p
+            val nearPainter = kotlin.math.abs(x - cw * painter.x) < 14f * p && kotlin.math.abs(y - (ch * painter.y - 16f * p)) < 22f * p
+            if (nearEasel || nearPainter) {
+                when {
+                    painter.showing -> visitorStore?.paintings()?.lastOrNull()?.let { shownPainting = it }
+                    painter.easelUp -> showMessage(GameText.get(Res.string.painter_wip), duration = 2.6f)
+                    else -> showMessage(GameText.get(Res.string.painter_hello), duration = 2.6f)
+                }
+                audio.playBubblePop()
+                return true
+            }
+        }
+        val bx = cw * OldCoupleVisit.BENCH_X
+        val by = ch * OldCoupleVisit.BENCH_Y
+        if (oldCouple.noteWaiting && oldCouple.phase != OldCoupleVisit.Phase.SITTING &&
+            kotlin.math.abs(x - bx) < 18f * p && kotlin.math.abs(y - (by - 4f * p)) < 12f * p
+        ) {
+            oldCouple.noteWaiting = false
+            visitorStore?.addNote(com.example.data.Visitors.today().year)
+            shownNote = true
+            audio.playPaperFlip()
+            particles.spawnHeart(bx, by - 12f * p, Color(0xFFFF8FA3))
+            onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:NOTE"))
+            return true
+        }
+        if (oldCouple.phase == OldCoupleVisit.Phase.SITTING &&
+            kotlin.math.abs(x - bx) < 22f * p && kotlin.math.abs(y - (by - 12f * p)) < 18f * p
+        ) {
+            // He sits on the left of the bench, The Great on the right; each has their own lines
+            val line = if (x < bx) {
+                when (oldCouple.hisNext) {
+                    0 -> Res.string.old_couple_line_1
+                    1 -> Res.string.old_couple_line_3
+                    else -> Res.string.old_couple_line_5
+                }.also { oldCouple.saidHis() }
+            } else {
+                when (oldCouple.herNext) {
+                    0 -> Res.string.old_couple_elegance
+                    1 -> Res.string.old_couple_line_2
+                    else -> Res.string.old_couple_line_4
+                }.also { oldCouple.saidHers() }
+            }
+            audio.playBubblePop()
+            showMessage(GameText.get(line), duration = 3.5f)
+            return true
+        }
+        return false
     }
 
     /** The pet's name: Mochi's own, or the name of whoever lives with them now. */

@@ -143,6 +143,9 @@ fun OurStoryDialog(
     var showCollection by remember { mutableStateOf(false) }
     // A friend's secret, opened again from the book (plan 09, I).
     var secret by remember { mutableStateOf<com.example.data.Friend?>(null) }
+    // A visitor's keepsake, opened again from the book (plan 11).
+    var visitorKey by remember { mutableStateOf<String?>(null) }
+    val visitorStore = remember(prefs) { com.example.data.VisitorStore(prefs.storage) }
     val collection = remember(prefs) { com.example.data.CollectionStore(prefs.storage) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
         value = withContext(Dispatchers.Default) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
@@ -154,6 +157,14 @@ fun OurStoryDialog(
     val scope = rememberCoroutineScope()
 
     secret?.let { FriendSecretDialog(it, prefs.boyfriendName, prefs.girlfriendName, onDismiss = { secret = null }) }
+    when (visitorKey) {
+        "visitor:PAINTING" -> PaintingsDialog(
+            visitorStore.paintings(),
+            com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = false)), com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = true)),
+            prefs.boyfriendName, prefs.girlfriendName, onDismiss = { visitorKey = null }
+        )
+        "visitor:NOTE" -> AnniversaryNoteDialog(onDismiss = { visitorKey = null })
+    }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(TinyColors.Paper).statusBarsPadding().testTag("our_story_dialog")) {
             Row(
@@ -216,7 +227,8 @@ fun OurStoryDialog(
                 showCollection -> CollectionBookPage(
                     progress, collection, prefs.boyfriendName, prefs.girlfriendName,
                     together = prefs.anniversaryDate, daysTogether = prefs.getDaysTogether(),
-                    onOpenSecret = { secret = it }
+                    onOpenSecret = { secret = it },
+                    onOpenVisitor = { visitorKey = it }
                 )
                 showKeepsakes -> KeepsakesPage(progress, prefs.boyfriendName, prefs.girlfriendName, onGiveKeepsake?.let { give ->
                     { item: String, fromBoy: Boolean ->
@@ -431,6 +443,9 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "LANTERN_NIGHT" -> Res.string.keepsake_festival_lantern
     "GIFT_EXCHANGE" -> Res.string.keepsake_festival_gift
     "VISIT" -> Res.string.keepsake_fox_visit
+    "PAINTING" -> Res.string.keepsake_visitor_painting
+    "OLD_COUPLE" -> Res.string.keepsake_visitor_old_couple
+    "NOTE" -> Res.string.keepsake_visitor_note
     "BAO" -> Res.string.keepsake_secret_bao
     "LEO" -> Res.string.keepsake_secret_leo
     "PIP" -> Res.string.keepsake_secret_pip
@@ -540,7 +555,9 @@ fun CollectionBookPage(
     /** false draws "Found you" still. */
     animate: Boolean = true,
     /** Opens a friend's secret again (plan 09, I); null leaves the rows still. */
-    onOpenSecret: ((com.example.data.Friend) -> Unit)? = null
+    onOpenSecret: ((com.example.data.Friend) -> Unit)? = null,
+    /** Opens a visitor's keepsake again (plan 11): the paintings, or the note. */
+    onOpenVisitor: ((String) -> Unit)? = null
 ) {
     var page by remember { mutableStateOf(initialPage) }
     val entries = page?.let { com.example.data.CollectionBook.page(it) }.orEmpty()
@@ -582,7 +599,12 @@ fun CollectionBookPage(
             val secret = com.example.data.Friend.entries.firstOrNull { it.secretKey == entry.key }
             CollectionRow(
                 entry, isFound, if (isFound) store.first(entry.key) else null, boyName, girlName,
-                onClick = if (isFound && secret != null && onOpenSecret != null) { { onOpenSecret(secret) } } else null
+                onClick = when {
+                    !isFound -> null
+                    secret != null && onOpenSecret != null -> { { onOpenSecret(secret) } }
+                    (entry.key == "visitor:PAINTING" || entry.key == "visitor:NOTE") && onOpenVisitor != null -> { { onOpenVisitor(entry.key) } }
+                    else -> null
+                }
             )
         }
     }
@@ -826,6 +848,9 @@ private fun collectionHintText(h: com.example.data.CollectionHint): StringResour
     com.example.data.CollectionHint.FOR_HER -> Res.string.collection_hint_for_her
     com.example.data.CollectionHint.FRIDAY -> Res.string.collection_hint_friday
     com.example.data.CollectionHint.FRIEND -> Res.string.collection_hint_friend
+    com.example.data.CollectionHint.PAINTER -> Res.string.collection_hint_painter
+    com.example.data.CollectionHint.PIER_EVENING -> Res.string.collection_hint_pier_evening
+    com.example.data.CollectionHint.ANNIVERSARY -> Res.string.collection_hint_anniversary
 }
 
 /** The name in the book: a keepsake's name, or a crop's. */

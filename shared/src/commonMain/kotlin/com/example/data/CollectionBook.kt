@@ -13,7 +13,7 @@ import com.example.progress.Seen
 enum class CollectionPage { FINDS, SEA, KITCHEN, GARDEN, MOMENTS }
 
 /** When or where a thing turns up, as a hint for the ones not found yet. */
-enum class CollectionHint { SPRING, SUMMER, AUTUMN, WINTER, NIGHT, RAIN, FOR_HER, FRIDAY, FRIEND }
+enum class CollectionHint { SPRING, SUMMER, AUTUMN, WINTER, NIGHT, RAIN, FOR_HER, FRIDAY, FRIEND, PAINTER, PIER_EVENING, ANNIVERSARY }
 
 /**
  * One thing that can be collected. [key] is its keepsake id (`discovery:SEASHELL`, `catch:PEARL`,
@@ -82,6 +82,10 @@ object CollectionBook {
         add(CollectionEntry("fox:BALL", CollectionPage.MOMENTS, CollectionHint.FRIDAY, hidden = true))
         // The friends' secrets (plan 09, I), opened by a gift they love; tap one to read it again
         for (f in Friend.entries) add(CollectionEntry(f.secretKey, CollectionPage.MOMENTS, CollectionHint.FRIEND, hidden = true))
+        // The visitors (plan 11): the painting opens the gallery, the note opens again
+        add(CollectionEntry("visitor:PAINTING", CollectionPage.MOMENTS, CollectionHint.PAINTER))
+        add(CollectionEntry("visitor:OLD_COUPLE", CollectionPage.MOMENTS, CollectionHint.PIER_EVENING))
+        add(CollectionEntry("visitor:NOTE", CollectionPage.MOMENTS, CollectionHint.ANNIVERSARY, hidden = true))
     }
 
     private fun seasonHint(season: String): CollectionHint? = when (season) {

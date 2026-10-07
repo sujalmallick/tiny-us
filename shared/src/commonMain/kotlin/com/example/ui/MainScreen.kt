@@ -150,6 +150,7 @@ fun MainScreen(
     val foxStore = remember(prefs) { com.example.data.FoxStore(prefs.storage) }
     val petStore = remember(prefs) { com.example.data.PetStore(prefs.storage) }
     val friendsStore = remember(prefs) { com.example.data.FriendsStore(prefs.storage) }
+    val visitorStore = remember(prefs) { com.example.data.VisitorStore(prefs.storage) }
     var showFestival by remember { mutableStateOf(false) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
@@ -266,6 +267,8 @@ fun MainScreen(
             engine.catName = prefs.catName
             engine.petStore = petStore
             engine.friendsStore = friendsStore
+            engine.visitorStore = visitorStore
+            engine.togetherSince = prefs.anniversaryDate
             engine.refreshFestival()
             // A Phones Down session still running from before the app closed carries on.
             if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()
@@ -1540,6 +1543,14 @@ fun MainScreen(
                 onDismiss = { showAvatarCustomizer = false }
             )
         }
+
+        engine.shownPainting?.let {
+            PaintingsDialog(
+                visitorStore.paintings(), engine.boy.look, engine.girl.look,
+                prefs.boyfriendName, prefs.girlfriendName, onDismiss = { engine.shownPainting = null }
+            )
+        }
+        if (engine.shownNote) AnniversaryNoteDialog(onDismiss = { engine.shownNote = false })
 
         engine.shownSecret?.let { friend ->
             FriendSecretDialog(friend, prefs.boyfriendName, prefs.girlfriendName, onDismiss = { engine.shownSecret = null })

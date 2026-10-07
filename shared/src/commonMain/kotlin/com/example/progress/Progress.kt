@@ -52,6 +52,8 @@ sealed class ProgressEvent {
     data class PhonesDown(val minutes: Int) : ProgressEvent()
     /** A festival was celebrated (plan 09, D); its keepsake goes in the box. */
     data class FestivalCelebrated(val festival: String) : ProgressEvent()
+    /** A visitor's keepsake (plan 11): a painting, meeting the old couple, their anniversary note. */
+    data class VisitorKeepsake(val key: String) : ProgressEvent()
     /** A favourite given to a friend in the world (plan 09, I): it leaves the box. */
     data class FriendGift(val friend: String, val item: String) : ProgressEvent()
     /** A friend's secret was opened (plan 09, I); it goes in the collection book. */
@@ -247,6 +249,7 @@ data class ProgressState(
             if (have <= 0) this else copy(keepsakes = keepsakes + (event.item to have - 1)).see(Seen.FRIEND_GIFTS, event.friend)
         }
         is ProgressEvent.SecretFound -> keep("secret:${event.friend}")
+        is ProgressEvent.VisitorKeepsake -> keep(event.key)
         ProgressEvent.FoxBallFound -> keep("fox:BALL")
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0
