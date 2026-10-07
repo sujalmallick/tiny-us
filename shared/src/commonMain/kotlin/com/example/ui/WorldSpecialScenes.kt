@@ -490,7 +490,14 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
 
     // 7. Leo the barista behind a waist-high counter
     val leo = CafeLayout.barista(cw, ch, p)
-    drawBarista(scope, leo.x, leo.y, CafeLayout.baristaScale(p), time, engine.cafeBaristaBrewTimer > 0f)
+    // After hours (plan 09, I) he wipes the counter on even hours and reads on odd ones
+    val afterHours = when {
+        engine.cafeOpen -> 0
+        engine.clockHour % 2 == 0 -> 1
+        else -> 2
+    }
+    drawBarista(scope, leo.x, leo.y, CafeLayout.baristaScale(p), time, engine.cafeBaristaBrewTimer > 0f, afterHours)
+    drawOpenSign(scope, CafeLayout.window(cw, ch), p, engine.cafeOpen)
     val counterBase = ch * (CafeLayout.WALL_BOTTOM + 0.01f)
     scope.px(Color(0xFF5A3825), barX, barY, barW, counterBase - barY)
     var slat = barX + 3f * p
@@ -679,7 +686,11 @@ private fun drawPendantLamp(scope: DrawScope, x: Float, bottomY: Float, p: Float
     scope.pCircle(Color(0xFFFFF2C2), 1.8f * p, Offset(x, bottomY - 1.5f * p))
 }
 
-private fun drawBarista(scope: DrawScope, x: Float, feetY: Float, p: Float, time: Float, brewing: Boolean) {
+private fun drawBarista(scope: DrawScope, x: Float, feetY: Float, p: Float, time: Float, brewing: Boolean, afterHours: Int = 0) {
+    if (afterHours != 0) {
+        drawBaristaAfterHours(scope, x, feetY, p, time, reading = afterHours == 2)
+        return
+    }
     val bob = if (brewing) sin(time * 10f) * 0.5f * p else 0f
     val top = feetY - 29f * p + bob
     scope.pCircle(Color(0xFFFFD8B8), 4.5f * p, Offset(x, top + 5f * p))
@@ -694,6 +705,78 @@ private fun drawBarista(scope: DrawScope, x: Float, feetY: Float, p: Float, time
     scope.px(Color(0xFF38523A), x - 4f * p, top + 12f * p, 8f * p, 17f * p)
     scope.px(Color(0xFFE9C46A), x - 1f * p, top + 15f * p, 2f * p, 2f * p)
     scope.px(Color(0xFFFFD8B8), x + 5f * p, top + 13f * p + (if (brewing) sin(time * 12f) * p else 0f), 2.2f * p, 2.2f * p)
+}
+
+/**
+ * Leo after hours (plan 09, I): looking down at the counter, either wiping it in slow circles with
+ * a cloth or reading a paperback propped on it.
+ */
+private fun drawBaristaAfterHours(scope: DrawScope, x: Float, feetY: Float, p: Float, time: Float, reading: Boolean) {
+    val top = feetY - 29f * p
+    scope.pCircle(Color(0xFFFFD8B8), 4.5f * p, Offset(x, top + 5.5f * p))
+    scope.px(Color(0xFF4A3425), x - 5f * p, top + 0.5f * p, 10f * p, 3.5f * p)
+    scope.px(Color(0xFF4A3425), x - 5.5f * p, top + 2f * p, 2f * p, 4f * p)
+    // Eyes down
+    scope.px(Color(0xFF2C190D), x - 2.5f * p, top + 6f * p, 1.4f * p, 0.6f * p)
+    scope.px(Color(0xFF2C190D), x + 1.3f * p, top + 6f * p, 1.4f * p, 0.6f * p)
+    scope.px(Color(0xFFFFAAA6), x - 3.5f * p, top + 7f * p, 1.5f * p, 0.9f * p)
+    scope.px(Color(0xFFFFAAA6), x + 2f * p, top + 7f * p, 1.5f * p, 0.9f * p)
+    scope.px(Color(0xFFFFF1E6), x - 5f * p, top + 10f * p, 10f * p, 19f * p)
+    scope.px(Color(0xFF38523A), x - 4f * p, top + 12f * p, 8f * p, 17f * p)
+    scope.px(Color(0xFFE9C46A), x - 1f * p, top + 15f * p, 2f * p, 2f * p)
+    if (reading) {
+        // A paperback held up open in front of him, above the cups and cakes on the counter
+        scope.px(Color(0xFF4A7C9B), x - 1f * p, top + 11f * p, 10f * p, 5f * p)
+        scope.px(Color(0xFFFFF8E7), x - 0.5f * p, top + 11.5f * p, 4.2f * p, 4f * p)
+        scope.px(Color(0xFFFFF8E7), x + 4.3f * p, top + 11.5f * p, 4.2f * p, 4f * p)
+        scope.px(Color(0x55000000), x + 0.5f * p, top + 12.5f * p, 2.5f * p, 0.5f * p)
+        scope.px(Color(0x55000000), x + 5f * p, top + 12.5f * p, 2.5f * p, 0.5f * p)
+        scope.px(Color(0xFFFFD8B8), x - 2f * p, top + 13f * p, 1.6f * p, 1.6f * p)
+        scope.px(Color(0xFFFFD8B8), x + 8.6f * p, top + 13f * p, 1.6f * p, 1.6f * p)
+        // Turning a page now and then
+        if ((time % 5f) < 0.4f) scope.px(Color(0xFFFFFFFF), x + 4.3f * p, top + 10.5f * p, 2.5f * p, 4f * p)
+    } else {
+        // Wiping the open end of the counter in slow circles, arm reaching out
+        val wx = x + 10f * p + sin(time * 2.4f) * 2.5f * p
+        val wy = top + 18.5f * p + kotlin.math.cos(time * 2.4f) * 0.5f * p
+        scope.px(Color(0xFFFFF1E6), x + 5f * p, top + 14f * p, (wx - x - 5f * p).coerceAtLeast(p), 1.6f * p)
+        scope.px(Color(0xFFFFD8B8), wx, wy - 2f * p, 2.2f * p, 2.2f * p)
+        scope.px(Color(0xFF8ECAE6), wx - 1f * p, wy, 4.5f * p, 1.4f * p)
+    }
+}
+
+/** The pixel letters for the cafe sign, 3 x 5 each. */
+private val SIGN_GLYPHS = mapOf(
+    'O' to listOf("###", "#.#", "#.#", "#.#", "###"),
+    'P' to listOf("###", "#.#", "###", "#..", "#.."),
+    'E' to listOf("###", "#..", "##.", "#..", "###"),
+    'N' to listOf("#.#", "###", "###", "###", "#.#"),
+    'C' to listOf("###", "#..", "#..", "#..", "###"),
+    'L' to listOf("#..", "#..", "#..", "#..", "###"),
+    'S' to listOf("###", "#..", "###", "..#", "###"),
+    'D' to listOf("##.", "#.#", "#.#", "#.#", "##.")
+)
+
+/** A little wooden sign hanging in the window (plan 09, I): OPEN from 7 till 21, then CLOSED. */
+private fun drawOpenSign(scope: DrawScope, window: androidx.compose.ui.geometry.Rect, p: Float, open: Boolean) {
+    val word = if (open) "OPEN" else "CLOSED"
+    val u = p
+    val w = (word.length * 4 + 1) * u
+    val h = 7f * u
+    val left = window.left + 10f * p
+    val top = window.top + 24f * p
+    // Two strings from the frame
+    scope.px(Color(0xFF3B2A1E), left + 2f * u, window.top + 4f * p, 0.5f * u, top - window.top - 4f * p)
+    scope.px(Color(0xFF3B2A1E), left + w - 2.5f * u, window.top + 4f * p, 0.5f * u, top - window.top - 4f * p)
+    scope.px(Color(0xFF6B4226), left - u, top - u, w + 2f * u, h + 2f * u)
+    scope.px(Color(0xFFFFF1E6), left, top, w, h)
+    val ink = if (open) Color(0xFF2D6A4F) else Color(0xFFC1121F)
+    word.forEachIndexed { i, ch ->
+        val glyph = SIGN_GLYPHS[ch] ?: return@forEachIndexed
+        for ((gy, row) in glyph.withIndex()) for ((gx, c) in row.withIndex()) {
+            if (c == '#') scope.px(ink, left + (1 + i * 4 + gx) * u, top + (1 + gy) * u, u, u)
+        }
+    }
 }
 
 /** A big fiddle-leaf fig in a terracotta pot; leaves sway a little. */

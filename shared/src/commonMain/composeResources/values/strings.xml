@@ -1496,4 +1496,25 @@
     <string name="pet_owl_wakes">%1$s opens one eye and hoots softly.</string>
     <string name="pet_owl_play">%1$s flutters up and down!</string>
     <string name="pet_owl_sleep">%1$s closes her eyes for a daytime nap.</string>
+    <!-- Plan 09, I: the friends' routines, likes and secrets -->
+    <string name="leo_after_hours">Leo: ’We’re closed, but stay as long as you like. I’ll keep the lamps on.’</string>
+    <string name="bao_tea_time">Grandpa Bao: ’Four o’clock. Tea first, fish later.’</string>
+    <string name="gift_bao_tea">Grandpa Bao: ’Tea! Just the way my Mei used to make it.’ He holds the cup in both hands.</string>
+    <string name="gift_bao_boot">Grandpa Bao laughs until he wheezes: ’So THAT’s where my boot went!’</string>
+    <string name="gift_leo_pie">Leo: ’A harvest pie? For me? It’s going on the menu, and I’m naming it after you two.’</string>
+    <string name="gift_pip_fish">Pip gulps the fish down whole and does a proud little dance on the rail.</string>
+    <string name="secret_close">Thank you</string>
+    <string name="secret_bao_title">Bao’s old letter</string>
+    <string name="secret_bao_intro">Bao takes a folded, yellowed letter out of his coat. ’I wrote it the summer I met her. Never sent it. Read it, if you like.’</string>
+    <string name="secret_bao_letter">Dear Mei,\n\nI caught nothing today. I spent the whole morning watching you sell plums by the harbour instead, so that is your fault.\n\nTomorrow I will buy a plum and say something clever. If I say nothing clever, I will buy another plum.\n\nYours, already,\nBao</string>
+    <string name="secret_leo_title">Leo’s sketchbook</string>
+    <string name="secret_leo_intro">Leo slides a battered sketchbook across the counter, a little shy. ’Don’t laugh. I’ve been drawing you two since your first coffee.’</string>
+    <string name="secret_leo_caption">’%1$s and %2$s, the table by the window. Every rainy day.’ – Leo</string>
+    <string name="secret_pip_title">Pip’s treasure</string>
+    <string name="secret_pip_intro">Pip hops down to the third board of the pier and pecks at it until it lifts. Underneath is his whole treasure.</string>
+    <string name="secret_pip_list">A bottle cap, a silver spoon, a blue button, a ring of keys nobody missed, and a small heart-shaped stone, which he nudges towards you.</string>
+    <string name="keepsake_secret_bao">Bao’s letter to Mei</string>
+    <string name="keepsake_secret_leo">A page of Leo’s sketchbook</string>
+    <string name="keepsake_secret_pip">Pip’s heart-shaped stone</string>
+    <string name="collection_hint_friend">A gift they love opens it</string>
 </resources>
