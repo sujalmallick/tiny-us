@@ -49,12 +49,17 @@ import com.example.scene.autonomy.SpotAction
 import kotlin.math.abs
 import kotlin.math.exp
 import kotlin.math.sin
-import kotlin.random.Random
 import com.example.resources.*
 import org.jetbrains.compose.resources.StringResource
 import kotlinx.datetime.number
 import kotlinx.datetime.periodUntil
 import kotlinx.datetime.toLocalDateTime
+
+/**
+ * The scene's randomness flows through here so previews can seed it (see [com.example.engine.WorldRandom]).
+ * Shadows the simple name `Random` in this file; production still uses [kotlin.random.Random.Default].
+ */
+private val Random: kotlin.random.Random get() = com.example.engine.WorldRandom.rng
 
 private val OUTDOOR_ENVIRONMENTS = setOf(
     EnvironmentType.MEADOW,
@@ -283,7 +288,7 @@ class SceneEngine(
     private var pierGullTimer = 0f
     private var pierGullTargetX = 0.62f
     /** Random source for the pier's characters; tests swap in a seeded one. */
-    var pierRng: Random = Random.Default
+    var pierRng: kotlin.random.Random = kotlin.random.Random.Default
     private val pierCatchPicker = AntiRepeatRandomPicker(PierCatch.entries.toList())
     private val baoLinePicker = AntiRepeatRandomPicker(GRANDPA_BAO_LINES)
     /** Today's Daily Tiny Moments question, revealed by the message in a bottle. */
@@ -1266,7 +1271,7 @@ class SceneEngine(
      */
     fun nextRandomScene(lastScene: SceneType? = null): SceneType {
         val candidates = allScenes.filter { it != currentScene && it !in recentSceneHistory && (lastScene == null || it != lastScene) }
-        val next = candidates.randomOrNull() ?: allScenes.filter { it != currentScene }.randomOrNull() ?: allScenes.first()
+        val next = candidates.randomOrNull(Random) ?: allScenes.filter { it != currentScene }.randomOrNull(Random) ?: allScenes.first()
         loadScene(next)
         return next
     }
@@ -1387,7 +1392,7 @@ class SceneEngine(
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
                             if (eventChance(0.9f, deltaSeconds)) {
-                                particles.spawnHeart(cw * 0.49f + (kotlin.random.Random.nextFloat() - 0.5f) * 30f, ch * 0.55f)
+                                particles.spawnHeart(cw * 0.49f + (Random.nextFloat() - 0.5f) * 30f, ch * 0.55f)
                             }
                         }
                         else -> { isWatchSceneActive = false }
@@ -1711,7 +1716,7 @@ class SceneEngine(
                                 girl.pose = CharacterPose.HUG
                             }
                             if (eventChance(0.7f, deltaSeconds)) {
-                                particles.spawnHeart(cw * 0.48f + (kotlin.random.Random.nextFloat() - 0.5f) * 25f, ch * 0.45f)
+                                particles.spawnHeart(cw * 0.48f + (Random.nextFloat() - 0.5f) * 25f, ch * 0.45f)
                             }
                         }
                         else -> { isWatchSceneActive = false }
@@ -1774,7 +1779,7 @@ class SceneEngine(
                             boy.emotion = CharacterEmotion.HAPPY
                             girl.emotion = CharacterEmotion.HAPPY
                             if (eventChance(1.05f, deltaSeconds)) {
-                                particles.spawnHeart(cw * 0.49f + (kotlin.random.Random.nextFloat() - 0.5f) * 40f, ch * 0.52f)
+                                particles.spawnHeart(cw * 0.49f + (Random.nextFloat() - 0.5f) * 40f, ch * 0.52f)
                             }
                         }
                         t < endTime -> {
@@ -1828,8 +1833,8 @@ class SceneEngine(
                             girl.emotion = CharacterEmotion.LOVING
                             if (eventChance(1.05f, deltaSeconds)) {
                                 particles.spawnHeart(
-                                    cw * 0.30f + (kotlin.random.Random.nextFloat() - 0.5f) * 20f,
-                                    ch * 0.58f + (kotlin.random.Random.nextFloat() - 0.5f) * 10f
+                                    cw * 0.30f + (Random.nextFloat() - 0.5f) * 20f,
+                                    ch * 0.58f + (Random.nextFloat() - 0.5f) * 10f
                                 )
                             }
                         }
@@ -1875,7 +1880,7 @@ class SceneEngine(
                             boy.emotion = CharacterEmotion.LOVING
                             girl.emotion = CharacterEmotion.LOVING
                             if (eventChance(0.7f, deltaSeconds)) {
-                                particles.spawnSparkles(cw * 0.55f + (kotlin.random.Random.nextFloat() - 0.5f) * 30f, ch * 0.45f, 1)
+                                particles.spawnSparkles(cw * 0.55f + (Random.nextFloat() - 0.5f) * 30f, ch * 0.45f, 1)
                             }
                             if (eventChance(0.62f, deltaSeconds)) {
                                 particles.spawnHeart(cw * 0.55f, ch * 0.50f)
@@ -1942,7 +1947,7 @@ class SceneEngine(
                                 particles.spawnSparkles(canvasWidth * kissMidX, canvasHeight * boy.worldY - 26f * pxScale, 4)
                             }
                             if (eventChance(1.05f, deltaSeconds)) {
-                                particles.spawnHeart(canvasWidth * kissMidX + (kotlin.random.Random.nextFloat() - 0.5f) * 40f, canvasHeight * boy.worldY - 32f * pxScale)
+                                particles.spawnHeart(canvasWidth * kissMidX + (Random.nextFloat() - 0.5f) * 40f, canvasHeight * boy.worldY - 32f * pxScale)
                             }
                         }
                         else -> { isWatchSceneActive = false }
@@ -3535,7 +3540,7 @@ class SceneEngine(
                 CatState.SITTING_PURR,
                 CatState.BELLY_ROLL
             )
-            val next = states.random()
+            val next = states.random(Random)
             catState = next
             catSleeping = (next == CatState.SLEEPING)
             catWorldX = 0.74f
@@ -3575,12 +3580,12 @@ class SceneEngine(
                 EnvironmentType.LIVING_ROOM -> {
                     // Settle near the warm couch rug, floor lamp, or cozy box
                     val spots = listOf(0.22f, 0.35f, 0.48f, 0.62f, 0.76f)
-                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.24f + Random.nextFloat() * 0.55f)
+                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull(Random) ?: (0.24f + Random.nextFloat() * 0.55f)
                 }
                 EnvironmentType.KITCHEN -> {
                     // Near the warm stove, kitchen table jute rug, or window
                     val spots = listOf(0.24f, 0.38f, 0.50f, 0.68f)
-                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull() ?: (0.25f + Random.nextFloat() * 0.50f)
+                    spots.filter { kotlin.math.abs(it - catWorldX) > 0.12f }.randomOrNull(Random) ?: (0.25f + Random.nextFloat() * 0.50f)
                 }
                 else -> {
                     // Outdoor scenes:
@@ -3599,7 +3604,7 @@ class SceneEngine(
                             (boy.worldX + girl.worldX) / 2f,
                             0.18f + Random.nextFloat() * 0.65f
                         )
-                        spots.filter { kotlin.math.abs(it - catWorldX) > 0.10f }.randomOrNull() ?: (0.18f + Random.nextFloat() * 0.65f)
+                        spots.filter { kotlin.math.abs(it - catWorldX) > 0.10f }.randomOrNull(Random) ?: (0.18f + Random.nextFloat() * 0.65f)
                     }
                 }
             }
@@ -3621,21 +3626,21 @@ class SceneEngine(
             weather == WeatherType.RAIN || weather == WeatherType.SNOW -> {
                 // In cold/wet weather, mostly cozy loafing or purring
                 val wetStates = listOf(CatState.SLEEPING, CatState.SLEEPING, CatState.SITTING_PURR, CatState.BELLY_ROLL)
-                wetStates.random()
+                wetStates.random(Random)
             }
             weather == WeatherType.SUNNY -> {
                 // In sunshine, love sunbathing belly rolls and purring
                 val sunStates = listOf(CatState.BELLY_ROLL, CatState.SITTING_PURR, CatState.SLEEPING, CatState.PLAYFUL_POUNCE)
-                sunStates.random()
+                sunStates.random(Random)
             }
             weather == WeatherType.SAKURA || weather == WeatherType.AUTUMN -> {
                 // In falling leaves or petals, playful pounce and purr
                 val playfulStates = listOf(CatState.PLAYFUL_POUNCE, CatState.SITTING_PURR, CatState.BELLY_ROLL, CatState.SLEEPING)
-                playfulStates.random()
+                playfulStates.random(Random)
             }
             else -> {
                 val states = listOf(CatState.SITTING_PURR, CatState.BELLY_ROLL, CatState.PLAYFUL_POUNCE, CatState.SLEEPING)
-                states.random()
+                states.random(Random)
             }
         }
         catState = next
@@ -5009,7 +5014,7 @@ class SceneEngine(
                 "Forever your ${boy.name}"
             )
         }
-        val chosen = whispers.random()
+        val chosen = whispers.random(Random)
         boySpeechText = chosen
         boySpeechTimer = 4.5f
         boy.reactionTimer = 4.0f
@@ -5033,7 +5038,7 @@ class SceneEngine(
                 "${girl.name} loves ${boy.name} forever"
             )
         }
-        val chosen = whispers.random()
+        val chosen = whispers.random(Random)
         girlSpeechText = chosen
         girlSpeechTimer = 4.5f
         girl.reactionTimer = 4.0f
@@ -5184,7 +5189,7 @@ class SceneEngine(
                 "Make a wish on the shooting star!",
                 "Wrapped in starlight and gentle evening whispers."
             )
-            showMessage(quotes.random(), duration = 3.0f)
+            showMessage(quotes.random(Random), duration = 3.0f)
         } else {
             audio.playStarTwinkle()
             particles.spawnSparkles(x, y, 10)
@@ -5275,7 +5280,7 @@ class SceneEngine(
             "You weren't supposed to see that!",
             "Chopping sweet carrots and fresh herbs together."
         )
-        showMessage(lines.random(), duration = 3.0f)
+        showMessage(lines.random(Random), duration = 3.0f)
     }
 
     fun onTouchFridge(touchX: Float, touchY: Float) {
@@ -5302,7 +5307,7 @@ class SceneEngine(
             "Look, the photo from our trip is on the fridge!",
             "Found your favorite sweet treat in the fridge!"
         )
-        showMessage(snackQuotes.random(), duration = 3.0f)
+        showMessage(snackQuotes.random(Random), duration = 3.0f)
     }
 
     fun onTouchCabinet(cw: Float, ch: Float) {
@@ -6928,7 +6933,7 @@ class SceneEngine(
     ))
 
     /** All of autonomy's randomness, so tests can seed it through [behaviorBrain]. */
-    private val rng: Random get() = behaviorBrain.random
+    private val rng: kotlin.random.Random get() = behaviorBrain.random
 
     private fun agentFor(c: PixelCharacter): AutonomyAgent = if (c === boy) boyAgent else girlAgent
     private fun homeFor(c: PixelCharacter): HomeSpot = if (c === boy) boyHome else girlHome
@@ -9382,7 +9387,7 @@ class SceneEngine(
             "Found our couple photo tucked between vintage poems!",
             "A tiny white bunny plush rests peacefully on tier 3."
         )
-        showMessage(quotes.random(), duration = 3.5f)
+        showMessage(quotes.random(Random), duration = 3.5f)
     }
 
     fun onTouchLoftRecordPlayer(cw: Float, ch: Float) {

@@ -129,6 +129,7 @@ class TinyUsOfflineTest {
         assertEquals(EnvironmentType.RAINY_CAFE, engine.currentScene.environment)
 
         // Barista Leo interaction
+        engine.clockHourOverride = 12
         engine.onTouchCafeBarista(1000f, 1000f)
         assertTrue(engine.cafeBaristaBrewTimer > 0f)
         assertEquals(CharacterEmotion.HAPPY, engine.boy.emotion)

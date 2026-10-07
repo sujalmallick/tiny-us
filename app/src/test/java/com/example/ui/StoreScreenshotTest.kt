@@ -11,6 +11,7 @@ import com.example.engine.WorldCamera
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
 import com.example.scene.WeatherType
+import org.junit.After
 import org.junit.Assume.assumeTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -30,6 +31,14 @@ import java.time.Duration
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 class StoreScreenshotTest {
+
+    @After
+    fun tearDown() {
+        com.example.engine.TimeOfDayPhase.hourOverride = null
+        celestialProgressOverride = null
+        localDaySecondsOverride = null
+        moonPhaseOverride = null
+    }
 
     private class Shot(val name: String, val scene: String, val atmosphere: String, val weather: String)
 
@@ -143,6 +152,19 @@ class StoreScreenshotTest {
             topReservePx = 58f * metrics.density, bottomReservePx = 70f * metrics.density
         )
         val engine = SceneEngine(audio = AmbientAudio().apply { isEnabled = false }, onOpenLoveNotes = {}, onOpenMemories = {}).apply {
+            // Seed the world's randomness and pin the sky/clock overrides so each shot renders the
+            // same way every run; a before/after pixel diff then shows only real art changes.
+            com.example.engine.WorldRandom.seed(0x5EED1L)
+            behaviorBrain.random = com.example.engine.WorldRandom.rng
+            pierRng = com.example.engine.WorldRandom.rng
+            val (sunProg, daySec) = when (shot.atmosphere) {
+                "NIGHT" -> 0.62f to 22f * 3600f
+                "SUNSET" -> 0.9f to 18.5f * 3600f
+                else -> 0.45f to 14f * 3600f
+            }
+            celestialProgressOverride = sunProg
+            localDaySecondsOverride = daySec
+            com.example.engine.TimeOfDayPhase.hourOverride = 21
             updateNames("Leo", "Mia")
             loadScene(scene)
             updateAtmosphereMode(shot.atmosphere)
@@ -186,6 +208,9 @@ class StoreScreenshotTest {
         }
         // Just long enough to lay the screen out and draw it.
         shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(30))
+        // The world view re-seeds the night stars from the real clock when it composes; pin them
+        // again right before drawing so night shots are identical run to run.
+        reallocateNightStars(42L)
         val image = Bitmap.createBitmap(view.width.coerceAtLeast(1), view.height.coerceAtLeast(1), Bitmap.Config.ARGB_8888)
         view.draw(android.graphics.Canvas(image))
         frameTickerPaused = false

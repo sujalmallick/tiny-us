@@ -390,11 +390,7 @@ object WorldSprites {
         val isSnow = weather == com.example.scene.WeatherType.SNOW
 
         // Low contact shadow separates the little house from the meadow.
-        scope.drawOval(
-            Color(0x30151A1D),
-            Offset(houseLeft - 6 * p, groundY - 3 * p),
-            Size(houseW + 12 * p, 7 * p)
-        )
+        drawContactShadow(scope, cx, groundY, 72, p)
 
         // Chimney on left side
         val chimneyW = 10 * p
@@ -569,19 +565,14 @@ object WorldSprites {
                 catState
             }
 
-            // Grounding contact drop-shadow beneath Mochi
-            val catShadowW = when (effectiveState) {
-                com.example.scene.CatState.BELLY_ROLL -> 15f * p
-                com.example.scene.CatState.SLEEPING -> 13f * p
-                com.example.scene.CatState.PLAYFUL_POUNCE -> 14f * p
-                else -> 11f * p
+            // Grounding contact shadow beneath Mochi: a flat pixel ellipse on Mochi's own grid.
+            val catShadowWidth = when (effectiveState) {
+                com.example.scene.CatState.BELLY_ROLL -> 15
+                com.example.scene.CatState.SLEEPING -> 13
+                com.example.scene.CatState.PLAYFUL_POUNCE -> 14
+                else -> 11
             }
-            val catShadowH = 3.4f * p
-            scope.drawOval(
-                color = Color(0xFF151820).copy(alpha = 0.24f),
-                topLeft = Offset(cx - catShadowW / 2f, groundY - catShadowH * 0.65f),
-                size = Size(catShadowW, catShadowH)
-            )
+            drawContactShadow(scope, cx, groundY, catShadowWidth, p)
 
             when (effectiveState) {
             com.example.scene.CatState.SLEEPING -> {
@@ -846,6 +837,9 @@ object WorldSprites {
         val left = centerX - w / 2f
         val top = groundY - h
 
+        // Contact shadow grounding the couch
+        drawContactShadow(scope, centerX, groundY, 60, p)
+
         // Couch Backrest
         scope.drawRect(couchFabricDark, Offset(left, top), Size(w, 15 * p))
         scope.drawRect(couchFabric, Offset(left + 2 * p, top + 2 * p), Size(w - 4 * p, 12 * p))
@@ -882,6 +876,9 @@ object WorldSprites {
         val counterH = 16 * p
         val left = counterX - counterW / 2f
         val top = groundY - counterH
+
+        // Contact shadow grounding the kitchen counter
+        drawContactShadow(scope, counterX, groundY, 48, p)
 
         // 1. Wall Backsplash tiles - subway tile pattern behind counter
         val tileBg = if (isNight) Color(0xFFE2D6CA) else Color(0xFFF3ECE4)
@@ -1496,6 +1493,7 @@ object WorldSprites {
             val stoolW = 12 * p
             val stoolH = 14 * p
             val sy = groundY - stoolH
+            drawContactShadow(scope, sx + stoolW / 2f, groundY, 14, p)
             // Seat
             scope.drawRect(Color(0xFFDDA15E), Offset(sx, sy), Size(stoolW, 3 * p))
             scope.drawRect(Color(0xFFBC6C25), Offset(sx, sy + 2 * p), Size(stoolW, 1 * p))
@@ -1773,8 +1771,8 @@ object WorldSprites {
 
         // Contact tire shadows on asphalt road surface
         val roadContactY = groundY + 6.0f * p
-        scope.drawOval(Color(0x55000000), Offset(rearWheelX - 7 * p, roadContactY - 1.5f * p), Size(14 * p, 3 * p))
-        scope.drawOval(Color(0x55000000), Offset(frontWheelX - 7 * p, roadContactY - 1.5f * p), Size(14 * p, 3 * p))
+        drawContactShadow(scope, rearWheelX, roadContactY, 14, p)
+        drawContactShadow(scope, frontWheelX, roadContactY, 14, p)
 
         fun drawWheel(wx: Float) {
             // Dark tire with bevel
@@ -2407,6 +2405,9 @@ object WorldSprites {
         val left = cx - w / 2f
         val top = groundY - h
 
+        // Contact shadow grounding the wardrobe
+        drawContactShadow(scope, cx, groundY, 36, p)
+
         // 1. Ornate Wooden Pediment / Crown Molding Header
         val woodDark = Color(0xFF43281C)
         val woodMid = Color(0xFF582F0E)
@@ -2601,6 +2602,9 @@ object WorldSprites {
         val binLeft = cx - binW / 2f
         val binTop = groundY - binH
 
+        // Contact shadow grounding the dustbin
+        drawContactShadow(scope, cx, groundY, 12, p)
+
         // 1. Chrome Foot Pedal at bottom center
         scope.drawRect(Color(0xFF2B2D42), Offset(cx - 5.5f * p, groundY - 1.8f * p), Size(11 * p, 1.8f * p)) // base ring
         scope.drawRect(Color(0xFFCED4DA), Offset(cx - 2.5f * p, groundY - 2.2f * p), Size(5 * p, 1.8f * p)) // pedal step
@@ -2749,6 +2753,9 @@ object WorldSprites {
         val potH = 12 * p
         val potLeft = cornerX - potW / 2f
         val potTop = groundY - potH
+
+        // Contact shadow grounding the planter pot
+        drawContactShadow(scope, cornerX, groundY, 16, p)
 
         // Ceramic white planter pot
         scope.drawRect(Color(0xFFE9ECEF), Offset(potLeft, potTop), Size(potW, potH))
@@ -2987,11 +2994,7 @@ object WorldSprites {
         val bTop = groundY - bh
 
         // Ground shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.22f),
-            Offset(bLeft - p, groundY - 2.5f * p),
-            Size(bw + 2 * p, 4 * p)
-        )
+        drawContactShadow(scope, cx, groundY, 18, p)
 
         // Basket body (woven golden wicker)
         val wickerBase = Color(0xFFC48B47)
@@ -3037,11 +3040,7 @@ object WorldSprites {
         val nTop = groundY - nh
 
         // Ground shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.18f),
-            Offset(nLeft - p, groundY - 2 * p),
-            Size(nw + 2 * p, 3 * p)
-        )
+        drawContactShadow(scope, cx, groundY, 13, p)
 
         // Notepad paper backing
         val paperCream = Color(0xFFFFFDF5)
@@ -3077,11 +3076,7 @@ object WorldSprites {
         val gTop = groundY - gh
 
         // Soft drop shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.22f),
-            Offset(gLeft - p, groundY - 2 * p),
-            Size(gw + 2 * p, 3.5f * p)
-        )
+        drawContactShadow(scope, cx, groundY, 16, p)
 
         // Wood game box (warm mahogany)
         val woodDark = Color(0xFF6B4226)
@@ -3119,11 +3114,7 @@ object WorldSprites {
         val hTop = groundY - hh
 
         // Contact drop shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.16f),
-            Offset(hLeft, groundY - 1.5f * p),
-            Size(hw, 2.5f * p)
-        )
+        drawContactShadow(scope, cx, groundY, 9, p)
 
         // Crisp folded origami facet colors (Japanese washi paper)
         val facetMain = Color(0xFFFF4D6D)
@@ -3159,11 +3150,7 @@ object WorldSprites {
         val top = groundY - ch
 
         // Soft drop shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.18f),
-            Offset(left - p, groundY - 1.5f * p),
-            Size(cw + 2 * p, 2.5f * p)
-        )
+        drawContactShadow(scope, cx, groundY, 10, p)
 
         // Ceramic jar body (warm terracotta/cream)
         scope.drawRect(Color(0xFFE8DCC4), Offset(left, top + 2 * p), Size(cw, ch - 2 * p))
@@ -3302,11 +3289,7 @@ object WorldSprites {
         val legSpread = 13 * p
 
         // Contact drop shadow
-        scope.drawOval(
-            Color.Black.copy(alpha = 0.22f),
-            Offset(cx - legSpread - 2 * p, groundY - 2 * p),
-            Size(legSpread * 2 + 4 * p, 3.5f * p)
-        )
+        drawContactShadow(scope, cx, groundY, 30, p)
 
         // Tripod legs (rich mahogany wood with brass tips)
         val woodLeg = Color(0xFF5E3023)

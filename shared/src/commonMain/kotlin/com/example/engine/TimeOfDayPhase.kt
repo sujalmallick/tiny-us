@@ -40,7 +40,13 @@ enum class TimeOfDayPhase {
          */
         var debugOverride: TimeOfDayPhase? = null
 
+        /**
+         * Pins the 24-hour hour integer (0..23) for reproducible previews and tests.
+         */
+        var hourOverride: Int? = null
+
         fun currentHour(): Int {
+            hourOverride?.let { return it }
             return try {
                 Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()).hour
             } catch (_: Exception) {

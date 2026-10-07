@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.example.engine.drawContactShadow
 import com.example.scene.FoxVisit
 import com.example.scene.SceneEngine
 import kotlin.math.PI
@@ -65,7 +66,7 @@ fun drawFridayFox(scope: DrawScope, engine: SceneEngine, cw: Float, ch: Float, w
     }
 
     // A soft shadow on the grass
-    scope.drawOval(Color(0x33151820), Offset(cx - 8f * p, bottom - 1.5f * p), Size(16f * p, 2.5f * p))
+    drawContactShadow(scope, cx, bottom, 16, p)
 
     val trotting = fox.phase == FoxVisit.Phase.ARRIVING || fox.phase == FoxVisit.Phase.LEAVING
     val step = ((fox.age * 8f).toInt() and 1) == 0

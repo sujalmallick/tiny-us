@@ -98,6 +98,7 @@ class SeatedScenesTest {
 
     @Test
     fun `barista and guitar emotes are visible`() {
+        engine.clockHourOverride = 12
         engine.loadScene(SceneType.RAINY_CAFE)
         engine.onTouchCafeBarista(cw, ch)
         assertTrue(engine.boy.emoteTimer > 0f && engine.girl.emoteTimer > 0f)
