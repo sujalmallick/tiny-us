@@ -194,8 +194,8 @@ class CozyGames(private val engine: SceneEngine) {
         val boy = engine.boy
         val girl = engine.girl
         // They walk over and sit down when they get there, facing each other.
-        boy.moveTo(TABLE_BOY_X, arrivePose = CharacterPose.SIT)
-        girl.moveTo(TABLE_GIRL_X, arrivePose = CharacterPose.SIT)
+        boy.moveTo(TABLE_BOY_X, TABLE_SEAT_Y, arrivePose = CharacterPose.SIT)
+        girl.moveTo(TABLE_GIRL_X, TABLE_SEAT_Y, arrivePose = CharacterPose.SIT)
         boy.direction = Direction.RIGHT
         girl.direction = Direction.LEFT
         boy.reactionTimer = MEAL_SECONDS
@@ -590,8 +590,10 @@ class CozyGames(private val engine: SceneEngine) {
         val POT_XS = listOf(0.34f, 0.46f)
         const val POTS_Y = 0.74f
         /** Where they sit at the kitchen table to eat (plan 09, E4). */
-        const val TABLE_BOY_X = 0.42f
-        const val TABLE_GIRL_X = 0.58f
+        /** The stools at either end of the kitchen table, and how far down they are (plan 10, B). */
+        const val TABLE_BOY_X = 0.28f
+        const val TABLE_GIRL_X = 0.72f
+        const val TABLE_SEAT_Y = 0.885f
         const val MEAL_SECONDS = 9f
         const val DINNER_TALK_AFTER = 4.3f
         /** Grandpa Bao's lesson: three lines, then the practice bite (plan 09, F2). */

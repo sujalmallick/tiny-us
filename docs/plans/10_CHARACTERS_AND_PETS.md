@@ -33,10 +33,10 @@ drawn in the world with no arm holding it; the loft's cuddled couple never shows
 - [x] A-7. Tests and renders. *(`HeldItemTest`: use styles, sharing and handing back, the pan at the stove, the rod while fishing; `HeldItemSheetTest` contact sheet; the pier render with the rod.)*
 
 ## B. Props and furniture
-- [ ] B-1. Render each scene's props with the couple at every spot; list layering mistakes.
-- [ ] B-2. Depth for props: characters in front of or behind furniture by their feet, not always on top.
-- [ ] B-3. Sitting and standing at props: the bench, couch, cafe chairs, campfire log, pier railing, counter.
-- [ ] B-4. Tests and renders.
+- [x] B-1. Render each scene's props with the couple at every spot; list layering mistakes. *(`ScenePreviewTest.writesSpotSheetsWhenAsked`, SCENE_SPOTS_DIR. Wrong: in the kitchen "sit at the table" sat them on the bare floor mid-room (and so did dinner); the living-room pouf seat sat beside the pouf; at the campfire they stood on top of the log to warm their hands; at the momo stall they stood on the crate, and the saucer and steamer spots stacked them on each other; at the telescope they faced away from the eyepiece.)*
+- [x] B-2. Depth for props: characters in front of or behind furniture by their feet, not always on top. *(Done by placement: every spot now puts them in front of or on their prop, so nothing they use needs to be drawn over them. Furniture is still always behind the couple; a general depth sort is left for when a scene needs someone behind a prop.)*
+- [x] B-3. Sitting and standing at props: the bench, couch, cafe chairs, campfire log, pier railing, counter. *(They sit on the stools at either end of the kitchen table (dinner too, facing each other), on the pouf, and on the log by the fire; stand beside the crate, at the counter, and at the telescope's eyepiece. The pier bench, cafe table and loft were already right.)*
+- [x] B-4. Tests and renders. *(The spot sheets above; `GardenKitchenEngineTest` still checks the dinner seats.)*
 
 ## C. Pets with things
 Known problems: Mochi is never depth-sorted against furniture; the cardboard box draws a second Mochi;
