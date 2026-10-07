@@ -8,6 +8,15 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.ui.draw.drawWithContent
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Shadow
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.text.TextStyle
+import org.jetbrains.compose.resources.painterResource
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.interaction.MutableInteractionSource
@@ -32,19 +41,13 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.data.PreferencesManager
-import com.example.engine.CharacterPose
-import com.example.engine.Direction
-import com.example.engine.EmoteType
 import com.example.engine.ParticleSystem
-import com.example.engine.PixelArtRenderer
-import com.example.engine.PixelCharacter
 import com.example.ui.theme.DeepRose
 import com.example.ui.theme.TinyColors
 import kotlinx.coroutines.delay
@@ -68,34 +71,6 @@ fun SplashScreen(
     }
     val particles = remember { ParticleSystem() }
 
-    val boy = remember {
-        PixelCharacter(
-            isGirl = false,
-            name = prefs.boyfriendName,
-            worldX = 0.40f,
-            worldY = 0.62f,
-            pose = CharacterPose.IDLE,
-            direction = Direction.RIGHT,
-            emote = EmoteType.HEART,
-            emoteTimer = 99f,
-            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = false))
-        )
-    }
-
-    val girl = remember {
-        PixelCharacter(
-            isGirl = true,
-            name = prefs.girlfriendName,
-            worldX = 0.60f,
-            worldY = 0.62f,
-            pose = CharacterPose.IDLE,
-            direction = Direction.LEFT,
-            emote = EmoteType.BLUSH,
-            emoteTimer = 99f,
-            look = com.example.engine.AvatarLook.of(prefs.getAvatarAppearance(isSlotB = true))
-        )
-    }
-
     // Heartbeat pulsating animation
     val infiniteTransition = rememberInfiniteTransition(label = "pulse")
     val heartScale by infiniteTransition.animateFloat(
@@ -106,17 +81,6 @@ fun SplashScreen(
             repeatMode = RepeatMode.Reverse
         ),
         label = stringResource(Res.string.ui_heartscale)
-    )
-
-    // Gentle vertical bob for characters
-    val charBob by infiniteTransition.animateFloat(
-        initialValue = -2f,
-        targetValue = 2f,
-        animationSpec = infiniteRepeatable(
-            animation = tween(durationMillis = 1000, easing = FastOutSlowInEasing),
-            repeatMode = RepeatMode.Reverse
-        ),
-        label = stringResource(Res.string.ui_charbob)
     )
 
     // Sound chime and auto-advance timer
@@ -131,15 +95,8 @@ fun SplashScreen(
     Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(
-                Brush.verticalGradient(
-                    colors = listOf(
-                        Color(0xFFFFF0F5),
-                        Color(0xFFFFE3E8),
-                        Color(0xFFFCD5CE)
-                    )
-                )
-            )
+            // The picture's own sky, so a tall screen just has more sky above the scene.
+            .background(SplashSky)
             .clickable(
                 indication = null,
                 interactionSource = remember { MutableInteractionSource() }
@@ -148,52 +105,31 @@ fun SplashScreen(
                 onSplashComplete()
             }
     ) {
-        // Background particles and decorative meadow
+        // The two of them on the pier at sunset, with Mochi: fitted to the width and sitting on
+        // the bottom edge, so the lamp and the lighthouse are never cropped away.
+        Image(
+            painter = painterResource(Res.drawable.splash_sunset),
+            contentDescription = null,
+            contentScale = ContentScale.FillWidth,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .aspectRatio(SPLASH_ASPECT)
+                // The top of the picture melts into the plain sky above it: no seam.
+                .drawWithContent {
+                    drawContent()
+                    drawRect(Brush.verticalGradient(listOf(SplashSky, Color.Transparent), startY = 0f, endY = size.height * 0.14f))
+                }
+        )
+
+        // A few hearts drifting up over the sea.
         Canvas(modifier = Modifier.fillMaxSize()) {
             val cw = size.width
             val ch = size.height
-            val p = (cw / 100f).coerceIn(3f, 4.5f)
-
-            // Spawn ambient floating petals/hearts
-            if (Random.nextFloat() < 0.08f) {
-                particles.spawnPetals(cw * Random.nextFloat(), ch * 0.9f, 1)
-            }
-            if (Random.nextFloat() < 0.04f) {
-                particles.spawnHeart(cw * (0.3f + Random.nextFloat() * 0.4f), ch * 0.7f)
+            if (Random.nextFloat() < 0.03f) {
+                particles.spawnHeart(cw * (0.3f + Random.nextFloat() * 0.4f), ch * 0.72f)
             }
             particles.update(0.016f)
-
-            // Draw cozy grassy curved hill at bottom
-            val hillY = ch * 0.63f
-            drawCircle(
-                color = Color(0xFF80B918),
-                radius = cw * 0.85f,
-                center = Offset(cw * 0.5f, hillY + cw * 0.85f - 18 * p)
-            )
-            drawCircle(
-                color = Color(0xFF55A630),
-                radius = cw * 0.85f,
-                center = Offset(cw * 0.5f, hillY + cw * 0.85f)
-            )
-
-            // Render characters standing close together
-            PixelArtRenderer.drawCharacter(
-                drawScope = this,
-                char = boy.copy(bounceOffset = charBob),
-                centerX = cw * 0.42f,
-                bottomY = hillY,
-                pixelSize = p
-            )
-
-            PixelArtRenderer.drawCharacter(
-                drawScope = this,
-                char = girl.copy(bounceOffset = -charBob),
-                centerX = cw * 0.58f,
-                bottomY = hillY,
-                pixelSize = p
-            )
-
-            // Draw floating particles
             particles.particles.forEach { pt ->
                 drawRect(
                     color = pt.color.copy(alpha = pt.alpha),
@@ -236,7 +172,8 @@ fun SplashScreen(
                 fontWeight = FontWeight.ExtraBold,
                 fontFamily = FontFamily.SansSerif,
                 letterSpacing = 2.sp,
-                color = DeepRose
+                color = Color.White,
+                style = TextStyle(shadow = SkyShadow)
             )
 
             Spacer(modifier = Modifier.height(6.dp))
@@ -246,7 +183,8 @@ fun SplashScreen(
                 fontSize = 15.sp,
                 fontWeight = FontWeight.Medium,
                 fontFamily = FontFamily.Serif,
-                color = TinyColors.InkMuted
+                color = Color.White.copy(alpha = 0.92f),
+                style = TextStyle(shadow = SkyShadow)
             )
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -255,24 +193,20 @@ fun SplashScreen(
                 text = stringResource(Res.string.ui_splash_for_you, prefs.girlfriendName),
                 fontSize = 14.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = TinyColors.Rose
+                color = Color(0xFFFFD6E0),
+                style = TextStyle(shadow = SkyShadow)
             )
-        }
 
-        // Bottom Loading / Hint Text
-        Column(
-            modifier = Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottom = 50.dp),
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
+            Spacer(modifier = Modifier.height(22.dp))
+
             Text(
                 text = stringResource(Res.string.ui_entering_our_cozy_world),
                 fontSize = 13.sp,
                 fontWeight = FontWeight.SemiBold,
-                color = Color.White.copy(alpha = 0.95f)
+                color = Color.White.copy(alpha = 0.9f),
+                style = TextStyle(shadow = SkyShadow)
             )
-            Spacer(modifier = Modifier.height(6.dp))
+            Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = stringResource(Res.string.ui_tap_anywhere_to_skip),
                 fontSize = 11.sp,
@@ -281,3 +215,12 @@ fun SplashScreen(
         }
     }
 }
+
+/** The sunset picture's width over its height (580 x 744). */
+private const val SPLASH_ASPECT = 580f / 744f
+
+/** The top of the sunset picture's sky, continued above it on tall screens. */
+private val SplashSky = Color(0xFF353783)
+
+/** A soft dark shadow so the white words read over the bright sunset. */
+private val SkyShadow = Shadow(color = Color(0x99201640), offset = Offset(0f, 3f), blurRadius = 6f)
