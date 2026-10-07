@@ -52,6 +52,10 @@ sealed class ProgressEvent {
     data class PhonesDown(val minutes: Int) : ProgressEvent()
     /** A festival was celebrated (plan 09, D); its keepsake goes in the box. */
     data class FestivalCelebrated(val festival: String) : ProgressEvent()
+    /** The Friday fox came to play with Mochi (plan 10, D). */
+    object FoxVisited : ProgressEvent()
+    /** They found the ball the fox left on a Friday they missed (plan 10, D). */
+    object FoxBallFound : ProgressEvent()
 }
 
 /**
@@ -231,6 +235,8 @@ data class ProgressState(
         is ProgressEvent.ThankYouJarFilled -> plus(Counter.THANK_YOU_JARS).keep("jar:THANK_YOU")
         is ProgressEvent.PhonesDown -> plus(Counter.PHONES_DOWN)
         is ProgressEvent.FestivalCelebrated -> see(Seen.FESTIVALS, event.festival).plus(Counter.FESTIVALS).keep("festival:${event.festival}")
+        ProgressEvent.FoxVisited -> keep("fox:VISIT")
+        ProgressEvent.FoxBallFound -> keep("fox:BALL")
         is ProgressEvent.GiftGiven -> {
             val have = keepsakes[event.item] ?: 0
             if (have <= 0) this

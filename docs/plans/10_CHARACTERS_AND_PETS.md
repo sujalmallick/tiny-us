@@ -47,9 +47,9 @@ the milk saucer doesn't make Mochi walk to it; ice-cream cones on the pier sit a
 - [x] C-3. Tests and renders. *(`MochiThingsTest`: into the box and out again, over to the saucer, never left in a box after a scene change; the Mochi sheet.)*
 
 ## D. The Friday fox
-- [ ] D-1. A fox cub with a ball visits on Fridays, in an outdoor scene; plays catch with Mochi; leaves.
-- [ ] D-2. The twist: a missed Friday leaves the ball behind.
-- [ ] D-3. Tests and renders.
+- [x] D-1. A fox cub with a ball visits on Fridays, in an outdoor scene; plays catch with Mochi; leaves. *(`FridayFox`, `FoxStore`, `FoxVisit`, drawn in `WorldFox.kt`. Once each Friday, in the meadow, under the tree, on the walk or the hill, by day: it trots in to wherever Mochi is, and the ball goes back and forth between them; tap it for a happy hop. It goes into the collection book (Festivals and moments, "Only on Fridays").)*
+- [x] D-2. The twist: a missed Friday leaves the ball behind. *(If they had the app before that Friday but the fox didn't find them, its ball lies in the grass with little paw prints trotting away; tap it: "It waited for you all Friday." It's a hidden entry in the collection book.)*
+- [x] D-3. Tests and renders. *(`FridayFoxTest` (the Fridays, when the ball waits), `FridayFoxEngineTest` (the visit start to finish, once a Friday, not at night or indoors, the ball found); `ScenePreviewTest.writesFridayFoxWhenAsked`.)*
 
 ## E. A pets tab
 Candidates from the website footer (tiny-us-site `src/components/FooterPlayground.tsx`): bunny, fox cub with
