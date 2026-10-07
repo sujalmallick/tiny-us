@@ -4,7 +4,7 @@ Since Tiny Us is built with Kotlin Multiplatform (KMP), GitHub Actions compiles 
 
 ## Widget App Group setup
 
-The iOS widget reads a local snapshot through the App Group `group.com.example.tinyus.shared`. For a signed device build, register that App Group with the Apple Developer team, enable it for both the app and `com.example.tinyus.widget` identifiers, and keep the matching value in both entitlement files, `TinyAppGroup.suiteName` (`iosApp/iosApp/TinyWidgetPayload.swift`) and `IosUserDefaultsStorage.APP_GROUP_SUITE` (shared Kotlin). The widget shows its built-in Tiny Us preview until the app and extension share that group.
+The iOS widget reads a local snapshot through the App Group `group.com.tinyus.app.shared`. For a signed device build, register that App Group with the Apple Developer team, enable it for both the app and `com.example.tinyus.widget` identifiers, and keep the matching value in both entitlement files, `TinyAppGroup.suiteName` (`iosApp/iosApp/TinyWidgetPayload.swift`) and `IosUserDefaultsStorage.APP_GROUP_SUITE` (shared Kotlin). The widget shows its built-in Tiny Us preview until the app and extension share that group.
 
 The iOS bundle identifiers in this public project are example identifiers. Replace them with identifiers registered to your signing team before distributing a signed build.
 
@@ -58,6 +58,6 @@ If you prefer wireless resigning over local Wi-Fi:
 ## Method 3: TestFlight (Apple Developer Program — $99/yr)
 
 If you have an official Apple Developer account:
-1. Create an App ID in Apple Developer portal (`com.example.tinyus`).
+1. Create an App ID in Apple Developer portal (`com.tinyus.app`, and `com.tinyus.app.widget` for the widget).
 2. Add Fastlane or Apple App Store Connect API keys to GitHub Secrets.
 3. GitHub Actions can upload the build directly to TestFlight, allowing you and your partner to install and update wirelessly from the TestFlight app on iOS.

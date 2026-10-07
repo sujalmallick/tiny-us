@@ -16,7 +16,7 @@ In **Certificates, Identifiers & Profiles > Identifiers** (on developer.apple.co
 2. **App ID for the app:** `+`, then **App IDs > App**, then the bundle ID `com.tinyus.app`. Tick **App Groups** and pick the group from step 1.
 3. **App ID for the widget:** the same, with `com.tinyus.app.widget` and the same App Group.
 
-These match the Android app's ID (`com.tinyus.app`). The iOS project still uses the placeholder `com.example.tinyus`, which has to change before the first upload (see "Bundle ID" below).
+These match the Android app's ID (`com.tinyus.app`) and the iOS project.
 
 ## 3. Create the app in App Store Connect
 
@@ -64,6 +64,4 @@ In App Store Connect, open the version, pick the TestFlight build, add the scree
 
 ## Bundle ID
 
-The iOS project uses the placeholder `com.example.tinyus`, with `group.com.example.tinyus.shared` for the widget's App Group. Before the first upload, it moves to `com.tinyus.app` (the Android ID), `com.tinyus.app.widget` and `group.com.tinyus.app.shared`. That's a small change in the Xcode project, the entitlements and the App Group name in the code.
-
-The installed test app on the iPad then counts as a different app. Save a backup in the old one (Settings > Backup & Restore) and restore it in the new one to keep your data.
+The iOS app is `com.tinyus.app` (the Android ID), the widget `com.tinyus.app.widget`, and their shared App Group `group.com.tinyus.app.shared`. Until version 1.0 they were the placeholder `com.example.tinyus`, so a test app installed before the change counts as a different app on the iPad. Save a backup in the old one (Settings > Backup & Restore) and restore it in the new one to keep your data.

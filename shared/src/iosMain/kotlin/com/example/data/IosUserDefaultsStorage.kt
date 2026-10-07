@@ -20,7 +20,7 @@ class IosUserDefaultsStorage(
 
     companion object {
         /** Must match the App Group in iosApp.entitlements and TinyUsWidget.entitlements. */
-        const val APP_GROUP_SUITE = "group.com.example.tinyus.shared"
+        const val APP_GROUP_SUITE = "group.com.tinyus.app.shared"
 
         /** App Group defaults shared with the widget. Without the entitlement (unsigned sideloads) iOS keeps this suite app-local. */
         fun defaultStorage(): IosUserDefaultsStorage =

@@ -2,7 +2,7 @@ import Foundation
 
 /// App Group identifiers shared by Tiny Us and its WidgetKit extension. Must match both .entitlements files.
 enum TinyAppGroup {
-    static let suiteName = "group.com.example.tinyus.shared"
+    static let suiteName = "group.com.tinyus.app.shared"
     static let payloadKey = "tiny-us.widget.payload"
     /// The scene pictures (PNG, one game pixel per pixel), written by the shared app (IosWidgetPictures).
     static let smallSceneKey = "tiny-us.widget.scene.small"
