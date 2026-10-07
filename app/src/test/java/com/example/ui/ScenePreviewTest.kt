@@ -17,6 +17,7 @@ import com.example.engine.WorldCamera
 import com.example.engine.WorldViewport
 import com.example.scene.SceneEngine
 import com.example.scene.SceneType
+import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -41,13 +42,47 @@ class ScenePreviewTest {
     private val cw = 1080f
     private val ch = 2400f
 
+    @After
+    fun tearDown() {
+        TimeOfDayPhase.hourOverride = null
+        celestialProgressOverride = null
+        localDaySecondsOverride = null
+        moonPhaseOverride = null
+    }
+
     private fun engineFor(scene: SceneType, phase: TimeOfDayPhase, cw: Float = this.cw, ch: Float = this.ch) =
         SceneEngine(audio = AmbientAudio().apply { isEnabled = false }, onOpenLoveNotes = {}, onOpenMemories = {}).apply {
+            // Seed the world's randomness (birds, weather, ambient particles) so this scene renders
+            // identically every run; without it a pixel-by-pixel before/after diff is swamped by
+            // particles that happen to land in different spots each time.
+            com.example.engine.WorldRandom.seed(0x5EED1L)
+            // Autonomy has its own seedable random; point it at the same seeded stream so the
+            // couple's routines, blinks and discovery beats land the same way every run.
+            behaviorBrain.random = com.example.engine.WorldRandom.rng
+            // The pier's gull/crab/barista beats have their own random; point it at the same stream.
+            pierRng = com.example.engine.WorldRandom.rng
             loadScene(scene)
             updateAtmosphereMode(if (phase == TimeOfDayPhase.NIGHT || phase == TimeOfDayPhase.SUNSET) phase.name else "DAY")
+            // Pin everything that otherwise follows the real clock, so repeat renders of the same
+            // scene and phase land the sun/moon, wall clocks and sunbeams in the same place. The
+            // before/after comparison then differs only where the art changed.
+            val (sunProg, daySec) = when (phase) {
+                TimeOfDayPhase.MORNING -> 0.12f to 7.5f * 3600f
+                TimeOfDayPhase.AFTERNOON -> 0.45f to 14f * 3600f
+                TimeOfDayPhase.SUNSET -> 0.9f to 18.5f * 3600f
+                TimeOfDayPhase.NIGHT -> 0.62f to 22f * 3600f
+            }
+            celestialProgressOverride = sunProg
+            localDaySecondsOverride = daySec
+            TimeOfDayPhase.hourOverride = 21
+            // Keep the weather from drifting to another type mid-preview (unless a specific weather
+            // is being previewed, which turns drift off itself below).
+            weatherDriftEnabled = false
             // SCENE_PREVIEW_WEATHER=RAIN (or SNOW, SAKURA, AUTUMN) previews weather.
-            // SCENE_PREVIEW_MOON=0.25 pins the moon's phase (0 new, 0.5 full).
-            moonPhaseOverride = System.getenv("SCENE_PREVIEW_MOON")?.toFloat()
+            // SCENE_PREVIEW_MOON=0.25 pins the moon's phase (0 new, 0.5 full). Without it, pin a
+            // full moon so repeat renders agree: otherwise the phase follows the real date and its
+            // smooth glow shifts a sub-pixel amount between runs.
+            moonPhaseOverride = System.getenv("SCENE_PREVIEW_MOON")?.toFloat() ?: 0.5f
             // SCENE_PREVIEW_SPECIAL=DIWALI (or any SpecialDay) dresses the scene for that day.
             com.example.engine.SpecialDays.override = System.getenv("SCENE_PREVIEW_SPECIAL")?.let { com.example.engine.SpecialDay.valueOf(it) }
             System.getenv("SCENE_PREVIEW_WEATHER")?.let { name ->

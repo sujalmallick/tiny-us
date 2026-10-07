@@ -185,6 +185,13 @@ var moonPhaseOverride: Float?
     get() = com.example.engine.MoonPhase.override
     set(value) { com.example.engine.MoonPhase.override = value }
 
+/**
+ * Pins how far the sun/moon has travelled across the sky (see [celestialProgress]) instead of
+ * reading the real clock; for previews and tests only, so repeat renders land the light in the
+ * same spot.
+ */
+var celestialProgressOverride: Float? = null
+
 /** Tonight's moon phase, 0 new to 0.5 full and back to 1 (shared with the loft, which lives in :shared). */
 fun currentMoonFraction(): Float = com.example.engine.MoonPhase.current()
 
@@ -213,6 +220,7 @@ private fun clockHours(): Float {
  * fitting fixed spot is used instead.
  */
 fun celestialProgress(isNight: Boolean, isSunset: Boolean, isMorning: Boolean): Float {
+    celestialProgressOverride?.let { return it.coerceIn(0f, 1f) }
     val h = clockHours()
     val phase = com.example.engine.TimeOfDayPhase.fromHour(h.toInt())
     return if (isNight) {

@@ -3,7 +3,12 @@ package com.example.engine
 import androidx.compose.ui.graphics.Color
 import kotlin.math.sin
 import kotlin.math.exp
-import kotlin.random.Random
+
+/**
+ * All particle randomness flows through here so previews can seed it (see [WorldRandom]). Shadows
+ * the simple name `Random` in this file; production still uses [kotlin.random.Random.Default].
+ */
+private val Random: kotlin.random.Random get() = WorldRandom.rng
 
 data class PixelParticle(
     var x: Float,
@@ -311,7 +316,7 @@ class ParticleSystem {
                             normX = nx,
                             normY = ny,
                             type = ParticleType.AUTUMN_LEAF,
-                            color = AUTUMN_LEAF_COLORS.random(),
+                            color = AUTUMN_LEAF_COLORS.random(Random),
                             size = 3.2f + Random.nextFloat() * 1.5f,
                             styleVariant = Random.nextInt(3),
                             alpha = 0.95f
@@ -330,7 +335,7 @@ class ParticleSystem {
                             normX = nx,
                             normY = ny,
                             type = ParticleType.SAKURA_PETAL,
-                            color = SAKURA_PETAL_COLORS.random(),
+                            color = SAKURA_PETAL_COLORS.random(Random),
                             size = 3.0f + Random.nextFloat() * 1.4f,
                             styleVariant = Random.nextInt(3),
                             alpha = 0.95f
@@ -349,7 +354,7 @@ class ParticleSystem {
                             normX = nx,
                             normY = ny,
                             type = ParticleType.SNOWFLAKE,
-                            color = SNOW_COLORS.random(),
+                            color = SNOW_COLORS.random(Random),
                             size = 2.4f + Random.nextFloat() * 1.4f,
                             styleVariant = Random.nextInt(3),
                             alpha = 0.95f
@@ -915,7 +920,7 @@ class ParticleSystem {
                 vx = (Random.nextFloat() - 0.5f) * 0.4f,
                 vy = 0.8f + Random.nextFloat() * 0.4f,
                 size = 5f + Random.nextFloat() * 2f,
-                color = MUSIC_NOTE_COLORS.random(),
+                color = MUSIC_NOTE_COLORS.random(Random),
                 maxLife = 70f + Random.nextFloat() * 20f,
                 type = ParticleType.MUSIC_NOTE,
                 phase = Random.nextFloat() * 6.28f
@@ -932,7 +937,7 @@ class ParticleSystem {
                     vx = (Random.nextFloat() - 0.5f) * 1.5f,
                     vy = -(0.8f + Random.nextFloat() * 1.2f),
                     size = 3f + Random.nextFloat() * 2.5f,
-                    color = GRASS_COLORS.random(),
+                    color = GRASS_COLORS.random(Random),
                     maxLife = 35f + Random.nextFloat() * 15f,
                     type = ParticleType.SPARKLE,
                     phase = Random.nextFloat() * 6.28f
@@ -1045,7 +1050,7 @@ class ParticleSystem {
                 vx = (Random.nextFloat() - 0.5f) * 0.018f * cw * depth,
                 vy = fallSpeed,
                 size = 2.6f + depth * 1.3f + Random.nextFloat() * 0.9f,
-                color = SAKURA_PETAL_COLORS.random(),
+                color = SAKURA_PETAL_COLORS.random(Random),
                 maxLife = lifeFrames,
                 type = ParticleType.SAKURA_PETAL,
                 phase = Random.nextFloat() * 6.28f,
@@ -1069,7 +1074,7 @@ class ParticleSystem {
                 vx = (Random.nextFloat() - 0.46f) * 0.015f * cw * depth,
                 vy = fallSpeed,
                 size = 2.9f + depth * 1.4f + Random.nextFloat() * 0.9f,
-                color = AUTUMN_LEAF_COLORS.random(),
+                color = AUTUMN_LEAF_COLORS.random(Random),
                 maxLife = lifeFrames,
                 type = ParticleType.AUTUMN_LEAF,
                 phase = Random.nextFloat() * 6.28f,
@@ -1093,7 +1098,7 @@ class ParticleSystem {
                 vx = (Random.nextFloat() - 0.5f) * 0.008f * cw * depth,
                 vy = fallSpeed,
                 size = 1.8f + depth * 1.4f + Random.nextFloat() * 0.9f,
-                color = SNOW_COLORS.random(),
+                color = SNOW_COLORS.random(Random),
                 maxLife = lifeFrames,
                 type = ParticleType.SNOWFLAKE,
                 phase = Random.nextFloat() * 6.28f,
@@ -1112,7 +1117,7 @@ class ParticleSystem {
                 vx = (Random.nextFloat() - 0.3f) * 0.6f,
                 vy = (Random.nextFloat() - 0.6f) * 0.5f,
                 size = 3.0f + Random.nextFloat() * 2.5f,
-                color = SUN_SPARKLE_COLORS.random(),
+                color = SUN_SPARKLE_COLORS.random(Random),
                 maxLife = 150f + Random.nextFloat() * 60f,
                 type = ParticleType.SPARKLE,
                 phase = Random.nextFloat() * 6.28f

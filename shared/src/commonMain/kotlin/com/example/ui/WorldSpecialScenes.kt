@@ -138,8 +138,15 @@ private fun mix(a: Color, b: Color, t: Float): Color = androidx.compose.ui.graph
 private var tzOffsetMs = 0L
 private var tzCheckedAt = Long.MIN_VALUE
 
+/**
+ * Pins the seconds-since-midnight that wall clocks and the sunroom's sunbeams read, instead of the
+ * real clock; for previews and tests only, so repeat renders agree.
+ */
+var localDaySecondsOverride: Float? = null
+
 /** Seconds since local midnight; drives wall clocks and where the sun shines in from. */
 private fun localDaySeconds(): Float {
+    localDaySecondsOverride?.let { return it }
     val now = kotlin.time.Clock.System.now().toEpochMilliseconds()
     if (now - tzCheckedAt > 60_000L) {
         tzOffsetMs = kotlinx.datetime.TimeZone.currentSystemDefault()

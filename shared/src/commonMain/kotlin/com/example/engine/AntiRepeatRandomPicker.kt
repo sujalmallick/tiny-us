@@ -13,7 +13,7 @@ class AntiRepeatRandomPicker<T>(private val items: List<T>) {
             items[0]
         } else {
             val candidates = items.filter { it != lastPicked }
-            candidates.randomOrNull() ?: items.random()
+            candidates.randomOrNull(WorldRandom.rng) ?: items.random(WorldRandom.rng)
         }
         lastPicked = chosen
         return chosen
@@ -31,7 +31,7 @@ class AntiRepeatRandomPicker<T>(private val items: List<T>) {
             return dynamicItems[0]
         }
         val candidates = dynamicItems.filter { it != lastPicked }
-        val chosen = candidates.randomOrNull() ?: dynamicItems.random()
+        val chosen = candidates.randomOrNull(WorldRandom.rng) ?: dynamicItems.random(WorldRandom.rng)
         lastPicked = chosen
         return chosen
     }

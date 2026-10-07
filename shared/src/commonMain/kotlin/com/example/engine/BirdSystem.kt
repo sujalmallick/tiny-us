@@ -10,7 +10,12 @@ import kotlin.math.abs
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
-import kotlin.random.Random
+
+/**
+ * All bird randomness flows through here so previews can seed it (see [WorldRandom]). Shadows the
+ * simple name `Random` in this file; production still uses [kotlin.random.Random.Default].
+ */
+private val Random: kotlin.random.Random get() = WorldRandom.rng
 
 /** Prints bird decisions to the console when true (was Android's Log.d). */
 private const val DEBUG_BIRDS = false
