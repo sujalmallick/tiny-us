@@ -175,8 +175,9 @@ class CoupleRequestsTest {
                 if (!engine.requests.active) println("Request started and ended within one update at t=$t")
                 firstAt = t
                 asked = engine.requests.kind
-                // The log keeps only the last few dozen activities, so look now.
-                askLogged = engine.autonomyLog.lastOrNull() == Behavior.ASK_FOR_SOMETHING
+                // The log keeps only the last few dozen activities, so look now. Both of them
+                // tick in the same frame, so the partner may have logged something just after.
+                askLogged = Behavior.ASK_FOR_SOMETHING in engine.autonomyLog.takeLast(3)
             }
         }
         assertTrue("A request should start within ten minutes (cooldown ${engine.requests.cooldown}, scene ${engine.currentScene}, log ${engine.autonomyLog.takeLast(8)})", firstAt > 0f)

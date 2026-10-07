@@ -103,6 +103,31 @@ class AutonomyEngineTest {
     }
 
     @Test
+    fun `in the loft they walk back to the couch rather than jump there`() {
+        // The loft's idle loop used to put them straight back on the couch, so whoever the
+        // routine had left by the window or the fairy lights jumped there in one frame.
+        engine.autonomyEnabled = false
+        engine.loadScene(SceneType.COZY_LOFT)
+        run(9f)
+        engine.boy.resetTo(0.62f, 0.60f)
+        engine.girl.resetTo(0.74f, 0.58f)
+        val maxStep = CharacterMotionTween.SHARED_WALKING_SPEED * dt * 2.2f + 0.0005f
+        var bx = engine.boy.worldX; var by = engine.boy.worldY
+        var gx = engine.girl.worldX; var gy = engine.girl.worldY
+        run(6f) {
+            assertTrue("boy jumped", hypot(engine.boy.worldX - bx, engine.boy.worldY - by) <= maxStep)
+            assertTrue("girl jumped", hypot(engine.girl.worldX - gx, engine.girl.worldY - gy) <= maxStep)
+            bx = engine.boy.worldX; by = engine.boy.worldY
+            gx = engine.girl.worldX; gy = engine.girl.worldY
+        }
+        assertEquals(SceneEngine.LOFT_BOY_SEAT_X, engine.boy.worldX, 0.001f)
+        assertEquals(SceneEngine.LOFT_SEAT_Y, engine.boy.worldY, 0.001f)
+        assertEquals(CharacterPose.SIT, engine.boy.pose)
+        assertEquals(SceneEngine.LOFT_GIRL_SEAT_X, engine.girl.worldX, 0.001f)
+        assertEquals(CharacterPose.SIT_SNUGGLE, engine.girl.pose)
+    }
+
+    @Test
     fun `a tap makes the routine step aside, then it carries on`() {
         engine.loadScene(SceneType.CAMPFIRE)
         runUntil(40f, "an autonomous walk") { engine.boyAgent.phase == AgentPhase.WALKING || engine.girlAgent.phase == AgentPhase.WALKING }
