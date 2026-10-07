@@ -62,6 +62,30 @@ class StoreScreenshotTest {
     fun tablet10() = renderAll("tablet10")
 
     /**
+     * App Store, iPhone 6.9-inch: 1290 x 2796 (430 x 932 points at 3x). The app is the same shared
+     * Compose UI on iOS; [asIos] also caps the world's zoom the way the iOS app does.
+     */
+    @Test
+    @Config(sdk = [34], qualifiers = "w430dp-h932dp-port-xxhdpi")
+    fun appStoreIphone() = asIos(screenScale = 3) { renderAll("appstore_iphone_6_9") }
+
+    /** App Store, iPad 13-inch: 2048 x 2732 (1024 x 1366 points at 2x). */
+    @Test
+    @Config(sdk = [34], qualifiers = "w1024dp-h1366dp-port-xhdpi")
+    fun appStoreIpad() = asIos(screenScale = 2) { renderAll("appstore_ipad_13") }
+
+    /** On iOS one game pixel is at most 4 points (MainViewController's limitWorldZoom), so an iPad shows more of the scene. */
+    private fun asIos(screenScale: Int, render: () -> Unit) {
+        val before = com.example.engine.WorldViewport.maxZoom
+        com.example.engine.WorldViewport.maxZoom = 4 * screenScale
+        try {
+            render()
+        } finally {
+            com.example.engine.WorldViewport.maxZoom = before
+        }
+    }
+
+    /**
      * Plan 06, F2: the same screens in the en-XA pseudo-locale, where every string is about a
      * third longer, to spot text that would clip in a longer language. On the smallest common
      * phone width as well as the usual one.

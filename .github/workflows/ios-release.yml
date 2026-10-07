@@ -1,0 +1,126 @@
+name: Tiny Us iOS Release (TestFlight)
+
+# Run by hand (Actions > this workflow > Run workflow) once the Apple secrets are set up; see
+# docs/store/APP_STORE_RELEASE.md. It builds a signed App Store build and uploads it to TestFlight.
+# Signing is automatic through an App Store Connect API key, so no certificate or profile files and
+# no Mac are needed: Xcode creates and keeps the signing pieces in your Apple account.
+on:
+  workflow_dispatch:
+
+concurrency:
+  group: ios-release
+  cancel-in-progress: false
+
+jobs:
+  release-ios:
+    runs-on: macos-latest
+    timeout-minutes: 75
+    env:
+      ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+      ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+      ASC_KEY_P8_BASE64: ${{ secrets.ASC_KEY_P8_BASE64 }}
+      APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+
+    steps:
+      - name: Check the Apple secrets
+        run: |
+          missing=""
+          for name in ASC_KEY_ID ASC_ISSUER_ID ASC_KEY_P8_BASE64 APPLE_TEAM_ID; do
+            [ -n "${!name}" ] || missing="$missing $name"
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::Missing repository secrets:$missing. See docs/store/APP_STORE_RELEASE.md."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v5
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-provider: basic
+
+      - name: Cache Kotlin/Native toolchain
+        uses: actions/cache@v5
+        with:
+          path: ~/.konan
+          key: konan-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: konan-${{ runner.os }}-${{ runner.arch }}-
+
+      - name: Prepare the build
+        run: |
+          chmod +x gradlew
+          echo "sdk.dir=${ANDROID_HOME:-$ANDROID_SDK_ROOT}" > local.properties
+          mkdir -p build-logs
+          xcodebuild -version
+          # The API key lives only in this runner's temp folder, never in the repo or the logs.
+          mkdir -p "$RUNNER_TEMP/asc"
+          echo "$ASC_KEY_P8_BASE64" | base64 --decode > "$RUNNER_TEMP/asc/AuthKey.p8"
+
+      - name: Verify Privacy & Safeguards
+        run: ./gradlew verifyNoUnauthorizedNetworkingOrAnalytics
+
+      - name: Build Shared iOS Framework
+        run: |
+          set -o pipefail
+          ./gradlew :shared:linkReleaseFrameworkIosArm64 2>&1 | tee build-logs/gradle-frameworks.log
+
+      # The build number is this workflow's run number, so every upload is higher than the last.
+      - name: Archive signed App Store build
+        run: |
+          set -o pipefail
+          xcodebuild -project iosApp/iosApp.xcodeproj \
+                     -scheme iosApp \
+                     -configuration Release \
+                     -destination 'generic/platform=iOS' \
+                     -archivePath build/TinyUs.xcarchive \
+                     -allowProvisioningUpdates \
+                     -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8" \
+                     -authenticationKeyID "$ASC_KEY_ID" \
+                     -authenticationKeyIssuerID "$ASC_ISSUER_ID" \
+                     DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+                     CODE_SIGN_STYLE=Automatic \
+                     CURRENT_PROJECT_VERSION="${{ github.run_number }}" \
+                     JAVA_HOME="$JAVA_HOME" \
+                     archive 2>&1 | tee build-logs/xcodebuild-archive.log
+
+      - name: Upload to TestFlight
+        run: |
+          set -o pipefail
+          cat > "$RUNNER_TEMP/ExportOptions.plist" <<PLIST
+          <?xml version="1.0" encoding="UTF-8"?>
+          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+          <plist version="1.0">
+          <dict>
+            <key>method</key><string>app-store-connect</string>
+            <key>destination</key><string>upload</string>
+            <key>teamID</key><string>$APPLE_TEAM_ID</string>
+            <key>signingStyle</key><string>automatic</string>
+            <key>manageAppVersionAndBuildNumber</key><false/>
+          </dict>
+          </plist>
+          PLIST
+          xcodebuild -exportArchive \
+                     -archivePath build/TinyUs.xcarchive \
+                     -exportOptionsPlist "$RUNNER_TEMP/ExportOptions.plist" \
+                     -exportPath build/export \
+                     -allowProvisioningUpdates \
+                     -authenticationKeyPath "$RUNNER_TEMP/asc/AuthKey.p8" \
+                     -authenticationKeyID "$ASC_KEY_ID" \
+                     -authenticationKeyIssuerID "$ASC_ISSUER_ID" 2>&1 | tee build-logs/xcodebuild-export.log
+          echo "Uploaded build ${{ github.run_number }}. It shows in TestFlight after Apple has processed it (usually 10 to 30 minutes)."
+
+      - name: Report build errors
+        if: failure()
+        run: python3 .github/scripts/report_build_errors.py build-logs
+
+      - name: Remove the API key
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/asc"
