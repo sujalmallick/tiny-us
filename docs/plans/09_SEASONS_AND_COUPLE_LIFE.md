@@ -406,12 +406,13 @@ The sealed letters from A and C keep their own homes:
 - the bottle on the line (F, as `LetterKind.BOTTLE`).
 
 ### H. Collection book
-- [ ] H-1. Collection pages with "found N of M", silhouettes and hints.
-- [ ] H-2. When, where and who found each item first.
-- [ ] H-3. Seasonal items.
-- [ ] H-4. Tests.
+- [x] H-1. Collection pages with "found N of M", silhouettes and hints. *(`CollectionBook` in `data/CollectionBook.kt`; five pages in Our Story: little finds, sea and shore, kitchen, garden, festivals and moments. Rare ones read "???" until found.)*
+- [x] H-2. When, where and who found each item first. *(`CollectionStore` keeps the first find: who (or both, or "for her"), the scene, the time of day, the weather and the date. Finds from before the book read "Found before the book began".)*
+- [x] H-3. Seasonal items. *(Hints from the catches and crops: "Only in spring", "Only at night", "Only in the rain", "Something to find for her".)*
+- [x] H-4. Tests. *(`CollectionBookTest`: the pages, hidden entries and hints, found from every sort of progress, given-away gifts, first find kept; `CollectionBookPreviewTest` renders each page.)*
 
 ### I. Characters' routines and likes
+Skipped for now: on 2026-10-07 the user moved straight on to the characters and pets batch (holding and using things, props, pets).
 - [ ] I-1. Routines for Leo, Bao and Pip by the clock.
 - [ ] I-2. Favourite gifts, a unique line for each, and their small secret unlocked (a thank-you line in the scene; G is dropped).
 - [ ] I-3. Tests.

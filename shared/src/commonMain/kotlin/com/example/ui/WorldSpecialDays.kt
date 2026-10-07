@@ -139,7 +139,7 @@ private fun pennant(scope: DrawScope, cx: Float, y: Float, p: Float, color: Colo
 }
 
 /** A 5 x 5 pixel heart with its top-left at ([x], [y]). */
-private fun pixelHeart(scope: DrawScope, x: Float, y: Float, p: Float, color: Color) {
+internal fun pixelHeart(scope: DrawScope, x: Float, y: Float, p: Float, color: Color) {
     scope.drawRect(color, Offset(x + p, y), Size(p, p))
     scope.drawRect(color, Offset(x + 3f * p, y), Size(p, p))
     scope.drawRect(color, Offset(x, y + p), Size(5f * p, 2f * p))

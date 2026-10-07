@@ -12,7 +12,8 @@ sealed class ProgressEvent {
     data class ConstellationFound(val id: String) : ProgressEvent()
     object SnowmanBuilt : ProgressEvent()
     /** A discovery picked up (wildflower, seashell...): it goes into the keepsake box. */
-    data class DiscoveryFound(val kind: String) : ProgressEvent()
+    /** [finder] is BOY or GIRL when known, for the collection book's "who found it first" (plan 09, H). */
+    data class DiscoveryFound(val kind: String, val finder: String? = null) : ProgressEvent()
     /** A falling snowflake, petal, leaf or dandelion puff caught. */
     data class Caught(val kind: String) : ProgressEvent()
     data class SceneVisited(val scene: String) : ProgressEvent()

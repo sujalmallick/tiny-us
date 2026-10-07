@@ -8421,7 +8421,7 @@ class SceneEngine(
     /** They've reached it: pick it up and react. */
     private fun startDiscovery(c: PixelCharacter, cw: Float, ch: Float) {
         if (!discovery.active) return
-        onProgress?.invoke(com.example.progress.ProgressEvent.DiscoveryFound(discovery.kind.name))
+        onProgress?.invoke(com.example.progress.ProgressEvent.DiscoveryFound(discovery.kind.name, if (c === boy) "BOY" else "GIRL"))
         if (discovery.kind == com.example.scene.autonomy.DiscoveryKind.MOCHI_TOY) careForMochi(4)
         val partner = if (c === boy) girl else boy
         val x = cw * discovery.x

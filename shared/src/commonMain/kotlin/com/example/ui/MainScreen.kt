@@ -426,9 +426,14 @@ fun MainScreen(
     }
     var progress by remember { mutableStateOf(progressStore.load()) }
     val firstsToCelebrate = remember { androidx.compose.runtime.mutableStateListOf<com.example.progress.LittleFirst>() }
+    val collectionStore = remember(prefs) { com.example.data.CollectionStore(prefs.storage) }
     val recordProgress: (com.example.progress.ProgressEvent) -> Unit = remember {
         { event ->
             val (next, earned) = com.example.progress.LittleFirsts.apply(progress, event, CoupleDates.today().toEpochDays().toLong())
+            // The collection book (plan 09, H): the story of each first find.
+            for (key in com.example.data.CollectionBook.newlyFound(progress, next)) {
+                collectionStore.record(firstFindOf(key, event, engine))
+            }
             if (next != progress) {
                 progress = next
                 progressStore.save(next)
@@ -1818,4 +1823,19 @@ private fun syncCoupleDates(prefs: PreferencesManager) {
 private fun dueBottle(store: com.example.data.BirthdayStore): com.example.data.SealedLetter? {
     val today = CoupleDates.today()
     return store.letters().firstOrNull { it.kind == com.example.data.LetterKind.BOTTLE && !it.isOpened && it.canOpen(today) }
+}
+
+/** Who found [key] (from [event]) and where and when, for the collection book (plan 09, H). */
+private fun firstFindOf(key: String, event: com.example.progress.ProgressEvent, engine: SceneEngine): com.example.data.FirstFind {
+    val treasure = key in setOf("catch:PEARL", "catch:HEART_SHELL", "catch:SEA_GLASS_HEART")
+    val by = when {
+        event is com.example.progress.ProgressEvent.DiscoveryFound -> event.finder ?: "BOTH"
+        treasure -> "BOY" // reeled up and given to her on the spot (plan 09, F)
+        else -> "BOTH"
+    }
+    return com.example.data.FirstFind(
+        key = key, by = by, forPartner = treasure,
+        scene = engine.currentScene.name, weather = engine.weather.name, phase = engine.timeOfDayPhase.name,
+        epochDay = CoupleDates.today().toEpochDays().toLong()
+    )
 }
