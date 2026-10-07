@@ -249,7 +249,7 @@ fun drawSeasidePierScene(
     PierSprites.drawGrandpaBao(
         scope, bao.x, bao.y, PierLayout.baoScale(p), time, engine.pierFishingPhase, engine.pierLastCatch,
         waterY = horizonY + (railY - horizonY) * 0.62f,
-        sipping = engine.pierBaoSipTimer > 0f,
+        sipping = engine.pierBaoSipTimer > 0f || engine.isBaoTeaTime,
         waving = engine.pierBaoWaveTimer > 0f,
         dozing = engine.isBaoDozing
     )

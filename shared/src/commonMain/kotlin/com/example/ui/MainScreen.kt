@@ -149,6 +149,7 @@ fun MainScreen(
     val festivalStore = remember(prefs) { com.example.data.FestivalStore(prefs.storage) }
     val foxStore = remember(prefs) { com.example.data.FoxStore(prefs.storage) }
     val petStore = remember(prefs) { com.example.data.PetStore(prefs.storage) }
+    val friendsStore = remember(prefs) { com.example.data.FriendsStore(prefs.storage) }
     var showFestival by remember { mutableStateOf(false) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
@@ -264,6 +265,7 @@ fun MainScreen(
             engine.foxStore = foxStore
             engine.catName = prefs.catName
             engine.petStore = petStore
+            engine.friendsStore = friendsStore
             engine.refreshFestival()
             // A Phones Down session still running from before the app closed carries on.
             if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()
@@ -450,6 +452,7 @@ fun MainScreen(
     DisposableEffect(engine) {
         if (previewEngine == null) {
             engine.onProgress = recordProgress
+            engine.keepsakesProvider = { progress.keepsakes }
             recordProgress(com.example.progress.ProgressEvent.SceneVisited(engine.currentScene.name))
             recordProgress(com.example.progress.ProgressEvent.DaysTogether(CoupleCalendar.tinyUsDay()))
         }
@@ -1536,6 +1539,10 @@ fun MainScreen(
                 },
                 onDismiss = { showAvatarCustomizer = false }
             )
+        }
+
+        engine.shownSecret?.let { friend ->
+            FriendSecretDialog(friend, prefs.boyfriendName, prefs.girlfriendName, onDismiss = { engine.shownSecret = null })
         }
 
         if (showPets) {

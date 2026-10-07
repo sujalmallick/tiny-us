@@ -90,6 +90,10 @@ fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Floa
         "GIFT_EXCHANGE" -> { px(0, 0, 4, 3, Color(0xFF52B788)); px(1, 0, 1, 3, Color(0xFFE63946)); px(0, 3, 1, 1, Color(0xFFE63946)); px(2, 3, 1, 1, Color(0xFFE63946)) }
         // The Friday fox's face, and its ball (plan 10, D)
         "VISIT" -> { px(0, 3, 1, 1, Color(0xFF3D2C2E)); px(3, 3, 1, 1, Color(0xFF3D2C2E)); px(0, 0, 4, 3, Color(0xFFE8743B)); px(1, 0, 2, 1, Color(0xFFFFF4E6)); px(1, 1, 1, 1, Color(0xFF3D2C2E)); px(2, 1, 1, 1, Color(0xFF3D2C2E)) }
+        // The friends' secrets (plan 09, I): a letter, a sketchbook, a heart-shaped stone
+        "BAO" -> { px(0, 0, 4, 3, Color(0xFFF6E7C8)); px(0, 2, 4, 1, Color(0xFFD9B99B)); px(1, 1, 2, 1, Color(0xFFC1121F)) }
+        "LEO" -> { px(0, 0, 4, 3, Color(0xFF4A7C9B)); px(1, 0, 2, 3, Color(0xFFFBF7EE)); px(1, 1, 1, 1, Color(0xFF6C6C6C)) }
+        "PIP" -> { px(0, 2, 1, 1, Color(0xFFFF8FA3)); px(2, 2, 1, 1, Color(0xFFFF8FA3)); px(0, 1, 3, 1, Color(0xFFFF8FA3)); px(1, 0, 1, 1, Color(0xFFFF8FA3)) }
         "BALL" -> { px(1, 0, 1, 1, Color(0xFFE63946)); px(0, 1, 3, 1, Color(0xFFE63946)); px(1, 1, 1, 1, Color(0xFFFFD166)); px(1, 2, 1, 1, Color(0xFFE63946)) }
         "THANK_YOU" -> { px(0, 0, 4, 3, Color(0xFFBDE0FE)); px(1, 1, 1, 1, Color(0xFFFF8FAB)); px(2, 0, 1, 1, Color(0xFFFFD166)); px(0, 3, 4, 1, Color(0xFF7A4A1E)) }
         else -> px(0, 0, 3, 3, Color(0xFFFFB5C2))

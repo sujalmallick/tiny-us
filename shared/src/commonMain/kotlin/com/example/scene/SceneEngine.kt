@@ -104,6 +104,10 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** How close Pip dares to perch to the couple around noon (plan 09, I). */
+        const val PIP_BOLD_GAP = 0.09f
+        /** How long a friend's thank-you line shows before their secret opens. */
+        const val SECRET_AFTER = 2.6f
         /** Other pets (plan 10, E): when a visitor turns up, and how the fox and Boba come to stay. */
         const val PET_VISITOR_AFTER = 6f
         const val FOX_STAYS_AFTER = 3
@@ -410,6 +414,21 @@ class SceneEngine(
     var tableCandleTimer: Float by mutableFloatStateOf(0f)     // drives candle flicker & warm glow (1.5 s)
     var poufBounceTimer: Float by mutableFloatStateOf(0f)      // drives knitted pouf squish-bounce (0.8 s)
     var cardboardBoxTimer: Float by mutableFloatStateOf(0f)    // drives Mochi peeking out of box (1.3 s)
+    /** The hour the friends keep their routines by (plan 09, I); tests set [clockHourOverride]. */
+    var clockHourOverride: Int? = null
+    val clockHour: Int get() = clockHourOverride ?: TimeOfDayPhase.currentHour()
+    /** The cafe is open from 7 till 21; after hours Leo wipes the counter or reads. */
+    val cafeOpen: Boolean get() = com.example.data.Friend.cafeOpen(clockHour)
+    /** Four o'clock: Bao has his tea. */
+    val isBaoTeaTime: Boolean get() = com.example.data.Friend.baoTeaTime(clockHour) && !isBaoDozing
+    var friendsStore: com.example.data.FriendsStore? = null
+    /** What's in the keepsake box, for gifts to the friends. */
+    var keepsakesProvider: () -> Map<String, Int> = { emptyMap() }
+    /** A friend's secret to show (just opened, or opened again from the collection book). */
+    var shownSecret: com.example.data.Friend? by mutableStateOf(null)
+    private var secretPending: com.example.data.Friend? = null
+    private var secretRevealIn = 0f
+
     /** Who lives with them (plan 10, E): Mochi unless they chose another pet. Declared early. */
     var petKind: com.example.data.PetKind by mutableStateOf(com.example.data.PetKind.CAT)
         private set
@@ -2044,6 +2063,13 @@ class SceneEngine(
         tickSharing(deltaSeconds)
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         updatePets(deltaSeconds)
+        if (secretRevealIn > 0f) {
+            secretRevealIn -= deltaSeconds
+            if (secretRevealIn <= 0f) {
+                shownSecret = secretPending
+                secretPending = null
+            }
+        }
         if (loftBookAutoClose > 0f) {
             loftBookAutoClose -= deltaSeconds
             if (loftBookAutoClose <= 0f) loftBookReading = false
@@ -5662,6 +5688,15 @@ class SceneEngine(
     }
 
     fun onTouchCafeBarista(cw: Float, ch: Float) {
+        val leo0 = CafeLayout.barista(cw, ch, WorldViewport.pixelScale(cw))
+        if (giveFriendFavourite(com.example.data.Friend.LEO, leo0.x, leo0.y - 40f)) return
+        if (!cafeOpen) {
+            // After hours: no coffee, but he doesn't mind them staying
+            audio.playBubblePop()
+            particles.spawnHeart(leo0.x, leo0.y - 50f, Color(0xFFFF729F))
+            showMessage(GameText.get(Res.string.leo_after_hours), duration = 3.2f)
+            return
+        }
         cafeBaristaBrewTimer = 2.5f
         audio.playSteamHiss()
         audio.playHeartChime()
@@ -5821,6 +5856,14 @@ class SceneEngine(
             showMessage(GameText.get(Res.string.scene_grandpa_bao_hm_oh_i_was_only_resting_my), duration = 2.6f)
             return
         }
+        val bao = PierLayout.bao(cw, ch)
+        if (giveFriendFavourite(com.example.data.Friend.BAO, bao.x, bao.y - 40f)) return
+        if (isBaoTeaTime) {
+            pierBaoQuietTime = 0f
+            audio.playBubblePop()
+            showMessage(GameText.get(Res.string.bao_tea_time), duration = 3f)
+            return
+        }
         pierBaoQuietTime = 0f
         when (pierFishingPhase) {
             PierFishingPhase.IDLE, PierFishingPhase.SHOWING -> startBaoCast(announce = true)
@@ -5842,6 +5885,13 @@ class SceneEngine(
 
     fun onTouchPip(cw: Float, ch: Float) {
         if (!pierGullState.isVisible || pierGullState == GullState.ESCAPING) return
+        if (giveFriendFavourite(com.example.data.Friend.PIP, cw * pierGullX, ch * pierGullY - 20f)) {
+            // A fish! He stays, gulps it down and does a little dance
+            if (pierGullState == GullState.SNEAKING || pierGullState == GullState.STEALING) pierGullState = GullState.PERCHED
+            pierGullTimer = 6f
+            audio.playSeagullCall()
+            return
+        }
         val caughtInTheAct = pierGullState == GullState.SNEAKING || pierGullState == GullState.STEALING
         pierGullState = GullState.ESCAPING
         audio.playSeagullCall()
@@ -5999,7 +6049,7 @@ class SceneEngine(
         // By day he fishes on his own; at night he'd rather nod off.
         if (pierFishingPhase == PierFishingPhase.IDLE && !timeOfDayPhase.isNight) {
             pierBaoSelfCastTimer -= dt
-            if (pierBaoSelfCastTimer <= 0f && pierBaoSipTimer <= 0f) {
+            if (pierBaoSelfCastTimer <= 0f && pierBaoSipTimer <= 0f && !isBaoTeaTime) {
                 pierBaoSelfCastTimer = 20f + pierRng.nextFloat() * 12f
                 startBaoCast(announce = false)
             }
@@ -6053,7 +6103,8 @@ class SceneEngine(
             GullState.FLYING -> {
                 if (moveGullToward(pierGullTargetX, PierLayout.RAIL_Y, 0.22f, dt)) {
                     pierGullState = GullState.PERCHED
-                    pierGullTimer = 4f + pierRng.nextFloat() * 4f
+                    // Around noon he never sits still for long (plan 09, I)
+                    pierGullTimer = if (com.example.data.Friend.pipDaring(clockHour)) 2f + pierRng.nextFloat() * 2f else 4f + pierRng.nextFloat() * 4f
                 }
             }
             GullState.PERCHED -> {
@@ -6065,6 +6116,11 @@ class SceneEngine(
                 if (pierIceCreamTimer > 0f) {
                     pierGullTargetX = (boy.worldX + girl.worldX) / 2f
                     pierGullState = GullState.SNEAKING
+                } else if (com.example.data.Friend.pipDaring(clockHour) && pierRng.nextFloat() < 0.7f) {
+                    // At his boldest around noon: right up on the rail beside them
+                    val mid = (boy.worldX + girl.worldX) / 2f
+                    pierGullTargetX = (mid + if (pierRng.nextBoolean()) -PIP_BOLD_GAP else PIP_BOLD_GAP).coerceIn(0.1f, 0.9f)
+                    pierGullState = GullState.FLYING
                 } else if (pierRng.nextFloat() < 0.5f) {
                     val others = PierLayout.PERCH_XS.filter { abs(it - pierGullX) > 0.05f }
                     pierGullTargetX = others[pierRng.nextInt(others.size)]
@@ -7762,6 +7818,39 @@ class SceneEngine(
         catFacingLeft = foxVisit.x < catWorldX
         showMessage(GameText.get(Res.string.fox_arrives), duration = 3.5f)
         onProgress?.invoke(com.example.progress.ProgressEvent.FoxVisited)
+    }
+
+    /**
+     * Gives [friend] one of their favourites from the keepsake box (plan 09, I), once a day:
+     * a thank-you line of their own, and the first time, their secret. Returns whether it gave.
+     */
+    private fun giveFriendFavourite(friend: com.example.data.Friend, x: Float, y: Float): Boolean {
+        val store = friendsStore ?: return false
+        val day = com.example.data.CoupleDates.today().toString()
+        if (store.giftedOn(friend, day)) return false
+        val item = friend.favouriteIn(keepsakesProvider()) ?: return false
+        store.noteGift(friend, day)
+        onProgress?.invoke(com.example.progress.ProgressEvent.FriendGift(friend.name, item))
+        audio.playHeartChime()
+        repeat(3) { particles.spawnHeart(x + (it - 1) * 24f, y, Color(0xFFFF8FA3)) }
+        for (c in charactersBoyGirl) emote(c, EmoteType.HEART, 2f)
+        val line = when (friend) {
+            com.example.data.Friend.BAO -> if (item == "catch:OLD_BOOT") Res.string.gift_bao_boot else Res.string.gift_bao_tea
+            com.example.data.Friend.LEO -> Res.string.gift_leo_pie
+            com.example.data.Friend.PIP -> Res.string.gift_pip_fish
+        }
+        showMessage(GameText.get(line), duration = 4f)
+        if (store.openSecret(friend)) {
+            onProgress?.invoke(com.example.progress.ProgressEvent.SecretFound(friend.name))
+            secretPending = friend
+            secretRevealIn = SECRET_AFTER
+        }
+        return true
+    }
+
+    /** Opens [friend]'s secret again (from the collection book). */
+    fun showSecret(friend: com.example.data.Friend) {
+        if (friendsStore?.secretOpen(friend) == true) shownSecret = friend
     }
 
     /** The pet's name: Mochi's own, or the name of whoever lives with them now. */

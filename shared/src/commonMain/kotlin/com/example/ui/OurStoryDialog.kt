@@ -141,6 +141,8 @@ fun OurStoryDialog(
     var showKeepsakes by remember { mutableStateOf(false) }
     // The collection book (plan 09, H).
     var showCollection by remember { mutableStateOf(false) }
+    // A friend's secret, opened again from the book (plan 09, I).
+    var secret by remember { mutableStateOf<com.example.data.Friend?>(null) }
     val collection = remember(prefs) { com.example.data.CollectionStore(prefs.storage) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
         value = withContext(Dispatchers.Default) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
@@ -151,6 +153,7 @@ fun OurStoryDialog(
     val listState = rememberLazyListState()
     val scope = rememberCoroutineScope()
 
+    secret?.let { FriendSecretDialog(it, prefs.boyfriendName, prefs.girlfriendName, onDismiss = { secret = null }) }
     Dialog(onDismissRequest = onDismiss, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Column(Modifier.fillMaxSize().background(TinyColors.Paper).statusBarsPadding().testTag("our_story_dialog")) {
             Row(
@@ -212,7 +215,8 @@ fun OurStoryDialog(
                 showFirsts -> LittleFirstsPage(progress)
                 showCollection -> CollectionBookPage(
                     progress, collection, prefs.boyfriendName, prefs.girlfriendName,
-                    together = prefs.anniversaryDate, daysTogether = prefs.getDaysTogether()
+                    together = prefs.anniversaryDate, daysTogether = prefs.getDaysTogether(),
+                    onOpenSecret = { secret = it }
                 )
                 showKeepsakes -> KeepsakesPage(progress, prefs.boyfriendName, prefs.girlfriendName, onGiveKeepsake?.let { give ->
                     { item: String, fromBoy: Boolean ->
@@ -427,6 +431,9 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "LANTERN_NIGHT" -> Res.string.keepsake_festival_lantern
     "GIFT_EXCHANGE" -> Res.string.keepsake_festival_gift
     "VISIT" -> Res.string.keepsake_fox_visit
+    "BAO" -> Res.string.keepsake_secret_bao
+    "LEO" -> Res.string.keepsake_secret_leo
+    "PIP" -> Res.string.keepsake_secret_pip
     "BALL" -> Res.string.keepsake_fox_ball
     else -> Res.string.keepsake_something
 }
@@ -531,7 +538,9 @@ fun CollectionBookPage(
     /** null opens "Found you". */
     initialPage: com.example.data.CollectionPage? = null,
     /** false draws "Found you" still. */
-    animate: Boolean = true
+    animate: Boolean = true,
+    /** Opens a friend's secret again (plan 09, I); null leaves the rows still. */
+    onOpenSecret: ((com.example.data.Friend) -> Unit)? = null
 ) {
     var page by remember { mutableStateOf(initialPage) }
     val entries = page?.let { com.example.data.CollectionBook.page(it) }.orEmpty()
@@ -570,7 +579,11 @@ fun CollectionBookPage(
         }
         items(entries, key = { it.key }) { entry ->
             val isFound = com.example.data.CollectionBook.isFound(entry.key, progress)
-            CollectionRow(entry, isFound, if (isFound) store.first(entry.key) else null, boyName, girlName)
+            val secret = com.example.data.Friend.entries.firstOrNull { it.secretKey == entry.key }
+            CollectionRow(
+                entry, isFound, if (isFound) store.first(entry.key) else null, boyName, girlName,
+                onClick = if (isFound && secret != null && onOpenSecret != null) { { onOpenSecret(secret) } } else null
+            )
         }
     }
 }
@@ -715,7 +728,8 @@ private fun CollectionRow(
     isFound: Boolean,
     first: com.example.data.FirstFind?,
     boyName: String,
-    girlName: String
+    girlName: String,
+    onClick: (() -> Unit)? = null
 ) {
     val mystery = !isFound && entry.hidden
     val title = if (mystery) stringResource(Res.string.collection_mystery) else stringResource(collectionName(entry.key))
@@ -724,7 +738,7 @@ private fun CollectionRow(
         isFound -> stringResource(Res.string.collection_before_book)
         else -> stringResource(entry.hint?.let(::collectionHintText) ?: if (mystery) Res.string.collection_hint_mystery else Res.string.collection_not_yet)
     }
-    TinyCard(padding = TinySpace.md) {
+    TinyCard(padding = TinySpace.md, onClick = onClick) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             val shadow = TinyColors.InkMuted.copy(alpha = 0.45f)
             Canvas(Modifier.size(36.dp).background(if (isFound) TinyColors.RoseSoft else TinyColors.Muted, PixelCircleShape)) {
@@ -811,6 +825,7 @@ private fun collectionHintText(h: com.example.data.CollectionHint): StringResour
     com.example.data.CollectionHint.RAIN -> Res.string.collection_hint_rain
     com.example.data.CollectionHint.FOR_HER -> Res.string.collection_hint_for_her
     com.example.data.CollectionHint.FRIDAY -> Res.string.collection_hint_friday
+    com.example.data.CollectionHint.FRIEND -> Res.string.collection_hint_friend
 }
 
 /** The name in the book: a keepsake's name, or a crop's. */

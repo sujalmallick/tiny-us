@@ -412,10 +412,10 @@ The sealed letters from A and C keep their own homes:
 - [x] H-4. Tests. *(`CollectionBookTest`: the pages, hidden entries and hints, found from every sort of progress, given-away gifts, first find kept; `CollectionBookPreviewTest` renders each page.)*
 
 ### I. Characters' routines and likes
-Skipped for now: on 2026-10-07 the user moved straight on to the characters and pets batch (holding and using things, props, pets).
-- [ ] I-1. Routines for Leo, Bao and Pip by the clock.
-- [ ] I-2. Favourite gifts, a unique line for each, and their small secret unlocked (a thank-you line in the scene; G is dropped).
-- [ ] I-3. Tests.
+Skipped on 2026-10-07 for the characters and pets batch (plan 10); built after it the same day.
+- [x] I-1. Routines for Leo, Bao and Pip by the clock. *(`Friend` in `data/Friends.kt`. The cafe's sign reads OPEN from 7 till 21, then CLOSED; after hours Leo reads or wipes the counter, and still lets them stay. Bao has his tea at four and doesn't cast then. Pip is boldest around noon: he perches right beside them and never sits still.)*
+- [x] I-2. Favourite gifts, a unique line for each, and their small secret unlocked (a thank-you line in the scene; G is dropped). *(Tap them with a favourite in the keepsake box, once a day: Bao loves tea (and laughs at the old boot), Leo the harvest pie, Pip any fish. The first gift opens their secret: Bao's unsent letter to Mei, Leo's sketchbook with a drawing of the two of them, Pip's treasure under the third board. Each goes in the collection book and opens again from there.)*
+- [x] I-3. Tests. *(`FriendsTest`, `FriendsEngineTest` (the hours, Bao's tea, a gift a day, the secret, Pip taking a fish), `FriendsPreviewTest` (the cafe open and after hours, the pier at four, the three secrets).)*
 
 ## Decisions for the user
 
