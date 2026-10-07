@@ -426,6 +426,8 @@ fun keepsakeName(item: String): StringResource = when (item.substringAfter(":"))
     "BLOSSOM_PICNIC" -> Res.string.keepsake_festival_picnic
     "LANTERN_NIGHT" -> Res.string.keepsake_festival_lantern
     "GIFT_EXCHANGE" -> Res.string.keepsake_festival_gift
+    "VISIT" -> Res.string.keepsake_fox_visit
+    "BALL" -> Res.string.keepsake_fox_ball
     else -> Res.string.keepsake_something
 }
 
@@ -808,6 +810,7 @@ private fun collectionHintText(h: com.example.data.CollectionHint): StringResour
     com.example.data.CollectionHint.NIGHT -> Res.string.collection_hint_night
     com.example.data.CollectionHint.RAIN -> Res.string.collection_hint_rain
     com.example.data.CollectionHint.FOR_HER -> Res.string.collection_hint_for_her
+    com.example.data.CollectionHint.FRIDAY -> Res.string.collection_hint_friday
 }
 
 /** The name in the book: a keepsake's name, or a crop's. */

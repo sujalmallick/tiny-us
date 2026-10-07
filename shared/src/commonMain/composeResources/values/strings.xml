@@ -1443,4 +1443,11 @@
     <!-- Plan 10, A: sharing what's in your hand -->
     <string name="share_sip">Want a sip?</string>
     <string name="share_look">Here, look at this.</string>
+    <!-- Plan 10, D: the Friday fox -->
+    <string name="fox_arrives">A little fox trots in with a ball. It’s Friday!</string>
+    <string name="fox_leaves">The fox picks up its ball and trots home. See you next Friday.</string>
+    <string name="fox_ball_left">The fox left its ball in the grass. It waited for you all Friday.</string>
+    <string name="keepsake_fox_visit">The Friday fox</string>
+    <string name="keepsake_fox_ball">The ball the fox left you</string>
+    <string name="collection_hint_friday">Only on Fridays</string>
 </resources>

@@ -146,6 +146,7 @@ fun MainScreen(
     var coupleTool by remember { mutableStateOf<CoupleTool?>(null) }
     // The festivals (plan 09, D) and whether one's screen is open.
     val festivalStore = remember(prefs) { com.example.data.FestivalStore(prefs.storage) }
+    val foxStore = remember(prefs) { com.example.data.FoxStore(prefs.storage) }
     var showFestival by remember { mutableStateOf(false) }
     // Couples from older builds may still be "Him" and "Her": ask once, kindly, instead of renaming.
     var showNamePrompt by remember {
@@ -258,6 +259,7 @@ fun MainScreen(
             engine.birthdayStore = birthdayStore
             engine.coupleLifeStore = coupleLifeStore
             engine.festivalStore = festivalStore
+            engine.foxStore = foxStore
             engine.refreshFestival()
             // A Phones Down session still running from before the app closed carries on.
             if (coupleLifeStore.phonesDownSecondsLeft() != null) engine.startPhonesDown()

@@ -271,6 +271,11 @@ fun PixelWorldView(
                             flushPendingTap()
                             return@detectTapGestures
                         }
+                        // The Friday fox and the ball it left (plan 10, D)
+                        if (engine.onFoxTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) {
+                            flushPendingTap()
+                            return@detectTapGestures
+                        }
 
                         // Dedicated touch targets for Evening Scooter Ride
                         if (engine.currentScene == com.example.scene.SceneType.EVENING_RIDE) {
@@ -1716,6 +1721,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         drawCatchGame(this, engine.catchGame, cw, ch, pixelScale, engine.sceneTime)
 
         // Cooking, fishing and garden care (plan 07, C3-C5).
+        drawFridayFox(this, engine, cw, ch, pixelScale)
         drawCozyGames(this, engine, cw, ch, pixelScale, engine.sceneTime)
 
         // Special days (plan 06, G2): a garland and the day's touch, lit like the rest of the scene.

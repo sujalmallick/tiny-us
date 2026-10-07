@@ -104,6 +104,12 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** The Friday fox (plan 10, D): the scenes it visits, when it turns up, where the ball is left. */
+        val FOX_SCENES = setOf(SceneType.FLOWER, SceneType.UNDER_TREE, SceneType.LOOKING, SceneType.WALK)
+        const val FOX_ARRIVES_AFTER = 8f
+        const val FOX_GROUND_Y = 0.77f
+        const val FOX_BALL_X = 0.74f
+        const val FOX_BALL_Y = 0.79f
         /** Where Mochi's box and saucer are, and how long she stays in the box (plan 10, C). */
         const val MOCHI_BOX_X = 0.17f
         const val MOCHI_BOX_Y = 0.925f
@@ -400,6 +406,14 @@ class SceneEngine(
     var tableCandleTimer: Float by mutableFloatStateOf(0f)     // drives candle flicker & warm glow (1.5 s)
     var poufBounceTimer: Float by mutableFloatStateOf(0f)      // drives knitted pouf squish-bounce (0.8 s)
     var cardboardBoxTimer: Float by mutableFloatStateOf(0f)    // drives Mochi peeking out of box (1.3 s)
+    /** The Friday fox (plan 10, D), declared early: loadScene resets it. */
+    val foxVisit = FoxVisit()
+    var foxStore: com.example.data.FoxStore? by mutableStateOf(null)
+    /** The Friday whose ball the fox left in the grass, while it's lying there; null otherwise. */
+    var foxBallFriday: kotlinx.datetime.LocalDate? by mutableStateOf(null)
+        private set
+    private var foxCheckedScene: SceneType? = null
+
     /** Mochi on her way to her box or saucer (plan 10, C), declared early: loadScene resets them. */
     private var mochiErrand: MochiErrand? = null
 
@@ -800,6 +814,9 @@ class SceneEngine(
         tableCandleTimer = 0f
         poufBounceTimer = 0f
         cardboardBoxTimer = 0f
+        foxVisit.stop()
+        foxCheckedScene = null
+        foxBallFriday = null
         mochiInBox = false
         mochiErrand = null
         basketYarnTimer = 0f
@@ -2000,6 +2017,7 @@ class SceneEngine(
         tickHeldItem(girl, deltaSeconds)
         tickFlowerHandover(deltaSeconds)
         tickSharing(deltaSeconds)
+        updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         if (loftBookAutoClose > 0f) {
             loftBookAutoClose -= deltaSeconds
             if (loftBookAutoClose <= 0f) loftBookReading = false
@@ -3352,6 +3370,12 @@ class SceneEngine(
                 catWorldX = catTargetX
                 catWorldY = catTargetY
                 arriveOnErrand(cw, ch)
+            } else if (foxVisit.active) {
+                // Out to meet the Friday fox: she sits and watches it, ready to play
+                catWorldX = catTargetX
+                catWorldY = catTargetY
+                catState = CatState.SITTING_PURR
+                catFacingLeft = foxVisit.x < catWorldX
             } else {
                 // Arrived at roaming destination! Settle down comfortably
                 catWorldX = catTargetX
@@ -3420,6 +3444,7 @@ class SceneEngine(
 
     private fun triggerAutonomousPetBehavior(cw: Float, ch: Float) {
         if (catTreatInProgress) return
+        if (foxVisit.active || mochiErrand != null) return
         if (currentScene == SceneType.COZY_LOFT) {
             val states = listOf(
                 CatState.SLEEPING,
@@ -7637,6 +7662,94 @@ class SceneEngine(
             shareTimer = SHARE_SECONDS
             return
         }
+    }
+
+    /**
+     * The Friday fox (plan 10, D). On a Friday, in the meadow, under the tree, on the walk or the
+     * hill, during the day, a fox cub turns up once with a ball and plays catch with Mochi. On a
+     * day after a Friday they missed, its ball is waiting in the grass for them instead.
+     */
+    private fun updateFridayFox(dt: Float, cw: Float, ch: Float) {
+        val store = foxStore ?: return
+        val today = com.example.data.FridayFox.today()
+        if (foxCheckedScene != currentScene) {
+            foxCheckedScene = currentScene
+            store.noteSeen(today)
+            foxBallFriday = if (currentScene in FOX_SCENES) com.example.data.FridayFox.ballWaiting(store, today) else null
+        }
+        if (foxVisit.active) {
+            foxVisit.mochiX = catWorldX
+            when (foxVisit.update(dt)) {
+                FoxVisit.Event.ARRIVED -> {
+                    for (c in charactersBoyGirl) {
+                        c.direction = if (foxVisit.x < c.worldX) Direction.LEFT else Direction.RIGHT
+                        emote(c, EmoteType.HEART, 2f)
+                        c.emotion = CharacterEmotion.LOVING
+                    }
+                    audio.playCatChirp()
+                }
+                FoxVisit.Event.BALL_TO_MOCHI -> {
+                    catState = CatState.PLAYFUL_POUNCE
+                    catFacingLeft = foxVisit.x < catWorldX
+                    audio.playBubblePop()
+                }
+                FoxVisit.Event.BALL_TO_FOX -> {
+                    catState = CatState.SITTING_PURR
+                    audio.playSoftRoll()
+                }
+                FoxVisit.Event.LEAVING -> {
+                    catState = CatState.SITTING_PURR
+                    showMessage(GameText.get(Res.string.fox_leaves), duration = 3.5f)
+                }
+                FoxVisit.Event.GONE, null -> Unit
+            }
+            return
+        }
+        if (!com.example.data.FridayFox.isFriday(today) || store.visited(today)) return
+        if (currentScene !in FOX_SCENES || timeOfDayPhase.isNight || sceneTime < FOX_ARRIVES_AFTER) return
+        if (isWatchSceneActive || mochiInBox || mochiErrand != null) return
+        store.markVisited(today)
+        // It comes to Mochi wherever she is; she wakes up and sits to watch it come
+        mochiMatchmakerActive = false
+        catSleeping = false
+        catState = CatState.SITTING_PURR
+        catTargetX = catWorldX
+        catTargetY = catWorldY
+        foxVisit.start(groundY = catWorldY, mochiX = catWorldX)
+        catFacingLeft = foxVisit.x < catWorldX
+        showMessage(GameText.get(Res.string.fox_arrives), duration = 3.5f)
+        onProgress?.invoke(com.example.progress.ProgressEvent.FoxVisited)
+    }
+
+    /** A tap on the fox (a happy hop) or on the ball it left (picked up). Returns whether it hit. */
+    fun onFoxTap(x: Float, y: Float, cw: Float, ch: Float, p: Float): Boolean {
+        if (foxVisit.active) {
+            val fx = cw * foxVisit.x
+            val fy = ch * foxVisit.y - 9f * p
+            if (kotlin.math.abs(x - fx) < 22f * p && kotlin.math.abs(y - fy) < 18f * p) {
+                foxVisit.hop = 0.45f
+                particles.spawnHeart(fx, fy - 12f * p, Color(0xFFFF9F43))
+                audio.playCatChirp()
+                return true
+            }
+            return false
+        }
+        val friday = foxBallFriday ?: return false
+        val bx = cw * FOX_BALL_X
+        val by = ch * FOX_BALL_Y
+        if (kotlin.math.abs(x - bx) > 16f * p || kotlin.math.abs(y - by) > 16f * p) return false
+        foxStore?.markBallCollected(friday)
+        foxBallFriday = null
+        particles.spawnSparkles(bx, by - 6f * p, 6)
+        audio.playHeartChime()
+        showMessage(GameText.get(Res.string.fox_ball_left), duration = 4.5f)
+        onProgress?.invoke(com.example.progress.ProgressEvent.FoxBallFound)
+        // Mochi pounces after it
+        catTargetX = (FOX_BALL_X - 0.05f).coerceIn(0.08f, 0.92f)
+        catTargetY = FOX_GROUND_Y
+        catState = CatState.WALK_FOLLOW
+        catSleeping = false
+        return true
     }
 
     /** Seconds until the book they took down in the loft is put back; 0 when they didn't take it. */

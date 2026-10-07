@@ -359,6 +359,36 @@ class ScenePreviewTest {
         }
     }
 
+    /** Plan 10, D: the Friday fox arriving, at play, and the ball it leaves. FOX_PREVIEW_DIR=dir. */
+    @Test
+    fun writesFridayFoxWhenAsked() {
+        val out = File(System.getenv("FOX_PREVIEW_DIR") ?: return).apply { mkdirs() }
+        val camera = WorldCamera.forScreen(cw, ch, SceneType.FLOWER, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
+        val w = camera.worldW
+        val h = camera.worldH
+        fun shot(name: String, today: kotlinx.datetime.LocalDate, until: (SceneEngine) -> Boolean) {
+            com.example.data.FridayFox.todayOverride = today
+            reallocateNightStars(42L)
+            val engine = engineFor(SceneType.FLOWER, TimeOfDayPhase.AFTERNOON, w, h)
+            engine.autonomyEnabled = false
+            engine.foxStore = com.example.data.FoxStore(com.example.data.InMemoryKeyValueStorage()).apply { noteSeen(kotlinx.datetime.LocalDate(2026, 9, 1)) }
+            var t = 0f
+            while (t < 60f && !until(engine)) { engine.update(1f / 30f, w, h); t += 1f / 30f }
+            val frame = render(cw, ch) { drawWorld(engine, LowResWorldBuffer(), camera) }
+            save(Bitmap.createBitmap(frame, 0, (ch * 0.30f).toInt(), cw.toInt(), (ch * 0.58f).toInt()), File(out, "fox_$name.png"))
+            frame.recycle()
+        }
+        val friday = kotlinx.datetime.LocalDate(2026, 10, 9)
+        try {
+            shot("arriving", friday) { it.foxVisit.active && it.foxVisit.x < 0.92f }
+            shot("catch", friday) { it.foxVisit.ballFlying && it.foxVisit.ballT in 0.45f..0.6f && it.foxVisit.phase == com.example.scene.FoxVisit.Phase.PLAYING }
+            shot("with_mochi", friday) { it.foxVisit.ballWithMochi }
+            shot("ball_left", kotlinx.datetime.LocalDate(2026, 10, 11)) { it.sceneTime > 2f }
+        } finally {
+            com.example.data.FridayFox.todayOverride = null
+        }
+    }
+
     @Test
     fun writesDissolvePreviewWhenAsked() {
         val out = File(System.getenv("SCENE_PREVIEW_DIR") ?: return).apply { mkdirs() }
