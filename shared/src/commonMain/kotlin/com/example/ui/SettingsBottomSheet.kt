@@ -129,6 +129,7 @@ fun SettingsBottomSheet(
     onOpenPolaroids: () -> Unit = {},
     onOpenDreamJournal: () -> Unit = {},
     onOpenWardrobe: () -> Unit = {},
+    onOpenPets: () -> Unit = {},
     onOpenAvatarCustomizer: () -> Unit = {},
     onOpenDateAdventures: () -> Unit = {},
     onOpenDailyMoment: () -> Unit = {},
@@ -380,6 +381,18 @@ fun SettingsBottomSheet(
                             onOpenAvatarCustomizer()
                         },
                         testTag = "settings_open_avatar_button"
+                    )
+                    TinyDivider()
+                    // Plan 10, E: the pets they've met, and who lives with them
+                    SettingsNavRow(
+                        icon = PixelIcons.Favorite,
+                        title = stringResource(Res.string.our_pets_entry),
+                        subtitle = stringResource(Res.string.our_pets_entry_sub),
+                        onClick = {
+                            onDismiss()
+                            onOpenPets()
+                        },
+                        testTag = "settings_open_pets_button"
                     )
                 }
             }

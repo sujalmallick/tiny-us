@@ -38,9 +38,16 @@ object GameText {
 
     val isLoaded: Boolean get() = texts.isNotEmpty()
 
+    /**
+     * The pet's name (plan 10, E): Mochi, what they renamed her, or whoever lives with them now.
+     * The scene's lines say "Mochi"; they follow this name.
+     */
+    var petName: String = "Mochi"
+
     /** The text of [res], formatted with [args] when there are any. Empty before [load]. */
     fun get(res: StringResource, vararg args: Any?): String {
-        val text = texts[res] ?: return ""
+        val raw = texts[res] ?: return ""
+        val text = if (petName == "Mochi") raw else raw.replace("Mochi", petName)
         return if (args.isEmpty()) text else format(text, args)
     }
 
