@@ -104,6 +104,10 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** Their places on the loft couch. */
+        const val LOFT_BOY_SEAT_X = 0.58f
+        const val LOFT_GIRL_SEAT_X = 0.65f
+        const val LOFT_SEAT_Y = 0.575f
         /** How close Pip dares to perch to the couple around noon (plan 09, I). */
         const val PIP_BOLD_GAP = 0.09f
         /** How long a friend's thank-you line shows before their secret opens. */
@@ -2831,6 +2835,22 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Back to their place on the loft couch. If the routine left them somewhere else (at the
+     * window, by the fairy lights) they walk back and sit down; they never jump there.
+     */
+    private fun settleOnLoftCouch(c: PixelCharacter, seatX: Float, seatPose: CharacterPose, facing: Direction) {
+        if (kotlin.math.hypot(c.worldX - seatX, c.worldY - LOFT_SEAT_Y) > 0.004f) {
+            c.moveTo(seatX, LOFT_SEAT_Y, arrivePose = seatPose)
+            return
+        }
+        c.worldX = seatX
+        c.worldY = LOFT_SEAT_Y
+        c.pose = seatPose
+        c.direction = facing
+        c.emotion = CharacterEmotion.LOVING
+    }
+
     private fun updateWalkScene(dt: Float, cw: Float, ch: Float) {
         val t = sceneTime
 
@@ -3126,18 +3146,10 @@ class SceneEngine(
             }
         } else {
             if (boy.reactionTimer <= 0 && !boy.isMovingOrTransitioning && !autonomyHolds(boy)) {
-                boy.worldX = 0.58f
-                boy.worldY = 0.575f
-                boy.pose = CharacterPose.SIT
-                boy.direction = Direction.RIGHT
-                boy.emotion = CharacterEmotion.LOVING
+                settleOnLoftCouch(boy, LOFT_BOY_SEAT_X, CharacterPose.SIT, Direction.RIGHT)
             }
             if (girl.reactionTimer <= 0 && !girl.isMovingOrTransitioning && !autonomyHolds(girl)) {
-                girl.worldX = 0.65f
-                girl.worldY = 0.575f
-                girl.pose = CharacterPose.SIT_SNUGGLE
-                girl.direction = Direction.LEFT
-                girl.emotion = CharacterEmotion.LOVING
+                settleOnLoftCouch(girl, LOFT_GIRL_SEAT_X, CharacterPose.SIT_SNUGGLE, Direction.LEFT)
             }
         }
         if (catState == CatState.SLEEPING) {
