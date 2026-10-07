@@ -1440,4 +1440,7 @@
         <item>All the treasures in the sea, and I would still choose you.</item>
         <item>The book is full now. My heart was full long before it.</item>
     </string-array>
+    <!-- Plan 10, A: sharing what's in your hand -->
+    <string name="share_sip">Want a sip?</string>
+    <string name="share_look">Here, look at this.</string>
 </resources>

@@ -67,7 +67,11 @@ enum class EmoteType {
 enum class HeldItem {
     NONE, MUG, BOOK, WATERING_CAN, MISTER, FLOWER, LEAF, LOVE_NOTE, SEASHELL, STAR_PEBBLE, YARN_BALL, LANTERN,
     /** A birthday cake with three candles (plan 09, A); [PixelCharacter.heldItemState] says which are lit. */
-    CAKE;
+    CAKE,
+    /** A frying pan (plan 10, A): held over the stove while cooking, tossed now and then. */
+    PAN,
+    /** A fishing rod (plan 10, A): gripped in both hands at the pier; [PixelCharacter.rodTip] is where the line starts. */
+    ROD;
 
     /** Always carried in both hands at the chest, never hanging from one. */
     val heldInBothHands: Boolean get() = this == CAKE
@@ -179,6 +183,9 @@ data class PixelCharacter(
     var heldItemState: Int = 0
     /** Raised in front of them: in use, or an item that's always held in both hands. */
     val heldItemRaised: Boolean get() = heldItem != HeldItem.NONE && (heldItemUse > 0f || heldItem.heldInBothHands)
+
+    /** Where the tip of their rod was last drawn, for the line out to the water (plan 10, A). */
+    var rodTip: Offset? = null
 
     /** A party hat for the birthday (plan 09, A), worn over whatever accessory they chose. */
     var wearsPartyHat: Boolean = false
@@ -607,6 +614,7 @@ object PixelArtRenderer {
     ) {
         // Feature 1: uniform +10% scale applied here once, covering all scenes and all poses
         val p = pixelSize * CHARACTER_SCALE_FACTOR
+        char.rodTip = null
         val flip = char.direction == Direction.LEFT
         val w = 18
         val h = 26
@@ -838,7 +846,7 @@ object PixelArtRenderer {
         px(5, 8, skinShadow)
 
         // --- 3. Eyes with Pixel Sparkles ---
-        val isClosedEyes = char.isBlinking ||
+        val isClosedEyes = char.isBlinking || usePose(char)?.closesEyes == true ||
                 char.pose == CharacterPose.IDLE_BLINK ||
                 char.pose == CharacterPose.HUG ||
                 char.pose == CharacterPose.HEAD_PAT_RECEIVE ||
@@ -1060,7 +1068,13 @@ object PixelArtRenderer {
                 fillRect(4, 13, 2, 4, sweaterColor)
                 fillRect(4, 17, 1, 1, handColor)
             }
-            CharacterPose.COOK -> {
+            CharacterPose.COOK -> if (char.heldItem == HeldItem.PAN) {
+                // Plan 10, A: the pan held out over the stove, a toss now and then
+                fillRect(4, 13, 2, 4, sweaterColor)
+                fillRect(4, 17, 1, 1, handColor)
+                fillRect(12, 14, 2, 2, sweaterColor)
+                drawPanInUse(scope, char, startX, startY - char.breathingOffset, p, flip, handColor)
+            } else {
                 // Holding wooden spoon over stove
                 fillRect(12, 14, 3, 2, sweaterColor)
                 fillRect(15, 14, 1, 1, handColor)
@@ -1100,7 +1114,12 @@ object PixelArtRenderer {
                 fillRect(13, 11, 2, 3, sweaterColor)
                 fillRect(13, 9, 2, 2, handColor)
             }
-            else -> if (char.heldItem.heldInBothHands) {
+            else -> if (char.heldItem == HeldItem.ROD) {
+                drawRodInHands(scope, char, startX, startY - char.breathingOffset, p, flip, sweaterColor, handColor, dy = 0)
+            } else if (usePose(char) != null) {
+                // Plan 10, A: the item where it's used (at the lips, the nose, the ear, the eyes)
+                drawUsePose(scope, char, startX, startY - char.breathingOffset, p, flip, sweaterColor, handColor, dy = 0)
+            } else if (char.heldItem.heldInBothHands) {
                 // A cake is carried low in both hands, under its plate, clear of the face
                 fillRect(5, 13, 2, 5, sweaterColor)
                 fillRect(11, 13, 2, 5, sweaterColor)
@@ -1129,6 +1148,7 @@ object PixelArtRenderer {
         if (char.heldItem != HeldItem.NONE) {
             val umbrellaArm = isHoldingUmbrella && !char.isGirl
             when {
+                char.pose == CharacterPose.COOK && char.heldItem == HeldItem.PAN -> Unit // drawn with the arms
                 umbrellaArm || char.pose in BACK_HAND_POSES -> {
                     fillRect(4, 17, 1, 1, handColor)
                     drawHeldItem(scope, char, startX, startY - char.breathingOffset, p, flip, 4, 17, raised = false, backHand = true)
@@ -1136,6 +1156,7 @@ object PixelArtRenderer {
                 char.pose !in EMPTY_HAND_POSES -> {
                     val y0 = startY - char.breathingOffset
                     when {
+                        usePose(char) != null || char.heldItem == HeldItem.ROD -> Unit // drawn with the arms
                         !char.heldItemRaised ->
                             // Carried in the outer hand, clear of whoever they're standing beside
                             drawHeldItem(scope, char, startX, y0, p, flip, 4, 17, raised = false, backHand = true)
@@ -1419,7 +1440,7 @@ object PixelArtRenderer {
 
         // Face
         fillRect(6, 8, 7, 4, skinColor)
-        if (char.isBlinking || char.pose == CharacterPose.SIT_SNUGGLE || char.emotion == CharacterEmotion.LOVING) {
+        if (char.isBlinking || char.pose == CharacterPose.SIT_SNUGGLE || char.emotion == CharacterEmotion.LOVING || usePose(char)?.closesEyes == true) {
             px(7, 9, EyeDark)
             px(8, 8, EyeDark)
             px(10, 8, EyeDark)
@@ -1502,13 +1523,18 @@ object PixelArtRenderer {
             // Left arm resting on lap
             fillRect(5, 14, 2, 3, sweaterColor)
             fillRect(6, 16, 2, 1, handColor)
+        } else if (char.heldItem == HeldItem.ROD) {
+            drawRodInHands(scope, char, startX, startY - char.breathingOffset, p, flip, sweaterColor, handColor, dy = 1)
+        } else if (usePose(char) != null) {
+            // Plan 10, A: used just as when standing, a row lower
+            drawUsePose(scope, char, startX, startY - char.breathingOffset, p, flip, sweaterColor, handColor, dy = 1)
         } else {
             // Hands resting on lap or holding hand
             fillRect(8, 16, 3, 1, handColor)
         }
 
         // Held item rests on the hands in the lap, raised a little while in use
-        if (char.heldItem != HeldItem.NONE) {
+        if (char.heldItem != HeldItem.NONE && char.heldItem != HeldItem.ROD && usePose(char) == null) {
             val lapBottom = when {
                 char.heldItem.heldInBothHands -> 19
                 char.heldItemRaised -> 14
@@ -2387,6 +2413,7 @@ object PixelArtRenderer {
         'B' to Color(0xFF4A7C9B), 'b' to Color(0xFF35607A), 't' to Color(0xFFFFD166), 'W' to Color(0xFFFFF8E7)
     )
     private val CAN_COLORS = mapOf('C' to Color(0xFF7FB069), 'c' to Color(0xFF5E8C4F))
+    private val PAN_COLORS = mapOf('k' to Color(0xFF6B4423), 'p' to Color(0xFF8D99AE), 'P' to Color(0xFF3D405B))
     private val MISTER_COLORS = mapOf('B' to Color(0xFFE0F2F1), 'b' to Color(0xFFA8D5CF), 'n' to Color(0xFF4A4E69))
 
     /** Carried at the side, hanging from the hand. */
@@ -2464,7 +2491,12 @@ object PixelArtRenderer {
         ), mapOf(
             'c' to Color(0xFF8ECAE6), 'W' to Color(0xFFFFF1F5), 'p' to Color(0xFFE5677F),
             'S' to Color(0xFFF4C27A), 'D' to Color(0xFFDDE3EA)
-        ))
+        )),
+        // Plan 10, A: carried by the handle, the pan hanging out to the side.
+        HeldItem.PAN to ItemArt(listOf(
+            "hkkpppp",
+            "...PPPP"
+        ), PAN_COLORS)
     )
 
     /** Held up in front while in use; items without an entry are just raised as carried. */
@@ -2512,6 +2544,212 @@ object PixelArtRenderer {
         val gripX = left + (art.handX - minX)
         val gripY = bottomY - (maxY - art.handY)
         drawHeldItem(scope, char, startX, startY, p, flip, gripX, gripY, raised = true, backHand = false)
+    }
+
+    /**
+     * The fishing rod in both hands (plan 10, A): the butt and reel at the lap, the rod angled up
+     * and out. The reel's handle turns while they reel in ([PixelCharacter.heldItemUse] above 0).
+     * Records [PixelCharacter.rodTip] so the line can carry on to the water.
+     */
+    private fun drawRodInHands(
+        scope: DrawScope,
+        char: PixelCharacter,
+        startX: Float,
+        y0: Float,
+        p: Float,
+        flip: Boolean,
+        sweater: Color,
+        hand: Color,
+        dy: Int
+    ) {
+        fun cellX(x: Int) = if (flip) 17 - x else x
+        fun cell(x: Int, y: Int, c: Color) =
+            scope.drawRect(c, Offset(startX + cellX(x) * p, y0 + (y + dy) * p), Size(p, p))
+        val rod = Color(0xFF8B5A2B)
+        val dark = Color(0xFF5C4630)
+        val reeling = char.heldItemUse > 0f
+        // Arms forward onto the rod
+        for (y in 13..14) { cell(11, y, sweater); cell(12, y, sweater) }
+        cell(13, 14, sweater)
+        // The rod: butt, then up and out to the tip
+        cell(11, 16, dark)
+        cell(12, 15, rod)
+        for (i in 0..5) cell(13 + i, 14 - i, rod)
+        // The reel, its handle going round while reeling
+        cell(12, 16, Color(0xFF6C757D))
+        val turn = if (reeling) ((char.heldItemAge * 8f).toInt() and 3) else 0
+        when (turn) {
+            0 -> cell(12, 17, dark)
+            1 -> cell(13, 16, dark)
+            2 -> cell(12, 15, dark)
+            else -> cell(11, 16, dark)
+        }
+        // Hands: one on the rod above the reel, one on the reel
+        cell(12, 15, hand)
+        cell(14, 13, hand)
+        // Where the line leaves the tip
+        val tipX = cellX(18)
+        char.rodTip = Offset(startX + tipX * p + p / 2f, y0 + (8 + dy) * p + p / 2f)
+    }
+
+    /**
+     * The pan over the stove (plan 10, A): held out by the handle in the front hand, with
+     * something sizzling in it that hops up when it's tossed (while in use, and every few seconds).
+     */
+    private fun drawPanInUse(
+        scope: DrawScope,
+        char: PixelCharacter,
+        startX: Float,
+        y0: Float,
+        p: Float,
+        flip: Boolean,
+        hand: Color
+    ) {
+        fun cell(x: Int, y: Int, w: Int, h: Int, c: Color) {
+            val left = if (flip) 17 - (x + w - 1) else x
+            scope.drawRect(c, Offset(startX + left * p, y0 + y * p), Size(w * p, h * p))
+        }
+        val age = char.heldItemAge
+        // A toss lasts 0.8 s: in use it repeats, otherwise once every 3 s.
+        val cycle = if (char.heldItemUse > 0f) 0.8f else 3f
+        val t = (age % cycle) / 0.8f
+        val tossing = t < 1f
+        val hop = if (tossing) (12f * t * (1f - t)).toInt() else 0 // up to 3 cells
+        val tilt = if (tossing && t < 0.5f) 1 else 0 // the far end lifts as it flicks
+        val c = PAN_COLORS
+        cell(14, 15, 1, 1, hand)
+        cell(15, 15, 2, 1, c.getValue('k'))
+        cell(17, 15 - tilt, 1, 1, c.getValue('p'))
+        cell(18, 15 - tilt, 3, 1, c.getValue('p'))
+        cell(17, 16 - tilt, 4, 1, c.getValue('P'))
+        cell(21, 14 - tilt, 1, 2, c.getValue('p'))
+        // An egg, sunny side up, with a bit of green
+        val top = 14 - tilt - hop
+        cell(18, top, 2, 1, Color(0xFFFFF8E7))
+        cell(19, top, 1, 1, Color(0xFFFFB703))
+        cell(20, top, 1, 1, Color(0xFF55A630))
+        if (!tossing && ((age * 4f).toInt() and 1) == 0) cell(19, 12, 1, 1, Color(0xFFE3ECF2).copy(alpha = 0.8f)) // sizzle
+    }
+
+    /**
+     * How a held thing is used (plan 10, A): each one goes where it belongs. A sip at the lips, a
+     * flower to the nose, a shell to the ear, a note or a leaf up to the eyes, a ball of yarn tossed.
+     */
+    enum class UseStyle(val closesEyes: Boolean) { SIP(true), SNIFF(true), LISTEN(true), LOOK(false), TOSS(false) }
+
+    fun useStyle(item: HeldItem): UseStyle? = when (item) {
+        HeldItem.MUG -> UseStyle.SIP
+        HeldItem.FLOWER -> UseStyle.SNIFF
+        HeldItem.SEASHELL -> UseStyle.LISTEN
+        HeldItem.LOVE_NOTE, HeldItem.LEAF, HeldItem.STAR_PEBBLE -> UseStyle.LOOK
+        HeldItem.YARN_BALL -> UseStyle.TOSS
+        else -> null
+    }
+
+    /** The use pose they're in right now, or null when not using something that has one. */
+    fun usePose(char: PixelCharacter): UseStyle? =
+        if (char.heldItemUse > 0f) useStyle(char.heldItem) else null
+
+    /**
+     * Draws the arms and the item of [usePose], on the standing sprite's grid ([dy] 1 for sitting,
+     * whose face sits a row lower). [y0] already includes the breathing offset.
+     */
+    private fun drawUsePose(
+        scope: DrawScope,
+        char: PixelCharacter,
+        startX: Float,
+        y0: Float,
+        p: Float,
+        flip: Boolean,
+        sweater: Color,
+        hand: Color,
+        dy: Int
+    ) {
+        val style = usePose(char) ?: return
+        fun cell(x: Int, y: Int, w: Int, h: Int, c: Color) {
+            val left = if (flip) 17 - (x + w - 1) else x
+            scope.drawRect(c, Offset(startX + left * p, y0 + (y + dy) * p), Size(w * p, h * p))
+        }
+        val age = char.heldItemAge
+        val beat = (age * 6f).toInt()
+        val frontArmDown = { cell(12, 13, 2, 4, sweater); cell(13, 17, 1, 1, hand) }
+        val backArmDown = { cell(4, 13, 2, 4, sweater); cell(4, 17, 1, 1, hand) }
+        when (style) {
+            UseStyle.SIP -> {
+                backArmDown()
+                // The front arm bends up and tips the mug to the lips, handle outward
+                cell(12, 13, 2, 1, sweater)
+                cell(13, 12, 2, 1, sweater)
+                val m = MUG_COLORS
+                cell(11, 9, 3, 3, m.getValue('M'))
+                cell(11, 9, 1, 1, m.getValue('r')) // tipped: the tea shows at the lip
+                cell(12, 10, 1, 1, m.getValue('H'))
+                cell(11, 11, 3, 1, m.getValue('m'))
+                cell(14, 10, 1, 2, hand)
+                // Steam curls up past the cheek
+                val steam = Color(0xFFE3ECF2).copy(alpha = 0.9f)
+                val sway = (age * 3f).toInt() and 1
+                cell(12 + sway, 7, 1, 1, steam)
+                cell(13 - sway, 6, 1, 1, steam)
+            }
+            UseStyle.SNIFF -> {
+                backArmDown()
+                // The flower held up under the nose
+                cell(12, 13, 2, 2, sweater)
+                val r = Color(0xFFFF758F)
+                val g = Color(0xFF55A630)
+                cell(12, 8, 1, 1, r)
+                cell(11, 9, 1, 1, r)
+                cell(12, 9, 1, 1, Color(0xFFFFD166))
+                cell(13, 9, 1, 1, r)
+                cell(12, 10, 1, 1, r)
+                cell(12, 11, 1, 1, g)
+                cell(13, 11, 1, 1, g)
+                cell(12, 12, 1, 1, hand)
+                if (beat % 6 < 3) cell(14, 6, 1, 1, r) // a little heart of a breath
+            }
+            UseStyle.LISTEN -> {
+                frontArmDown()
+                // The back hand holds the shell to the ear; the sea whispers out of it
+                cell(4, 12, 2, 1, sweater)
+                cell(3, 11, 2, 1, sweater)
+                cell(3, 10, 2, 1, hand)
+                val sh = Color(0xFFFFF1E6)
+                val sd = Color(0xFFE76F51)
+                cell(4, 7, 2, 1, sh)
+                cell(3, 8, 1, 1, sh)
+                cell(4, 8, 1, 1, sd)
+                cell(5, 8, 1, 1, sh)
+                cell(4, 9, 2, 1, sh)
+                val sea = Color(0xFF8ECAE6)
+                if (beat % 4 < 2) { cell(2, 6, 1, 1, sea); cell(1, 5, 1, 1, sea) } else { cell(1, 7, 1, 1, sea); cell(0, 6, 1, 1, sea) }
+            }
+            UseStyle.LOOK -> {
+                // Held up in both hands, just under the eyes, for a good look
+                cell(5, 13, 2, 2, sweater)
+                cell(11, 13, 2, 2, sweater)
+                drawHeldAtChest(scope, char, startX, y0 + dy * p, p, flip, bottomY = 12)
+                cell(6, 12, 1, 1, hand)
+                cell(11, 12, 1, 1, hand)
+            }
+            UseStyle.TOSS -> {
+                backArmDown()
+                // Tossed up from the front hand and caught again, trailing its thread
+                cell(12, 13, 2, 1, sweater)
+                cell(13, 12, 1, 1, sweater)
+                cell(13, 11, 2, 1, hand)
+                val t = (age * 1.6f) % 1f
+                val top = 7 - (16f * t * (1f - t)).toInt() // up to 4 cells high
+                val y = Color(0xFFFF8FAB)
+                val yd = Color(0xFFE5677F)
+                cell(13, top, 1, 1, y)
+                cell(12, top + 1, 3, 1, y)
+                cell(13, top + 1, 1, 1, yd)
+                cell(13, top + 2, 1, 1, y)
+                val thread = 10 - (top + 3)
+                if (thread > 0) cell(14, top + 3, 1, thread, yd)
+            }
+        }
     }
 
     /**

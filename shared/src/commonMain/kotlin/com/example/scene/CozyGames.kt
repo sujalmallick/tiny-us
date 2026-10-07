@@ -324,8 +324,25 @@ class CozyGames(private val engine: SceneEngine) {
     fun stopFishing() {
         fishing.stop()
         fishingActive = false
+        // He puts the rod down and turns back to her.
+        if (engine.boy.heldItem == com.example.engine.HeldItem.ROD) {
+            engine.boy.putAwayHeldItem()
+            engine.boy.direction = Direction.RIGHT
+        }
         lessonTime = -1f
         fishingPhase = fishing.phase
+    }
+
+    /**
+     * While they fish, he holds the rod in both hands facing the water (plan 10, A), and the reel
+     * turns while a catch comes in.
+     */
+    private fun holdRod() {
+        val boy = engine.boy
+        if (boy.heldItem != com.example.engine.HeldItem.ROD) boy.hold(com.example.engine.HeldItem.ROD, 5f)
+        boy.heldItemTimeLeft = 5f
+        boy.heldItemUse = if (fishing.phase == FishingGame.Phase.REELING) 0.5f else 0f
+        boy.direction = if (BOBBER_X < boy.worldX) Direction.LEFT else Direction.RIGHT
     }
 
     /** A treasure for her: he gives it to her right there, and it goes on the shelf. */
@@ -341,6 +358,7 @@ class CozyGames(private val engine: SceneEngine) {
             stopFishing()
             return
         }
+        holdRod()
         if (inBaoLesson) {
             updateBaoLesson(dt)
             fishingPhase = fishing.phase

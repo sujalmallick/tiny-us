@@ -104,6 +104,13 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** Things one offers the other for a moment (plan 10, A), and how. */
+        val SHAREABLE = setOf(HeldItem.MUG, HeldItem.FLOWER, HeldItem.SEASHELL, HeldItem.STAR_PEBBLE, HeldItem.LEAF, HeldItem.BOOK)
+        const val SHARE_SECONDS = 2.6f
+        const val SHARE_DISTANCE = 0.22f
+        const val SHARE_EVERY_SECONDS = 26f
+        /** How long they read together after taking a book down in the loft (plan 10, A). */
+        const val LOFT_BOOK_SECONDS = 14f
         /** How long the released lanterns take to drift out of sight (plan 09, D). */
         const val LANTERN_SECONDS = 14f
         /** Give up on a walk that hasn't arrived after this long. */
@@ -1977,6 +1984,11 @@ class SceneEngine(
         tickHeldItem(boy, deltaSeconds)
         tickHeldItem(girl, deltaSeconds)
         tickFlowerHandover(deltaSeconds)
+        tickSharing(deltaSeconds)
+        if (loftBookAutoClose > 0f) {
+            loftBookAutoClose -= deltaSeconds
+            if (loftBookAutoClose <= 0f) loftBookReading = false
+        }
 
         // Emote timers
         if (boy.emoteTimer > 0) {
@@ -7405,7 +7417,7 @@ class SceneEngine(
             SpotAction.LISTEN_CHIMES -> { windChimeSwayTimer = 2.5f; audio.playWindChime(); emote(c, EmoteType.MUSIC_NOTE, 2f) }
             SpotAction.LOOK_UP_TREE -> { if (weather == WeatherType.AUTUMN) c.hold(HeldItem.LEAF, CARRIED_ITEM_SECONDS, useSeconds = 1.6f); particles.spawnPetals(x, ch * 0.40f, 3); emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
             SpotAction.SIT_GRASS -> { c.emotion = CharacterEmotion.HAPPY; emote(c, EmoteType.HEART, 1.4f) }
-            SpotAction.STIR_POT -> { repeat(3) { particles.spawnSteam(x + 20f, y - 90f) }; audio.playCookingBubbles() }
+            SpotAction.STIR_POT -> { c.hold(HeldItem.PAN, spot.dwellSeconds + 0.4f); repeat(3) { particles.spawnSteam(x + 20f, y - 90f) }; audio.playCookingBubbles() }
             SpotAction.RINSE_DISHES -> { particles.spawnSparkles(x - 20f, y - 70f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
             SpotAction.PEEK_OVEN -> { cabinetOpenTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f); audio.playWoodKnock() }
             SpotAction.SIT_TABLE -> { c.emotion = CharacterEmotion.HAPPY }
@@ -7422,7 +7434,7 @@ class SceneEngine(
             SpotAction.CHECK_CRATE -> { bambooCrateTimer = 1.6f; audio.playWoodKnock() }
             SpotAction.FILL_SAUCER -> { milkSaucerTimer = 2.4f; emote(c, EmoteType.HEART, 1.6f) }
             SpotAction.LOOK_WINDOW -> { loftWindowTimer = 3f; emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
-            SpotAction.BROWSE_BOOKS -> { c.hold(HeldItem.BOOK, CARRIED_ITEM_SECONDS, useSeconds = spot.dwellSeconds); loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
+            SpotAction.BROWSE_BOOKS -> { browseBooks(c, spot); loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
             SpotAction.ADMIRE_FAIRY_LIGHTS -> { loftFairyLightsTimer = 3f; emote(c, EmoteType.SPARKLE, 1.6f) }
             SpotAction.FOG_WINDOW -> {
                 cafeWindowHeartTimer = 2.8f
@@ -7515,6 +7527,63 @@ class SceneEngine(
         }
     }
 
+    /**
+     * Sharing (plan 10, A): now and then whoever's holding something offers it to the other, who
+     * has a sip, a sniff, a listen or a look and hands it back.
+     */
+    private var shareFrom: PixelCharacter? = null
+    private var shareTimer = 0f
+
+    private fun tickSharing(dt: Float) {
+        val from = shareFrom
+        if (from != null) {
+            shareTimer -= dt
+            if (shareTimer > 0f) return
+            shareFrom = null
+            val to = if (from === boy) girl else boy
+            val item = to.heldItem
+            if (item == HeldItem.NONE || from.heldItem != HeldItem.NONE) return
+            to.putAwayHeldItem()
+            from.hold(item, CARRIED_ITEM_SECONDS)
+            emote(to, EmoteType.HEART, 1.6f)
+            return
+        }
+        if (isWatchSceneActive) return
+        for (c in charactersBoyGirl) {
+            val other = if (c === boy) girl else boy
+            if (c.heldItem !in SHAREABLE || c.heldItemUse > 0f || other.heldItem != HeldItem.NONE) continue
+            if (c.isMovingOrTransitioning || other.isMovingOrTransitioning) continue
+            if (kotlin.math.abs(c.worldX - other.worldX) > SHARE_DISTANCE) continue
+            if (rng.nextFloat() >= dt / SHARE_EVERY_SECONDS) continue
+            val item = c.heldItem
+            c.putAwayHeldItem()
+            other.hold(item, SHARE_SECONDS + 1f, useSeconds = SHARE_SECONDS)
+            other.emotion = CharacterEmotion.LOVING
+            speakerSpeech(c, GameText.get(if (item == HeldItem.MUG) Res.string.share_sip else Res.string.share_look), 2.4f)
+            shareFrom = c
+            shareTimer = SHARE_SECONDS
+            return
+        }
+    }
+
+    /** Seconds until the book they took down in the loft is put back; 0 when they didn't take it. */
+    private var loftBookAutoClose = 0f
+
+    /**
+     * A book from the shelf. In the loft, where they're always curled up together, they open it and
+     * read it together for a while (plan 10, A); a book in one hand would never be seen there.
+     */
+    private fun browseBooks(c: PixelCharacter, spot: SceneSpot) {
+        if (currentScene.environment == EnvironmentType.COZY_LOFT) {
+            if (!loftBookReading) {
+                loftBookReading = true
+                loftBookAutoClose = LOFT_BOOK_SECONDS
+            }
+        } else {
+            c.hold(HeldItem.BOOK, CARRIED_ITEM_SECONDS, useSeconds = spot.dwellSeconds)
+        }
+    }
+
     /** A found flower changes hands a moment after it's found. */
     private var flowerHandoverFrom: PixelCharacter? = null
     private var flowerHandoverTimer = 0f
@@ -7543,7 +7612,9 @@ class SceneEngine(
         c.heldItemUse = 1.8f
         c.heldItemTimeLeft = maxOf(c.heldItemTimeLeft, 8f)
         c.reactionTimer = 1.8f
-        if (c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.IDLE
+        // A pan is tossed right there at the stove; everything else is used standing (or sitting) still.
+        val atStove = (item == HeldItem.PAN && c.pose == CharacterPose.COOK) || item == HeldItem.ROD
+        if (!atStove && c.pose != CharacterPose.SIT && c.pose != CharacterPose.SIT_SNUGGLE) c.pose = CharacterPose.IDLE
         c.emotion = CharacterEmotion.HAPPY
         val x = cw * c.worldX
         val y = ch * c.worldY
@@ -7559,6 +7630,8 @@ class SceneEngine(
             HeldItem.WATERING_CAN, HeldItem.MISTER -> { audio.playWaterDrip(); particles.spawnSparkles(x + 30f, y - 50f, 3, Color(0xFFBFE6FF)) }
             HeldItem.LANTERN -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playCandleFlicker() }
             HeldItem.CAKE -> { emote(c, EmoteType.HEART, 1.6f); audio.playHeartChime() }
+            HeldItem.ROD -> audio.playReelClick()
+            HeldItem.PAN -> { emote(c, EmoteType.SPARKLE, 1.4f); audio.playCookingBubbles(); repeat(2) { particles.spawnSteam(x + 30f, y - 70f) } }
             HeldItem.NONE -> Unit
         }
         return true
@@ -8634,6 +8707,7 @@ class SceneEngine(
     fun onTouchLoftBookshelf(cw: Float, ch: Float) {
         audio.playLeafRustle()
         loftBookReading = !loftBookReading
+        loftBookAutoClose = 0f // opened by hand, it stays open until closed by hand
         particles.spawnSparkles(cw * 0.18f, ch * 0.42f, 6)
         boy.emote = EmoteType.MUSIC_NOTE
         boy.emoteTimer = 2.0f
