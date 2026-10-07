@@ -57,7 +57,7 @@ object SceneSpots {
         ),
         SceneType.SLEEP to listOf(
             SceneSpot(1, 0.20f, 0.70f, true, SpotAction.WATER_PLANT),
-            SceneSpot(2, 0.22f, 0.77f, true, SpotAction.PEEK_BOX),
+            SceneSpot(2, 0.27f, 0.90f, true, SpotAction.PEEK_BOX),
             SceneSpot(3, 0.70f, 0.778f, false, SpotAction.SIT_POUF, CharacterPose.SIT, 5f),
             SceneSpot(4, 0.54f, 0.72f, false, SpotAction.LIGHT_CANDLE)
         ),

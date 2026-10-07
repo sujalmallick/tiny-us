@@ -42,9 +42,9 @@ drawn in the world with no arm holding it; the loft's cuddled couple never shows
 Known problems: Mochi is never depth-sorted against furniture; the cardboard box draws a second Mochi;
 the milk saucer doesn't make Mochi walk to it; ice-cream cones on the pier sit at fixed offsets.
 
-- [ ] C-1. Render Mochi at every object; list what's wrong.
-- [ ] C-2. Fix the box (one Mochi, in the box), the saucer walk, depth against props.
-- [ ] C-3. Tests and renders.
+- [x] C-1. Render Mochi at every object; list what's wrong. *(`ScenePreviewTest.writesMochiSheetWhenAsked`, MOCHI_PREVIEW_DIR: Mochi in every scene, in her box, at her saucer. Wrong: tapping the box drew a second Mochi peeking out while the real one sat elsewhere; the saucer never brought her over. In the other scenes she sits clear of the props, so she isn't drawn over anything.)*
+- [x] C-2. Fix the box (one Mochi, in the box), the saucer walk, depth against props. *(`SceneEngine.MochiErrand`: the box sends her walking over to hop in; only her head peeks out now and then, and she hops out beside it after a while. The saucer (a tap, or filling it) has her trot over and lap at it. The box spot moved next to the box.)*
+- [x] C-3. Tests and renders. *(`MochiThingsTest`: into the box and out again, over to the saucer, never left in a box after a scene change; the Mochi sheet.)*
 
 ## D. The Friday fox
 - [ ] D-1. A fox cub with a ball visits on Fridays, in an outdoor scene; plays catch with Mochi; leaves.

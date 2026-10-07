@@ -104,6 +104,13 @@ class SceneEngine(
         const val AUTONOMY_REST_RANGE = 4f
         /** How long a mug, book or find is carried about before it is put away. */
         const val CARRIED_ITEM_SECONDS = 22f
+        /** Where Mochi's box and saucer are, and how long she stays in the box (plan 10, C). */
+        const val MOCHI_BOX_X = 0.17f
+        const val MOCHI_BOX_Y = 0.925f
+        const val MOCHI_BOX_SECONDS = 6f
+        const val MOCHI_BOX_PEEK_SECONDS = 2.6f
+        const val MOCHI_SAUCER_X = 0.43f
+        const val MOCHI_SAUCER_Y = 0.76f
         /** Things one offers the other for a moment (plan 10, A), and how. */
         val SHAREABLE = setOf(HeldItem.MUG, HeldItem.FLOWER, HeldItem.SEASHELL, HeldItem.STAR_PEBBLE, HeldItem.LEAF, HeldItem.BOOK)
         const val SHARE_SECONDS = 2.6f
@@ -393,6 +400,12 @@ class SceneEngine(
     var tableCandleTimer: Float by mutableFloatStateOf(0f)     // drives candle flicker & warm glow (1.5 s)
     var poufBounceTimer: Float by mutableFloatStateOf(0f)      // drives knitted pouf squish-bounce (0.8 s)
     var cardboardBoxTimer: Float by mutableFloatStateOf(0f)    // drives Mochi peeking out of box (1.3 s)
+    /** Mochi on her way to her box or saucer (plan 10, C), declared early: loadScene resets them. */
+    private var mochiErrand: MochiErrand? = null
+
+    /** She's in the cardboard box: the renderer draws her peeking out instead of the usual cat. */
+    var mochiInBox: Boolean by mutableStateOf(false)
+        private set
     var basketYarnTimer: Float by mutableFloatStateOf(0f)      // drives yarn ball rolling & basket wobble (1.4 s)
     var magazineRackTimer: Float by mutableFloatStateOf(0f)    // drives magazine/vinyl card flip & spin (1.3 s)
 
@@ -787,6 +800,8 @@ class SceneEngine(
         tableCandleTimer = 0f
         poufBounceTimer = 0f
         cardboardBoxTimer = 0f
+        mochiInBox = false
+        mochiErrand = null
         basketYarnTimer = 0f
         magazineRackTimer = 0f
         pagodaGlowTimer = 0f
@@ -2205,6 +2220,7 @@ class SceneEngine(
         if (tableCandleTimer > 0f)  tableCandleTimer  = (tableCandleTimer  - deltaSeconds).coerceAtLeast(0f)
         if (poufBounceTimer > 0f)   poufBounceTimer   = (poufBounceTimer   - deltaSeconds).coerceAtLeast(0f)
         if (cardboardBoxTimer > 0f) cardboardBoxTimer = (cardboardBoxTimer - deltaSeconds).coerceAtLeast(0f)
+        if (mochiInBox && cardboardBoxTimer <= 0f) hopOutOfBox()
         if (basketYarnTimer > 0f)   basketYarnTimer   = (basketYarnTimer   - deltaSeconds).coerceAtLeast(0f)
         if (magazineRackTimer > 0f) magazineRackTimer = (magazineRackTimer - deltaSeconds).coerceAtLeast(0f)
 
@@ -3332,6 +3348,10 @@ class SceneEngine(
                 if (eventChance(0.20f, dt)) {
                     particles.spawnSparkles(cw * catWorldX, ch * catWorldY - 5f, 1)
                 }
+            } else if (mochiErrand != null) {
+                catWorldX = catTargetX
+                catWorldY = catTargetY
+                arriveOnErrand(cw, ch)
             } else {
                 // Arrived at roaming destination! Settle down comfortably
                 catWorldX = catTargetX
@@ -6219,10 +6239,65 @@ class SceneEngine(
     }
 
     fun onTouchCardboardBox(touchX: Float, touchY: Float) {
-        if (cardboardBoxTimer > 0f) return
-        cardboardBoxTimer = 1.3f
+        if (mochiErrand == MochiErrand.BOX) return
+        if (mochiInBox) {
+            // Another peek from the box she's already in
+            cardboardBoxTimer = maxOf(cardboardBoxTimer, MOCHI_BOX_PEEK_SECONDS)
+        } else {
+            sendMochiOnErrand(MochiErrand.BOX)
+        }
         audio.playCatChirp()
         particles.spawnHeart(touchX, touchY - 14f, Color(0xFFFF85A1))
+    }
+
+    /**
+     * Mochi going to something of hers (plan 10, C): the cardboard box in the living room, which
+     * she hops into and peeks out of, and the saucer by the momo stall, which she laps at. There's
+     * only ever one Mochi: in the box, only her peeking head shows.
+     */
+    enum class MochiErrand { BOX, SAUCER }
+
+    private fun sendMochiOnErrand(errand: MochiErrand) {
+        val (x, y) = when (errand) {
+            MochiErrand.BOX -> if (currentScene == SceneType.SLEEP) MOCHI_BOX_X to MOCHI_BOX_Y else return
+            MochiErrand.SAUCER -> if (currentScene == SceneType.MOMO_STALL) MOCHI_SAUCER_X to MOCHI_SAUCER_Y else return
+        }
+        mochiMatchmakerActive = false
+        mochiErrand = errand
+        catTargetX = x
+        catTargetY = y
+        catSleeping = false
+        catState = CatState.WALK_FOLLOW
+        catFacingLeft = catTargetX < catWorldX
+    }
+
+    private fun arriveOnErrand(cw: Float, ch: Float) {
+        when (mochiErrand) {
+            MochiErrand.BOX -> {
+                mochiInBox = true
+                cardboardBoxTimer = MOCHI_BOX_SECONDS
+                catState = CatState.SITTING_PURR
+                audio.playSoftThud()
+            }
+            MochiErrand.SAUCER -> {
+                catState = CatState.SITTING_PURR
+                catFacingLeft = true
+                milkSaucerTimer = 1.8f
+                audio.playSaucerSip()
+                particles.spawnHeart(cw * catWorldX, ch * catWorldY - 22f, Color(0xFFFF85A1))
+            }
+            null -> Unit
+        }
+        mochiErrand = null
+    }
+
+    private fun hopOutOfBox() {
+        mochiInBox = false
+        catWorldX = MOCHI_BOX_X + 0.07f
+        catTargetX = catWorldX
+        catState = CatState.SITTING_PURR
+        catFacingLeft = true
+        audio.playCatChirp()
     }
 
     fun onTouchStorageBasket(touchX: Float, touchY: Float) {
@@ -6336,11 +6411,9 @@ class SceneEngine(
     fun onTouchMilkSaucer(touchX: Float, touchY: Float) {
         if (milkSaucerTimer > 0f) return
         milkSaucerTimer = 1.8f
-        audio.playSaucerSip()
         audio.playCatPurr()
-        catTargetX = 0.38f
-        catFacingLeft = catTargetX < catWorldX
-        catState = CatState.SITTING_PURR
+        // She trots over for a drink (plan 10, C)
+        sendMochiOnErrand(MochiErrand.SAUCER)
         particles.spawnHeart(touchX, touchY - 10f, Color(0xFFFF85A1))
     }
 
@@ -7422,7 +7495,7 @@ class SceneEngine(
             SpotAction.PEEK_OVEN -> { cabinetOpenTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f); audio.playWoodKnock() }
             SpotAction.SIT_TABLE -> { c.emotion = CharacterEmotion.HAPPY }
             SpotAction.WATER_PLANT -> { c.hold(HeldItem.WATERING_CAN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f); plantWaterTimer = 2.4f; sunroomMistTimer = 1.6f; particles.spawnSparkles(x - 30f, y - 60f, 4, Color(0xFFBFE6FF)); audio.playWaterDrip() }
-            SpotAction.PEEK_BOX -> { cardboardBoxTimer = 2.4f; emote(c, EmoteType.QUESTION, 1.6f) }
+            SpotAction.PEEK_BOX -> { if (mochiInBox) cardboardBoxTimer = MOCHI_BOX_PEEK_SECONDS else sendMochiOnErrand(MochiErrand.BOX); emote(c, EmoteType.QUESTION, 1.6f) }
             SpotAction.SIT_POUF -> { poufBounceTimer = 0.8f; audio.playBubblePop() }
             SpotAction.LIGHT_CANDLE -> { tableCandleTimer = 3f; audio.playCandleFlicker(); emote(c, EmoteType.SPARKLE, 1.6f) }
             SpotAction.USE_TELESCOPE -> { telescopeStarTimer = 3f; particles.spawnSparkles(cw * 0.5f, ch * 0.12f, 6); emote(c, EmoteType.SPARKLE, 2f); audio.playStarTwinkle() }
@@ -7432,7 +7505,7 @@ class SceneEngine(
             SpotAction.SNIFF_STEAMER -> { momoSteamerTimer = 2.4f; repeat(2) { particles.spawnSteam(x, y - 120f) }; emote(c, EmoteType.HEART, 1.6f) }
             SpotAction.READ_CHALKBOARD -> { chalkboardTimer = 2.4f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
             SpotAction.CHECK_CRATE -> { bambooCrateTimer = 1.6f; audio.playWoodKnock() }
-            SpotAction.FILL_SAUCER -> { milkSaucerTimer = 2.4f; emote(c, EmoteType.HEART, 1.6f) }
+            SpotAction.FILL_SAUCER -> { milkSaucerTimer = 2.4f; sendMochiOnErrand(MochiErrand.SAUCER); emote(c, EmoteType.HEART, 1.6f) }
             SpotAction.LOOK_WINDOW -> { loftWindowTimer = 3f; emote(c, EmoteType.SPARKLE, 1.8f); c.emotion = CharacterEmotion.LOVING }
             SpotAction.BROWSE_BOOKS -> { browseBooks(c, spot); loftBookNookTimer = 3f; emote(c, EmoteType.DOTS, 1.6f); audio.playPaperFlip() }
             SpotAction.ADMIRE_FAIRY_LIGHTS -> { loftFairyLightsTimer = 3f; emote(c, EmoteType.SPARKLE, 1.6f) }
