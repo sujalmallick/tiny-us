@@ -53,16 +53,16 @@ object SceneSpots {
             SceneSpot(1, 0.58f, 0.70f, false, SpotAction.STIR_POT, CharacterPose.COOK, 4f),
             SceneSpot(2, 0.32f, 0.70f, true, SpotAction.RINSE_DISHES, CharacterPose.COOK),
             SceneSpot(3, 0.66f, 0.71f, false, SpotAction.PEEK_OVEN),
-            SceneSpot(4, 0.46f, 0.75f, false, SpotAction.SIT_TABLE, CharacterPose.SIT, 5f)
+            SceneSpot(4, com.example.scene.CozyGames.TABLE_BOY_X, com.example.scene.CozyGames.TABLE_SEAT_Y, false, SpotAction.SIT_TABLE, CharacterPose.SIT, 5f)
         ),
         SceneType.SLEEP to listOf(
             SceneSpot(1, 0.20f, 0.70f, true, SpotAction.WATER_PLANT),
             SceneSpot(2, 0.22f, 0.77f, true, SpotAction.PEEK_BOX),
-            SceneSpot(3, 0.70f, 0.74f, false, SpotAction.SIT_POUF, CharacterPose.SIT, 5f),
+            SceneSpot(3, 0.70f, 0.778f, false, SpotAction.SIT_POUF, CharacterPose.SIT, 5f),
             SceneSpot(4, 0.54f, 0.72f, false, SpotAction.LIGHT_CANDLE)
         ),
         SceneType.WALK to listOf(
-            SceneSpot(1, 0.36f, 0.70f, true, SpotAction.USE_TELESCOPE, dwellSeconds = 3.8f),
+            SceneSpot(1, 0.36f, 0.70f, false, SpotAction.USE_TELESCOPE, dwellSeconds = 3.8f),
             SceneSpot(2, 0.22f, 0.74f, true, SpotAction.ADMIRE_LANTERN),
             SceneSpot(3, 0.78f, 0.75f, false, SpotAction.SMELL_LAVENDER),
             SceneSpot(4, 0.60f, 0.78f, false, SpotAction.POKE_MUSHROOMS)
@@ -72,10 +72,10 @@ object SceneSpots {
             SceneSpot(2, 0.72f, 0.75f, false, SpotAction.SIT_GRASS, CharacterPose.SIT, 5.5f)
         ),
         SceneType.MOMO_STALL to listOf(
-            SceneSpot(1, 0.44f, 0.71f, false, SpotAction.SNIFF_STEAMER),
-            SceneSpot(2, 0.28f, 0.73f, true, SpotAction.READ_CHALKBOARD),
-            SceneSpot(3, 0.74f, 0.73f, false, SpotAction.CHECK_CRATE),
-            SceneSpot(4, 0.40f, 0.75f, true, SpotAction.FILL_SAUCER)
+            SceneSpot(1, 0.40f, 0.71f, false, SpotAction.SNIFF_STEAMER),
+            SceneSpot(2, 0.20f, 0.73f, false, SpotAction.READ_CHALKBOARD),
+            SceneSpot(3, 0.63f, 0.73f, false, SpotAction.CHECK_CRATE),
+            SceneSpot(4, 0.47f, 0.77f, true, SpotAction.FILL_SAUCER)
         ),
         SceneType.COZY_LOFT to listOf(
             SceneSpot(1, 0.74f, 0.58f, false, SpotAction.LOOK_WINDOW, isWindow = true, dwellSeconds = 4f),
@@ -93,8 +93,8 @@ object SceneSpots {
             SceneSpot(3, 0.50f, 0.70f, false, SpotAction.LOOK_SKYLIGHT, isWindow = true)
         ),
         SceneType.CAMPFIRE to listOf(
-            SceneSpot(1, 0.39f, 0.70f, false, SpotAction.WARM_HANDS),
-            SceneSpot(2, 0.57f, 0.70f, true, SpotAction.WARM_HANDS),
+            SceneSpot(1, 0.39f, 0.70f, false, SpotAction.WARM_HANDS, CharacterPose.SIT, 4.5f),
+            SceneSpot(2, 0.57f, 0.70f, true, SpotAction.WARM_HANDS, CharacterPose.SIT, 4.5f),
             SceneSpot(3, 0.64f, 0.70f, false, SpotAction.STRUM_GUITAR, CharacterPose.SIT, 4.5f),
             SceneSpot(4, 0.24f, 0.70f, true, SpotAction.TEND_LANTERN)
         ),

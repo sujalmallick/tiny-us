@@ -269,6 +269,58 @@ class ScenePreviewTest {
         }
     }
 
+    /**
+     * Plan 10, B: every scene with the couple at each of its spots (him at one, her at the next), in
+     * the spot's pose, so props in front of or behind them can be checked. SCENE_SPOTS_DIR=dir.
+     */
+    @Test
+    fun writesSpotSheetsWhenAsked() {
+        val out = File(System.getenv("SCENE_SPOTS_DIR") ?: return).apply { mkdirs() }
+        val only = System.getenv("SCENE_PREVIEW_SCENES")?.split(',')?.map { it.trim() }?.toSet()
+        for (scene in SceneType.values()) {
+            if (only != null && scene.name !in only) continue
+            val spots = com.example.scene.autonomy.SceneSpots.forScene(scene)
+            if (spots.isEmpty()) continue
+            val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
+            val frames = spots.indices.map { i ->
+                reallocateNightStars(42L)
+                val engine = engineFor(scene, TimeOfDayPhase.AFTERNOON, camera.worldW, camera.worldH)
+                engine.autonomyEnabled = false
+                engine.cuddleProgress = 0f // at the spots they're apart, as the routine has them
+                fun place(c: com.example.engine.PixelCharacter, spot: com.example.scene.autonomy.SceneSpot) {
+                    c.worldX = spot.x
+                    c.worldY = spot.y
+                    c.pose = spot.pose
+                    c.direction = if (spot.faceLeft) com.example.engine.Direction.LEFT else com.example.engine.Direction.RIGHT
+                }
+                place(engine.boy, spots[i])
+                if (spots.size > 1) place(engine.girl, spots[(i + 1) % spots.size])
+                // SCENE_SPOTS_MEAL=1: the kitchen frames show them sat down to eat instead.
+                if (scene == SceneType.COOKING && System.getenv("SCENE_SPOTS_MEAL") != null) {
+                    engine.boy.worldX = com.example.scene.CozyGames.TABLE_BOY_X; engine.boy.worldY = com.example.scene.CozyGames.TABLE_SEAT_Y
+                    engine.girl.worldX = com.example.scene.CozyGames.TABLE_GIRL_X; engine.girl.worldY = com.example.scene.CozyGames.TABLE_SEAT_Y
+                    engine.boy.pose = com.example.engine.CharacterPose.SIT; engine.girl.pose = com.example.engine.CharacterPose.SIT
+                    engine.boy.direction = com.example.engine.Direction.RIGHT; engine.girl.direction = com.example.engine.Direction.LEFT
+                }
+                render(cw, ch) { drawWorld(engine, LowResWorldBuffer(), camera) }
+            }
+            // The lower part of each frame, where they stand, side by side at half size.
+            val top = (ch * 0.30f).toInt()
+            val h = (ch * 0.58f).toInt()
+            val sheet = Bitmap.createBitmap((cw.toInt() / 2) * frames.size, h / 2, Bitmap.Config.ARGB_8888)
+            val canvas = android.graphics.Canvas(sheet)
+            frames.forEachIndexed { i, f ->
+                val part = Bitmap.createBitmap(f, 0, top, cw.toInt(), h)
+                canvas.drawBitmap(Bitmap.createScaledBitmap(part, cw.toInt() / 2, h / 2, false), (i * cw.toInt() / 2).toFloat(), 0f, null)
+                f.recycle()
+            }
+            save(sheet, File(out, "spots_${scene.name.lowercase()}.png"))
+            File(out, "spots_${scene.name.lowercase()}.txt").writeText(
+                spots.mapIndexed { i, sp -> "$i: him at ${sp.action} (${sp.pose}), her at ${spots[(i + 1) % spots.size].action}" }.joinToString("\n")
+            )
+        }
+    }
+
     @Test
     fun writesDissolvePreviewWhenAsked() {
         val out = File(System.getenv("SCENE_PREVIEW_DIR") ?: return).apply { mkdirs() }

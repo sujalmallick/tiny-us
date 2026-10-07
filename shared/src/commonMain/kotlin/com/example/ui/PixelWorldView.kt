@@ -1471,6 +1471,10 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 engine.boy.direction = com.example.engine.Direction.RIGHT
                 engine.girl.direction = com.example.engine.Direction.LEFT
             }
+            // With the rod in his hands he faces the water, whatever else the scene would have him do (plan 10, A).
+            if (engine.boy.heldItem == com.example.engine.HeldItem.ROD) {
+                engine.boy.direction = if (com.example.scene.CozyGames.BOBBER_X < engine.boy.worldX) com.example.engine.Direction.LEFT else com.example.engine.Direction.RIGHT
+            }
 
             fun drawBoy() {
                 PixelArtRenderer.drawCharacter(
@@ -1587,10 +1591,9 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 )
             }
 
-            if (isKissing || isHugging) {
-                engine.boy.direction = origBoyDir
-                engine.girl.direction = origGirlDir
-            }
+            // Put back whatever facing the drawing borrowed.
+            engine.boy.direction = origBoyDir
+            engine.girl.direction = origGirlDir
         }
 
         // 2a. Cozy Rainy Cafe: the little table stands in front of the seated couple

@@ -100,12 +100,14 @@ private fun drawCoupleFishing(scope: DrawScope, engine: SceneEngine, cw: Float, 
     val line = Color(0xCCFFFFFF)
     val bobberX = cw * CozyGames.BOBBER_X
     val restY = ch * CozyGames.BOBBER_Y + kotlin.math.sin(time * 2.2f) * 0.6f * p
-    // The rod leans from his hands out over the rail, its tip above the bobber.
+    // The rod is in his hands (plan 10, A); it carries on from there out over the rail, its tip
+    // above the bobber.
     val holder = engine.boy
-    val butt = Offset(cw * holder.worldX - 2f * p, ch * holder.worldY - 9f * p)
+    val inHands = holder.rodTip
+    val butt = inHands ?: Offset(cw * holder.worldX - 2f * p, ch * holder.worldY - 9f * p)
     val tip = Offset(bobberX + 2f * p, ch * 0.60f - 26f * p)
     scope.drawLine(rod, butt, tip, strokeWidth = 1.2f * p)
-    scope.drawRect(Color(0xFF5C4630), Offset(butt.x - p, butt.y - 3f * p), Size(2f * p, 2f * p)) // the reel
+    if (inHands == null) scope.drawRect(Color(0xFF5C4630), Offset(butt.x - p, butt.y - 3f * p), Size(2f * p, 2f * p)) // the reel
     when (game.phase) {
         FishingGame.Phase.REELING, FishingGame.Phase.LANDED -> {
             // The catch swings up on the line.
