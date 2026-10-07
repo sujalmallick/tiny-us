@@ -276,6 +276,11 @@ fun PixelWorldView(
                             flushPendingTap()
                             return@detectTapGestures
                         }
+                        // The painter, the old couple, their note (plan 11)
+                        if (engine.onVisitorTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) {
+                            flushPendingTap()
+                            return@detectTapGestures
+                        }
                         // A pet they haven't met yet (plan 10, E)
                         if (engine.onPetVisitorTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) {
                             flushPendingTap()
@@ -1345,6 +1350,13 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             pixelScale = pixelScale,
             engine = engine
         )
+        // The newest painting from the street painter hangs on the loft wall (plan 11)
+        if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
+            engine.visitorStore?.paintings()?.lastOrNull()?.let { painting ->
+                val pw = cw * LOFT_PAINTING_W
+                drawPainting(this, painting, cw * LOFT_PAINTING_X, ch * LOFT_PAINTING_Y, pw, pw * 0.72f, engine.boy.look, engine.girl.look)
+            }
+        }
         afterSkyBands = null
 
         // 1b. Ground fallen particles (leaves, sakura petals, snow on grass)
@@ -1737,6 +1749,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
 
         // Cooking, fishing and garden care (plan 07, C3-C5).
         drawFridayFox(this, engine, cw, ch, pixelScale)
+        drawVisitors(this, engine, cw, ch, pixelScale)
         drawPetVisitor(this, engine, cw, ch, pixelScale)
         drawCozyGames(this, engine, cw, ch, pixelScale, engine.sceneTime)
 
@@ -1977,3 +1990,8 @@ class CameraCache {
         return WorldCamera.forScreen(width, height, scene, topReservePx = topReserve, bottomReservePx = bottomReserve).also { camera = it }
     }
 }
+
+/** Where the newest painting hangs on the loft wall (plan 11), as shares of the world. */
+private const val LOFT_PAINTING_X = 0.08f
+private const val LOFT_PAINTING_Y = 0.20f
+private const val LOFT_PAINTING_W = 0.14f

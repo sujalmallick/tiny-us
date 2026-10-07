@@ -1517,4 +1517,33 @@
     <string name="keepsake_secret_leo">A page of Leo’s sketchbook</string>
     <string name="keepsake_secret_pip">Pip’s heart-shaped stone</string>
     <string name="collection_hint_friend">A gift they love opens it</string>
+    <!-- Plan 11: visitors -->
+    <string name="painter_sets_up">A street painter sets up an easel and looks over at you two.</string>
+    <string name="painter_hello">The painter: ’Don’t mind me. Just be yourselves.’</string>
+    <string name="painter_wip">The painter: ’Hold still… there. That’s you two.’</string>
+    <string name="painter_done">The painter turns the canvas round: it’s the two of you, just as you are. It’ll hang in the loft.</string>
+    <string name="painting_title">A painting of you</string>
+    <string name="painting_of">%1$s and %2$s, by the street painter</string>
+    <string name="painting_caption">Painted on %1$s</string>
+    <string name="painting_older">Older</string>
+    <string name="painting_newer">Newer</string>
+    <string name="painting_count">%1$d of %2$d</string>
+    <string name="old_couple_arrive">An old couple strolls along the pier and sits on the bench: Billionaire and The Great.</string>
+    <string name="old_couple_line_1">Billionaire: ’Richest man on this pier. Ask me why.’ He looks at The Great.</string>
+    <string name="old_couple_line_2">The Great: ’Fifty years. He still steals my fries.’</string>
+    <string name="old_couple_line_3">Billionaire: ’I proposed right there. She said ’maybe’.’</string>
+    <string name="old_couple_line_4">The Great: ’Don’t wait for a reason. Hold her hand.’</string>
+    <string name="old_couple_line_5">Billionaire: ’Every morning I still bring her tea. Every morning she says it’s too sweet.’</string>
+    <string name="old_couple_elegance">The Great: ’Elegance is the only beauty that never fades.’</string>
+    <string name="old_couple_note_left">Billionaire and The Great stroll off arm in arm. They’ve left something on the bench, under a pebble.</string>
+    <string name="old_couple_note_title">A note under a pebble</string>
+    <string name="old_couple_note_intro">Folded small, in careful old handwriting:</string>
+    <string name="old_couple_note_text">For the two of you, from the two of us.</string>
+    <string name="old_couple_note_signed">Happy anniversary. B. and G.</string>
+    <string name="keepsake_visitor_painting">A painting of you two</string>
+    <string name="keepsake_visitor_old_couple">Billionaire and The Great</string>
+    <string name="keepsake_visitor_note">Their note under a pebble</string>
+    <string name="collection_hint_painter">A painter, some sunny day</string>
+    <string name="collection_hint_pier_evening">On the pier, as the sun goes down</string>
+    <string name="collection_hint_anniversary">On your anniversary</string>
 </resources>

@@ -1,6 +1,6 @@
-# Plan 11: visitors (design, not built yet)
+# Plan 11: visitors
 
-Written 2026-10-07 by GROWTH for the user, who picked two visitors. Build after the weekly usage limit resets (2026-10-09). Plan 10 (characters and pets) belongs to FEATURES, so agree on who builds this before starting.
+Written 2026-10-07 by GROWTH for the user, who picked two visitors; built by FEATURES the same day at the user's request. The old man is "Billionaire" (the user also wrote "Billion"; one string to change if that's the name).
 
 ## Ground rules
 
@@ -32,8 +32,8 @@ Written 2026-10-07 by GROWTH for the user, who picked two visitors. Build after 
 
 ## Build checklist
 
-- [ ] V-1. A `Visitors` model and store: when each visitor last came, and the visit rules (once a day at most, scene and time of day).
-- [ ] V-2. The painter: easel, painting progress, the reveal, the painting rendered from the live scene, and the loft wall.
-- [ ] V-3. The old couple: sprites, sitting on the pier bench, the mirroring (follow the couple's poses with a short delay), the lines, the anniversary note.
-- [ ] V-4. Collection book entries (the painting, "Billionaire and The Great").
-- [ ] V-5. Tests (the visit rules, the mirroring, the anniversary note) and renders.
+- [x] V-1. A `Visitors` model and store: when each visitor last came, and the visit rules (once a day at most, scene and time of day). *(`data/Visitors.kt`: `Visitors.mayCome`, `VisitorStore`. The painter comes at most every 6 days, the old couple every 2; one visitor a day; they turn up about 6 s into a scene that fits.)*
+- [x] V-2. The painter: easel, painting progress, the reveal, the painting rendered from the live scene, and the loft wall. *(`PainterVisit` in `scene/Visits.kt`, drawn in `WorldVisitors.kt`. He walks in, sets up, dabs for 45 s (tap: "Hold still... there."), turns the canvas round. The `Painting` keeps that moment (scene, weather, light, outfits, holding hands or hugging, Mochi) and `drawPainting` paints it with their real looks; the newest hangs in the loft; all of them in `PaintingsDialog`.)*
+- [x] V-3. The old couple: sprites, sitting on the pier bench, the mirroring (follow the couple's poses with a short delay), the lines, the anniversary note. *(`OldCoupleVisit`: they stroll in arm in arm, sit on their own bench and echo the couple 1.5 s later (hands joined, snuggle, hug, a snack). The user asked for the main girl's skin tone on both and faces and clothes of their own: Billionaire fair-skinned in a navy three-piece suit with a red bow tie, a gold watch chain, white brows, a moustache and a flat cap; The Great in a long plum dress with pearls, a brooch and a cream shawl, her grey hair in a bun (no glasses, at the user's request). Tap him or her for their own lines; The Great says "Elegance is the only beauty that never fades." On the anniversary they always come and leave a note under a pebble.)*
+- [x] V-4. Collection book entries (the painting, "Billionaire and The Great"). *(And the note, hidden. The painting row opens the paintings; the note row opens the note.)*
+- [x] V-5. Tests (the visit rules, the mirroring, the anniversary note) and renders. *(`VisitorsTest`, `VisitorsEngineTest`, `VisitorsPreviewTest`.)*
