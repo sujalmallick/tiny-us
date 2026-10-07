@@ -543,11 +543,13 @@ object CozySprites {
         top: Float,
         p: Float,
         petals: List<Color> = listOf(Color(0xFFFF8FAB)),
-        center: Color = Color(0xFFFFD166)
+        center: Color = Color(0xFFFFD166),
+        /** When set, every pixel is this colour: a shadow of something not found yet. */
+        silhouette: Color? = null
     ) {
         for ((y, row) in sprite.rows.withIndex()) {
             for ((x, ch) in row.withIndex()) {
-                val color = when (ch) {
+                val color = if (ch != '.' && silhouette != null) silhouette else when (ch) {
                     '.' -> null
                     'P' -> petals[0]
                     'Q' -> petals.getOrElse(1) { petals[0] }

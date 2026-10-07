@@ -1,5 +1,6 @@
 package com.example.ui
 
+import androidx.compose.animation.core.animateFloat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -37,6 +38,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.testTag
 import androidx.compose.foundation.Canvas
@@ -137,6 +139,9 @@ fun OurStoryDialog(
 ) {
     var progress by remember { mutableStateOf(progressStore.load()) }
     var showKeepsakes by remember { mutableStateOf(false) }
+    // The collection book (plan 09, H).
+    var showCollection by remember { mutableStateOf(false) }
+    val collection = remember(prefs) { com.example.data.CollectionStore(prefs.storage) }
     val story by produceState<List<StoryEntry>?>(initialValue = null) {
         value = withContext(Dispatchers.Default) { loadStory(prefs, polaroids, progress) { GameText.get(it) } }
     }
@@ -176,21 +181,27 @@ fun OurStoryDialog(
                 StoryFilter.values().forEach { f ->
                     TinyChip(
                         text = stringResource(f.labelRes),
-                        selected = !showFirsts && !showKeepsakes && f == filter,
-                        onClick = { showFirsts = false; showKeepsakes = false; filter = f; scope.launch { listState.scrollToItem(0) } }
+                        selected = !showFirsts && !showKeepsakes && !showCollection && f == filter,
+                        onClick = { showFirsts = false; showKeepsakes = false; showCollection = false; filter = f; scope.launch { listState.scrollToItem(0) } }
                     )
                 }
                 TinyChip(
                     text = stringResource(Res.string.little_firsts),
                     selected = showFirsts,
-                    onClick = { showFirsts = true; showKeepsakes = false },
+                    onClick = { showFirsts = true; showKeepsakes = false; showCollection = false },
                     icon = PixelIcons.AutoAwesome
                 )
                 TinyChip(
                     text = stringResource(Res.string.keepsakes),
                     selected = showKeepsakes,
-                    onClick = { showKeepsakes = true; showFirsts = false },
+                    onClick = { showKeepsakes = true; showFirsts = false; showCollection = false },
                     icon = PixelIcons.CardGiftcard
+                )
+                TinyChip(
+                    text = stringResource(Res.string.collection_book),
+                    selected = showCollection,
+                    onClick = { showCollection = true; showFirsts = false; showKeepsakes = false },
+                    icon = PixelIcons.AutoStories
                 )
             }
 
@@ -199,6 +210,10 @@ fun OurStoryDialog(
             val all = story
             when {
                 showFirsts -> LittleFirstsPage(progress)
+                showCollection -> CollectionBookPage(
+                    progress, collection, prefs.boyfriendName, prefs.girlfriendName,
+                    together = prefs.anniversaryDate, daysTogether = prefs.getDaysTogether()
+                )
                 showKeepsakes -> KeepsakesPage(progress, prefs.boyfriendName, prefs.girlfriendName, onGiveKeepsake?.let { give ->
                     { item: String, fromBoy: Boolean ->
                         give(item, fromBoy)
@@ -496,6 +511,311 @@ private fun KeepsakesPage(
         }
     }
 }
+
+/**
+ * The collection book (plan 09, H): a page for each kind of thing, how many are found, and for each
+ * one the little story of the first time (who, where, when). The rest are shadows with a hint; the
+ * rare ones stay "???" until someone finds them. It opens on "Found you": the two of them.
+ */
+@Composable
+fun CollectionBookPage(
+    progress: com.example.progress.ProgressState,
+    store: com.example.data.CollectionStore,
+    boyName: String,
+    girlName: String,
+    /** The day they got together (yyyy-MM-dd), and how many days it's been. */
+    together: String? = null,
+    daysTogether: Long = 0,
+    /** null opens "Found you". */
+    initialPage: com.example.data.CollectionPage? = null,
+    /** false draws "Found you" still. */
+    animate: Boolean = true
+) {
+    var page by remember { mutableStateOf(initialPage) }
+    val entries = page?.let { com.example.data.CollectionBook.page(it) }.orEmpty()
+    val found = entries.count { com.example.data.CollectionBook.isFound(it.key, progress) }
+    LazyColumn(
+        contentPadding = PaddingValues(start = TinySpace.lg, end = TinySpace.lg, top = TinySpace.md, bottom = 32.dp),
+        verticalArrangement = Arrangement.spacedBy(TinySpace.sm),
+        modifier = Modifier.fillMaxSize().testTag("collection_book_page")
+    ) {
+        item {
+            Row(
+                Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(TinySpace.sm)
+            ) {
+                TinyChip(
+                    text = stringResource(Res.string.found_you),
+                    selected = page == null,
+                    onClick = { page = null },
+                    icon = PixelIcons.Favorite
+                )
+                com.example.data.CollectionPage.entries.forEach { p ->
+                    TinyChip(text = stringResource(collectionPageName(p)), selected = p == page, onClick = { page = p })
+                }
+            }
+        }
+        if (page == null) {
+            foundYouItems(progress, boyName, girlName, together, daysTogether, animate)
+            return@LazyColumn
+        }
+        item {
+            Text(
+                stringResource(Res.string.collection_found_count, found, entries.size),
+                style = TinyType.Caption,
+                modifier = Modifier.padding(vertical = TinySpace.xs).testTag("collection_count")
+            )
+        }
+        items(entries, key = { it.key }) { entry ->
+            val isFound = com.example.data.CollectionBook.isFound(entry.key, progress)
+            CollectionRow(entry, isFound, if (isFound) store.first(entry.key) else null, boyName, girlName)
+        }
+    }
+}
+
+/**
+ * "Found you": the page about the two of them. A heart beats between their names while little
+ * hearts drift up around it, and below are love lines that open one by one as the book fills.
+ */
+private fun androidx.compose.foundation.lazy.LazyListScope.foundYouItems(
+    progress: com.example.progress.ProgressState,
+    boyName: String,
+    girlName: String,
+    together: String?,
+    daysTogether: Long,
+    animate: Boolean
+) {
+    val found = com.example.data.CollectionBook.foundCount(progress)
+    val total = com.example.data.CollectionBook.ENTRIES.size
+    item(key = "found_you_card") { FoundYouCard(boyName, girlName, together, daysTogether, animate) }
+    item(key = "found_you_count") {
+        Text(
+            stringResource(Res.string.found_you_count, found, total),
+            style = TinyType.Caption,
+            textAlign = TextAlign.Center,
+            modifier = Modifier.fillMaxWidth().padding(vertical = TinySpace.xs).testTag("found_you_count")
+        )
+    }
+    item(key = "found_you_lines") {
+        val lines = GameText.array(Res.array.found_you_lines)
+        val open = com.example.data.CollectionBook.foundYouLinesOpen(found).coerceAtMost(lines.size)
+        Column(verticalArrangement = Arrangement.spacedBy(TinySpace.sm)) {
+            lines.take(open).forEach { FoundYouLine(it) }
+            com.example.data.CollectionBook.foundYouNextIn(found)?.let { more ->
+                if (open < lines.size) FoundYouLine(stringResource(Res.string.found_you_next, more), locked = true)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FoundYouCard(boyName: String, girlName: String, together: String?, daysTogether: Long, animate: Boolean) {
+    // Still (one moment of it) for the JVM renders, which can't settle a never-ending animation.
+    val beatAndDrift = if (animate) androidx.compose.animation.core.rememberInfiniteTransition(label = "found_you") else null
+    val drift = beatAndDrift?.animateFloat(
+        initialValue = 0f,
+        targetValue = 1f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(9000, easing = androidx.compose.animation.core.LinearEasing)
+        ),
+        label = "found_you_drift"
+    )?.value ?: 0.35f
+    val beat = beatAndDrift?.animateFloat(
+        initialValue = 0.9f,
+        targetValue = 1.12f,
+        animationSpec = androidx.compose.animation.core.infiniteRepeatable(
+            androidx.compose.animation.core.tween(650, easing = androidx.compose.animation.core.FastOutSlowInEasing),
+            androidx.compose.animation.core.RepeatMode.Reverse
+        ),
+        label = "found_you_beat"
+    )?.value ?: 1f
+    val since = together?.let { runCatching { kotlinx.datetime.LocalDate.parse(it) }.getOrNull() }
+        ?.let { DateText.format(it, "d MMM yyyy") }
+    Box(
+        Modifier
+            .fillMaxWidth()
+            .clip(TinyRadius.Large)
+            .background(androidx.compose.ui.graphics.Brush.verticalGradient(listOf(TinyColors.RoseSoft, FOUND_YOU_BLUSH)))
+            .border(2.dp, TinyColors.Blush, TinyRadius.Large)
+            .testTag("found_you_card")
+    ) {
+        Canvas(Modifier.matchParentSize()) {
+            // Little hearts drifting up, each on its own path, fading in and out.
+            val p = 3.dp.toPx()
+            for (i in 0 until 14) {
+                val rise = (i * 0.071f + drift * (0.7f + (i % 4) * 0.12f)) % 1f
+                val sway = kotlin.math.sin((rise * 2f + i * 0.37f) * kotlin.math.PI.toFloat()) * 8.dp.toPx()
+                val x = ((i * 0.381f) % 1f) * (size.width - 8 * p) + 2 * p + sway
+                val y = size.height * (1.05f - rise * 1.1f)
+                val alpha = kotlin.math.sin(rise * kotlin.math.PI.toFloat()) * 0.5f
+                val scale = if (i % 3 == 0) 1.5f else 1f
+                pixelHeart(this, x, y, p * scale, FOUND_YOU_HEARTS[i % FOUND_YOU_HEARTS.size].copy(alpha = alpha))
+            }
+            // The big heart between them, beating.
+            val big = 4.dp.toPx() * beat
+            pixelHeart(this, size.width / 2f - 2.5f * big, 26.dp.toPx() - 2.5f * big, big, TinyColors.Rose)
+            pixelHeart(this, size.width / 2f - 1.5f * big + big * 0.2f, 26.dp.toPx() - 2.5f * big + big * 0.2f, big * 0.25f, Color.White.copy(alpha = 0.7f))
+        }
+        Column(
+            Modifier.fillMaxWidth().padding(start = TinySpace.lg, end = TinySpace.lg, top = 58.dp, bottom = TinySpace.xl),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text(
+                stringResource(Res.string.found_you),
+                style = TinyType.Display.copy(color = TinyColors.Rose),
+                modifier = Modifier.semantics { heading() }
+            )
+            Text(
+                stringResource(Res.string.found_you_names, boyName, girlName),
+                style = TinyType.Section,
+                modifier = Modifier.padding(top = TinySpace.xs)
+            )
+            if (since != null) {
+                Text(stringResource(Res.string.found_you_since, since), style = TinyType.Caption, modifier = Modifier.padding(top = TinySpace.sm))
+            }
+            if (daysTogether > 0) {
+                val d = daysTogether.coerceAtMost(Int.MAX_VALUE.toLong()).toInt()
+                Text(pluralStringResource(Res.plurals.found_you_days, d, d), style = TinyType.Caption)
+            }
+        }
+    }
+}
+
+@Composable
+private fun FoundYouLine(text: String, locked: Boolean = false) {
+    Row(
+        Modifier
+            .fillMaxWidth()
+            .clip(TinyRadius.Medium)
+            .background(if (locked) TinyColors.Muted else TinyColors.Card)
+            .border(1.dp, if (locked) TinyColors.Line else TinyColors.Blush, TinyRadius.Medium)
+            .padding(TinySpace.md),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Canvas(Modifier.size(15.dp)) {
+            pixelHeart(this, 0f, 0f, size.width / 5f, if (locked) TinyColors.InkMuted.copy(alpha = 0.35f) else TinyColors.Rose)
+        }
+        Spacer(Modifier.width(TinySpace.md))
+        Text(
+            text,
+            style = if (locked) TinyType.Caption
+            else TinyType.Body.copy(fontStyle = androidx.compose.ui.text.font.FontStyle.Italic, color = TinyColors.Ink)
+        )
+    }
+}
+
+private val FOUND_YOU_BLUSH = Color(0xFFFFDCE3)
+private val FOUND_YOU_HEARTS = listOf(Color(0xFFE88AA8), Color(0xFFFF8FAB), Color(0xFFAD4760), Color(0xFFFFB5C2))
+
+@Composable
+private fun CollectionRow(
+    entry: com.example.data.CollectionEntry,
+    isFound: Boolean,
+    first: com.example.data.FirstFind?,
+    boyName: String,
+    girlName: String
+) {
+    val mystery = !isFound && entry.hidden
+    val title = if (mystery) stringResource(Res.string.collection_mystery) else stringResource(collectionName(entry.key))
+    val detail = when {
+        isFound && first != null -> firstFindLine(first, boyName, girlName)
+        isFound -> stringResource(Res.string.collection_before_book)
+        else -> stringResource(entry.hint?.let(::collectionHintText) ?: if (mystery) Res.string.collection_hint_mystery else Res.string.collection_not_yet)
+    }
+    TinyCard(padding = TinySpace.md) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            val shadow = TinyColors.InkMuted.copy(alpha = 0.45f)
+            Canvas(Modifier.size(36.dp).background(if (isFound) TinyColors.RoseSoft else TinyColors.Muted, PixelCircleShape)) {
+                if (mystery) return@Canvas
+                val silhouette = if (isFound) null else shadow
+                val sprite = keepsakeSprite(entry.key)
+                if (sprite != null) {
+                    val p = kotlin.math.floor(size.width / (maxOf(sprite.width, sprite.height) + 3))
+                    com.example.games.CozySprites.draw(
+                        this, sprite, (size.width - sprite.width * p) / 2f, (size.height - sprite.height * p) / 2f, p,
+                        com.example.games.CozySprites.BOUQUET_COLORS, silhouette = silhouette
+                    )
+                } else {
+                    val p = size.width / 9f
+                    drawKeepsake(this, entry.key, 2.5f * p, 7f * p, p, silhouette)
+                }
+            }
+            Spacer(Modifier.width(TinySpace.md))
+            Column(Modifier.weight(1f)) {
+                Text(title, style = TinyType.BodyStrong.copy(color = if (isFound) TinyColors.Ink else TinyColors.InkMuted))
+                Text(detail, style = TinyType.Caption, modifier = Modifier.padding(top = 2.dp))
+            }
+        }
+    }
+}
+
+/** "Sprout found this first, on the pier, at night, in the rain, 3 Oct 2026". */
+@Composable
+private fun firstFindLine(f: com.example.data.FirstFind, boyName: String, girlName: String): String {
+    val who = when (f.by) {
+        "BOY" -> if (f.forPartner) stringResource(Res.string.collection_first_for, boyName, girlName) else stringResource(Res.string.collection_first_by, boyName)
+        "GIRL" -> if (f.forPartner) stringResource(Res.string.collection_first_for, girlName, boyName) else stringResource(Res.string.collection_first_by, girlName)
+        else -> stringResource(Res.string.collection_first_together)
+    }
+    val place = collectionPlace(f.scene)?.let { stringResource(it) }
+    val time = when (f.phase) {
+        "MORNING" -> Res.string.collection_when_morning
+        "AFTERNOON" -> Res.string.collection_when_afternoon
+        "SUNSET" -> Res.string.collection_when_sunset
+        "NIGHT" -> Res.string.collection_when_night
+        else -> null
+    }?.let { stringResource(it) }
+    val weather = when (f.weather) {
+        "RAIN" -> Res.string.collection_weather_rain
+        "SNOW" -> Res.string.collection_weather_snow
+        "SAKURA" -> Res.string.collection_weather_sakura
+        "AUTUMN" -> Res.string.collection_weather_autumn
+        else -> null
+    }?.let { stringResource(it) }
+    val date = if (f.epochDay > 0) DateText.format(kotlinx.datetime.LocalDate.fromEpochDays(f.epochDay.toInt()), "d MMM yyyy") else null
+    return listOfNotNull(who, place, time, weather, date).joinToString(", ")
+}
+
+private fun collectionPlace(scene: String): StringResource? = when (scene) {
+    "FLOWER" -> Res.string.collection_place_flower
+    "UNDER_TREE" -> Res.string.collection_place_tree
+    "COOKING" -> Res.string.collection_place_kitchen
+    "SLEEP", "LOOKING" -> Res.string.collection_place_home
+    "WALK" -> Res.string.collection_place_walk
+    "MOMO_STALL" -> Res.string.collection_place_stall
+    "EVENING_RIDE" -> Res.string.collection_place_ride
+    "COZY_LOFT" -> Res.string.collection_place_loft
+    "RAINY_CAFE" -> Res.string.collection_place_cafe
+    "SUNROOM" -> Res.string.collection_place_sunroom
+    "CAMPFIRE" -> Res.string.collection_place_campfire
+    "SEASIDE_PIER" -> Res.string.collection_place_pier
+    else -> null
+}
+
+private fun collectionPageName(p: com.example.data.CollectionPage): StringResource = when (p) {
+    com.example.data.CollectionPage.FINDS -> Res.string.collection_page_finds
+    com.example.data.CollectionPage.SEA -> Res.string.collection_page_sea
+    com.example.data.CollectionPage.KITCHEN -> Res.string.collection_page_kitchen
+    com.example.data.CollectionPage.GARDEN -> Res.string.collection_page_garden
+    com.example.data.CollectionPage.MOMENTS -> Res.string.collection_page_moments
+}
+
+private fun collectionHintText(h: com.example.data.CollectionHint): StringResource = when (h) {
+    com.example.data.CollectionHint.SPRING -> Res.string.collection_hint_spring
+    com.example.data.CollectionHint.SUMMER -> Res.string.collection_hint_summer
+    com.example.data.CollectionHint.AUTUMN -> Res.string.collection_hint_autumn
+    com.example.data.CollectionHint.WINTER -> Res.string.collection_hint_winter
+    com.example.data.CollectionHint.NIGHT -> Res.string.collection_hint_night
+    com.example.data.CollectionHint.RAIN -> Res.string.collection_hint_rain
+    com.example.data.CollectionHint.FOR_HER -> Res.string.collection_hint_for_her
+}
+
+/** The name in the book: a keepsake's name, or a crop's. */
+private fun collectionName(key: String): StringResource =
+    if (key.startsWith("crop:")) {
+        com.example.games.Ingredient.entries.firstOrNull { it.name == key.substringAfter(":") }
+            ?.let { com.example.scene.CozyGames.ingredientName(it) } ?: Res.string.keepsake_something
+    } else keepsakeName(key)
 
 /** How a festival reads in Our Story: the picnic's flowers, the lanterns, the gifts exchanged. */
 private fun festivalStoryTitle(f: com.example.data.Festival, picks: com.example.data.FestivalPicks): String {

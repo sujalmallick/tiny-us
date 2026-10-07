@@ -72,18 +72,23 @@ fun drawKeepsakeShelf(scope: DrawScope, shelf: List<String>, cw: Float, ch: Floa
 }
 
 /** A keepsake as a tiny pixel sprite, standing on [baseY] with its left edge at [x]. */
-fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Float) {
+fun drawKeepsake(scope: DrawScope, item: String, x: Float, baseY: Float, p: Float, silhouette: Color? = null) {
     keepsakeSprite(item)?.let { sprite ->
-        com.example.games.CozySprites.draw(scope, sprite, x, baseY - sprite.height * p, p, com.example.games.CozySprites.BOUQUET_COLORS)
+        com.example.games.CozySprites.draw(scope, sprite, x, baseY - sprite.height * p, p, com.example.games.CozySprites.BOUQUET_COLORS, silhouette = silhouette)
         return
     }
-    fun px(cx: Int, cy: Int, w: Int, h: Int, c: Color) = scope.drawRect(c, Offset(x + cx * p, baseY - (cy + h) * p), Size(w * p, h * p))
+    fun px(cx: Int, cy: Int, w: Int, h: Int, c: Color) = scope.drawRect(silhouette ?: c, Offset(x + cx * p, baseY - (cy + h) * p), Size(w * p, h * p))
     when (item.substringAfter(":")) {
         "WILDFLOWER" -> { px(2, 0, 1, 3, Color(0xFF3F7A4A)); px(1, 3, 3, 1, Color(0xFFE88AA8)); px(2, 4, 1, 1, Color(0xFFF6BD60)); px(1, 4, 1, 1, Color(0xFFE88AA8)); px(3, 4, 1, 1, Color(0xFFE88AA8)) }
         "RED_LEAF" -> { px(1, 0, 1, 1, Color(0xFF7A4A1E)); px(1, 1, 3, 2, Color(0xFFD9480F)); px(2, 3, 1, 1, Color(0xFFE76F51)) }
         "LOVE_NOTE" -> { px(0, 0, 4, 3, Color(0xFFFFF4E6)); px(1, 1, 2, 1, Color(0xFFE88AA8)) }
         "SEASHELL" -> { px(0, 0, 4, 1, Color(0xFFF5C6A5)); px(1, 1, 2, 2, Color(0xFFFADBC6)); px(2, 3, 1, 1, Color(0xFFF5C6A5)) }
         "STAR_PEBBLE" -> { px(0, 0, 4, 2, Color(0xFF6C757D)); px(1, 1, 1, 1, Color(0xFFFFD166)); px(2, 2, 1, 1, Color(0xFF8D99AE)) }
+        // The festivals and the jar, for the collection book (plan 09, H).
+        "BLOSSOM_PICNIC" -> { px(0, 0, 4, 1, Color(0xFF3F7A4A)); px(0, 1, 1, 1, Color(0xFFFF8FAB)); px(2, 1, 1, 1, Color(0xFFFFD166)); px(3, 1, 1, 1, Color(0xFFB497E7)) }
+        "LANTERN_NIGHT" -> { px(1, 0, 2, 1, Color(0xFF7A4A1E)); px(0, 1, 4, 2, Color(0xFFE76F51)); px(1, 2, 2, 1, Color(0xFFFFD166)); px(1, 3, 2, 1, Color(0xFF7A4A1E)) }
+        "GIFT_EXCHANGE" -> { px(0, 0, 4, 3, Color(0xFF52B788)); px(1, 0, 1, 3, Color(0xFFE63946)); px(0, 3, 1, 1, Color(0xFFE63946)); px(2, 3, 1, 1, Color(0xFFE63946)) }
+        "THANK_YOU" -> { px(0, 0, 4, 3, Color(0xFFBDE0FE)); px(1, 1, 1, 1, Color(0xFFFF8FAB)); px(2, 0, 1, 1, Color(0xFFFFD166)); px(0, 3, 4, 1, Color(0xFF7A4A1E)) }
         else -> px(0, 0, 3, 3, Color(0xFFFFB5C2))
     }
 }
@@ -95,6 +100,8 @@ fun keepsakeSprite(item: String): com.example.games.CozySprites.Sprite? {
         item.startsWith("dish:") -> com.example.games.CozySprites.DISHES[kind]
         item.startsWith("catch:") -> com.example.games.FishingCatch.entries.firstOrNull { it.name == kind }?.let { com.example.games.CozySprites.CATCHES[it] }
         item == com.example.progress.Gifts.BOUQUET -> com.example.games.CozySprites.BOUQUET
+        // A crop from the garden, for the collection book (plan 09, H).
+        item.startsWith("crop:") -> com.example.games.Ingredient.entries.firstOrNull { it.name == kind }?.let { com.example.games.CozySprites.INGREDIENTS[it] }
         else -> null
     }
 }
