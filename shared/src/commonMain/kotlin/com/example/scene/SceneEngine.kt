@@ -844,6 +844,8 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        cancelPetMove()
+        petTapCount = 0
         cozy.stopAll()
         boy.putAwayHeldItem()
         girl.putAwayHeldItem()
@@ -2105,6 +2107,7 @@ class SceneEngine(
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         updatePets(deltaSeconds)
         dropFromTheTree(deltaSeconds, canvasWidth, canvasHeight)
+        updatePetMove(deltaSeconds, canvasWidth, canvasHeight)
         updateVisitors(deltaSeconds)
         if (secretRevealIn > 0f) {
             secretRevealIn -= deltaSeconds
@@ -3271,6 +3274,7 @@ class SceneEngine(
     }
 
     fun triggerMochiMatchmaker(cw: Float, ch: Float) {
+        cancelPetMove()
         mochiMatchmakerActive = true
         mochiMatchmakerVariant = mochiMatchmakerPicker.pick()
         mochiMatchmakerStep = 0
@@ -3491,6 +3495,16 @@ class SceneEngine(
                 catWorldY = catTargetY
                 catState = CatState.SITTING_PURR
                 catFacingLeft = foxVisit.x < catWorldX
+            } else if (petSpotAction != null) {
+                // Over at something in the scene (plan 12, A): a sniff at the flowers, a pounce at the bucket...
+                catWorldX = catTargetX
+                catWorldY = catTargetY
+                val action = petSpotAction!!
+                petSpotAction = null
+                catState = CatState.SITTING_PURR
+                catSleeping = false
+                catFacingLeft = petSpotFacesLeft
+                startPetMove(PetMoves.atSpot(action, petKind), cw, ch)
             } else {
                 // Arrived at roaming destination! Settle down comfortably
                 catWorldX = catTargetX
@@ -3522,6 +3536,7 @@ class SceneEngine(
      */
     fun commandCatWalkTo(targetX: Float, targetY: Float, cw: Float, ch: Float) {
         if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return
+        cancelPetMove()
         mochiMatchmakerActive = false
         val isOutdoor = isCurrentSceneOutdoor
         val clampedTargetY = if (isOutdoor) {
@@ -3558,7 +3573,7 @@ class SceneEngine(
     }
 
     private fun triggerAutonomousPetBehavior(cw: Float, ch: Float) {
-        if (catTreatInProgress) return
+        if (catTreatInProgress || petMove != null) return
         if (foxVisit.active || mochiErrand != null) return
         if (currentScene == SceneType.COZY_LOFT) {
             val states = listOf(
@@ -3595,6 +3610,19 @@ class SceneEngine(
         // If cat is already sleeping peacefully, let it sleep most of the time (70% chance to remain sleeping)
         if (catState == CatState.SLEEPING && Random.nextFloat() < 0.70f) {
             return
+        }
+
+        // Plan 12, A: something of its own now and then, or off to have a look at something
+        if (catState != CatState.SLEEPING && petMove == null) {
+            val roll = Random.nextFloat()
+            if (roll < 0.30f) {
+                val wet = isCurrentSceneOutdoor && (weather == WeatherType.RAIN || weather == WeatherType.SNOW)
+                val choices = PetMoves.movesFor(petKind).filter { it != PetMove.DIG || isCurrentSceneOutdoor } +
+                    (if (wet) listOf(PetMove.SHAKE, PetMove.SHAKE) else emptyList())
+                if (startPetMove(choices.random(Random), cw, ch)) return
+            } else if (roll < 0.48f && visitSomething()) {
+                return
+            }
         }
 
         // Cat chooses next mood: 25% chance to gently roam to a new spot (replaces frantic 55% constant wandering)
@@ -5459,6 +5487,13 @@ class SceneEngine(
     fun onTouchCat(cw: Float, ch: Float) {
         grantRequest(RequestKind.MOCHI)
         careForMochi(1)
+        // Plan 12, A: after a few pats, a little trick
+        petTapCount++
+        if (petTapCount % 4 == 0 && catState != CatState.SLEEPING && startPetMove(PetMoves.trickFor(petKind), cw, ch)) {
+            showMessage(GameText.get(Res.string.pet_trick, petName), duration = 2.5f)
+            return
+        }
+        cancelPetMove()
         if (petKind != com.example.data.PetKind.CAT) {
             onTouchPet(cw, ch)
             return
@@ -6481,6 +6516,7 @@ class SceneEngine(
             MochiErrand.SAUCER -> if (currentScene == SceneType.MOMO_STALL) MOCHI_SAUCER_X to MOCHI_SAUCER_Y else return
         }
         mochiMatchmakerActive = false
+        cancelPetMove()
         mochiErrand = errand
         catTargetX = x
         catTargetY = y
@@ -8102,6 +8138,7 @@ class SceneEngine(
         get() = if (petKind == com.example.data.PetKind.CAT) catName else petKind.defaultName
 
     private fun setPet(kind: com.example.data.PetKind) {
+        cancelPetMove()
         petKind = kind
         hedgehogCurled = false
         petHabitTimer = 0f
@@ -8122,6 +8159,139 @@ class SceneEngine(
         mochiInBox = false
         mochiErrand = null
         return true
+    }
+
+    // ── Plan 12, A: the pets' moves ─────────────────────────────────────────
+
+    /** What the pet who lives with them is doing just now, if anything of its own. */
+    var petMove: PetMove? = null
+        private set
+    /** Seconds into [petMove]. */
+    var petMoveTime = 0f
+        private set
+    /** The thing in the scene the pet is wandering over to, and which way it'll face there. */
+    private var petSpotAction: com.example.scene.autonomy.SpotAction? = null
+    private var petSpotFacesLeft = false
+    /** Pats since the scene began: every fourth brings a trick. */
+    private var petTapCount = 0
+
+    /**
+     * Starts [move] for the pet who lives with them; false when it isn't the moment (the loft and
+     * the scooter, an errand, the Friday fox, a treat, the matchmaker) or the pet doesn't do that.
+     */
+    fun startPetMove(move: PetMove, cw: Float, ch: Float): Boolean {
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        if (mochiInBox || mochiErrand != null || foxVisit.active || catTreatInProgress || mochiMatchmakerActive) return false
+        if (!PetMoves.canDo(petKind, move)) return false
+        if (move == PetMove.DIG && !isCurrentSceneOutdoor) return false
+        catSleeping = false
+        if (move == PetMove.ZOOMIES) {
+            // A dash across and back, drawn as a run
+            startMochiZoomies(cw)
+        } else {
+            if (move == PetMove.ROLL) {
+                // Off it rolls, a little way along
+                val dir = if (catFacingLeft) -1f else 1f
+                catTargetX = avoidCampfirePit((catWorldX + dir * 0.12f).coerceIn(0.10f, 0.90f), catWorldY)
+                catTargetY = catWorldY
+                catState = CatState.WALK_FOLLOW
+            } else {
+                // It stays where it is for the move
+                catTargetX = catWorldX
+                catTargetY = catWorldY
+                if (catState == CatState.WALK_FOLLOW || catState == CatState.SLEEPING) catState = CatState.SITTING_PURR
+            }
+            petMove = move
+            petMoveTime = 0f
+        }
+        val x = cw * catWorldX
+        val y = ch * catWorldY
+        when (move) {
+            PetMove.HOP, PetMove.FLOP -> particles.spawnHeart(x, y - 30f, Color(0xFFFF8FA3))
+            PetMove.PARADE -> particles.spawnMusicNote(x, y - 30f)
+            PetMove.CHASE_TAIL, PetMove.POUNCE -> audio.playBubblePop()
+            else -> Unit
+        }
+        // The two of them notice: a laugh at the silly ones, melting at the sweet ones
+        val delight = when (move) {
+            PetMove.CHASE_TAIL, PetMove.ZOOMIES, PetMove.POUNCE, PetMove.HOP, PetMove.ROLL, PetMove.PARADE, PetMove.DIG -> Expression.LAUGH
+            PetMove.FLOP, PetMove.YAWN, PetMove.STRETCH, PetMove.GROOM, PetMove.HEAD_TURN -> Expression.HEART_EYES
+            else -> null
+        }
+        if (delight != null) {
+            val watcher = charactersBoyGirl.minByOrNull { abs(it.worldX - catWorldX) }
+            if (watcher != null && abs(watcher.worldX - catWorldX) < 0.35f && watcher.expressionTimer <= 0f) {
+                watcher.express(delight, 2.4f)
+            }
+        }
+        return true
+    }
+
+    private fun cancelPetMove() {
+        petMove = null
+        petMoveTime = 0f
+        petSpotAction = null
+    }
+
+    /** Off to have a look at something in the scene; false where there's nothing to go to. */
+    private fun visitSomething(): Boolean {
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        val spots = com.example.scene.autonomy.SceneSpots.forScene(currentScene).filter {
+            // The box and the saucer are errands of their own
+            it.action != com.example.scene.autonomy.SpotAction.PEEK_BOX && it.action != com.example.scene.autonomy.SpotAction.FILL_SAUCER &&
+                abs(it.x - catWorldX) > 0.08f
+        }
+        val spot = spots.randomOrNull(Random) ?: return false
+        // A little closer to the thing than a person would stand
+        val toward = if (spot.faceLeft) -0.05f else 0.05f
+        catTargetY = (spot.y).coerceIn(0.66f, if (isCurrentSceneOutdoor) 0.74f else 0.72f)
+        catTargetX = avoidCampfirePit((spot.x + toward).coerceIn(0.10f, 0.90f), catTargetY)
+        catFacingLeft = catTargetX < catWorldX
+        catState = CatState.WALK_FOLLOW
+        catSleeping = false
+        petSpotAction = spot.action
+        petSpotFacesLeft = spot.faceLeft
+        return true
+    }
+
+    /** The move's little effects as it goes (earth flying, drops, puffs), and its end. */
+    private fun updatePetMove(dt: Float, cw: Float, ch: Float) {
+        val x = cw * catWorldX
+        val y = ch * catWorldY
+        val ahead = if (catFacingLeft) -1f else 1f
+        if (mochiZoomTimer > 0f && eventChance(6f, dt)) {
+            if (isCurrentSceneOutdoor) particles.spawnGrassPuff(x - ahead * 20f, y, 1) else particles.spawnSparkles(x - ahead * 20f, y - 6f, 1)
+        }
+        val move = petMove ?: return
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT || mochiErrand != null || mochiMatchmakerActive) {
+            cancelPetMove()
+            return
+        }
+        val before = petMoveTime
+        petMoveTime += dt
+        val p = WorldViewport.pixelScale(cw)
+        when (move) {
+            PetMove.SNIFF -> if (isCurrentSceneOutdoor && eventChance(1.5f, dt)) particles.spawnGrassPuff(x + ahead * 10f * p, y, 1)
+            PetMove.DIG -> if (eventChance(5f, dt)) particles.kickGroundParticles(x, y, cw, ch, cw * 0.03f, !catFacingLeft)
+            PetMove.SHAKE -> if (eventChance(12f, dt)) {
+                val dx = (Random.nextFloat() - 0.5f) * 16f * p
+                if (weather == WeatherType.RAIN) particles.spawnRainSplash(x + dx, y - 8f * p) else particles.spawnSparkles(x + dx, y - 8f * p, 1, Color(0xFFF2FAFF))
+            }
+            PetMove.CHASE_TAIL -> if (eventChance(3f, dt)) particles.spawnSparkles(x, y - 10f * p, 1)
+            PetMove.POUNCE -> if (before < move.seconds * 0.95f && petMoveTime >= move.seconds * 0.95f) {
+                // The landing
+                if (isCurrentSceneOutdoor) particles.spawnGrassPuff(x + ahead * 8f * p, y, 3) else particles.spawnSparkles(x + ahead * 8f * p, y - 4f, 3)
+            }
+            else -> Unit
+        }
+        if (petMoveTime >= move.seconds) {
+            if (move == PetMove.POUNCE) {
+                // It landed a little way ahead
+                catWorldX = (catWorldX + ahead * 8f * p / cw).coerceIn(0.08f, 0.92f)
+                catTargetX = catWorldX
+            }
+            cancelPetMove()
+        }
     }
 
     /**

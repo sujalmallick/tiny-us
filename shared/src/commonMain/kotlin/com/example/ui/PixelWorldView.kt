@@ -1542,6 +1542,20 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             }
 
             fun drawMochi() {
+                // A move of their own (plan 12, A): a stretch, a sniff, a chase after a tail...
+                val move = engine.petMove
+                if (isCatInScene && !engine.mochiInBox && move != null) {
+                    if (PetSprites.drawsKind(engine.petKind)) {
+                        PetSprites.drawMove(this, engine.petKind, move, engine.petMoveTime, cw * engine.catWorldX, catY, pixelScale, engine.catFacingLeft)
+                    } else {
+                        drawCatMove(
+                            this, move, engine.petMoveTime, cw * engine.catWorldX, catY, pixelScale, engine.sceneTime,
+                            engine.catFacingLeft, isSnow,
+                            if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle
+                        )
+                    }
+                    return
+                }
                 // In her cardboard box only her peeking head shows, drawn with the box (plan 10, C).
                 if (isCatInScene && !engine.mochiInBox && PetSprites.drawsKind(engine.petKind)) {
                     // Whoever lives with them now (plan 10, E)

@@ -1546,4 +1546,5 @@
     <string name="collection_hint_painter">A painter, some sunny day</string>
     <string name="collection_hint_pier_evening">On the pier, as the sun goes down</string>
     <string name="collection_hint_anniversary">On your anniversary</string>
+    <string name="pet_trick">%1$s shows off a little trick!</string>
 </resources>
