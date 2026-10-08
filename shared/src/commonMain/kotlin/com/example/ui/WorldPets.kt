@@ -440,18 +440,19 @@ fun drawCatMove(
             scope = scope, cx = x, groundY = groundY - lift, p = p, timeSeconds = clock, catState = state,
             isSleeping = false, isSnow = isSnow, facingLeft = face, collarStyle = collarStyle
         )
-    // The sitting pose's face, for a paw or an open mouth over it
+    // The sitting pose's face, for a paw or an open mouth over it (moving with her purr)
     val headTop = groundY - 13f * p
+    val purr = sin(time * 25f) * 0.4f * p * (if (facingLeft) -1f else 1f)
     when (move) {
         com.example.scene.PetMove.STRETCH -> cat(CatState.PLAYFUL_POUNCE, clock = 0f)
         com.example.scene.PetMove.GROOM -> {
             cat(CatState.SITTING_PURR)
             val up = sin(t * 10f) > 0f
             val pawTop = headTop + (if (up) 2f else 3f) * p
-            scope.drawRect(Color(0xFFCED4DA), Offset(cx - 1.6f * p, pawTop), Size(3.2f * p, 3.4f * p))
-            scope.drawRect(Color(0xFFF8F9FA), Offset(cx - 1.2f * p, pawTop), Size(2.4f * p, 3f * p))
-            scope.drawRect(Color(0xFFFFCAD4), Offset(cx - 0.5f * p, pawTop + 0.4f * p), Size(p, 0.8f * p))
-            if (up) scope.drawRect(Color(0xFFFF8FA3), Offset(cx - 0.5f * p, headTop + 1.6f * p), Size(p, 0.8f * p))
+            scope.drawRect(Color(0xFFCED4DA), Offset(cx + purr - 1.6f * p, pawTop), Size(3.2f * p, 3.4f * p))
+            scope.drawRect(Color(0xFFF8F9FA), Offset(cx + purr - 1.2f * p, pawTop), Size(2.4f * p, 3f * p))
+            scope.drawRect(Color(0xFFFFCAD4), Offset(cx + purr - 0.5f * p, pawTop + 0.4f * p), Size(p, 0.8f * p))
+            if (up) scope.drawRect(Color(0xFFFF8FA3), Offset(cx + purr - 0.5f * p, headTop + 1.6f * p), Size(p, 0.8f * p))
         }
         com.example.scene.PetMove.CHASE_TAIL -> {
             val turn = ((t / 0.18f).toInt() and 1) == 0
@@ -466,8 +467,8 @@ fun drawCatMove(
         com.example.scene.PetMove.YAWN -> {
             cat(CatState.SITTING_PURR)
             if (f in 0.2f..0.8f) {
-                scope.drawRect(Color(0xFF6B2737), Offset(cx - 1.1f * p, headTop + 2.6f * p), Size(2.2f * p, 1.8f * p))
-                scope.drawRect(Color(0xFFFF8FA3), Offset(cx - 0.6f * p, headTop + 3.4f * p), Size(1.2f * p, 0.9f * p))
+                scope.drawRect(Color(0xFF6B2737), Offset(cx + purr - 1.1f * p, headTop + 2.6f * p), Size(2.2f * p, 1.8f * p))
+                scope.drawRect(Color(0xFFFF8FA3), Offset(cx + purr - 0.6f * p, headTop + 3.4f * p), Size(1.2f * p, 0.9f * p))
             }
         }
         com.example.scene.PetMove.SNIFF -> cat(CatState.PLAYFUL_POUNCE, clock = t * 0.25f)
