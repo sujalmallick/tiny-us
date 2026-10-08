@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.drawPixelGlow
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -274,7 +275,7 @@ private fun drawDaySun(
     val core = if (low) Color(0xFFFFD9A0) else Color(0xFFFFF6CF)
     val center = Offset(x + d * p / 2f, y + d * p / 2f)
     val pulse = 0.9f + sin(time * 0.8f) * 0.1f
-    scope.drawCircle(body.copy(alpha = 0.12f * pulse), radius = 11f * p, center = center)
+    drawPixelGlow(scope, body.copy(alpha = 0.12f * pulse), 11f * p, center, p)
     drawPixelDisc(scope, x, y, d, p, body)
     scope.drawRect(core, Offset(x + 2f * p, y + 2f * p), Size((d - 4f) * p, (d - 4f) * p))
 }
@@ -496,8 +497,8 @@ fun drawMilkyWayNightSky(
     val moonFraction = currentMoonFraction()
     // A thin crescent glows less than a full moon.
     val glow = 0.25f + 0.75f * com.example.engine.MoonPhase.illumination(moonFraction)
-    scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.04f * glow), radius = 20f * p, center = moonCenter)
-    scope.drawCircle(Color(0xFFFFF8D6).copy(alpha = 0.08f * glow), radius = 12f * p, center = moonCenter)
+    drawPixelGlow(scope, Color(0xFFFFF3B0).copy(alpha = 0.04f * glow), 20f * p, moonCenter, p)
+    drawPixelGlow(scope, Color(0xFFFFF8D6).copy(alpha = 0.08f * glow), 12f * p, moonCenter, p)
 
     // Crisp Pixel Moon Body
     scope.drawRect(Color(0xFFFFF3B0), Offset(moonX, moonY), Size(14 * p, 14 * p))
@@ -539,37 +540,6 @@ fun drawMilkyWayNightSky(
         scope.drawRect(Color(0xFFBDE0FE).copy(alpha = 0.40f), Offset(headX - tailDx * 2f, headY - tailDy * 2f), Size(p, p))
         scope.drawRect(Color(0xFF90E0EF).copy(alpha = 0.20f), Offset(headX - tailDx * 3f, headY - tailDy * 3f), Size(p, p))
     }
-}
-
-/** One drifting pixel cloud; it wraps around a world [cw] wide. */
-fun drawSkyCloud(
-    scope: DrawScope,
-    cw: Float,
-    baseX: Float,
-    y: Float,
-    scaleFactor: Float,
-    time: Float,
-    p: Float,
-    isSunset: Boolean,
-    isMorning: Boolean
-) {
-    val cx = (baseX + (time * 10f * scaleFactor)) % (cw + 140f) - 70f
-    val cloudColor = when {
-        isSunset -> Color(0xFFFFDDD2)
-        isMorning -> Color(0xFFFFF0F5)
-        else -> Color(0xF2FFFFFF)
-    }
-    val cloudShadow = when {
-        isSunset -> Color(0xFFE29578)
-        isMorning -> Color(0xFFF7CAD0)
-        else -> Color(0xFFD6E2E9)
-    }
-
-    scope.drawRect(cloudShadow, Offset(cx, y + 2 * p), Size(28 * p, 10 * p))
-    scope.drawRect(cloudColor, Offset(cx, y), Size(28 * p, 10 * p))
-    scope.drawRect(cloudColor, Offset(cx + 6 * p, y - 6 * p), Size(18 * p, 6 * p))
-    scope.drawRect(cloudColor, Offset(cx - 5 * p, y + 3 * p), Size(6 * p, 6 * p))
-    scope.drawRect(cloudColor, Offset(cx + 27 * p, y + 3 * p), Size(6 * p, 6 * p))
 }
 
 fun drawSkyAndClouds(
@@ -669,11 +639,6 @@ fun drawSkyAndClouds(
         afterSkyBands?.invoke(scope)
 
         // ── Drifting fluffy pixel clouds (drawn on top of sky fill) ──────────
-        fun drawCloud(baseX: Float, y: Float, scaleFactor: Float) =
-            drawSkyCloud(scope, cw, baseX, y, scaleFactor, time, p, isSunset, isMorning)
-
-        drawCloud(cw * 0.08f, ch * 0.10f, 0.7f)
-        drawCloud(cw * 0.60f, ch * 0.18f, 1.0f)
-        drawCloud(cw * 0.35f, ch * 0.28f, 0.5f)
+        drawDayClouds(scope, cw, ch, time, p, isSunset, isMorning)
     }
 }

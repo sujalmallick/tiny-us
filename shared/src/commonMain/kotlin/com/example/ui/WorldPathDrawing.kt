@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.drawPixelGlow
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -311,7 +312,7 @@ fun drawPathGround(
         scope.drawRect(Color(0xFF6C757D), Offset(pagX - 2 * p, pagY - 7 * p), Size(4 * p, 2f * p))
         // Soft warm ambient glow
         val pagFlick = sin(timeSeconds * 4f) * 0.08f + 0.92f
-        scope.drawCircle(Color(0x35FFAA00).copy(alpha = 0.22f * pagFlick), 18 * p, Offset(pagX, pagY + 5 * p))
+        drawPixelGlow(scope, Color(0x35FFAA00).copy(alpha = 0.22f * pagFlick), 18 * p, Offset(pagX, pagY + 5 * p), p)
         // Reeds and wild grasses nestling the lantern base
         for (i in RIVER_REED_OFFSETS.indices) {
             val rx = RIVER_REED_OFFSETS[i]
@@ -348,7 +349,7 @@ fun drawPathGround(
             scope.drawRect(Color(0xFFEDE0D4), Offset(mx, my), Size(1.8f * p, 4.5f * p))
             scope.drawRect(Color(0xFF48CAE4).copy(alpha = mPulse), Offset(mx - 2 * p, my - 2 * p), Size(5.8f * p, 2.5f * p))
             scope.drawRect(Color(0xFF90E0EF).copy(alpha = mPulse), Offset(mx - p, my - 2.8f * p), Size(3.8f * p, p))
-            scope.drawCircle(Color(0x3048CAE4).copy(alpha = 0.20f * mPulse), 7 * p, Offset(mx + 2 * p, my))
+            drawPixelGlow(scope, Color(0x3048CAE4).copy(alpha = 0.20f * mPulse), 7 * p, Offset(mx + 2 * p, my), p)
         }
     } else {
         // --- MOMO_STALL Scene: Authentic Night Market Layout ---
@@ -404,8 +405,7 @@ fun drawPathGround(
         val tblH = 15 * p
         val tblX = cw * 0.50f - tblW / 2f
         val tblY = curbY + curbH * 0.55f
-        val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = false)
-        drawCastShadow(scope, cw * 0.50f, tblY + tblH, 40, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = weather)
+        drawCastShadow(scope, cw * 0.50f, tblY + tblH, 40, p, heightPx = 15)
         drawContactShadow(scope, cw * 0.50f, tblY + tblH, 40, p)
         // Wooden folding street table legs
         scope.drawRect(Color(0xFF45240F), Offset(tblX + 3 * p, tblY + 3 * p), Size(2.5f * p, tblH - 3 * p))
@@ -443,7 +443,7 @@ fun drawPathGround(
         scope.drawRect(Color(0xFFB08968), Offset(lanX, lanY), Size(4.5f * p, 7 * p))
         scope.drawRect(Color(0xFFFFD166), Offset(lanX + 0.8f * p, lanY + 1.5f * p), Size(3 * p, 4 * p))
         val lFlick = sin(timeSeconds * 4.5f) * 0.10f + 0.90f
-        scope.drawCircle(Color(0x35FFAA00).copy(alpha = 0.22f * lFlick), 10 * p, Offset(lanX + 2.2f * p, lanY + 3.5f * p))
+        drawPixelGlow(scope, Color(0x35FFAA00).copy(alpha = 0.22f * lFlick), 10 * p, Offset(lanX + 2.2f * p, lanY + 3.5f * p), p)
 
         // Two wooden street stools beside the table
         fun drawStreetStool(sx: Float) {
@@ -451,7 +451,7 @@ fun drawPathGround(
             val stH = 11 * p
             val sl = sx - stW / 2f
             val sy = tblY + 2 * p
-            drawCastShadow(scope, sx, sy + stH, 12, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = weather)
+            drawCastShadow(scope, sx, sy + stH, 12, p, heightPx = 11)
             drawContactShadow(scope, sx, sy + stH, 12, p)
             scope.drawRect(Color(0xFF45240F), Offset(sl + 1.5f * p, sy + 2.5f * p), Size(2 * p, stH - 2.5f * p))
             scope.drawRect(Color(0xFF45240F), Offset(sl + stW - 3.5f * p, sy + 2.5f * p), Size(2 * p, stH - 2.5f * p))

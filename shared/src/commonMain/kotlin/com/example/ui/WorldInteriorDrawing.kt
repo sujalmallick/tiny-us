@@ -71,6 +71,7 @@ import com.example.engine.PixelParticle
 import com.example.engine.CharacterMotionTween
 import com.example.engine.WorldSprites
 import com.example.engine.drawCastShadow
+import com.example.engine.drawPixelGlow
 import com.example.engine.drawContactShadow
 import com.example.engine.RoomTheme
 import com.example.scene.EnvironmentType
@@ -421,11 +422,7 @@ fun drawKitchenRoom(
         scope.drawRect(glowColor.copy(alpha = glowAlpha * (1f - step * 0.14f)), Offset(lampX - gw / 2f, gy), Size(gw, 6 * p))
     }
     // Warm floor light pool under pendant lamp
-    scope.drawOval(
-        color = Color(0xFFFFD166).copy(alpha = if (isNight) 0.22f else 0.12f),
-        topLeft = Offset(lampX - 26 * p, floorY - 4 * p),
-        size = Size(52 * p, 8 * p)
-    )
+    drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = if (isNight) 0.22f else 0.12f), 26 * p, Offset(lampX, floorY), p, squash = 0.16f)
 
     // 9. Retro 1950s Pastel Refrigerator (Right wall, cw * 0.88f)
     val fridgeX = cw * 0.88f
@@ -537,7 +534,7 @@ fun drawKitchenRoom(
     val tblH = 18 * p
     val tblX = cw * 0.50f - tblW / 2f
     val tblY = juteY + 7 * p
-    drawCastShadow(scope, cw * 0.50f, tblY + tblH, 54, p, isOutdoor = false)
+    drawCastShadow(scope, cw * 0.50f, tblY + tblH, 54, p)
     drawContactShadow(scope, cw * 0.50f, tblY + tblH, 54, p)
     // Sturdy wooden legs with crossbar
     scope.drawRect(Color(0xFF43281C), Offset(tblX + 4 * p, tblY + 4 * p), Size(3 * p, tblH - 4 * p))
@@ -583,7 +580,7 @@ fun drawKitchenRoom(
         val chW = 10 * p
         val chH = 22 * p
         val cl = chairX - chW / 2f
-        drawCastShadow(scope, chairX, chY + chH, 12, p, isOutdoor = false)
+        drawCastShadow(scope, chairX, chY + chH, 12, p)
         drawContactShadow(scope, chairX, chY + chH, 12, p)
         // Chair backrest spindles
         scope.drawRect(Color(0xFF5C3A21), Offset(cl + (if (facingRight) 0f else chW - 2.5f * p), chY), Size(2.5f * p, chH))
@@ -603,7 +600,7 @@ fun drawKitchenRoom(
     val stlW = 14 * p
     val stlH = 10 * p
     val sLeft = stlX - stlW / 2f
-    drawCastShadow(scope, stlX, stlY + stlH, 15, p, isOutdoor = false)
+    drawCastShadow(scope, stlX, stlY + stlH, 15, p)
     drawContactShadow(scope, stlX, stlY + stlH, 15, p)
     scope.drawRect(Color(0xFF5C3A21), Offset(sLeft + 2 * p, stlY + 2.5f * p), Size(2 * p, stlH - 2.5f * p))
     scope.drawRect(Color(0xFF5C3A21), Offset(sLeft + stlW - 4 * p, stlY + 2.5f * p), Size(2 * p, stlH - 2.5f * p))
@@ -618,7 +615,7 @@ fun drawKitchenRoom(
     val crateW = 24 * p
     val crateH = 17 * p
     val cLeft = crateX - crateW / 2f
-    drawCastShadow(scope, crateX, crateY + crateH, 26, p, isOutdoor = false)
+    drawCastShadow(scope, crateX, crateY + crateH, 26, p)
     drawContactShadow(scope, crateX, crateY + crateH, 26, p)
     scope.drawRect(Color(0xFF3E2413), Offset(cLeft, crateY), Size(crateW, crateH))
     // Pumpkin in crate
@@ -636,7 +633,7 @@ fun drawKitchenRoom(
     // Burlap potato sack beside crate
     val sackX = cLeft + crateW + 2 * p
     val sackY = crateY + 2 * p
-    drawCastShadow(scope, sackX + 6 * p, sackY + 15 * p, 14, p, isOutdoor = false)
+    drawCastShadow(scope, sackX + 6 * p, sackY + 15 * p, 14, p)
     drawContactShadow(scope, sackX + 6 * p, sackY + 15 * p, 14, p)
     scope.drawRect(Color(0xFFD4A373), Offset(sackX, sackY), Size(12 * p, 15 * p))
     scope.drawRect(Color(0xFFB08968), Offset(sackX + 1.5f * p, sackY + 1.5f * p), Size(9 * p, 11 * p))
@@ -648,7 +645,7 @@ fun drawKitchenRoom(
     val floorPotW = 18 * p
     val floorPotH = 14 * p
     val pLeft = plantX - floorPotW / 2f
-    drawCastShadow(scope, plantX, plantY + floorPotH + 5 * p, 19, p, isOutdoor = false)
+    drawCastShadow(scope, plantX, plantY + floorPotH + 5 * p, 19, p)
     drawContactShadow(scope, plantX, plantY + floorPotH + 5 * p, 19, p)
     // Tripod wooden stand
     scope.drawRect(Color(0xFF5C3A21), Offset(pLeft + 2 * p, plantY + floorPotH - 2 * p), Size(2.5f * p, 7 * p))
@@ -763,7 +760,7 @@ fun drawLivingRoom(
     val tblH = 14 * p
     val tblX = cw * 0.50f - tblW / 2f
     val tblY = floorY + 23 * p
-    drawCastShadow(scope, cw * 0.50f, tblY + tblH, 50, p, isOutdoor = false)
+    drawCastShadow(scope, cw * 0.50f, tblY + tblH, 50, p)
     drawContactShadow(scope, cw * 0.50f, tblY + tblH, 50, p)
     // Sturdy wooden tapered legs
     scope.drawRect(Color(0xFF43281C), Offset(tblX + 3.5f * p, tblY + 3.5f * p), Size(2.5f * p, tblH - 3.5f * p))
@@ -808,7 +805,7 @@ fun drawLivingRoom(
     val pfW = 18 * p
     val pfH = 12 * p
     val pfLeft = pfX - pfW / 2f
-    drawCastShadow(scope, pfX, pfY + pfH, 19, p, isOutdoor = false)
+    drawCastShadow(scope, pfX, pfY + pfH, 19, p)
     drawContactShadow(scope, pfX, pfY + pfH, 19, p)
     scope.drawRect(Color(0xFF526456), Offset(pfLeft, pfY + 2 * p), Size(pfW, pfH - 2 * p))
     scope.drawRect(Color(0xFF6B7F6E), Offset(pfLeft + p, pfY), Size(pfW - 2 * p, pfH - 2 * p))
@@ -837,7 +834,7 @@ fun drawLivingRoom(
     val cBoxW = 20 * p
     val cBoxH = 13 * p
     val cbLeft = cBoxX - cBoxW / 2f
-    drawCastShadow(scope, cBoxX, cBoxY + cBoxH, 22, p, isOutdoor = false)
+    drawCastShadow(scope, cBoxX, cBoxY + cBoxH, 22, p)
     drawContactShadow(scope, cBoxX, cBoxY + cBoxH, 22, p)
     scope.drawRect(Color(0xFF6F523B), Offset(cbLeft, cBoxY), Size(cBoxW, cBoxH))
     scope.drawRect(Color(0xFFC59B76), Offset(cbLeft, cBoxY + 3 * p), Size(cBoxW, cBoxH - 3 * p))
@@ -862,7 +859,7 @@ fun drawLivingRoom(
     val bskW = 18 * p
     val bskH = 15 * p
     val bLeft = bskX - bskW / 2f
-    drawCastShadow(scope, bskX, bskY + bskH, 20, p, isOutdoor = false)
+    drawCastShadow(scope, bskX, bskY + bskH, 20, p)
     drawContactShadow(scope, bskX, bskY + bskH, 20, p)
     scope.drawRect(Color(0xFFB08968), Offset(bLeft, bskY), Size(bskW, bskH))
     scope.drawRect(Color(0xFFD4A373), Offset(bLeft + 2 * p, bskY + 2 * p), Size(bskW - 4 * p, bskH - 4 * p))
@@ -883,7 +880,7 @@ fun drawLivingRoom(
     val rackW = 26 * p
     val rackH = 18 * p
     val rLeft = rackX - rackW / 2f
-    drawCastShadow(scope, rackX, rackY + rackH, 28, p, isOutdoor = false)
+    drawCastShadow(scope, rackX, rackY + rackH, 28, p)
     drawContactShadow(scope, rackX, rackY + rackH, 28, p)
     // Wooden rack structure (warm teak / walnut)
     scope.drawRect(Color(0xFF45240F), Offset(rLeft, rackY), Size(rackW, rackH))

@@ -842,14 +842,14 @@ object LoftSprites {
         } else if (isSunset) {
             // Warm sunset sun
             val sunR = 13 * p
-            scope.drawCircle(Color(0x40FFB703), sunR + 10 * p, Offset(celestialX, celestialY + 12 * p))
-            scope.drawCircle(Color(0x70FB8500), sunR + 5 * p, Offset(celestialX, celestialY + 12 * p))
+            drawPixelGlow(scope, Color(0x40FFB703), sunR + 10 * p, Offset(celestialX, celestialY + 12 * p), p)
+            drawPixelGlow(scope, Color(0x70FB8500), sunR + 5 * p, Offset(celestialX, celestialY + 12 * p), p)
             scope.drawCircle(Color(0xFFFFB703), sunR, Offset(celestialX, celestialY + 12 * p))
         } else {
             // Daytime sun glow
             val sunR = 12 * p
-            scope.drawCircle(Color(0x35FFF3B0), sunR + 12 * p, Offset(celestialX, celestialY))
-            scope.drawCircle(Color(0x60FFEAA7), sunR + 6 * p, Offset(celestialX, celestialY))
+            drawPixelGlow(scope, Color(0x35FFF3B0), sunR + 12 * p, Offset(celestialX, celestialY), p)
+            drawPixelGlow(scope, Color(0x60FFEAA7), sunR + 6 * p, Offset(celestialX, celestialY), p)
             scope.drawCircle(Color(0xFFFFF9DB), sunR, Offset(celestialX, celestialY))
         }
 
@@ -1101,7 +1101,7 @@ object LoftSprites {
         scope.drawRect(Color(0xFFFFD166), Offset(lanternBeamX + 2 * p, lanternY + 3 * p), Size(4 * p, 6 * p))
 
         // Radiant glow
-        scope.drawCircle(Color(0x25FFAA00), 18 * p, Offset(lanternBeamX + 4 * p, lanternY + 6 * p))
+        drawPixelGlow(scope, Color(0x25FFAA00), 18 * p, Offset(lanternBeamX + 4 * p, lanternY + 6 * p), p)
 
         // Ivy vines wrapped around lantern and rafter
         val vineDark = Color(0xFF1B4332)
@@ -1556,10 +1556,10 @@ object LoftSprites {
         if (lampLit) {
             val flicker = sin(timeSeconds * 5f) * 0.05f + 0.95f
             val glowCenter = Offset(lampBaseX + 2 * p, shadeY + 3.5f * p)
-            scope.drawCircle(AmberLightLow.copy(alpha = 0.08f * flicker), 55 * p, glowCenter)
-            scope.drawCircle(AmberLightLow.copy(alpha = 0.15f * flicker), 36 * p, glowCenter)
-            scope.drawCircle(AmberLightMid.copy(alpha = 0.24f * flicker), 20 * p, glowCenter)
-            scope.drawCircle(AmberLightBright.copy(alpha = 0.38f * flicker), 10 * p, glowCenter)
+            drawPixelGlow(scope, AmberLightLow.copy(alpha = 0.08f * flicker), 55 * p, glowCenter, p)
+            drawPixelGlow(scope, AmberLightLow.copy(alpha = 0.15f * flicker), 36 * p, glowCenter, p)
+            drawPixelGlow(scope, AmberLightMid.copy(alpha = 0.24f * flicker), 20 * p, glowCenter, p)
+            drawPixelGlow(scope, AmberLightBright.copy(alpha = 0.38f * flicker), 10 * p, glowCenter, p)
         }
 
         // 4 Framed picture prints stacked on the vertical column between bookshelf & window
@@ -1601,7 +1601,7 @@ object LoftSprites {
 
         // Contact shadow grounding the daybed on the floor. The cuddled couple are part of this
         // sofa sprite, so the shadow belongs to the sofa, not to their feet.
-        drawCastShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p, isOutdoor = false)
+        drawCastShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p)
         drawContactShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p)
 
         // Sofa wooden turned legs
@@ -1715,7 +1715,7 @@ object LoftSprites {
         val tableY = floorY + 4 * p
 
         // Contact shadow grounding the coffee table on the floor
-        drawCastShadow(scope, cw * 0.55f, tableY + tableH, 36, p, isOutdoor = false)
+        drawCastShadow(scope, cw * 0.55f, tableY + tableH, 36, p)
         drawContactShadow(scope, cw * 0.55f, tableY + tableH, 36, p)
 
         // Table wooden legs
@@ -1753,7 +1753,7 @@ object LoftSprites {
         scope.drawRect(lanternLight, Offset(lanternX + p, lanternY + 1.2f * p), Size(3.5f * p, 5f * p))
         if (lampLit) {
             val flicker = sin(timeSeconds * 6f) * 0.08f + 0.92f
-            scope.drawCircle(AmberLightMid.copy(alpha = 0.22f * flicker), 14 * p, Offset(lanternX + 2.8f * p, lanternY + 3.5f * p))
+            drawPixelGlow(scope, AmberLightMid.copy(alpha = 0.22f * flicker), 14 * p, Offset(lanternX + 2.8f * p, lanternY + 3.5f * p), p)
         }
 
         // 4. Plate of freshly baked chocolate chip cookies
@@ -1785,7 +1785,7 @@ object LoftSprites {
         val stoolY = floorY + 8 * p
 
         // Contact shadow grounding the footstool on the floor
-        drawCastShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p, isOutdoor = false)
+        drawCastShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p)
         drawContactShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p)
 
         scope.drawRect(DarkWoodBeam, Offset(stoolX + p, stoolY + 3.5f * p), Size(2f * p, 5.5f * p))
@@ -1851,7 +1851,7 @@ object LoftSprites {
         scope.drawRect(Color.White, Offset(lantX - 0.9f * p, lantY + 4f * p), Size(1.8f * p, 2.5f * p))
         if (lampLit) {
             val flick = sin(timeSeconds * 5f) * 0.08f + 0.92f
-            scope.drawCircle(AmberLightMid.copy(alpha = 0.18f * flick), 12 * p, Offset(lantX, lantY + 6 * p))
+            drawPixelGlow(scope, AmberLightMid.copy(alpha = 0.18f * flick), 12 * p, Offset(lantX, lantY + 6 * p), p)
         }
 
         // --- STAIRCASE CORNER BLANKET STORAGE (Tucked on right side) ---
@@ -1885,7 +1885,7 @@ object LoftSprites {
         val standY = floorY - standH + 4 * p
 
         // Tiered wooden nightstand / audio rack
-        drawCastShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p, isOutdoor = false)
+        drawCastShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p)
         drawContactShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p)
         scope.drawRect(Color(0xFF45240F), Offset(standX, standY), Size(standW, standH))
         scope.drawRect(Color(0xFF6B3A19), Offset(standX - p, standY), Size(standW + 2 * p, 2 * p))
@@ -1937,7 +1937,7 @@ object LoftSprites {
         // Potted houseplant on the floor beside the audio rack
         val plantX = standX + standW + 1.5f * p
         val plantY = floorY
-        drawCastShadow(scope, plantX + 2.75f * p, plantY, 7, p, isOutdoor = false)
+        drawCastShadow(scope, plantX + 2.75f * p, plantY, 7, p)
         drawContactShadow(scope, plantX + 2.75f * p, plantY, 7, p)
         scope.drawRect(Color(0xFFB07D62), Offset(plantX, plantY - 5.5f * p), Size(5.5f * p, 5.5f * p))
         scope.drawRect(Color(0xFF2D6A4F), Offset(plantX - 1.5f * p, plantY - 10 * p), Size(8.5f * p, 5 * p))
@@ -2009,7 +2009,7 @@ object LoftSprites {
             }
             if (lampLit) {
                 val flicker = sin(timeSeconds * 4f + bxRel * 8f) * 0.06f + 0.94f
-                scope.drawCircle(roomTheme.light.copy(alpha = 0.20f * flicker), 8 * p, Offset(bx + 1.5f * p, by + 2 * p))
+                drawPixelGlow(scope, roomTheme.light.copy(alpha = 0.20f * flicker), 8 * p, Offset(bx + 1.5f * p, by + 2 * p), p)
             }
         }
 

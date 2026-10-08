@@ -67,8 +67,7 @@ fun drawFridayFox(scope: DrawScope, engine: SceneEngine, cw: Float, ch: Float, w
     }
 
     // A soft shadow on the grass
-    val sunProgress = celestialProgress(isNight = false, isSunset = engine.timeOfDayPhase.isSunset, isMorning = engine.timeOfDayPhase.isMorning)
-    drawCastShadow(scope, cx, bottom, 16, p, sunProgress = sunProgress, isOutdoor = true, isNight = engine.timeOfDayPhase.isNight, weather = engine.weather)
+    drawCastShadow(scope, cx, bottom, 16, p, heightPx = 14)
     drawContactShadow(scope, cx, bottom, 16, p)
 
     val trotting = fox.phase == FoxVisit.Phase.ARRIVING || fox.phase == FoxVisit.Phase.LEAVING

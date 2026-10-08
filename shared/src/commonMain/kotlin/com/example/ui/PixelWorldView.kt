@@ -1,5 +1,8 @@
 package com.example.ui
 
+import com.example.engine.drawPixelGlow
+import com.example.engine.CastLight
+import com.example.engine.SceneLight
 import com.example.engine.GameText
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -1334,6 +1337,16 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         // Dynamic Weather outdoor check
         val isOutdoor = engine.isCurrentSceneOutdoor
 
+        // The light every cast shadow in this frame falls away from (depth, part 2): the sun on its
+        // way across the sky, or by night the campfire
+        SceneLight.current = CastLight(
+            sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning),
+            outdoor = isOutdoor,
+            night = isNight,
+            weather = engine.weather,
+            lampX = if (isNight && engine.currentScene == com.example.scene.SceneType.CAMPFIRE) cw * com.example.scene.CampfireLayout.PIT_X else null
+        )
+
         // 1. Environmental Background (the after-rain rainbow goes in just after the sky)
         afterSkyBands = if (engine.rainbowTimer > 0f && engine.isCurrentSceneOutdoor) {
             { s -> drawRainbow(s, cw, ch, pixelScale, engine.rainbowTimer) }
@@ -1498,10 +1511,6 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 engine.boy.direction = if (com.example.scene.CozyGames.BOBBER_X < engine.boy.worldX) com.example.engine.Direction.LEFT else com.example.engine.Direction.RIGHT
             }
 
-            val sunProg = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
-            val deckMinY = if (engine.currentScene.environment == EnvironmentType.SEASIDE_PIER) ch * com.example.scene.PierLayout.DECK_Y else null
-            val campfireLightX = if (engine.currentScene == com.example.scene.SceneType.CAMPFIRE) cw * 0.50f else null
-
             fun drawBoy() {
                 PixelArtRenderer.drawCharacter(
                     drawScope = this,
@@ -1513,12 +1522,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     isSnow = isSnow,
                     isSpeaking = !engine.boySpeechText.isNullOrEmpty(),
                     snapToPixel = lowRes,
-                    sunProgress = sunProg,
-                    isOutdoor = isOutdoor,
-                    isNight = isNight,
-                    weather = engine.weather,
-                    localLightX = campfireLightX,
-                    minGroundY = deckMinY
+                    castLight = SceneLight.current
                 )
             }
 
@@ -1533,12 +1537,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     isSnow = isSnow,
                     isSpeaking = !engine.girlSpeechText.isNullOrEmpty(),
                     snapToPixel = lowRes,
-                    sunProgress = sunProg,
-                    isOutdoor = isOutdoor,
-                    isNight = isNight,
-                    weather = engine.weather,
-                    localLightX = campfireLightX,
-                    minGroundY = deckMinY
+                    castLight = SceneLight.current
                 )
             }
 
@@ -1549,8 +1548,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     PetSprites.drawPet(
                         this, engine.petKind, cw * engine.catWorldX, catY, pixelScale, engine.sceneTime,
                         engine.catState, engine.catFacingLeft, night = engine.timeOfDayPhase.isNight,
-                        sunProgress = sunProg, isOutdoor = isOutdoor, weather = engine.weather,
-                        localLightX = campfireLightX, minGroundY = deckMinY
+                        castLight = SceneLight.current
                     )
                 } else if (isCatInScene && !engine.mochiInBox) {
                     WorldSprites.drawCat(
@@ -1563,12 +1561,7 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                         isSnow = isSnow,
                         facingLeft = engine.catFacingLeft,
                         collarStyle = if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle,
-                        sunProgress = sunProg,
-                        isOutdoor = isOutdoor,
-                        isNight = isNight,
-                        weather = engine.weather,
-                        localLightX = campfireLightX,
-                        minGroundY = deckMinY
+                        castLight = SceneLight.current
                     )
                 }
             }
@@ -1741,8 +1734,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     val bGlow = sin(bT * kotlin.math.PI.toFloat()).coerceIn(0f, 1f)
                     if (bGlow > 0f) {
                         val col = bulbColors[i % bulbColors.size]
-                        drawCircle(col.copy(alpha = bGlow * 0.55f), (5f + bGlow * 7f) * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
-                        drawCircle(Color.White.copy(alpha = bGlow * 0.85f), 2.2f * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p))
+                        drawPixelGlow(this, col.copy(alpha = bGlow * 0.55f), (5f + bGlow * 7f) * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p), p)
+                        drawPixelGlow(this, Color.White.copy(alpha = bGlow * 0.85f), 2.2f * p, androidx.compose.ui.geometry.Offset(bx, by + 2 * p), p)
                     }
                 }
             }

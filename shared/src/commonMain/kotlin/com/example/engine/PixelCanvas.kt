@@ -612,13 +612,7 @@ object PixelArtRenderer {
         isSnow: Boolean = false,
         isSpeaking: Boolean = false,
         snapToPixel: Boolean = false,
-        sunProgress: Float? = null,
-        isOutdoor: Boolean = true,
-        isNight: Boolean = false,
-        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
-        localLightX: Float? = null,
-        minGroundY: Float? = null,
-        maxGroundY: Float? = null
+        castLight: CastLight? = null
     ) {
         // Feature 1: uniform +10% scale applied here once, covering all scenes and all poses
         val p = pixelSize * CHARACTER_SCALE_FACTOR
@@ -643,21 +637,24 @@ object PixelArtRenderer {
         val shadowWidth = (baseShadowWidth * (1f - (risenPx * 0.06f).coerceAtMost(0.35f)))
             .roundToInt().coerceAtLeast(4)
 
-        // Light cast shadow (stepped pixel rows cast away from sun or local light)
-        drawCastShadow(
-            scope = drawScope,
-            centerX = centerX + char.idleSwayOffset * 0.5f,
-            groundY = bottomY,
-            widthPx = shadowWidth,
-            p = p,
-            sunProgress = sunProgress,
-            isOutdoor = isOutdoor,
-            isNight = isNight,
-            weather = weather,
-            localLightX = localLightX,
-            minGroundY = minGroundY,
-            maxGroundY = maxGroundY
-        )
+        // In the world ([castLight] set) they also throw a shadow across the ground, away from the
+        // light; it is body-wide and as long as they are tall (sitting, lying down: shorter)
+        if (castLight != null) {
+            val standingHeight = when (char.pose) {
+                CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 8
+                CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 20
+                else -> h
+            }
+            drawCastShadow(
+                scope = drawScope,
+                centerX = centerX + char.idleSwayOffset * 0.5f,
+                groundY = bottomY,
+                widthPx = (shadowWidth * 0.7f).roundToInt().coerceAtLeast(3),
+                p = p,
+                heightPx = standingHeight,
+                light = castLight
+            )
+        }
 
         drawContactShadow(
             scope = drawScope,
