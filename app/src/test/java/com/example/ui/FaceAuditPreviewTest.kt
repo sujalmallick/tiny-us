@@ -102,6 +102,34 @@ class FaceAuditPreviewTest {
     }
 
     @Test
+    fun everyOutfitAtNativeSize() {
+        out ?: return
+        val charP = WorldViewport.characterPixelScale(1080f, lowRes = true)
+        val outfits = (0 until PixelArtRenderer.BoyOutfitPalettes.size).map { false to it } +
+            (0 until PixelArtRenderer.GirlDressPalettes.size).map { true to it }
+        val cellW = 200
+        val cellH = 300
+        val w = cellW * outfits.size
+        val h = cellH * 2
+        val bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888)
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(android.graphics.Canvas(bmp)), Size(w.toFloat(), h.toFloat())) {
+            drawRect(Color(0xFF8CC97A), Offset.Zero, Size(w.toFloat(), h.toFloat()))
+            for ((i, o) in outfits.withIndex()) {
+                val (girl, index) = o
+                for (row in 0..1) {
+                    val c = PixelCharacter(isGirl = girl, name = "", worldX = 0f, worldY = 0f).apply {
+                        outfitIndex = index
+                        pose = if (row == 1) CharacterPose.SIT else CharacterPose.IDLE
+                    }
+                    PixelArtRenderer.drawCharacter(this, c, cellW * i + cellW / 2f, cellH * (row + 1) - 16f, pixelSize = charP, snapToPixel = true)
+                }
+            }
+        }
+        save(bmp, "outfits_native.png")
+        assertTrue(bmp.width > 0)
+    }
+
+    @Test
     fun facesInTheWorld() {
         out ?: return
         runBlocking { GameText.load() }

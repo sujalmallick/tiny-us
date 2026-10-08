@@ -1088,6 +1088,9 @@ object PixelArtRenderer {
             px(10, 15, sweaterHighlight)
         }
 
+        val twinkle = (char.blinkTimer * 2.5f).toInt() % 2 == 0
+        if (!isSnow) OutfitDetails.torso(::px, isGirl, char.outfitIndex, girlDress, boyOutfit, sitting = false, twinkle = twinkle)
+
         // --- 7. Arms & Actions ---
         if (isHoldingUmbrella && !char.isGirl) {
             // Boy raised arm reaching up and outward towards umbrella handle centered between couple
@@ -1236,6 +1239,7 @@ object PixelArtRenderer {
                 } else {
                     fillRect(12, 13, 2, 4, sweaterColor)
                     fillRect(13, 17, 1, 1, handColor)
+                    if (!isSnow) OutfitDetails.cuffs(::px, isGirl, girlDress, boyOutfit, sitting = false)
                 }
             }
         }
@@ -1417,7 +1421,16 @@ object PixelArtRenderer {
                 }
             }
         }
+        if (!isSnow) {
+            val stillLegs = char.pose !in WALKING_OR_JUMPING
+            OutfitDetails.lower(::px, isGirl, char.outfitIndex, girlDress, boyOutfit, sitting = false, stillLegs = stillLegs, twinkle = twinkle)
+            if (stillLegs) OutfitDetails.shoes(::px, isGirl, if (isGirl) ShoesGirl else boyOutfit.shoes)
+        }
     }
+
+    private val WALKING_OR_JUMPING = setOf(
+        CharacterPose.WALK_1, CharacterPose.WALK_2, CharacterPose.WALK_3, CharacterPose.WALK_4, CharacterPose.JOY_JUMP
+    )
 
     private fun drawSittingCharacter(
         scope: DrawScope,
@@ -1632,6 +1645,12 @@ object PixelArtRenderer {
             }
         }
 
+        val twinkle = (char.blinkTimer * 2.5f).toInt() % 2 == 0
+        if (!isSnow) {
+            OutfitDetails.torso(::px, isGirl, char.outfitIndex, girlDress, boyOutfit, sitting = true, twinkle = twinkle)
+            OutfitDetails.cuffs(::px, isGirl, girlDress, boyOutfit, sitting = true)
+        }
+
         if (isHoldingUmbrella && !char.isGirl) {
             // Boy sitting with raised arm reaching up and outward towards umbrella handle
             fillRect(12, 12, 2, 3, sweaterColor)
@@ -1668,6 +1687,7 @@ object PixelArtRenderer {
             fillRect(5, 18, 8, 1, WinterBootsGirlFur)
         }
         fillRect(5, 19, 8, 2, shoesColor)
+        if (!isSnow) OutfitDetails.lower(::px, isGirl, char.outfitIndex, girlDress, boyOutfit, sitting = true, stillLegs = true, twinkle = twinkle)
     }
 
     /**
