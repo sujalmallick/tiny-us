@@ -657,7 +657,7 @@ object PixelArtRenderer {
         // Grounding contact shadow beneath the character's feet: a flat pixel ellipse on the same
         // grid as the sprite. It stays on the ground (bottomY) and shrinks a little when they jump.
         val baseShadowWidth = when (char.pose) {
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 19
+            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 17
             CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 17
             CharacterPose.HUG, CharacterPose.KISS -> 16
             else -> 14
@@ -698,13 +698,8 @@ object PixelArtRenderer {
                 drawSittingCharacter(drawScope, char, startX, startY + 5 * p, p, flip, isHoldingUmbrella, isSnow)
             }
             CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> {
-                drawSleepingCharacter(drawScope, char, startX, startY + 6 * p, p, flip, isSnow)
-            }
-            CharacterPose.HUG -> {
-                drawHuggingCharacter(drawScope, char, startX, startY, p, flip, isSnow)
-            }
-            CharacterPose.KISS -> {
-                drawKissingCharacter(drawScope, char, startX, startY, p, flip, isSnow)
+                // Asleep sitting up, slumped a row lower: the same head and clothes as ever
+                drawSittingCharacter(drawScope, char, startX, startY + 6 * p, p, flip, false, isSnow)
             }
             else -> {
                 drawStandingCharacter(drawScope, char, startX, startY, p, flip, isHoldingUmbrella, isSnow)
@@ -915,6 +910,7 @@ object PixelArtRenderer {
         val isClosedEyes = usePose(char)?.closesEyes == true ||
                 char.pose == CharacterPose.IDLE_BLINK ||
                 char.pose == CharacterPose.HUG ||
+                char.pose == CharacterPose.KISS ||
                 char.pose == CharacterPose.HEAD_PAT_RECEIVE ||
                 char.emotion == CharacterEmotion.LOVING ||
                 char.pose == CharacterPose.JOY_JUMP
@@ -976,6 +972,10 @@ object PixelArtRenderer {
         } else if (char.pose == CharacterPose.EAT_SNEAK) {
             px(9, 10, EyeDark)
             px(10, 11, CookieBrown)
+        } else if (char.pose == CharacterPose.KISS) {
+            // Lips puckered toward them
+            px(11, 10, Color(0xFFFF3366))
+            px(12, 10, Color(0xFFFF758F))
         } else {
             px(9, 10, blushColor) // tiny smile
             px(8, 10, skinColor)
@@ -1189,6 +1189,20 @@ object PixelArtRenderer {
                 px(18, 12, Color(0xFFD90429)) // spicy red chili chutney
                 fillRect(4, 13, 2, 4, sweaterColor)
             }
+            CharacterPose.HUG -> {
+                // Both arms round the one they're holding: the front arm across, the back one below it
+                fillRect(12, 13, 4, 2, sweaterColor)
+                fillRect(16, 13, 2, 2, handColor)
+                fillRect(10, 15, 5, 2, sweaterColor)
+                fillRect(15, 15, 2, 1, handColor)
+            }
+            CharacterPose.KISS -> {
+                // A hand on their shoulder, the other arm resting
+                fillRect(12, 12, 4, 2, sweaterColor)
+                fillRect(16, 11, 2, 2, handColor)
+                fillRect(4, 13, 2, 4, sweaterColor)
+                fillRect(4, 17, 1, 1, handColor)
+            }
             CharacterPose.JOY_JUMP -> {
                 // Both arms raised up in celebration
                 fillRect(3, 11, 2, 3, sweaterColor)
@@ -1226,8 +1240,8 @@ object PixelArtRenderer {
             }
         }
 
-        // --- 7b. Held item ---
-        if (char.heldItem != HeldItem.NONE) {
+        // --- 7b. Held item (tucked away during a hug or a kiss) ---
+        if (char.heldItem != HeldItem.NONE && char.pose != CharacterPose.HUG && char.pose != CharacterPose.KISS) {
             val umbrellaArm = isHoldingUmbrella && !char.isGirl
             when {
                 char.pose == CharacterPose.COOK && char.heldItem == HeldItem.PAN -> Unit // drawn with the arms
@@ -1535,7 +1549,8 @@ object PixelArtRenderer {
             fillRect(6, 10, 2, 1, blushColor)
             fillRect(11, 10, 2, 1, blushColor)
         } else {
-            if (char.isBlinking) {
+            val dozing = char.pose == CharacterPose.SLEEP || char.pose == CharacterPose.SLEEP_YAWN
+            if (char.isBlinking || dozing) {
                 fillRect(7, 10, 2, 1, EyeDark)
                 fillRect(10, 10, 2, 1, EyeDark)
             } else {
@@ -1547,7 +1562,13 @@ object PixelArtRenderer {
             px(6, 10, blushColor)
             px(12, 10, blushColor)
         }
-        px(9, 11, blushColor)
+        if (char.pose == CharacterPose.SLEEP_YAWN) {
+            // A sleepy yawn
+            px(9, 11, EyeDark)
+            px(9, 12, Color(0xFFC9184A))
+        } else {
+            px(9, 11, blushColor)
+        }
         if (showsExpression(char) && char.pose != CharacterPose.SIT_SNUGGLE) {
             drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, char.isBlinking, char.expressionAge)
         }
@@ -1631,7 +1652,8 @@ object PixelArtRenderer {
         }
 
         // Held item rests on the hands in the lap, raised a little while in use
-        if (char.heldItem != HeldItem.NONE && char.heldItem != HeldItem.ROD && usePose(char) == null) {
+        val asleep = char.pose == CharacterPose.SLEEP || char.pose == CharacterPose.SLEEP_YAWN
+        if (!asleep && char.heldItem != HeldItem.NONE && char.heldItem != HeldItem.ROD && usePose(char) == null) {
             val lapBottom = when {
                 char.heldItem.heldInBothHands -> 19
                 char.heldItemRaised -> 14
@@ -1646,379 +1668,6 @@ object PixelArtRenderer {
             fillRect(5, 18, 8, 1, WinterBootsGirlFur)
         }
         fillRect(5, 19, 8, 2, shoesColor)
-    }
-
-    private fun drawSleepingCharacter(
-        scope: DrawScope,
-        char: PixelCharacter,
-        startX: Float,
-        startY: Float,
-        p: Float,
-        flip: Boolean,
-        isSnow: Boolean = false
-    ) {
-        val look = char.look
-        // Clothing silhouette follows the chosen look, not the character slot.
-        val isGirl = look.wearsDress
-        val longHair = look.longHair
-        val girlDress = getGirlDressPalette(char.outfitIndex)
-        val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = look.hair
-        val sweaterColor = if (isSnow) {
-            if (isGirl) WinterCoatGirl else WinterCoatBoy
-        } else {
-            if (isGirl) girlDress.sweater else boyOutfit.sweater
-        }
-        val pantsColor = if (isSnow) {
-            if (isGirl) WinterTightsGirl else WinterPantsBoy
-        } else {
-            if (isGirl) girlDress.skirt else boyOutfit.pants
-        }
-        val shoesColor = if (isSnow) {
-            if (isGirl) WinterBootsGirl else WinterBootsBoy
-        } else {
-            if (isGirl) ShoesGirl else boyOutfit.shoes
-        }
-        val skinColor = look.skin
-        val blushColor = BlushCoral
-
-        fun px(gridX: Int, gridY: Int, color: Color) {
-            val actualX = if (flip) (17 - gridX) else gridX
-            val breathY = if (gridY <= 15) -char.breathingOffset * 0.75f else 0f
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualX * p, startY + gridY * p + breathY),
-                size = Size(p, p)
-            )
-        }
-
-        fun drawPixelRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color, breathY: Float) {
-            val actualLeftX = if (flip) (17 - (gx + gw - 1)) else gx
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualLeftX * p, startY + gy * p + breathY),
-                size = Size(gw * p, gh * p)
-            )
-        }
-
-        fun fillRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color) {
-            if (gw <= 0 || gh <= 0) return
-            val breath = -char.breathingOffset * 0.75f
-            if (gy + gh <= 16) {
-                drawPixelRect(gx, gy, gw, gh, color, breath)
-            } else if (gy > 15) {
-                drawPixelRect(gx, gy, gw, gh, color, 0f)
-            } else {
-                val topH = 16 - gy
-                val bottomH = gh - topH
-                drawPixelRect(gx, gy, gw, topH, color, breath)
-                drawPixelRect(gx, 16, gw, bottomH, color, 0f)
-            }
-        }
-
-        // Tilted cozy sleeping head
-        fillRect(7, 4, 7, 4, hairColor)
-        if (longHair) {
-            fillRect(5, 6, 3, 8, hairColor)
-            fillRect(12, 5, 2, 2, RibbonGirl)
-        }
-        fillRect(8, 8, 6, 4, skinColor)
-
-        // Sleeping closed eye lines: - -
-        fillRect(9, 9, 2, 1, EyeDark)
-        fillRect(12, 9, 2, 1, EyeDark)
-        px(8, 10, blushColor)
-        px(13, 10, blushColor)
-
-        // Curled body
-        fillRect(6, 12, 8, 5, sweaterColor)
-        fillRect(5, 16, 9, 3, pantsColor)
-        fillRect(5, 18, 6, 2, shoesColor)
-    }
-
-    private fun drawHuggingCharacter(
-        scope: DrawScope,
-        char: PixelCharacter,
-        startX: Float,
-        startY: Float,
-        p: Float,
-        flip: Boolean,
-        isSnow: Boolean = false
-    ) {
-        val look = char.look
-        // Clothing silhouette follows the chosen look, not the character slot.
-        val isGirl = look.wearsDress
-        val longHair = look.longHair
-        val girlDress = getGirlDressPalette(char.outfitIndex)
-        val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = look.hair
-        val hairHigh = look.hairHighlight
-        val sweaterColor = if (isSnow) {
-            if (isGirl) WinterCoatGirl else WinterCoatBoy
-        } else {
-            if (isGirl) girlDress.sweater else boyOutfit.sweater
-        }
-        val pantsColor = if (isSnow) {
-            if (isGirl) WinterTightsGirl else WinterPantsBoy
-        } else {
-            if (isGirl) girlDress.skirt else boyOutfit.pants
-        }
-        val shoesColor = if (isSnow) {
-            if (isGirl) WinterBootsGirl else WinterBootsBoy
-        } else {
-            if (isGirl) ShoesGirl else boyOutfit.shoes
-        }
-        val skinColor = look.skin
-        val handColor = if (isSnow) {
-            if (isGirl) WinterMittensGirl else WinterGlovesBoy
-        } else {
-            skinColor
-        }
-
-        fun px(gridX: Int, gridY: Int, color: Color) {
-            val actualX = if (flip) (17 - gridX) else gridX
-            val breathY = if (gridY <= 17) -char.breathingOffset * 0.8f else 0f
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualX * p, startY + gridY * p + breathY),
-                size = Size(p, p)
-            )
-        }
-
-        fun drawPixelRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color, breathY: Float) {
-            val actualLeftX = if (flip) (17 - (gx + gw - 1)) else gx
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualLeftX * p, startY + gy * p + breathY),
-                size = Size(gw * p, gh * p)
-            )
-        }
-
-        fun fillRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color) {
-            if (gw <= 0 || gh <= 0) return
-            val breath = -char.breathingOffset * 0.8f
-            if (gy + gh <= 18) {
-                drawPixelRect(gx, gy, gw, gh, color, breath)
-            } else if (gy > 17) {
-                drawPixelRect(gx, gy, gw, gh, color, 0f)
-            } else {
-                val topH = 18 - gy
-                val bottomH = gh - topH
-                drawPixelRect(gx, gy, gw, topH, color, breath)
-                drawPixelRect(gx, 18, gw, bottomH, color, 0f)
-            }
-        }
-
-        // Embracing pose leaning forward
-        if (isSnow && !longHair) {
-            fillRect(8, 0, 2, 2, WinterPomPomBoy)
-            fillRect(6, 2, 7, 3, WinterBeanieBoy)
-            fillRect(5, 4, 8, 2, WinterBeanieBrimBoy)
-        } else {
-            fillRect(7, 2, 7, 3, hairColor)
-            fillRect(6, 4, 8, 3, hairColor)
-            if (longHair) {
-                fillRect(5, 5, 2, 10, hairColor)
-                fillRect(12, 4, 2, 2, RibbonGirl)
-                px(13, 4, RibbonCenter)
-            } else {
-                fillRect(7, 1, 5, 1, hairHigh)
-            }
-        }
-
-        if (isSnow && longHair) {
-            fillRect(6, 2, 6, 1, WinterEarmuffsGirl)
-            fillRect(3, 6, 2, 4, WinterEarmuffsFluff)
-            fillRect(13, 6, 2, 4, WinterEarmuffsFluff)
-        }
-
-        // Peaceful closed blissful eyes
-        fillRect(7, 7, 7, 4, skinColor)
-        px(8, 8, EyeDark)
-        px(9, 7, EyeDark)
-        px(11, 7, EyeDark)
-        px(12, 8, EyeDark)
-        // Deep rosy blush
-        fillRect(7, 9, 2, 1, BlushRose)
-        fillRect(12, 9, 2, 1, BlushRose)
-
-        // Arms wrapped tightly around partner
-        fillRect(6, 12, 8, 6, sweaterColor)
-        if (isSnow) {
-            if (isGirl) {
-                fillRect(6, 11, 7, 2, WinterScarfGirl)
-            } else {
-                fillRect(6, 11, 7, 2, WinterScarfBoy)
-            }
-        } else {
-            val isHoodieOutfit = (!isGirl && boyOutfit.isHoodie) || (isGirl && (girlDress.isHoodie || char.outfitIndex >= 7))
-            if (isHoodieOutfit) {
-                val hoodAccent = if (isGirl) girlDress.trim else boyOutfit.collar
-                val cordColor = if (isGirl) Color.White.copy(alpha = 0.95f) else (if (char.outfitIndex == 1) boyOutfit.collar else Color.White.copy(alpha = 0.95f))
-                px(5, 11, hoodAccent)
-                px(6, 11, hoodAccent)
-                px(11, 11, hoodAccent)
-                px(8, 13, cordColor)
-                px(8, 14, cordColor)
-            }
-        }
-        fillRect(12, 13, 4, 3, sweaterColor)
-        fillRect(15, 14, 2, 2, handColor) // hands embracing back
-
-        fillRect(6, 18, 7, 3, pantsColor)
-        fillRect(5, 21, 3, 4, pantsColor)
-        fillRect(9, 21, 3, 4, pantsColor)
-        fillRect(4, 24, 4, 2, shoesColor)
-        fillRect(9, 24, 4, 2, shoesColor)
-    }
-
-    private fun drawKissingCharacter(
-        scope: DrawScope,
-        char: PixelCharacter,
-        startX: Float,
-        startY: Float,
-        p: Float,
-        flip: Boolean,
-        isSnow: Boolean = false
-    ) {
-        val look = char.look
-        // Clothing silhouette follows the chosen look, not the character slot.
-        val isGirl = look.wearsDress
-        val longHair = look.longHair
-        val girlDress = getGirlDressPalette(char.outfitIndex)
-        val boyOutfit = getBoyOutfitPalette(char.outfitIndex)
-        val hairColor = look.hair
-        val hairHigh = look.hairHighlight
-        val hairShadow = look.hairShadow
-        val sweaterColor = if (isSnow) {
-            if (isGirl) WinterCoatGirl else WinterCoatBoy
-        } else {
-            if (isGirl) girlDress.sweater else boyOutfit.sweater
-        }
-        val pantsColor = if (isSnow) {
-            if (isGirl) WinterTightsGirl else WinterPantsBoy
-        } else {
-            if (isGirl) girlDress.skirt else boyOutfit.pants
-        }
-        val shoesColor = if (isSnow) {
-            if (isGirl) WinterBootsGirl else WinterBootsBoy
-        } else {
-            if (isGirl) ShoesGirl else boyOutfit.shoes
-        }
-        val skinColor = look.skin
-        val handColor = if (isSnow) {
-            if (isGirl) WinterMittensGirl else WinterGlovesBoy
-        } else {
-            skinColor
-        }
-        val lipKissColor = Color(0xFFFF3366)
-
-        fun px(gridX: Int, gridY: Int, color: Color) {
-            val actualX = if (flip) (17 - gridX) else gridX
-            val breathY = if (gridY <= 17) -char.breathingOffset * 0.8f else 0f
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualX * p, startY + gridY * p + breathY),
-                size = Size(p, p)
-            )
-        }
-
-        fun drawPixelRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color, breathY: Float) {
-            val actualLeftX = if (flip) (17 - (gx + gw - 1)) else gx
-            scope.drawRect(
-                color = color,
-                topLeft = Offset(startX + actualLeftX * p, startY + gy * p + breathY),
-                size = Size(gw * p, gh * p)
-            )
-        }
-
-        fun fillRect(gx: Int, gy: Int, gw: Int, gh: Int, color: Color) {
-            if (gw <= 0 || gh <= 0) return
-            val breath = -char.breathingOffset * 0.8f
-            if (gy + gh <= 18) {
-                drawPixelRect(gx, gy, gw, gh, color, breath)
-            } else if (gy > 17) {
-                drawPixelRect(gx, gy, gw, gh, color, 0f)
-            } else {
-                val topH = 18 - gy
-                val bottomH = gh - topH
-                drawPixelRect(gx, gy, gw, topH, color, breath)
-                drawPixelRect(gx, 18, gw, bottomH, color, 0f)
-            }
-        }
-
-        // Leaning head forward for tender kiss
-        if (isSnow && !longHair) {
-            fillRect(9, 0, 2, 2, WinterPomPomBoy)
-            fillRect(7, 2, 8, 3, WinterBeanieBoy)
-            fillRect(6, 4, 9, 2, WinterBeanieBrimBoy)
-        } else {
-            fillRect(7, 2, 8, 3, hairColor)
-            fillRect(6, 4, 9, 3, hairColor)
-            if (longHair) {
-                fillRect(5, 5, 2, 11, hairColor)
-                fillRect(4, 8, 2, 6, hairShadow)
-                fillRect(13, 4, 2, 2, RibbonGirl)
-                px(14, 4, RibbonCenter)
-            } else {
-                fillRect(8, 1, 5, 1, hairHigh)
-                fillRect(9, 2, 4, 1, hairHigh)
-            }
-        }
-
-        if (isSnow && longHair) {
-            fillRect(7, 2, 6, 1, WinterEarmuffsGirl)
-            fillRect(4, 6, 2, 4, WinterEarmuffsFluff)
-            fillRect(14, 6, 2, 4, WinterEarmuffsFluff)
-        }
-
-        // Face skin leaning forward
-        fillRect(7, 7, 8, 4, skinColor)
-        // Peaceful blissful closed eye lines: sweet curved ^ ^
-        px(8, 8, EyeDark)
-        px(9, 7, EyeDark)
-        px(11, 7, EyeDark)
-        px(12, 8, EyeDark)
-
-        // Rosy blush glowing on cheek
-        fillRect(8, 9, 2, 1, BlushRose)
-        fillRect(12, 9, 2, 1, BlushRose)
-
-        // Sweet puckered kiss lips extending forward right into partner!
-        fillRect(14, 10, 2, 1, lipKissColor)
-        px(15, 9, Color(0xFFFF758F))
-
-        // Torso leaning forward
-        fillRect(6, 12, 8, 6, sweaterColor)
-        if (isSnow) {
-            if (isGirl) {
-                fillRect(6, 11, 7, 2, WinterScarfGirl)
-            } else {
-                fillRect(6, 11, 7, 2, WinterScarfBoy)
-            }
-        } else {
-            val isHoodieOutfit = (!isGirl && boyOutfit.isHoodie) || (isGirl && (girlDress.isHoodie || char.outfitIndex >= 7))
-            if (isHoodieOutfit) {
-                val hoodAccent = if (isGirl) girlDress.trim else boyOutfit.collar
-                val cordColor = if (isGirl) Color.White.copy(alpha = 0.95f) else (if (char.outfitIndex == 1) boyOutfit.collar else Color.White.copy(alpha = 0.95f))
-                px(5, 11, hoodAccent)
-                px(6, 11, hoodAccent)
-                px(11, 11, hoodAccent)
-                px(8, 13, cordColor)
-                px(8, 14, cordColor)
-            }
-        }
-        // Arm reaching forward and tenderly holding partner's cheek / shoulder
-        fillRect(12, 13, 5, 2, sweaterColor)
-        fillRect(16, 12, 2, 2, handColor) // hand cupping cheek/shoulder
-        fillRect(5, 13, 2, 4, sweaterColor)
-
-        // Lower body
-        fillRect(6, 18, 7, 3, pantsColor)
-        fillRect(5, 21, 3, 4, pantsColor)
-        fillRect(9, 21, 3, 4, pantsColor)
-        fillRect(4, 24, 4, 2, shoesColor)
-        fillRect(9, 24, 4, 2, shoesColor)
     }
 
     /**
@@ -2247,7 +1896,7 @@ object PixelArtRenderer {
         }
 
         when (char.pose) {
-            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> {
+            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE, CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> {
                 // Sitting head: eyes at (7..8, 9) and (10..11, 9)
                 // Left square frame around left eye
                 drawRect(6, 8, 4, 1, GlassesFrame)
@@ -2267,41 +1916,6 @@ object PixelArtRenderer {
                 // Soft subtle glints inside lens
                 px(7, 9, GlassesGlint)
                 px(11, 9, GlassesGlint)
-            }
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> {
-                // Tilted sleeping head: eyes at (9..10, 9) and (12..13, 9)
-                // Left square frame
-                drawRect(8, 8, 4, 1, GlassesFrame)
-                drawRect(8, 10, 4, 1, GlassesFrame)
-                drawRect(8, 8, 1, 3, GlassesFrame)
-                drawRect(11, 8, 1, 3, GlassesFrame)
-                // Right square frame
-                drawRect(11, 8, 4, 1, GlassesFrame)
-                drawRect(11, 10, 4, 1, GlassesFrame)
-                drawRect(14, 8, 1, 3, GlassesFrame)
-                // Nose bridge
-                px(11, 9, GlassesFrameLight)
-                // Temple arm
-                px(7, 9, GlassesFrame)
-            }
-            CharacterPose.HUG, CharacterPose.KISS -> {
-                // Leaning forward: eyes at (8..9, 7..8) and (11..12, 7..8)
-                // Left square frame
-                drawRect(7, 7, 4, 1, GlassesFrame)
-                drawRect(7, 9, 4, 1, GlassesFrame)
-                drawRect(7, 7, 1, 3, GlassesFrame)
-                drawRect(10, 7, 1, 3, GlassesFrame)
-                // Right square frame
-                drawRect(10, 7, 4, 1, GlassesFrame)
-                drawRect(10, 9, 4, 1, GlassesFrame)
-                drawRect(13, 7, 1, 3, GlassesFrame)
-                // Nose bridge
-                px(10, 7, GlassesFrameLight)
-                // Temple arm
-                px(6, 8, GlassesFrame)
-                // Soft glint
-                px(8, 8, GlassesGlint)
-                px(11, 8, GlassesGlint)
             }
             else -> {
                 // Standing / default poses: eyes at (7..8, 8) and (10..11, 8)
@@ -2339,9 +1953,7 @@ object PixelArtRenderer {
         // each other): just past the eyes at the edge of the face, so it never covers an eye. Each
         // pose has its own head, so its own spot (top-left of the 2x2 bud, unflipped grid).
         val (budX, budY) = when (char.pose) {
-            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> 12 to 9
-            CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 14 to 9
-            CharacterPose.HUG, CharacterPose.KISS -> 13 to 8
+            CharacterPose.SIT, CharacterPose.SIT_SNUGGLE, CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> 12 to 9
             else -> 12 to 8
         }
         // The head breathes with the body, so the bud does too.
