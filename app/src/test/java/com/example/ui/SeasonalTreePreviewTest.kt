@@ -40,7 +40,8 @@ class SeasonalTreePreviewTest {
             Triple(WeatherType.SNOW, "DAY", "winter"),
             Triple(WeatherType.RAIN, "DAY", "rain"),
             Triple(WeatherType.SUNNY, "SUNSET", "summer_sunset"),
-            Triple(WeatherType.AUTUMN, "NIGHT", "autumn_night")
+            Triple(WeatherType.AUTUMN, "NIGHT", "autumn_night"),
+            Triple(WeatherType.SUNNY, "DAY", "summer_heart")
         )
         for ((weather, mode, name) in shots) {
             val camera = WorldCamera.forScreen(cw, ch, SceneType.UNDER_TREE, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
@@ -53,6 +54,11 @@ class SeasonalTreePreviewTest {
             }
             var t = 0f
             while (t < 9f) { engine.update(1f / 20f, camera.worldW, camera.worldH); t += 1f / 20f }
+            if (name.endsWith("heart")) {
+                // The two of them stepped aside, so the carved heart on the trunk shows
+                engine.boy.worldX = 0.16f
+                engine.girl.worldX = 0.86f
+            }
             val bmp = Bitmap.createBitmap(cw.toInt(), ch.toInt(), Bitmap.Config.ARGB_8888)
             CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(android.graphics.Canvas(bmp)), Size(cw, ch)) {
                 drawWorld(engine, LowResWorldBuffer(), camera)

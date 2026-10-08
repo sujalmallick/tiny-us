@@ -33,8 +33,8 @@ import kotlin.random.Random
  *
  * It's built once for each season and light, one image pixel per game pixel, from a few placed
  * shapes: a gently curved trunk with a root flare, five curved branches (the low left one carries
- * the swing), and a score of leafy puffs closed into one canopy, shaded as a whole and textured with
- * leaf clusters lit from the upper right. Each frame draws that image in a few bands, the upper
+ * the swing), and a score of leafy puffs closed into one canopy, each shaded on its own (lit from the
+ * upper right, a dark rim underneath), with a few darker pockets where the branches show. Each frame draws that image in a few bands, the upper
  * ones nudged by the wind.
  */
 object SeasonalTree {
@@ -128,8 +128,16 @@ object SeasonalTree {
         intArrayOf(0, 65, 12), intArrayOf(-13, 67, 10), intArrayOf(14, 68, 10), intArrayOf(26, 71, 9), intArrayOf(-24, 71, 8)
     )
 
-    /** In autumn these puffs turn red among the orange. */
-    private val RED_PUFFS = intArrayOf(2, 7, 10, 14)
+    /** Darker pockets in the crown, where the branches show: (dx, height, radius). */
+    private val HOLES = listOf(
+        intArrayOf(-17, 72, 3), intArrayOf(16, 75, 3), intArrayOf(-4, 92, 2),
+        intArrayOf(-27, 88, 2), intArrayOf(26, 91, 2), intArrayOf(6, 104, 2)
+    )
+    /** Autumn's thinning leaves have a few more. */
+    private val AUTUMN_HOLES = listOf(
+        intArrayOf(-36, 84, 3), intArrayOf(36, 86, 3), intArrayOf(-8, 80, 3), intArrayOf(10, 100, 3),
+        intArrayOf(-24, 98, 2), intArrayOf(30, 76, 3), intArrayOf(-44, 74, 3)
+    )
 
     /** In autumn twigs show through the leaves only up to this height. */
     private const val AUTUMN_REACH = 105
@@ -144,12 +152,11 @@ object SeasonalTree {
     // ---------------------------------------------------------------- palettes
 
     private val CANOPY = mapOf(
-        Season.SUMMER to intArrayOf(0x1D4A2A, 0x2B6A34, 0x44913A, 0x73BB44, 0xB4E268),
-        Season.RAIN to intArrayOf(0x173F29, 0x235B32, 0x387B3B, 0x5B9D47, 0x8BC26B),
-        Season.SPRING to intArrayOf(0xA44269, 0xCC628B, 0xEA8DAE, 0xF8B8CE, 0xFFE2EB),
-        Season.AUTUMN to intArrayOf(0x6A2410, 0xA63E16, 0xDA6D1F, 0xF3A33A, 0xFFD47C)
+        Season.SUMMER to intArrayOf(0x1E4A2B, 0x2C6B35, 0x45923B, 0x74BC45, 0xB6E36A),
+        Season.RAIN to intArrayOf(0x18402A, 0x245C33, 0x3A7D3C, 0x5E9F48, 0x8FC36D),
+        Season.SPRING to intArrayOf(0xA8456E, 0xD0668F, 0xEC8FB0, 0xF8B9CF, 0xFFE3EC),
+        Season.AUTUMN to intArrayOf(0x6E2410, 0xA83F17, 0xDA6D1F, 0xF2A23A, 0xFFD27A)
     )
-    private val AUTUMN_RED = intArrayOf(0x581A0E, 0x8A2614, 0xBE3F1E, 0xDE6A2C, 0xF59E4A)
     /** Bark: shade, wood, sunlit side, groove. */
     private val WOOD = intArrayOf(0x45250F, 0x6B4226, 0x8E5C36, 0x37190A)
 
@@ -275,17 +282,31 @@ object SeasonalTree {
     }
 
     /**
-     * The canopy's tones (-1 none, 0 deepest shade to 4 brightest), and which puff each cell
-     * belongs to. The puffs are closed into one mass first, so no gaps show between them.
+     * The canopy's tones (-1 none, 0 deepest shade to 4 brightest). Each puff is shaded on its
+     * own, back to front: lit from the upper right, a dark rim along its underside and a little
+     * 2 x 2 leaf texture. Then the crown is closed, so no sky shows between the puffs.
      */
-    private class Canopy(val tone: IntArray, val owner: IntArray)
+    private fun puffTone(x: Int, u: Int, cx: Int, cu: Int, r: Int, bump: Float): Int {
+        val ddx = (x - cx).toFloat()
+        val ddu = (u - cu).toFloat()
+        val nx = ddx / r
+        val nu = ddu / r
+        var v = nu * 0.75f + nx * 0.40f
+        v += (hash(x.floorDiv(2), (U_MAX - u).floorDiv(2), 1) - 0.5f) * 0.55f + (hash(x, u, 2) - 0.5f) * 0.2f
+        if (hypot(ddx, ddu) > r + bump - 1.2f && nu < 0.3f) v -= 0.5f
+        return when {
+            v > 0.62f -> 4
+            v > 0.20f -> 3
+            v > -0.22f -> 2
+            v > -0.62f -> 1
+            else -> 0
+        }
+    }
 
-    private fun buildCanopy(): Canopy {
+    private fun buildCanopy(): IntArray {
+        val tone = IntArray(W * H) { -1 }
         val owner = IntArray(W * H) { -1 }
-        val dist = FloatArray(W * H)
-        val reach = FloatArray(W * H)
-        val nxs = FloatArray(W * H)
-        val nus = FloatArray(W * H)
+        val bumps = FloatArray(W * H)
         for ((i, puff) in PUFFS.withIndex()) {
             val (dx, cu, r) = Triple(puff[0], puff[1], puff[2])
             val cx = BX + dx
@@ -293,16 +314,17 @@ object SeasonalTree {
                 if (!inGrid(x, u)) continue
                 val ddx = (x - cx).toFloat()
                 val ddu = (u - cu).toFloat()
-                val d = hypot(ddx, ddu)
-                val bucket = ((atan2(ddu, ddx) + PI.toFloat()) / (2f * PI.toFloat()) * 24f).toInt() % 24
-                val bump = (hash(bucket, i, 3) - 0.5f) * 2.4f
-                if (d > r + bump) continue
+                val bucket = ((atan2(ddu, ddx) + PI.toFloat()) / (2f * PI.toFloat()) * 22f).toInt() % 22
+                val bump = (hash(bucket, dx * 7 + cu, 3) - 0.5f) * 3f
+                if (hypot(ddx, ddu) > r + bump) continue
                 val k = idx(x, u)
-                owner[k] = i; dist[k] = d; reach[k] = r + bump; nxs[k] = ddx / r; nus[k] = ddu / r
+                tone[k] = puffTone(x, u, cx, cu, r, bump)
+                owner[k] = i
+                bumps[k] = bump
             }
         }
-        // Close the canopy: every notch and gap between puffs smaller than the disk is filled,
-        // so the foliage is one continuous mass whose outer edge stays irregular.
+        // Close the crown: every notch and gap between puffs smaller than the disk is filled and
+        // shaded as part of the nearest puff, so the canopy is one mass with an irregular edge.
         val disk = ArrayList<IntArray>()
         for (dx in -3..3) for (du in -3..3) if (dx * dx + du * du <= 10) disk += intArrayOf(dx, du)
         val grown = BooleanArray(W * H)
@@ -314,75 +336,36 @@ object SeasonalTree {
             val k = idx(x, u)
             if (owner[k] >= 0 || !grown[k]) continue
             if (disk.any { !inGrid(x + it[0], u + it[1]) || !grown[idx(x + it[0], u + it[1])] }) continue
-            // A filled gap joins the nearest puff and is shaded as part of it
             var best = -1
             var bestD = 99
-            var bestReach = 0f
+            var bestBump = 0f
             for (o in disk) {
                 if (!inGrid(x + o[0], u + o[1])) continue
                 val n = idx(x + o[0], u + o[1])
                 val d2 = o[0] * o[0] + o[1] * o[1]
-                if (owner[n] >= 0 && d2 < bestD) { best = owner[n]; bestD = d2; bestReach = reach[n] }
+                if (owner[n] >= 0 && d2 < bestD) { best = owner[n]; bestD = d2; bestBump = bumps[n] }
             }
             if (best < 0) continue
             val puff = PUFFS[best]
-            val px = (BX + puff[0]).toFloat()
-            val pu = puff[1].toFloat()
-            owner[k] = best; dist[k] = hypot(x - px, u - pu); reach[k] = bestReach
-            nxs[k] = (x - px) / puff[2]; nus[k] = (u - pu) / puff[2]
+            tone[k] = puffTone(x, u, BX + puff[0], puff[1], puff[2], bestBump)
+            owner[k] = best
+            bumps[k] = bestBump
         }
-        fun has(x: Int, u: Int) = inGrid(x, u) && owner[idx(x, u)] >= 0
-        val tone = IntArray(W * H) { -1 }
-        for (u in U_MIN..U_MAX) for (x in 0 until W) {
-            val k = idx(x, u)
-            val i = owner[k]
-            if (i < 0) continue
-            val nx = nxs[k]
-            val nu = nus[k]
-            var v = (u - 98) / 36f * 0.30f + (x - BX) / 56f * 0.12f + nu * 0.62f + nx * 0.30f
-            v += (hash(x, u, 2) - 0.5f) * 0.12f
-            if (!has(x, u - 1) || !has(x, u - 2)) v -= 0.65f          // the underside, in shade
-            if (!has(x, u + 1) && nx > -0.4f) v += 0.35f              // a sunlit top edge
-            if (dist[k] > reach[k] - 1.6f && nu < 0f && has(x, u - 1) && owner[idx(x, u - 1)] != i) v -= 0.25f
-            tone[k] = when {
-                v > 0.55f -> 4
-                v > 0.15f -> 3
-                v > -0.25f -> 2
-                v > -0.65f -> 1
-                else -> 0
+        return tone
+    }
+
+    /** The darker pockets in the crown where the branches show; autumn's thinner leaves have more. */
+    private fun pockets(season: Season): BooleanArray {
+        val out = BooleanArray(W * H)
+        val list = if (season == Season.AUTUMN) HOLES + AUTUMN_HOLES else HOLES
+        for (hole in list) {
+            val (dx, cu, r) = Triple(hole[0], hole[1], hole[2])
+            for (u in cu - r..cu + r) for (x in BX + dx - r - 1..BX + dx + r + 1) {
+                if (!inGrid(x, u) || canopy[idx(x, u)] < 0) continue
+                if (hypot((x - BX - dx).toFloat(), (u - cu).toFloat()) <= r + 0.4f) out[idx(x, u)] = true
             }
         }
-        // Leaf clusters stamped over the shading: lit on top, a little shade beneath
-        val clump = arrayOf(0 to 2, -1 to 1, 0 to 1, 1 to 1, -2 to 0, -1 to 0, 0 to 0, 1 to 0, 2 to 0, -1 to -1, 1 to -1)
-        val step = 5
-        var gy = 0
-        while (gy < 140) {
-            var gx = 0
-            while (gx < 130) {
-                val sx = gx + (hash(gx, gy, 61) * step).toInt() - (gy / (step - 1)) % 2 * 2
-                val su = gy + (hash(gx, gy, 62) * (step - 1)).toInt()
-                if (has(sx, su)) {
-                    val base = tone[idx(sx, su)]
-                    if (base > 0) {
-                        val top = min(4, base + if (hash(gx, gy, 63) > 0.35f) 1 else 0)
-                        for ((ox, ou) in clump) {
-                            if (!has(sx + ox, su + ou)) continue
-                            val c = idx(sx + ox, su + ou)
-                            tone[c] = if (ou >= 1) top else max(tone[c], base)
-                        }
-                        for (ox in 0..1) {
-                            if (has(sx + ox, su - 2) && has(sx + ox, su - 1) && has(sx + ox, su - 3)) {
-                                val c = idx(sx + ox, su - 2)
-                                tone[c] = max(1, min(tone[c], base - 1))
-                            }
-                        }
-                    }
-                }
-                gx += step
-            }
-            gy += step - 1
-        }
-        return Canopy(tone, owner)
+        return out
     }
 
     private val leafyWood by lazy { buildWood(bare = false) }
@@ -404,7 +387,7 @@ object SeasonalTree {
     /** Cells along the canopy's underside, where falling petals and leaves come from. */
     private val dropCells by lazy {
         val out = ArrayList<Int>()
-        val tone = canopy.tone
+        val tone = canopy
         for (u in 45..U_MAX) for (x in 0 until W) {
             if (tone[idx(x, u)] >= 0 && (u - 1 < U_MIN || tone[idx(x, u - 1)] < 0)) out += (x - BX) * 1000 + u
         }
@@ -455,39 +438,34 @@ object SeasonalTree {
 
         if (season != Season.WINTER) {
             val pal = CANOPY.getValue(season)
-            val tone = canopy.tone
+            val tone = canopy
+            val pocket = pockets(season)
             for (u in U_MIN..U_MAX) for (x in 0 until W) {
                 val k = idx(x, u)
                 val t = tone[k]
                 if (t < 0) continue
-                val red = season == Season.AUTUMN &&
-                    (canopy.owner[k] in RED_PUFFS || hash(x / 6, u / 6, 64) > 0.78f)
-                put(x, u, if (red) AUTUMN_RED[t] else pal[t])
+                if (pocket[k]) {
+                    // a pocket shows the branch behind it, or the deepest shade
+                    put(x, u, if (wood[k] >= 0) WOOD[wood[k]] else pal[0])
+                    continue
+                }
+                put(x, u, pal[t])
             }
-            fun leafy(x: Int, u: Int) = inGrid(x, u) && tone[idx(x, u)] >= 0
+            fun open(x: Int, u: Int) = inGrid(x, u) && tone[idx(x, u)] >= 0 && !pocket[idx(x, u)]
             if (season == Season.SPRING) {
-                // Blossom clusters: two or three five-petal flowers together, white with warm hearts
-                for (gy in 0 until 140 step 7) for (gx in 0 until 130 step 7) {
-                    if (hash(gx, gy, 71) < 0.45f) continue
-                    for (k in 0 until 1 + (hash(gx, gy, 72) * 3).toInt()) {
-                        val fx = gx + (hash(gx, gy, 73 + k) * 6).toInt() + k * 2
-                        val fu = gy + (hash(gx, gy, 76 + k) * 5).toInt() - k
-                        if (!leafy(fx, fu) || tone[idx(fx, fu)] < 2) continue
-                        val petal = if (hash(fx, fu, 79) > 0.3f) 0xFFFFFF else 0xFFD6E4
-                        for ((ax, au) in arrayOf(0 to 1, -1 to 0, 1 to 0, 0 to -1)) if (leafy(fx + ax, fu + au)) put(fx + ax, fu + au, petal)
-                        put(fx, fu, if (hash(fx, fu, 80) > 0.4f) 0xFFC44F else 0xF05A8A)
-                    }
+                // Blossoms all over the sunlit puffs: five white petals round a warm heart
+                for (u in U_MIN..U_MAX) for (x in 0 until W) {
+                    if (!open(x, u) || tone[idx(x, u)] < 2 || hash(x, U_MAX - u, 11) <= 0.965f) continue
+                    for ((ax, au) in arrayOf(0 to 1, -1 to 0, 1 to 0, 0 to -1)) put(x + ax, u + au, 0xFFFFFF)
+                    put(x, u, if (hash(x, U_MAX - u, 12) > 0.5f) 0xFFC85A else 0xFF8FAB)
                 }
             }
             if (season == Season.SUMMER) {
-                // A few ripe fruits among the leaves
-                for (gy in 0 until 140 step 9) for (gx in 0 until 130 step 9) {
-                    if (hash(gx, gy, 81) < 0.62f) continue
-                    val fx = gx + (hash(gx, gy, 82) * 6).toInt()
-                    val fu = gy + (hash(gx, gy, 83) * 6).toInt()
-                    if (!leafy(fx, fu) || tone[idx(fx, fu)] !in 1..3 || !leafy(fx + 1, fu - 1) || tone[idx(fx + 1, fu - 1)] == 0) continue
-                    put(fx, fu, 0xD72A2A); put(fx + 1, fu, 0xFFA090)
-                    put(fx, fu - 1, 0xA21B1B); put(fx + 1, fu - 1, 0xD72A2A)
+                // Ripe fruit among the leaves
+                for (u in U_MIN..U_MAX) for (x in 0 until W) {
+                    if (!open(x, u) || tone[idx(x, u)] !in 1..3 || hash(x, U_MAX - u, 13) <= 0.992f) continue
+                    put(x, u, 0xD62828); put(x + 1, u, 0xFF9A8A)
+                    put(x, u - 1, 0xA01A1A); put(x + 1, u - 1, 0xD62828)
                 }
             }
         } else {
