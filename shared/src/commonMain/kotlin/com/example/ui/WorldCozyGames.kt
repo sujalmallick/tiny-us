@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.games.CozySprites
 import com.example.games.FishingGame
@@ -45,6 +46,7 @@ private fun drawGarden(scope: DrawScope, cozy: CozyGames, cw: Float, ch: Float, 
         val sprite = CozySprites.spot(plot.stage, plot.flower, GardenPlots.isPot(i))
         val (petal, center) = CozySprites.flowerColors(plot.flower ?: "")
         drawOwnerStake(scope, GardenPlots.ownerOf(i), base, p)
+        drawCastShadow(scope, base.x, base.y, sprite.width + 2, p, isOutdoor = true)
         drawContactShadow(scope, base.x, base.y, sprite.width + 2, p)
         CozySprites.draw(scope, sprite, base.x - sprite.width * p / 2f, base.y - sprite.height * p, p, listOf(petal), center)
         // A small sign of what it would like: a drop when it's thirsty today, a twinkle in bloom.

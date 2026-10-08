@@ -9,6 +9,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.engine.PierSprites
+import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.scene.GullState
 import com.example.scene.PierLayout
@@ -201,8 +202,11 @@ fun drawSeasidePierScene(
     PierSprites.drawTelescope(scope, scopeBase.x, scopeBase.y, p, glinting = engine.pierDolphinTimer > 0f)
 
     // 6. Bench the couple sits on (drawn behind them).
+    val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
     val benchY = ch * 0.74f - 9f * p
-    drawContactShadow(scope, cw * 0.49f, benchY + 9f * p, (cw * 0.30f / p).roundToInt(), p)
+    val benchWidthPx = (cw * 0.30f / p).roundToInt()
+    drawCastShadow(scope, cw * 0.49f, benchY + 9f * p, benchWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
+    drawContactShadow(scope, cw * 0.49f, benchY + 9f * p, benchWidthPx, p)
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY), Size(cw * 0.30f, 2.5f * p))
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY - 8f * p), Size(cw * 0.30f, 2f * p))
     scope.drawRect(Color(0xFF3E2A1D), Offset(cw * 0.36f, benchY), Size(1.8f * p, 9f * p))
@@ -210,7 +214,9 @@ fun drawSeasidePierScene(
 
     // 7. Ice-cream cart with a striped awning.
     val cart = PierLayout.cart(cw, ch)
+    drawCastShadow(scope, cart.x - 7f * p, cart.y, 8, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
     drawContactShadow(scope, cart.x - 7f * p, cart.y, 8, p)
+    drawCastShadow(scope, cart.x + 7f * p, cart.y, 8, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
     drawContactShadow(scope, cart.x + 7f * p, cart.y, 8, p)
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x - 7f * p, cart.y - 3f * p))
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x + 7f * p, cart.y - 3f * p))
@@ -230,6 +236,7 @@ fun drawSeasidePierScene(
 
     // 8. Bait bucket by Mochi's spot.
     val bucket = PierLayout.bucket(cw, ch)
+    drawCastShadow(scope, bucket.x, bucket.y, 10, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
     drawContactShadow(scope, bucket.x, bucket.y, 10, p)
     scope.drawRect(Color(0xFF8E9AA6), Offset(bucket.x - 3.5f * p, bucket.y - 6f * p), Size(7f * p, 6f * p))
     scope.drawRect(Color(0xFF6B7783), Offset(bucket.x - 4f * p, bucket.y - 6.5f * p), Size(8f * p, 1.2f * p))

@@ -611,7 +611,14 @@ object PixelArtRenderer {
         isHoldingUmbrella: Boolean = false,
         isSnow: Boolean = false,
         isSpeaking: Boolean = false,
-        snapToPixel: Boolean = false
+        snapToPixel: Boolean = false,
+        sunProgress: Float? = null,
+        isOutdoor: Boolean = true,
+        isNight: Boolean = false,
+        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
+        localLightX: Float? = null,
+        minGroundY: Float? = null,
+        maxGroundY: Float? = null
     ) {
         // Feature 1: uniform +10% scale applied here once, covering all scenes and all poses
         val p = pixelSize * CHARACTER_SCALE_FACTOR
@@ -635,6 +642,23 @@ object PixelArtRenderer {
         val risenPx = (char.bounceOffset / p).coerceAtLeast(0f)
         val shadowWidth = (baseShadowWidth * (1f - (risenPx * 0.06f).coerceAtMost(0.35f)))
             .roundToInt().coerceAtLeast(4)
+
+        // Light cast shadow (stepped pixel rows cast away from sun or local light)
+        drawCastShadow(
+            scope = drawScope,
+            centerX = centerX + char.idleSwayOffset * 0.5f,
+            groundY = bottomY,
+            widthPx = shadowWidth,
+            p = p,
+            sunProgress = sunProgress,
+            isOutdoor = isOutdoor,
+            isNight = isNight,
+            weather = weather,
+            localLightX = localLightX,
+            minGroundY = minGroundY,
+            maxGroundY = maxGroundY
+        )
+
         drawContactShadow(
             scope = drawScope,
             centerX = centerX + char.idleSwayOffset * 0.5f,

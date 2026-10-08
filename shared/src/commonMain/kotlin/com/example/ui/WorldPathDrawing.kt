@@ -70,6 +70,7 @@ import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelParticle
 import com.example.engine.CharacterMotionTween
 import com.example.engine.WorldSprites
+import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.engine.RoomTheme
 import com.example.scene.EnvironmentType
@@ -403,6 +404,8 @@ fun drawPathGround(
         val tblH = 15 * p
         val tblX = cw * 0.50f - tblW / 2f
         val tblY = curbY + curbH * 0.55f
+        val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = false)
+        drawCastShadow(scope, cw * 0.50f, tblY + tblH, 40, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = weather)
         drawContactShadow(scope, cw * 0.50f, tblY + tblH, 40, p)
         // Wooden folding street table legs
         scope.drawRect(Color(0xFF45240F), Offset(tblX + 3 * p, tblY + 3 * p), Size(2.5f * p, tblH - 3 * p))
@@ -448,6 +451,7 @@ fun drawPathGround(
             val stH = 11 * p
             val sl = sx - stW / 2f
             val sy = tblY + 2 * p
+            drawCastShadow(scope, sx, sy + stH, 12, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = weather)
             drawContactShadow(scope, sx, sy + stH, 12, p)
             scope.drawRect(Color(0xFF45240F), Offset(sl + 1.5f * p, sy + 2.5f * p), Size(2 * p, stH - 2.5f * p))
             scope.drawRect(Color(0xFF45240F), Offset(sl + stW - 3.5f * p, sy + 2.5f * p), Size(2 * p, stH - 2.5f * p))
