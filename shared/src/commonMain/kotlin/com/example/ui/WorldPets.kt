@@ -285,7 +285,7 @@ object PetSprites {
                 drawRows(scope, rows, look.colors, cx, groundY, p, facingLeft, headDrop = if (beat) 1 else 0)
                 if (kind == PetKind.BUNNY) {
                     // Paws up to the face
-                    cell(scope, rows, cx, groundY, p, facingLeft, 0f, 6, if (beat) 2 else 3, Color(0xFFF3EEE8))
+                    cell(scope, rows, cx, groundY, p, facingLeft, 0f, 6, if (beat) 2 else 3, Color(0xFFD9CFC4))
                 }
             }
             com.example.scene.PetMove.SCRATCH -> {
@@ -293,7 +293,12 @@ object PetSprites {
                 drawRows(scope, look.sit, look.colors, cx, groundY, p, facingLeft)
                 val w = look.sit.maxOf { it.length }
                 val foot = (w * 0.55f).toInt()
-                val fur = look.colors.values.first()
+                // the paw in a colour that shows against the head
+                val fur = when (kind) {
+                    PetKind.PUPPY -> look.colors.getValue('W')
+                    PetKind.FOX -> look.colors.getValue('d')
+                    else -> look.colors.values.first()
+                }
                 cell(scope, look.sit, cx, groundY, p, facingLeft, 0f, foot, if (beat) 1 else 2, fur)
                 cell(scope, look.sit, cx, groundY, p, facingLeft, 0f, foot - 1, if (beat) 2 else 3, fur)
             }
@@ -442,7 +447,10 @@ fun drawCatMove(
         com.example.scene.PetMove.GROOM -> {
             cat(CatState.SITTING_PURR)
             val up = sin(t * 10f) > 0f
-            scope.drawRect(Color(0xFFF8F9FA), Offset(cx - 1.2f * p, headTop + (if (up) 2f else 3f) * p), Size(2.4f * p, 3f * p))
+            val pawTop = headTop + (if (up) 2f else 3f) * p
+            scope.drawRect(Color(0xFFCED4DA), Offset(cx - 1.6f * p, pawTop), Size(3.2f * p, 3.4f * p))
+            scope.drawRect(Color(0xFFF8F9FA), Offset(cx - 1.2f * p, pawTop), Size(2.4f * p, 3f * p))
+            scope.drawRect(Color(0xFFFFCAD4), Offset(cx - 0.5f * p, pawTop + 0.4f * p), Size(p, 0.8f * p))
             if (up) scope.drawRect(Color(0xFFFF8FA3), Offset(cx - 0.5f * p, headTop + 1.6f * p), Size(p, 0.8f * p))
         }
         com.example.scene.PetMove.CHASE_TAIL -> {
