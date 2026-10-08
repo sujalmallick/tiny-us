@@ -346,6 +346,8 @@ class SceneEngine(
     var weatherCatchCount: Int by mutableIntStateOf(0)
         private set
     var rainbowTimer: Float by mutableFloatStateOf(0f)
+    /** Counts down while a cloud's shadow drifts across the couple (they stop and look up). */
+    var cloudPassTimer: Float = 0f
     var snowmanStage: Int by mutableIntStateOf(0)
         private set
     var snowmanWobbleTimer: Float by mutableFloatStateOf(0f)
@@ -3713,7 +3715,9 @@ class SceneEngine(
                     audio.playStarTwinkle()
                     particles.spawnSparkles(cw * targetX, ch * girl.worldY - 30f, 6)
                 } else {
-                    // Cloud Shadow: Couple stops, glances up at a passing cloud together
+                    // Cloud Shadow: Couple stops, glances up at a passing cloud together, and its
+                    // shadow drifts over them
+                    cloudPassTimer = WeatherLayout.CLOUD_PASS_SECONDS
                     boy.transitionPoseTo(CharacterPose.IDLE)
                     girl.transitionPoseTo(CharacterPose.IDLE)
                     boy.emotion = CharacterEmotion.CURIOUS
@@ -6748,6 +6752,7 @@ class SceneEngine(
             lastSeenWeather = weather
         }
         if (rainbowTimer > 0f) rainbowTimer = (rainbowTimer - dt).coerceAtLeast(0f)
+        if (cloudPassTimer > 0f) cloudPassTimer = (cloudPassTimer - dt).coerceAtLeast(0f)
         if (snowmanWobbleTimer > 0f) snowmanWobbleTimer = (snowmanWobbleTimer - dt).coerceAtLeast(0f)
     }
 

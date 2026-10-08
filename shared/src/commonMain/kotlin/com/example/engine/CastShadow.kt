@@ -6,96 +6,88 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.scene.WeatherType
 import kotlin.math.abs
+import kotlin.math.max
+import kotlin.math.min
 import kotlin.math.roundToInt
 
 /**
- * Universal cast shadow color: a cool near-black with low alpha (~0.14),
- * so it softens gently into grass, wood, stone, tiles and snow.
+ * The cast shadow colour: the same cool near-black as [ContactShadowColor], lighter, so where the
+ * two overlap under a foot the ground darkens a step and the cast shadow reads as the paler part.
  */
-val CastShadowColor: Color = Color(0x24101828)
+val CastShadowColor: Color = Color(0x3A101828)
 
 /**
- * Precomputed parameters for a cast shadow:
- * - [dxPx]: Total lateral pixel displacement at the furthest row (+ is right, - is left).
- * - [lengthRows]: Number of stepped rows extending forward from the ground baseline.
- * - [active]: Whether a cast shadow should be drawn.
+ * The light a scene's cast shadows fall away from (depth, part 2).
+ *
+ * [sunProgress] is how far the sun has come across the sky, 0 rising on the left, 0.5 overhead and
+ * 1 setting on the right (see the sky's celestialProgress). [lampX], when set, is a fire or lamp in
+ * screen pixels: shadows fall away from it instead, by night or indoors.
  */
-data class CastShadowGeometry(
-    val dxPx: Int,
-    val lengthRows: Int,
-    val active: Boolean
+data class CastLight(
+    val sunProgress: Float = 0.5f,
+    val outdoor: Boolean = true,
+    val night: Boolean = false,
+    val weather: WeatherType = WeatherType.SUNNY,
+    val lampX: Float? = null
 )
 
 /**
- * Computes the cast shadow parameters based on lighting environment:
- * - Outdoors by day: driven by sun progress (0 = morning, 0.5 = noon, 1.0 = sunset).
- *   Morning shadows point right (+dx), sunset shadows point left (-dx).
- *   Length is shortest near 0.5 (under feet) and longest near 0 or 1.
- * - Overcast (RAIN, SNOW): sun cast shadows are suppressed (none in rain/snow).
- * - Outdoors at night: no sun or moon cast shadows; local light sources (campfire, lamps)
- *   cast short, soft shadows away from the light.
- * - Indoors: subtle, short ground-plane cast shadow.
+ * The light of the frame being drawn. The world sets it once per frame, before drawing anything,
+ * so the couple, Mochi, the visitors and every prop throw their shadows the same way.
  */
-fun calculateCastShadowGeometry(
-    widthPx: Int,
-    sunProgress: Float? = null,
-    isOutdoor: Boolean = true,
-    isNight: Boolean = false,
-    weather: WeatherType = WeatherType.SUNNY,
-    localLightX: Float? = null,
-    centerX: Float = 0f
-): CastShadowGeometry {
-    if (widthPx < 2) return CastShadowGeometry(0, 0, false)
+object SceneLight {
+    var current: CastLight = CastLight()
+}
 
-    if (isOutdoor) {
-        if (isNight) {
-            // At night: no sun or moon shadows. If there is a local light (e.g. campfire),
-            // cast a short shadow away from it.
-            if (localLightX != null) {
-                val diffX = centerX - localLightX
-                val dir = if (diffX >= 0f) 1 else -1
-                val dx = dir * (widthPx / 4).coerceIn(2, 4)
-                return CastShadowGeometry(dx, 2, true)
-            }
-            return CastShadowGeometry(0, 0, false)
-        }
+/**
+ * A cast shadow's shape on the ground: its far end lands [tipDx] pixels to the side (+ right) and
+ * [rows] pixel rows toward the viewer. The ground is seen at a low angle, so even a long evening
+ * shadow is only a few rows deep and stretches mostly sideways.
+ */
+data class CastShadowShape(val tipDx: Int, val rows: Int) {
+    val visible: Boolean get() = rows > 0
 
-        // Overcast sky: no sun cast shadows in rain or snow
-        if (weather == WeatherType.RAIN || weather == WeatherType.SNOW) {
-            return CastShadowGeometry(0, 0, false)
-        }
-
-        // Daytime outdoors: driven by celestial progress (0.0 morning .. 0.5 noon .. 1.0 sunset)
-        val prog = (sunProgress ?: com.example.ui.celestialProgressOverride ?: 0.5f).coerceIn(0f, 1f)
-        val skewFactor = (0.5f - prog).coerceIn(-0.5f, 0.5f) // +0.5 at morning, 0 at noon, -0.5 at sunset
-
-        // Lateral skew: maximal at morning (+dx, right) and sunset (-dx, left), zero at noon
-        val maxShift = (widthPx * 0.65f).coerceIn(3f, 12f)
-        val dx = (skewFactor * 2f * maxShift).roundToInt()
-
-        // Length: short (2 rows) near noon (0.5), longer (4 rows) near 0 or 1
-        val distFromNoon = abs(0.5f - prog) * 2f // 0 at noon, 1 at dawn/dusk
-        val rows = (2 + (distFromNoon * 2f).roundToInt()).coerceIn(2, 4)
-
-        return CastShadowGeometry(dx, rows, true)
-    } else {
-        // Indoors: subtle, short ground-plane cast shadow (2 rows, slight offset)
-        if (localLightX != null) {
-            val diffX = centerX - localLightX
-            val dir = if (diffX >= 0f) 1 else -1
-            val dx = dir * (widthPx / 5).coerceIn(1, 3)
-            return CastShadowGeometry(dx, 2, true)
-        }
-        val dx = (widthPx / 7).coerceIn(1, 2)
-        return CastShadowGeometry(dx, 2, true)
+    companion object {
+        val NONE = CastShadowShape(0, 0)
     }
 }
 
 /**
- * Draws a light pixel cast-shadow onto the ground plane using stepped whole-game-pixel rows.
+ * Where the shadow of something [widthPx] wide and [heightPx] tall (in its own pixels) standing at
+ * [centerX] falls under [light]:
+ * - Outdoors by day it points away from the sun: right in the morning, left at sunset, short and
+ *   underfoot at noon, and longest when the sun is low.
+ * - Overcast (rain, snow) and moonlit nights: none. The contact shadow alone grounds things then.
+ * - A fire or lamp ([CastLight.lampX]): short, falling away from it.
+ * - Indoors with no lamp: a short soft shadow, a little to the right of the room's window light.
+ */
+fun castShadowShape(light: CastLight, widthPx: Int, heightPx: Int, centerX: Float): CastShadowShape {
+    if (widthPx < 2 || heightPx < 1) return CastShadowShape.NONE
+    light.lampX?.let { lampX ->
+        val away = if (centerX >= lampX) 1 else -1
+        return CastShadowShape(away * (heightPx * 0.35f).roundToInt().coerceIn(2, 10), 2)
+    }
+    if (!light.outdoor) return CastShadowShape((heightPx * 0.12f).roundToInt().coerceIn(1, 4), 2)
+    if (light.night || light.weather == WeatherType.RAIN || light.weather == WeatherType.SNOW) {
+        return CastShadowShape.NONE
+    }
+    // +1 with the sun rising on the left (the shadow points right) to -1 setting on the right
+    val side = (0.5f - light.sunProgress.coerceIn(0f, 1f)) * 2f
+    val low = abs(side)
+    return CastShadowShape((side * heightPx * 0.7f).roundToInt(), 2 + (low * 3f).roundToInt())
+}
+
+/**
+ * The shadow something casts across the ground (depth, part 2), on the same pixel grid as the thing
+ * itself: [p] is its pixel size, [widthPx] and [heightPx] its size in those pixels, and ([centerX],
+ * [groundY]) the middle of where it meets the ground.
  *
- * Drawn BEFORE the contact shadow and sprite:
- * order: cast shadow -> contact shadow -> sprite.
+ * The footprint is swept along [castShadowShape]'s direction, narrowing toward the far end like the
+ * top of the silhouette would. Each row is one solid run; its last pixels toward the far end fade
+ * out on a checkerboard, so the end dithers instead of stopping hard.
+ *
+ * Draw it first, then the contact shadow, then the sprite. Nothing is drawn above [groundY], so the
+ * shadow never climbs a wall or spills onto water behind a deck.
  */
 fun drawCastShadow(
     scope: DrawScope,
@@ -103,66 +95,56 @@ fun drawCastShadow(
     groundY: Float,
     widthPx: Int,
     p: Float,
-    sunProgress: Float? = null,
-    isOutdoor: Boolean = true,
-    isNight: Boolean = false,
-    weather: WeatherType = WeatherType.SUNNY,
-    localLightX: Float? = null,
-    minGroundY: Float? = null,
-    maxGroundY: Float? = null,
+    heightPx: Int = widthPx,
+    light: CastLight = SceneLight.current,
     color: Color = CastShadowColor
 ) {
-    if (widthPx < 2 || p <= 0f) return
-    val geom = calculateCastShadowGeometry(
-        widthPx = widthPx,
-        sunProgress = sunProgress,
-        isOutdoor = isOutdoor,
-        isNight = isNight,
-        weather = weather,
-        localLightX = localLightX,
-        centerX = centerX
-    )
-    if (!geom.active || geom.lengthRows <= 0) return
-
+    if (p <= 0f) return
+    val shape = castShadowShape(light, widthPx, heightPx, centerX)
+    if (!shape.visible) return
     val cx = (centerX / p).roundToInt()
     val cy = (groundY / p).roundToInt()
-
-    for (r in 0 until geom.lengthRows) {
+    val reach = abs(shape.tipDx)
+    // The far part of a sideways shadow fades: past this many pixels from the middle it dithers
+    val fadeFrom = ((reach + widthPx / 2f) * 0.7f).roundToInt()
+    for (r in 0 until shape.rows) {
+        val t0 = r / shape.rows.toFloat()
+        val t1 = (r + 1) / shape.rows.toFloat()
+        val half0 = widthPx * (1f - 0.45f * t0) / 2f
+        val half1 = widthPx * (1f - 0.45f * t1) / 2f
+        val c0 = cx + shape.tipDx * t0
+        val c1 = cx + shape.tipDx * t1
+        val left = min(c0 - half0, c1 - half1).roundToInt()
+        val right = max(c0 + half0, c1 + half1).roundToInt() - 1
+        if (right < left) continue
         val row = cy + r
         val rowY = row * p
-        if (minGroundY != null && rowY < minGroundY) continue
-        if (maxGroundY != null && rowY > maxGroundY) continue
-
-        // Lateral shift increases with distance from base
-        val rowShift = ((r + 1).toFloat() / geom.lengthRows * geom.dxPx).roundToInt()
-        val rowCx = cx + rowShift
-
-        // Taper width slightly with each step
-        val rowW = (widthPx - r * 2).coerceAtLeast(3)
-        val halfW = rowW / 2
-        val leftCol = rowCx - halfW
-        val rightCol = rowCx + halfW
-
-        val isEndRow = (r == geom.lengthRows - 1)
-        if (isEndRow) {
-            // Far row: checkerboard dither for soft fade
-            for (col in leftCol..rightCol) {
-                if (((col + row) and 1) == 0) {
-                    scope.drawRect(color, Offset(col * p, rowY), Size(p, p))
-                }
+        fun dither(from: Int, to: Int) {
+            for (col in from..to) {
+                if (((col + row) and 1) == 0) scope.drawRect(color, Offset(col * p, rowY), Size(p, p))
             }
-        } else {
-            // Inner core is solid; outermost edge pixel dithered
-            val coreLeft = leftCol + 1
-            val coreRight = rightCol - 1
-            if (coreRight >= coreLeft) {
-                scope.drawRect(color, Offset(coreLeft * p, rowY), Size((coreRight - coreLeft + 1) * p, p))
+        }
+        fun solid(from: Int, to: Int) {
+            if (to >= from) scope.drawRect(color, Offset(from * p, rowY), Size((to - from + 1) * p, p))
+        }
+        when {
+            // The far row is all checkerboard
+            r == shape.rows - 1 -> dither(left, right)
+            // Short shadows (noon, indoors) soften at both ends of each row
+            reach < 2 -> {
+                solid(left + 1, right - 1)
+                dither(left, left)
+                if (right > left) dither(right, right)
             }
-            if (((leftCol + row) and 1) == 0) {
-                scope.drawRect(color, Offset(leftCol * p, rowY), Size(p, p))
+            shape.tipDx > 0 -> {
+                val fade = min(cx + fadeFrom, right)
+                solid(left, fade - 1)
+                dither(fade, right)
             }
-            if (((rightCol + row) and 1) == 0) {
-                scope.drawRect(color, Offset(rightCol * p, rowY), Size(p, p))
+            else -> {
+                val fade = max(cx - fadeFrom, left)
+                dither(left, fade)
+                solid(fade + 1, right)
             }
         }
     }

@@ -346,7 +346,8 @@ object CozyPropLayout {
         val curb = walkCurbY(ch, p)
         return curb + (ch - curb) * 0.60f + 3f * p
     }
-    fun walkFootbridge(cw: Float, ch: Float, p: Float) = Offset(cw * 0.66f, walkCreekTop(ch, p) + (CREEK_ROWS + 1) * p)
+    /** Right of the glowing mushrooms (its left end clears their caps on the narrowest stage). */
+    fun walkFootbridge(cw: Float, ch: Float, p: Float) = Offset(cw * 0.70f, walkCreekTop(ch, p) + (CREEK_ROWS + 1) * p)
     /** The glowing mushrooms sit in the creek; taps near them stay theirs. */
     fun walkMushrooms(cw: Float) = cw * 0.50f
     fun hitWalkCreek(tap: Offset, cw: Float, ch: Float, p: Float): Boolean {
@@ -384,10 +385,13 @@ object CozyPropLayout {
     // record rack. Mochi's use of them lives with the pet behaviour (FEATURES).
     fun livingRoomFrontRowBottom(ch: Float, p: Float): Float = ch * 0.65f + ch * 0.35f * 0.75f + 13f * p
     fun petBed(cw: Float, ch: Float, p: Float) = Offset(cw * 0.62f, livingRoomFrontRowBottom(ch, p))
-    fun fishToy(cw: Float, ch: Float, p: Float) = Offset(cw * 0.495f, livingRoomFrontRowBottom(ch, p))
+    fun fishToy(cw: Float, ch: Float, p: Float) = Offset(cw * 0.47f, livingRoomFrontRowBottom(ch, p))
 }
 
 object WeatherLayout {
+    /** How long a cloud's shadow takes to sweep across the couple when they stop to look up. */
+    const val CLOUD_PASS_SECONDS = 6f
+
     /**
      * Where rain puddles form in each outdoor scene (fractions of the scene): on the ground where
      * water would gather, clear of the props. Scenes not listed use the meadow spots.

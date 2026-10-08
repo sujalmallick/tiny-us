@@ -12,7 +12,7 @@ class StageExtensionTest {
     private fun luma(c: Int) = ((c shr 16) and 0xFF) * 299 + ((c shr 8) and 0xFF) * 587 + (c and 0xFF) * 114
 
     @Test
-    fun groundBelowTheStageContinuesTheGroundsOwnTextureAndDarkensTowardTheEdge() {
+    fun groundBelowTheStageContinuesInTheGroundsOwnShadesAndDarkensTowardTheEdge() {
         val w = 40
         val h = 120
         val stageBottom = 80
@@ -23,7 +23,8 @@ class StageExtensionTest {
         for (y in 0 until stageBottom) for (x in 0 until w) {
             px[y * w + x] = when {
                 y >= 64 && x == 5 -> flower
-                y >= 64 && (x * 5 + y) % 7 == 0 -> blade
+                // irregular grass blades (no row period, so this is the plain-ground path, not a tiled floor)
+                y >= 64 && (x * 13 + y * y * 7) % 11 == 0 -> blade
                 else -> grass
             }
         }
@@ -32,10 +33,10 @@ class StageExtensionTest {
         // Texture carries on (not one flat colour), and the prop's colour never does.
         assertTrue(below.toSet().size > 1, "the fill should keep the ground's texture")
         assertTrue(below.none { channelsClose(it, flower) }, "a prop colour leaked into the fill")
-        // It darkens toward the screen edge, and the first row matches the ground exactly in tone.
+        // It darkens toward the screen edge, and the first rows stay in the ground's own tone.
         val firstRow = (0 until w).map { px[stageBottom * w + it] }
         val lastRow = (0 until w).map { px[(h - 1) * w + it] }
-        assertTrue(firstRow.all { it == grass || it == blade })
+        assertTrue(firstRow.all { channelsClose(it, grass) })
         assertTrue(lastRow.sumOf { luma(it) } < firstRow.sumOf { luma(it) })
     }
 

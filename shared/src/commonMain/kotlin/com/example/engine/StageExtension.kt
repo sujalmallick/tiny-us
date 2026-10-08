@@ -11,8 +11,8 @@ package com.example.engine
  *   courses) keep repeating, and the edge row's colour carries on;
  * - above the stage, columns that are one colour all the way through the band (a wall stripe, a
  *   lamp cord, a window mullion) carry on as columns;
- * - below the stage, the ground's own bottom rows (grass, gravel, terrace), cleaned of props, are
- *   repeated downward with a sideways shift each time, darkening in soft steps toward the edge;
+ * - below the stage, the ground's colour carries on with subtle grass ticks in its own shades (no
+ *   scene pixels are copied, so props never repeat there), darkening in soft steps toward the edge;
  * - above an outdoor night sky (starry), a few stars.
  */
 object StageExtension {
@@ -25,11 +25,15 @@ object StageExtension {
         if (stageTop > 0 && !tilePattern(px, w, stageTop, band, up = true, from = stageTop - 1, to = 0)) {
             fillAbove(px, w, stageTop, band, starry)
         }
-        if (stageBottom < h &&
-            !tilePattern(px, w, stageBottom - band, band, up = false, from = stageBottom, to = h - 1) &&
-            !tileFloor(px, w, stageBottom, minOf(FLOOR_BAND, stageH / 3), h)
-        ) {
-            fillBelow(px, w, h, stageBottom, band)
+        if (stageBottom < h) {
+            if (!tilePattern(px, w, stageBottom - band, band, up = false, from = stageBottom, to = h - 1) &&
+                !tileFloor(px, w, stageBottom, minOf(FLOOR_BAND, stageH / 3), h)
+            ) {
+                fillBelow(px, w, h, stageBottom, band)
+            }
+            // Whatever filled it (tiled floor, planks or ground), the area below the stage settles
+            // into the same soft foreground shade, so every scene's bottom blends the same way.
+            shadeBelow(px, w, h, stageBottom)
         }
     }
 
@@ -147,52 +151,62 @@ object StageExtension {
     }
 
     /**
-     * Continues the scene's own ground below the stage: the band's bottom rows that look like the
-     * ground (not a creek, rug or prop) are cleaned of any prop pixels and repeated downward, each
-     * repeat shifted sideways so copies never stack into columns. The fill then darkens in a few
-     * dithered steps toward the screen edge, like a foreground in shade.
+     * Continues the scene's ground below the stage in its own colour: each row takes the ground colour
+     * (repeating row patterns such as terrace bands or plank seams carry on in step), with short grass
+     * ticks a shade lighter or darker drawn in, never pixels copied from the scene, so a creek, a glow
+     * or a plant at the stage's edge can't be repeated below it. The fill then darkens in a few dithered
+     * steps toward the screen edge, like a foreground in shade.
      */
     private fun fillBelow(px: IntArray, w: Int, h: Int, bottom: Int, band: Int) {
         val first = bottom - band
         val rows = IntArray(band) { dominant(px, w, first + it) }
-        val edge = rows[band - 1]
-        // The ground: the run of rows at the bottom of the band whose colour matches the edge's.
-        var g = band - 1
-        while (g > 0 && close(rows[g - 1], edge)) g--
-        var tileLen = band - g
-        // Keep whole repeats of a row pattern (plank seams, terrace bands) so it carries on in step.
         val period = period(rows)
-        if (period in 1..tileLen) tileLen = (tileLen / period) * period
-        val start = band - tileLen
-        val tile = IntArray(tileLen * w)
-        for (k in 0 until tileLen) {
-            val i = start + k
-            val src = (first + i) * w
-            for (x in 0 until w) {
-                val c = px[src + x]
-                // The ground's own shades stay as texture; anything else (a prop poking in) becomes ground.
-                tile[k * w + x] = if (close(c, rows[i])) c else rows[i]
-            }
-        }
-        val fillH = (h - bottom).coerceAtLeast(1)
+        val edge = rows[band - 1]
         for (y in bottom until h) {
             val d = y - bottom
-            val k = d % tileLen
-            val cycle = d / tileLen
-            val shift = if (cycle == 0) 0 else hash(cycle, 7) % w
-            val level = minOf(SHADE_STEPS - 1, d * SHADE_STEPS / fillH)
-            val levelStart = (level * fillH + SHADE_STEPS - 1) / SHADE_STEPS
+            val base = if (period > 0) rows[band - period + (period + d) % period] else edge
             val row = y * w
             for (x in 0 until w) {
-                // Soften each step with a checkerboard row or two of the lighter shade.
-                val l = if (level > 0 && d - levelStart < 2 && (x + y) % 2 == 0) level - 1 else level
-                px[row + x] = darken(tile[k * w + (x + shift) % w], l * SHADE_PER_STEP)
+                // Grass ticks: a few columns get a 2-3 pixel mark per 3-row block, darker or lighter.
+                val tick = hash(x, (d + (x % 3)) / 3) % 100
+                px[row + x] = when {
+                    tick < TICK_DARK -> darken(base, 0.14f)
+                    tick < TICK_DARK + TICK_LIGHT -> lighten(base, 0.10f)
+                    else -> base
+                }
             }
         }
     }
 
+    /**
+     * Darkens the area below the stage in [SHADE_STEPS] soft steps toward the screen edge, like a
+     * foreground in shade. The first step is untouched, so the join with the stage stays seamless,
+     * and each later step begins with a checkerboard row or two of the lighter shade.
+     */
+    private fun shadeBelow(px: IntArray, w: Int, h: Int, bottom: Int) {
+        val fillH = (h - bottom).coerceAtLeast(1)
+        for (y in bottom until h) {
+            val d = y - bottom
+            val level = minOf(SHADE_STEPS - 1, d * SHADE_STEPS / fillH)
+            if (level == 0) continue
+            val levelStart = (level * fillH + SHADE_STEPS - 1) / SHADE_STEPS
+            val row = y * w
+            for (x in 0 until w) {
+                val l = if (d - levelStart < 2 && (x + y) % 2 == 0) level - 1 else level
+                if (l > 0) px[row + x] = darken(px[row + x], l * SHADE_PER_STEP)
+            }
+        }
+    }
+
+    private const val TICK_DARK = 5   // percent of 3-row blocks per column with a darker grass mark
+    private const val TICK_LIGHT = 2  // ... and with a lighter one
     private const val SHADE_STEPS = 4
     private const val SHADE_PER_STEP = 0.08f
+
+    private fun lighten(c: Int, amount: Float): Int {
+        fun ch(v: Int) = (v + (255 - v) * amount).toInt().coerceIn(0, 255)
+        return (0xFF shl 24) or (ch((c shr 16) and 0xFF) shl 16) or (ch((c shr 8) and 0xFF) shl 8) or ch(c and 0xFF)
+    }
 
     private fun darken(c: Int, amount: Float): Int {
         if (amount <= 0f) return c

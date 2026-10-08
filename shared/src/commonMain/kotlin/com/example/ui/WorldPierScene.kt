@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.drawPixelGlow
 import com.example.engine.WorldViewport
 
 import androidx.compose.ui.geometry.CornerRadius
@@ -130,7 +131,7 @@ fun drawSeasidePierScene(
         val beamAlpha = if (engine.pierLighthouseTimer > 0f) 0.32f else 0.18f
         scope.drawLine(Color(0xFFFFF3B0).copy(alpha = beamAlpha * 0.6f), lamp, end, strokeWidth = 14f * p, cap = StrokeCap.Round)
         scope.drawLine(Color(0xFFFFF3B0).copy(alpha = beamAlpha), lamp, end, strokeWidth = 6f * p, cap = StrokeCap.Round)
-        scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = 0.45f), 7f * p, lamp)
+        drawPixelGlow(scope, Color(0xFFFFF3B0).copy(alpha = 0.45f), 7f * p, lamp, p)
     }
 
     // 3. Message in a bottle, bobbing on the swell.
@@ -165,7 +166,7 @@ fun drawSeasidePierScene(
         val bulb = pierBulbColor(engine.pierLightsPalette, i)
         if (lightsGlow) {
             val twinkle = (if (sparkle) 0.45f else 0.25f) + 0.15f * sin(time * 2.2f + i)
-            scope.drawCircle(bulb.copy(alpha = twinkle), 3.5f * p, Offset(lx, railY - 2f * p + sag))
+            drawPixelGlow(scope, bulb.copy(alpha = twinkle), 3.5f * p, Offset(lx, railY - 2f * p + sag), p)
         }
         scope.drawCircle(if (lightsGlow) bulb else bulb.copy(alpha = 0.55f), 1f * p, Offset(lx, railY - 2f * p + sag))
     }
@@ -201,11 +202,13 @@ fun drawSeasidePierScene(
     val scopeBase = PierLayout.telescope(cw, ch)
     PierSprites.drawTelescope(scope, scopeBase.x, scopeBase.y, p, glinting = engine.pierDolphinTimer > 0f)
 
+    // Clouds' shadows drift over the planks (and the couple glancing up at one)
+    drawCloudShadows(scope, cw, ch, p, time, engine, isNight, isSunset, isMorning)
+
     // 6. Bench the couple sits on (drawn behind them).
-    val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
     val benchY = ch * 0.74f - 9f * p
     val benchWidthPx = (cw * 0.30f / p).roundToInt()
-    drawCastShadow(scope, cw * 0.49f, benchY + 9f * p, benchWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
+    drawCastShadow(scope, cw * 0.49f, benchY + 9f * p, benchWidthPx, p, heightPx = 14)
     drawContactShadow(scope, cw * 0.49f, benchY + 9f * p, benchWidthPx, p)
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY), Size(cw * 0.30f, 2.5f * p))
     scope.drawRect(Color(0xFF5B3E2B), Offset(cw * 0.34f, benchY - 8f * p), Size(cw * 0.30f, 2f * p))
@@ -214,9 +217,9 @@ fun drawSeasidePierScene(
 
     // 7. Ice-cream cart with a striped awning.
     val cart = PierLayout.cart(cw, ch)
-    drawCastShadow(scope, cart.x - 7f * p, cart.y, 8, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
+    drawCastShadow(scope, cart.x - 7f * p, cart.y, 8, p)
     drawContactShadow(scope, cart.x - 7f * p, cart.y, 8, p)
-    drawCastShadow(scope, cart.x + 7f * p, cart.y, 8, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
+    drawCastShadow(scope, cart.x + 7f * p, cart.y, 8, p)
     drawContactShadow(scope, cart.x + 7f * p, cart.y, 8, p)
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x - 7f * p, cart.y - 3f * p))
     scope.drawCircle(Color(0xFF3A3A3A), 3f * p, Offset(cart.x + 7f * p, cart.y - 3f * p))
@@ -236,7 +239,7 @@ fun drawSeasidePierScene(
 
     // 8. Bait bucket by Mochi's spot.
     val bucket = PierLayout.bucket(cw, ch)
-    drawCastShadow(scope, bucket.x, bucket.y, 10, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, minGroundY = deckY)
+    drawCastShadow(scope, bucket.x, bucket.y, 10, p, heightPx = 8)
     drawContactShadow(scope, bucket.x, bucket.y, 10, p)
     scope.drawRect(Color(0xFF8E9AA6), Offset(bucket.x - 3.5f * p, bucket.y - 6f * p), Size(7f * p, 6f * p))
     scope.drawRect(Color(0xFF6B7783), Offset(bucket.x - 4f * p, bucket.y - 6.5f * p), Size(8f * p, 1.2f * p))

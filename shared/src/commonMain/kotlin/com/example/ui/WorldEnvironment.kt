@@ -1,5 +1,6 @@
 package com.example.ui
 
+import com.example.engine.drawPixelGlow
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
@@ -101,7 +102,9 @@ fun drawEnvironment(
     when (env) {
         EnvironmentType.MEADOW -> {
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
+            drawDistantHills(scope, cw, ch * 0.66f, p, isNight, isSunset, isMorning, engine.weather)
             drawMeadowGround(scope, cw, ch, isNight, isSunset, timeSeconds, p, engine.weather)
+            drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
             // Cottage house in background
             val cottageP = p * com.example.scene.MeadowLayout.COTTAGE_SCALE
             WorldSprites.drawCottage(scope, com.example.scene.MeadowLayout.cottageX(p), com.example.scene.MeadowLayout.groundY(ch), cottageP, timeSeconds, isNight, engine.weather)
@@ -117,13 +120,14 @@ fun drawEnvironment(
             val farHouse = com.example.scene.CozyPropLayout.meadowFarBirdhouse(cw, ch, p)
             val meadowHaze = when { isNight -> Color(0xFF181B34); isSunset -> Color(0xFFF7B2AD); else -> Color(0xFFBCE7FD) }
             val meadowLight = com.example.engine.CozyProps.outdoorLight(isNight, isSunset)
-            com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farBirdhouse, farHouse.x, farHouse.y, p, meadowHaze, 0.35f, meadowLight)
+            val meadowSnow = engine.weather == com.example.scene.WeatherType.SNOW
+            com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farBirdhouse, farHouse.x, farHouse.y, p, meadowHaze, 0.35f, meadowLight, meadowSnow)
             // A flower fence right of the cottage; the wild flowers grow in front of its foot
             val fence = com.example.scene.CozyPropLayout.meadowFence(cw, ch)
             com.example.engine.CozyProps.drawFlowerFence(
                 scope, fence.x, fence.y, p, com.example.scene.CozyPropLayout.MEADOW_FENCE_WIDTH,
                 engine.propProgress(engine.fenceRustleTimer, com.example.scene.SceneEngine.FENCE_RUSTLE_SECONDS),
-                meadowLight
+                meadowLight, meadowSnow
             )
             // Flowers with dynamic garden growth
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather, engine.gardenBlooms)
@@ -134,7 +138,9 @@ fun drawEnvironment(
         }
         EnvironmentType.TWILIGHT -> {
             drawSkyAndClouds(scope, cw, ch, isNight = isNight, isSunset = isSunset, isMorning = isMorning, time = timeSeconds, p = p, weather = engine.weather, isPinkSunset = true)
+            drawDistantHills(scope, cw, ch * 0.66f, p, isNight, isSunset, isMorning, engine.weather)
             drawMeadowGround(scope, cw, ch, isNight = isNight, isSunset = isSunset, timeSeconds = timeSeconds, p = p, weather = engine.weather)
+            drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather, engine.gardenBlooms)
             // Twinkling fairy light jar on the grass
             WorldSprites.drawFairyJar(scope, cw * 0.76f, ch * 0.70f, p, timeSeconds)
@@ -145,7 +151,9 @@ fun drawEnvironment(
         }
         EnvironmentType.TREE_HILL -> {
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
+            drawDistantHills(scope, cw, ch * 0.66f, p, isNight, isSunset, isMorning, engine.weather)
             drawMeadowGround(scope, cw, ch, isNight, isSunset, timeSeconds, p, engine.weather)
+            drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
             // Summer daytime cool tree shade under the canopy
             if (engine.weather == com.example.scene.WeatherType.SUNNY && !isNight && !isSunset) {
                 WorldSprites.drawTreeShade(scope, cw * 0.5f, ch * 0.69f, p, timeSeconds)
@@ -442,11 +450,7 @@ fun drawEnvironment(
                 val cndY = tblY - 5f * p
                 val glowRadius = 14f * p * (1f + 0.4f * sin(t * 14f))
                 val glowAlpha = ((1f - t) * 0.45f).coerceIn(0f, 1f)
-                scope.drawCircle(
-                    color = Color(0xFFFFB703).copy(alpha = glowAlpha),
-                    radius = glowRadius,
-                    center = androidx.compose.ui.geometry.Offset(cndX + 2.2f * p, cndY + 2f * p)
-                )
+                drawPixelGlow(scope, Color(0xFFFFB703).copy(alpha = glowAlpha), glowRadius, androidx.compose.ui.geometry.Offset(cndX + 2.2f * p, cndY + 2f * p), p)
                 // Fluttering bright flame tip
                 val flk = sin(t * 26f) * 1.2f * p
                 scope.drawCircle(
@@ -655,6 +659,7 @@ fun drawEnvironment(
                 creekRippleX = engine.creekRippleX,
                 creekRipple = engine.propProgress(engine.creekRippleTimer, com.example.scene.SceneEngine.CREEK_RIPPLE_SECONDS)
             )
+            drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
             val walkLight = com.example.engine.CozyProps.outdoorLight(isNight, isSunset)
             if (engine.weather != com.example.scene.WeatherType.SNOW) {
                 val bridge = com.example.scene.CozyPropLayout.walkFootbridge(cw, ch, p)
@@ -662,7 +667,7 @@ fun drawEnvironment(
             }
             // A bicycle leaning on the streetlamp (drawn first so the lamp post stands in front)
             val bike = com.example.scene.CozyPropLayout.walkBicycle(cw, ch)
-            com.example.engine.drawCastShadow(scope, bike.x, bike.y, 26, p, sunProgress = celestialProgress(isNight = isNight, isSunset = isSunset, isMorning = isMorning), isOutdoor = true, isNight = isNight, weather = engine.weather)
+            com.example.engine.drawCastShadow(scope, bike.x, bike.y, 26, p, heightPx = 19)
             com.example.engine.drawContactShadow(scope, bike.x, bike.y, 26, p)
             com.example.engine.CozyProps.drawBicycle(scope, bike.x, bike.y, p, engine.propProgress(engine.bicycleBellTimer, com.example.scene.SceneEngine.BICYCLE_BELL_SECONDS), walkLight)
             WorldSprites.drawStreetlamp(scope, cw * 0.65f, ch * 0.68f, engine.lampLit && (isNight || isSunset), p)
@@ -681,21 +686,9 @@ fun drawEnvironment(
                 val pagX = cw * 0.20f
                 val pagY = curbY + curbH * 0.38f + 5 * p
 
-                scope.drawCircle(
-                    color = Color(0xFFFFAA00).copy(alpha = (pulse * 0.38f).coerceIn(0f, 1f)),
-                    radius = (18f + pulse * 14f) * p,
-                    center = androidx.compose.ui.geometry.Offset(pagX, pagY)
-                )
-                scope.drawCircle(
-                    color = Color(0xFFFFD166).copy(alpha = (pulse * 0.55f).coerceIn(0f, 1f)),
-                    radius = (10f + pulse * 8f) * p,
-                    center = androidx.compose.ui.geometry.Offset(pagX, pagY)
-                )
-                scope.drawCircle(
-                    color = Color.White.copy(alpha = (pulse * 0.85f).coerceIn(0f, 1f)),
-                    radius = (3.5f + pulse * 2f) * p,
-                    center = androidx.compose.ui.geometry.Offset(pagX, pagY - 1f * p)
-                )
+                drawPixelGlow(scope, Color(0xFFFFAA00).copy(alpha = (pulse * 0.38f).coerceIn(0f, 1f)), (18f + pulse * 14f) * p, androidx.compose.ui.geometry.Offset(pagX, pagY), p)
+                drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = (pulse * 0.55f).coerceIn(0f, 1f)), (10f + pulse * 8f) * p, androidx.compose.ui.geometry.Offset(pagX, pagY), p)
+                drawPixelGlow(scope, Color.White.copy(alpha = (pulse * 0.85f).coerceIn(0f, 1f)), (3.5f + pulse * 2f) * p, androidx.compose.ui.geometry.Offset(pagX, pagY - 1f * p), p)
             }
 
             // 2. Lavender Patch Sway & Scent Waft
@@ -737,11 +730,7 @@ fun drawEnvironment(
                     val bounce = sin(capT * kotlin.math.PI.toFloat()) * 4.5f * p
                     val glowPulse = sin(t * kotlin.math.PI.toFloat())
 
-                    scope.drawCircle(
-                        color = Color(0xFF48CAE4).copy(alpha = (glowPulse * 0.40f).coerceIn(0f, 1f)),
-                        radius = (8f + bounce * 0.8f) * p,
-                        center = androidx.compose.ui.geometry.Offset(mx + 2 * p, my - bounce)
-                    )
+                    drawPixelGlow(scope, Color(0xFF48CAE4).copy(alpha = (glowPulse * 0.40f).coerceIn(0f, 1f)), (8f + bounce * 0.8f) * p, androidx.compose.ui.geometry.Offset(mx + 2 * p, my - bounce), p)
 
                     scope.drawRect(Color(0xFFEDE0D4), androidx.compose.ui.geometry.Offset(mx, my - bounce), Size(1.8f * p, 4.5f * p))
                     scope.drawRect(Color(0xFF48CAE4), androidx.compose.ui.geometry.Offset(mx - 2 * p, my - 2 * p - bounce), Size(5.8f * p, 2.5f * p))
@@ -753,6 +742,7 @@ fun drawEnvironment(
         EnvironmentType.MOMO_STALL -> {
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
             drawPathGround(scope, cw, ch, p, engine.weather, isWalk = false, timeSeconds = timeSeconds, isNight = isNight, isSunset = isSunset)
+            drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
             WorldSprites.drawMomoStall(scope, cw * 0.50f, ch * 0.69f, p, timeSeconds)
 
             val pathY = ch * 0.66f + 4f * p
@@ -900,8 +890,8 @@ fun drawEnvironment(
                 val lanY = tblY - 6.5f * p
                 val pulse = sin(t * kotlin.math.PI.toFloat())
 
-                scope.drawCircle(Color(0xFFFFAA00).copy(alpha = pulse * 0.35f), (10f + pulse * 10f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p))
-                scope.drawCircle(Color(0xFFFFD166).copy(alpha = pulse * 0.55f), (6f + pulse * 5f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p))
+                drawPixelGlow(scope, Color(0xFFFFAA00).copy(alpha = pulse * 0.35f), (10f + pulse * 10f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p), p)
+                drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = pulse * 0.55f), (6f + pulse * 5f) * p, androidx.compose.ui.geometry.Offset(lanX + 2.2f * p, lanY + 3.5f * p), p)
 
                 val pltX = tblX + 5 * p
                 val pltY = tblY - 4 * p
@@ -926,9 +916,9 @@ fun drawEnvironment(
                 val spireY = templeBaseY - 135 * p
 
                 if (t2X in -50f * p..(cw + 50f * p)) {
-                    scope.drawCircle(Color(0xFFFFD166).copy(alpha = pulse * 0.40f), (24f + pulse * 18f) * p, androidx.compose.ui.geometry.Offset(t2X, spireY))
-                    scope.drawCircle(Color(0xFFFFF3B0).copy(alpha = pulse * 0.65f), (12f + pulse * 8f) * p, androidx.compose.ui.geometry.Offset(t2X, spireY))
-                    scope.drawCircle(Color.White.copy(alpha = pulse * 0.85f), 4 * p, androidx.compose.ui.geometry.Offset(t2X, spireY))
+                    drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = pulse * 0.40f), (24f + pulse * 18f) * p, androidx.compose.ui.geometry.Offset(t2X, spireY), p)
+                    drawPixelGlow(scope, Color(0xFFFFF3B0).copy(alpha = pulse * 0.65f), (12f + pulse * 8f) * p, androidx.compose.ui.geometry.Offset(t2X, spireY), p)
+                    drawPixelGlow(scope, Color.White.copy(alpha = pulse * 0.85f), 4 * p, androidx.compose.ui.geometry.Offset(t2X, spireY), p)
                     for (ray in 0..3) {
                         val rAngle = (ray * 45f) * (kotlin.math.PI.toFloat() / 180f)
                         val rLen = (18f + pulse * 16f) * p

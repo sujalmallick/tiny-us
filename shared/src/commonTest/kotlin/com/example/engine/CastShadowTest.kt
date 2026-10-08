@@ -1,418 +1,110 @@
 package com.example.engine
 
-import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.geometry.Size
-import androidx.compose.ui.graphics.BlendMode
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.ColorFilter
-import androidx.compose.ui.graphics.ImageBitmap
-import androidx.compose.ui.graphics.Path
-import androidx.compose.ui.graphics.PointMode
-import androidx.compose.ui.graphics.drawscope.DrawContext
-import androidx.compose.ui.graphics.drawscope.DrawScope
-import androidx.compose.ui.graphics.drawscope.DrawStyle
-import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.unit.IntSize
-import androidx.compose.ui.unit.LayoutDirection
 import com.example.scene.WeatherType
-import kotlin.math.abs
 import kotlin.math.roundToInt
+import kotlin.test.AfterTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
-@Suppress("DEPRECATION")
-class CastShadowRecordingScope : DrawScope {
-    val rects = mutableListOf<RectRecord>()
-
-    override val density: Float = 1f
-    override val fontScale: Float = 1f
-    override val layoutDirection: LayoutDirection = LayoutDirection.Ltr
-    override val size: Size = Size(2000f, 2000f)
-    override val drawContext: DrawContext
-        get() = throw UnsupportedOperationException()
-
-    override fun drawRect(
-        color: Color,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) {
-        rects.add(RectRecord(color, topLeft, size))
-    }
-
-    override fun drawRect(
-        brush: Brush,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawLine(
-        color: Color,
-        start: Offset,
-        end: Offset,
-        strokeWidth: Float,
-        cap: androidx.compose.ui.graphics.StrokeCap,
-        pathEffect: androidx.compose.ui.graphics.PathEffect?,
-        alpha: Float,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawLine(
-        brush: Brush,
-        start: Offset,
-        end: Offset,
-        strokeWidth: Float,
-        cap: androidx.compose.ui.graphics.StrokeCap,
-        pathEffect: androidx.compose.ui.graphics.PathEffect?,
-        alpha: Float,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawCircle(
-        color: Color,
-        radius: Float,
-        center: Offset,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawCircle(
-        brush: Brush,
-        radius: Float,
-        center: Offset,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawOval(
-        color: Color,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawOval(
-        brush: Brush,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawArc(
-        color: Color,
-        startAngle: Float,
-        sweepAngle: Float,
-        useCenter: Boolean,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawArc(
-        brush: Brush,
-        startAngle: Float,
-        sweepAngle: Float,
-        useCenter: Boolean,
-        topLeft: Offset,
-        size: Size,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawPath(
-        path: Path,
-        color: Color,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawPath(
-        path: Path,
-        brush: Brush,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawImage(
-        image: ImageBitmap,
-        topLeft: Offset,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawImage(
-        image: ImageBitmap,
-        srcOffset: IntOffset,
-        srcSize: IntSize,
-        dstOffset: IntOffset,
-        dstSize: IntSize,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawPoints(
-        points: List<Offset>,
-        pointMode: PointMode,
-        color: Color,
-        strokeWidth: Float,
-        cap: androidx.compose.ui.graphics.StrokeCap,
-        pathEffect: androidx.compose.ui.graphics.PathEffect?,
-        alpha: Float,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawPoints(
-        points: List<Offset>,
-        pointMode: PointMode,
-        brush: Brush,
-        strokeWidth: Float,
-        cap: androidx.compose.ui.graphics.StrokeCap,
-        pathEffect: androidx.compose.ui.graphics.PathEffect?,
-        alpha: Float,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawRoundRect(
-        color: Color,
-        topLeft: Offset,
-        size: Size,
-        cornerRadius: androidx.compose.ui.geometry.CornerRadius,
-        style: DrawStyle,
-        alpha: Float,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-
-    override fun drawRoundRect(
-        brush: Brush,
-        topLeft: Offset,
-        size: Size,
-        cornerRadius: androidx.compose.ui.geometry.CornerRadius,
-        alpha: Float,
-        style: DrawStyle,
-        colorFilter: ColorFilter?,
-        blendMode: BlendMode
-    ) = throw UnsupportedOperationException()
-}
-
 class CastShadowTest {
 
+    @AfterTest
+    fun resetLight() {
+        SceneLight.current = CastLight()
+    }
+
+    private fun shape(light: CastLight, w: Int = 10, h: Int = 26, x: Float = 100f) = castShadowShape(light, w, h, x)
+
     @Test
-    fun testMorningProgressZeroPointsRightAndIsLong() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 0.0f,
-            isOutdoor = true,
-            isNight = false,
-            weather = WeatherType.SUNNY
-        )
-        assertTrue(geom.active, "Cast shadow must be active on sunny morning")
-        assertTrue(geom.dxPx > 0, "Morning shadow must point right (positive dx): dx=${geom.dxPx}")
-        assertEquals(4, geom.lengthRows, "Morning shadow must be maximal length (4 rows)")
+    fun morningShadowsPointRightAndSunsetShadowsLeft() {
+        val morning = shape(CastLight(sunProgress = 0.1f))
+        val sunset = shape(CastLight(sunProgress = 0.9f))
+        assertTrue(morning.tipDx > 0)
+        assertTrue(sunset.tipDx < 0)
+        assertEquals(morning.tipDx, -sunset.tipDx)
     }
 
     @Test
-    fun testNoonProgressHalfIsCenteredAndShort() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 0.5f,
-            isOutdoor = true,
-            isNight = false,
-            weather = WeatherType.SUNNY
-        )
-        assertTrue(geom.active, "Cast shadow must be active at noon")
-        assertEquals(0, geom.dxPx, "Noon shadow must be centered under feet (dx == 0)")
-        assertEquals(2, geom.lengthRows, "Noon shadow must be shortest (2 rows)")
+    fun noonShadowsAreShortAndUnderfoot() {
+        val noon = shape(CastLight(sunProgress = 0.5f))
+        val evening = shape(CastLight(sunProgress = 0.95f))
+        assertEquals(0, noon.tipDx)
+        assertEquals(2, noon.rows)
+        assertTrue(evening.rows > noon.rows)
     }
 
     @Test
-    fun testSunsetProgressOnePointsLeftAndIsLong() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 1.0f,
-            isOutdoor = true,
-            isNight = false,
-            weather = WeatherType.SUNNY
-        )
-        assertTrue(geom.active, "Cast shadow must be active on sunny sunset")
-        assertTrue(geom.dxPx < 0, "Sunset shadow must point left (negative dx): dx=${geom.dxPx}")
-        assertEquals(4, geom.lengthRows, "Sunset shadow must be maximal length (4 rows)")
+    fun tallerThingsThrowLongerShadows() {
+        val light = CastLight(sunProgress = 0.9f)
+        assertTrue(shape(light, h = 40).tipDx < shape(light, h = 10).tipDx)
     }
 
     @Test
-    fun testNoneInRain() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 0.3f,
-            isOutdoor = true,
-            isNight = false,
-            weather = WeatherType.RAIN
-        )
-        assertFalse(geom.active, "Cast shadow must be suppressed in rain")
-        assertEquals(0, geom.lengthRows, "Rain must have 0 rows")
-
-        val scope = CastShadowRecordingScope()
-        drawCastShadow(scope, 100f, 200f, 14, 4f, sunProgress = 0.3f, weather = WeatherType.RAIN)
-        assertEquals(0, scope.rects.size, "No rects must be drawn in rain")
+    fun noSunShadowsInRainSnowOrAtNight() {
+        assertFalse(shape(CastLight(weather = WeatherType.RAIN)).visible)
+        assertFalse(shape(CastLight(weather = WeatherType.SNOW)).visible)
+        assertFalse(shape(CastLight(night = true)).visible)
+        assertTrue(shape(CastLight(weather = WeatherType.SAKURA)).visible)
     }
 
     @Test
-    fun testNoneInSnow() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 0.3f,
-            isOutdoor = true,
-            isNight = false,
-            weather = WeatherType.SNOW
-        )
-        assertFalse(geom.active, "Cast shadow must be suppressed in overcast snow")
-        assertEquals(0, geom.lengthRows, "Snow must have 0 rows")
+    fun firelightThrowsShadowsAwayFromTheFire() {
+        val fire = CastLight(night = true, lampX = 500f)
+        assertTrue(shape(fire, x = 300f).tipDx < 0)
+        assertTrue(shape(fire, x = 700f).tipDx > 0)
     }
 
     @Test
-    fun testNoneFromSunAtNight() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 14,
-            sunProgress = 0.5f,
-            isOutdoor = true,
-            isNight = true,
-            weather = WeatherType.SUNNY,
-            localLightX = null
-        )
-        assertFalse(geom.active, "No sun or moon cast shadow at night")
-        assertEquals(0, geom.lengthRows)
-
-        val scope = CastShadowRecordingScope()
-        drawCastShadow(scope, 100f, 200f, 14, 4f, isOutdoor = true, isNight = true)
-        assertEquals(0, scope.rects.size, "No rects must be drawn from sun at night")
+    fun indoorsTheShadowIsShortAndSoft() {
+        val room = shape(CastLight(outdoor = false, night = true, weather = WeatherType.RAIN))
+        assertTrue(room.visible)
+        assertEquals(2, room.rows)
+        assertTrue(room.tipDx in 1..4)
     }
 
     @Test
-    fun testNightLocalLightCastsAwayFromLight() {
-        // Campfire at X = 200, Character at X = 300 (to the right)
-        val rightGeom = calculateCastShadowGeometry(
-            widthPx = 14,
-            isOutdoor = true,
-            isNight = true,
-            localLightX = 200f,
-            centerX = 300f
-        )
-        assertTrue(rightGeom.active, "Local light at night must cast shadow")
-        assertTrue(rightGeom.dxPx > 0, "Character to right of fire must cast shadow right")
-        assertEquals(2, rightGeom.lengthRows, "Local light shadow is short (2 rows)")
-
-        // Character at X = 100 (to the left of fire)
-        val leftGeom = calculateCastShadowGeometry(
-            widthPx = 14,
-            isOutdoor = true,
-            isNight = true,
-            localLightX = 200f,
-            centerX = 100f
-        )
-        assertTrue(leftGeom.active)
-        assertTrue(leftGeom.dxPx < 0, "Character to left of fire must cast shadow left")
-        assertEquals(2, leftGeom.lengthRows)
-    }
-
-    @Test
-    fun testIndoorsSubtleShort() {
-        val geom = calculateCastShadowGeometry(
-            widthPx = 16,
-            isOutdoor = false,
-            isNight = false
-        )
-        assertTrue(geom.active, "Indoor cast shadow is active")
-        assertEquals(2, geom.lengthRows, "Indoor shadow is short (2 rows)")
-    }
-
-    @Test
-    fun testGridSnappingAndGroundBoundary() {
-        val scope = CastShadowRecordingScope()
+    fun drawsOnTheGridBelowTheGroundLineOnly() {
+        val scope = RecordingDrawScope()
         val p = 4f
-        val groundY = 200f
-        drawCastShadow(
-            scope = scope,
-            centerX = 103.7f,
-            groundY = groundY,
-            widthPx = 14,
-            p = p,
-            sunProgress = 0.2f,
-            isOutdoor = true,
-            isNight = false
-        )
-
-        assertTrue(scope.rects.isNotEmpty(), "Rects must be drawn")
-        for (rect in scope.rects) {
-            // Must snap to pixel grid
-            val remX = rect.topLeft.x % p
-            val remY = rect.topLeft.y % p
-            assertEquals(0f, remX, 0.001f, "TopLeft X must be snapped to p: ${rect.topLeft.x}")
-            assertEquals(0f, remY, 0.001f, "TopLeft Y must be snapped to p: ${rect.topLeft.y}")
-
-            // Size must be whole multiples of p
-            assertEquals(0f, rect.size.width % p, 0.001f, "Width must be multiple of p")
-            assertEquals(p, rect.size.height, 0.001f, "Height must be 1 pixel row (p)")
-
-            // Ground boundary: row must be at or below groundY
-            assertTrue(rect.topLeft.y >= (groundY / p).roundToInt() * p, "Shadow must not climb above groundY")
+        drawCastShadow(scope, centerX = 200f, groundY = 400f, widthPx = 10, p = p, heightPx = 26, light = CastLight(sunProgress = 0.9f))
+        assertTrue(scope.rects.isNotEmpty())
+        for (r in scope.rects) {
+            assertEquals(0f, r.topLeft.x % p)
+            assertEquals(0f, r.topLeft.y % p)
+            assertEquals(p, r.size.height)
+            assertEquals(0f, r.size.width % p)
+            // Never above where it touches the ground
+            assertTrue(r.topLeft.y >= 400f)
         }
     }
 
     @Test
-    fun testClampingToPierDeck() {
-        val scope = CastShadowRecordingScope()
-        val p = 5f
-        val groundY = 300f
-        val minGroundY = 305f // clamp out the top row
-        drawCastShadow(
-            scope = scope,
-            centerX = 100f,
-            groundY = groundY,
-            widthPx = 14,
-            p = p,
-            sunProgress = 0.0f,
-            minGroundY = minGroundY
-        )
-        for (rect in scope.rects) {
-            assertTrue(rect.topLeft.y >= minGroundY, "Rect y (${rect.topLeft.y}) must be >= minGroundY ($minGroundY)")
-        }
+    fun aSunsetShadowStretchesLeftAndItsFarEndDithers() {
+        val scope = RecordingDrawScope()
+        val p = 1f
+        drawCastShadow(scope, centerX = 200f, groundY = 100f, widthPx = 10, p = p, heightPx = 26, light = CastLight(sunProgress = 0.9f))
+        val minX = scope.rects.minOf { it.topLeft.x }
+        val maxX = scope.rects.maxOf { it.topLeft.x + it.size.width }
+        assertTrue(minX < 200f - 12f, "reaches well to the left: $minX")
+        assertTrue(maxX <= 206f, "barely past the right of the footprint: $maxX")
+        // The last row is a checkerboard of single pixels
+        val lastRow = scope.rects.maxOf { it.topLeft.y }
+        val far = scope.rects.filter { it.topLeft.y == lastRow }
+        assertTrue(far.all { it.size.width == p })
+        assertTrue(far.all { ((it.topLeft.x.roundToInt() + lastRow.roundToInt()) and 1) == 0 })
+    }
+
+    @Test
+    fun drawsWithTheSceneLightByDefault() {
+        val scope = RecordingDrawScope()
+        SceneLight.current = CastLight(night = true)
+        drawCastShadow(scope, 100f, 100f, 10, 2f)
+        assertTrue(scope.rects.isEmpty())
+        SceneLight.current = CastLight(sunProgress = 0.2f)
+        drawCastShadow(scope, 100f, 100f, 10, 2f)
+        assertTrue(scope.rects.isNotEmpty())
+        assertTrue(scope.rects.all { it.color == CastShadowColor })
     }
 }

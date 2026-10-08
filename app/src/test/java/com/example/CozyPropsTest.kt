@@ -47,6 +47,10 @@ class CozyPropsTest {
         )
         for ((name, grid) in grids) {
             assertTrue("$name is empty", grid.filledCount() > grid.width)
+            // No dark outlines: every edge pixel was given its material's deeper shade.
+            for (y in 0 until grid.height) for (x in 0 until grid.width) {
+                assertTrue("$name still has an outline pixel at ($x, $y)", grid[x, y] != 'k')
+            }
             val runPixels = runPixelCount(grid)
             assertEquals("$name runs must cover each filled pixel once", grid.filledCount(), runPixels)
         }
@@ -75,7 +79,8 @@ class CozyPropsTest {
         for (w in listOf(16, 28, 40)) {
             val fence = CozyProps.flowerFence(w)
             assertEquals(w, fence.width)
-            assertEquals('k', fence[1, 1]) // first post cap
+            assertTrue("first post cap", fence[1, 1] != '.')
+            assertTrue("rails must end on a post", fence[w - 3, 1] != '.')
             assertEquals('g', fence[0, 15]) // ground line
         }
     }
