@@ -602,12 +602,13 @@ object SeasonalTree {
                 }
             }
         }
+        // (by day it lies over the patch above, so together they're darker at the roots)
         for (u in -3..1) {
             val dv = (u + 1) / 2.2f
             val half = 21f * sqrt(max(0f, 1f - dv * dv))
             val x0 = (BX - half).toInt()
             val x1 = (BX + half).toInt()
-            if (x1 > x0) scope.drawRect(shadeColor.copy(alpha = if (light == Light.NIGHT) 0.2f else 0.28f), Offset(left + x0 * p, rowY(u)), Size((x1 - x0) * p, p))
+            if (x1 > x0) scope.drawRect(shadeColor.copy(alpha = if (light == Light.NIGHT) 0.22f else 0.15f), Offset(left + x0 * p, rowY(u)), Size((x1 - x0) * p, p))
         }
 
         // The tree, in bands: rows higher up bend a pixel or two with the wind
