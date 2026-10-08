@@ -194,6 +194,35 @@ data class PixelCharacter(
     /** The Blossom Picnic's flower crown (plan 09, D): which flower, or -1 for none. */
     var crownFlower: Int = -1
 
+    /** A passing look on their face (plan 12, B), shown while [expressionTimer] runs. */
+    var expression: Expression = Expression.NONE
+    var expressionTimer: Float = 0f
+    /** Seconds the current expression has shown, for its little animations. */
+    var expressionAge: Float = 0f
+    /** The emotion last turned into an expression, so each change shows once. */
+    var expressedEmotion: CharacterEmotion = emotion
+
+    /** Shows [e] on their face for [seconds]. */
+    fun express(e: Expression, seconds: Float = EXPRESSION_SECONDS) {
+        expression = e
+        expressionTimer = if (e == Expression.NONE) 0f else seconds
+        expressionAge = 0f
+    }
+
+    /** Runs the expression's clock down; a change of emotion shows its own look for a moment. */
+    fun tickExpression(dt: Float) {
+        if (emotion != expressedEmotion) {
+            expressedEmotion = emotion
+            val look = expressionFor(emotion)
+            if (look != Expression.NONE && expressionTimer <= 0f) express(look)
+        }
+        if (expressionTimer > 0f) {
+            expressionTimer -= dt
+            expressionAge += dt
+            if (expressionTimer <= 0f) expression = Expression.NONE
+        }
+    }
+
     /** Take [item] for [seconds], using it straight away for [useSeconds]. */
     fun hold(item: HeldItem, seconds: Float, useSeconds: Float = 0f) {
         heldItem = item
@@ -715,6 +744,20 @@ object PixelArtRenderer {
         }
     }
 
+    /**
+     * Whether [char]'s passing expression shows: not while their eyes are shut in a hug, a sip or
+     * a head pat, nor mid-bite or mid-gasp, where the pose has its own face.
+     */
+    fun showsExpression(char: PixelCharacter): Boolean {
+        if (char.expression == Expression.NONE || char.expressionTimer <= 0f) return false
+        if (usePose(char)?.closesEyes == true) return false
+        return when (char.pose) {
+            CharacterPose.HUG, CharacterPose.KISS, CharacterPose.HEAD_PAT_RECEIVE, CharacterPose.EAT_SNEAK,
+            CharacterPose.SURPRISED, CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> false
+            else -> true
+        }
+    }
+
     private fun drawStandingCharacter(
         scope: DrawScope,
         char: PixelCharacter,
@@ -923,6 +966,9 @@ object PixelArtRenderer {
         } else {
             px(9, 10, blushColor) // tiny smile
             px(8, 10, skinColor)
+        }
+        if (PixelArtRenderer.showsExpression(char)) {
+            drawExpressionFace(::px, char.expression, 0, skinColor, skinShadow, hairColor, char.isBlinking, char.expressionAge)
         }
 
         // --- 6. Sweater / Winter Coat / Torso ---
@@ -1477,6 +1523,9 @@ object PixelArtRenderer {
         fillRect(5, 10, 2, 1, blushColor)
         fillRect(11, 10, 2, 1, blushColor)
         px(9, 11, blushColor)
+        if (showsExpression(char) && char.pose != CharacterPose.SIT_SNUGGLE) {
+            drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, hairColor, char.isBlinking, char.expressionAge)
+        }
 
         // Torso & sitting posture
         fillRect(6, 13, 7, 4, sweaterColor)

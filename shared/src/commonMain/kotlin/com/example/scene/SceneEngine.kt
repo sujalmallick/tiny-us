@@ -21,6 +21,7 @@ import com.example.engine.CharacterPose
 import com.example.engine.CharacterState
 import com.example.engine.Direction
 import com.example.engine.EmoteType
+import com.example.engine.Expression
 import com.example.engine.HeldItem
 import com.example.engine.ParticleSystem
 import com.example.engine.ParticleType
@@ -88,6 +89,12 @@ class SceneEngine(
         /** The leaves that fall from the tree on the hill, by season. */
         private val TREE_AUTUMN_LEAVES = arrayOf(Color(0xFFE06C1E), Color(0xFFC24118), Color(0xFFF2A23A), Color(0xFFFFC85A))
         private val TREE_SUMMER_LEAVES = arrayOf(Color(0xFF44913A), Color(0xFF73BB44))
+        /** How long a situational face is held between frames that renew it. */
+        private const val SITUATIONAL_HOLD = 0.4f
+        /** The faces for each tap reaction, in the tap pickers' order. */
+        private val TAP_LOOKS = arrayOf(Expression.LAUGH, Expression.GRIN, Expression.SHY, Expression.HEART_EYES, Expression.BLISS, Expression.WINK)
+        /** How the one listening takes a line in a chat. */
+        private val TALK_LOOKS = arrayOf(Expression.LAUGH, Expression.GRIN, Expression.SMUG, Expression.WINK, Expression.SHY)
 
         /** How long a weather picked with the weather button stays before the season moves it on. */
         const val MANUAL_WEATHER_HOLD_SECONDS = 20f * 60f
@@ -2111,6 +2118,15 @@ class SceneEngine(
             if (loftBookAutoClose <= 0f) loftBookReading = false
         }
 
+        // Passing expressions (plan 12, B); a laugh bobs them up and down
+        for (c in charactersBoyGirl) {
+            holdSituationalExpression(c, if (c === boy) girl else boy)
+            c.tickExpression(deltaSeconds)
+            if (c.expression == Expression.LAUGH && !c.isTransitioningPosition &&
+                (c.pose == CharacterPose.IDLE || c.pose == CharacterPose.IDLE_BLINK)
+            ) c.bounceOffset = maxOf(c.bounceOffset, abs(sin(c.expressionAge * 14f)) * 1.6f)
+        }
+
         // Emote timers
         if (boy.emoteTimer > 0) {
             boy.emoteTimer -= deltaSeconds
@@ -3195,6 +3211,9 @@ class SceneEngine(
         lightningTimer = 0f
         nextLightningTime = 12f + Random.nextFloat() * 12f
         audio.playThunder()
+        for (c in charactersBoyGirl) {
+            if (c.pose != CharacterPose.SLEEP && c.pose != CharacterPose.SLEEP_YAWN) c.express(Expression.WORRIED, 2.8f)
+        }
     }
 
     // ── Feature 1: Mochi Matchmaker Engine ──────────────────────────────
@@ -4935,6 +4954,7 @@ class SceneEngine(
                 boySpeechTimer = 3.2f
             }
         }
+        boy.express(TAP_LOOKS[idx % TAP_LOOKS.size], 2.8f)
     }
 
     fun onTouchGirl(cw: Float, ch: Float) {
@@ -5008,6 +5028,7 @@ class SceneEngine(
                 girlSpeechTimer = 3.2f
             }
         }
+        girl.express(TAP_LOOKS[(idx + 2) % TAP_LOOKS.size], 2.8f)
     }
 
     /**
@@ -5029,6 +5050,7 @@ class SceneEngine(
         boy.reactionTimer = 4.0f
         boy.pose = CharacterPose.JOY_JUMP
         boy.emotion = CharacterEmotion.LOVING
+        boy.express(Expression.HEART_EYES, 4f)
         boy.emote = EmoteType.HEART
         boy.emoteTimer = 3.5f
         boy.bounceOffset = 12f
@@ -5053,6 +5075,7 @@ class SceneEngine(
         girl.reactionTimer = 4.0f
         girl.pose = CharacterPose.JOY_JUMP
         girl.emotion = CharacterEmotion.SHY
+        girl.express(Expression.SHY, 4f)
         girl.emote = EmoteType.BLUSH
         girl.emoteTimer = 3.5f
         girl.bounceOffset = 12f
@@ -5135,6 +5158,8 @@ class SceneEngine(
                 girl.worldX = midX + 0.02f
                 boy.pose = CharacterPose.KISS
                 girl.pose = CharacterPose.KISS
+                boy.express(Expression.HEART_EYES, 7f)
+                girl.express(Expression.SHY, 7f)
                 boy.emote = EmoteType.HEART
                 girl.emote = EmoteType.BLUSH
                 boy.emoteTimer = 3.5f
@@ -7526,6 +7551,7 @@ class SceneEngine(
                 for (k in charactersBoyGirl) {
                     k.emotion = CharacterEmotion.SURPRISED
                     emote(k, EmoteType.SPARKLE, 2.4f)
+                    k.express(Expression.STARRY, 3.4f)
                 }
                 particles.spawnShootingStar(cw * 0.15f, ch * 0.08f)
                 particles.spawnShootingStar(cw * 0.35f, ch * 0.05f)
@@ -7584,6 +7610,8 @@ class SceneEngine(
                 if (agent.step == 0 && agent.stepTimer > 2.2f) {
                     speakerSpeech(partner, GameText.get(replyLinePicker.pick()), 1.8f)
                     emote(partner, if (rng.nextBoolean()) EmoteType.HEART else EmoteType.BLUSH, 1.6f)
+                    partner.express(TALK_LOOKS[rng.nextInt(TALK_LOOKS.size)], 2f)
+                    c.express(Expression.LAUGH, 1.6f)
                     agent.step++
                 }
             }
@@ -7678,6 +7706,7 @@ class SceneEngine(
         val x = cw * spot.x
         val y = ch * spot.y
         c.emotion = CharacterEmotion.HAPPY
+        c.express(expressionAt(spot.action), spot.dwellSeconds)
         when (spot.action) {
             SpotAction.SMELL_FLOWERS -> { particles.spawnPetals(x, y - 30f, 3); emote(c, EmoteType.HEART, 1.8f); audio.playStarTwinkle() }
             SpotAction.PICK_FLOWER -> { flowerWiggleTimer = 1.2f; particles.spawnPetals(x, y - 20f, 2); emote(c, EmoteType.SPARKLE, 1.8f) }
@@ -7734,17 +7763,20 @@ class SceneEngine(
         when (weather) {
             WeatherType.SNOW -> {
                 c.emotion = CharacterEmotion.HAPPY
+                c.express(Expression.LAUGH, 2.2f)
                 emote(c, EmoteType.SPARKLE, 2f)
                 particles.spawnSparkles(x, y - 90f, 4, Color(0xFFF2FAFF))
                 audio.playStarTwinkle()
             }
             WeatherType.SAKURA -> {
                 c.transitionPoseTo(CharacterPose.RECEIVE_FLOWER)
+                c.express(Expression.BLISS, 2.4f)
                 particles.spawnPetals(x, y - 90f, 3)
                 emote(c, EmoteType.HEART, 1.8f)
             }
             WeatherType.AUTUMN -> {
                 c.transitionPoseTo(CharacterPose.JOY_JUMP)
+                c.express(Expression.LAUGH, 2f)
                 c.bounceOffset = 4f
                 particles.kickGroundParticles(x, y, cw, ch, cw * 0.06f, c.direction == Direction.LEFT)
                 particles.spawnLeaf(x, y - 20f)
@@ -7752,7 +7784,9 @@ class SceneEngine(
             }
             WeatherType.RAIN -> {
                 c.emotion = CharacterEmotion.CURIOUS
-                emote(c, if (rng.nextBoolean()) EmoteType.DOTS else EmoteType.SWEAT, 1.6f)
+                val sweat = rng.nextBoolean()
+                emote(c, if (sweat) EmoteType.SWEAT else EmoteType.DOTS, 1.6f)
+                if (sweat) c.express(Expression.WORRIED, 2f)
                 particles.spawnRainSplash(x, y)
             }
             WeatherType.SUNNY -> {
@@ -7942,7 +7976,10 @@ class SceneEngine(
                     val painting = paintThemNow(today)
                     store.addPainting(painting)
                     shownPainting = painting
-                    for (c in charactersBoyGirl) emote(c, EmoteType.HEART, 2.2f)
+                    for (c in charactersBoyGirl) {
+                        emote(c, EmoteType.HEART, 2.2f)
+                        c.express(Expression.TEARY, 4f)
+                    }
                     audio.playHeartChime()
                     showMessage(GameText.get(Res.string.painter_done), duration = 4f)
                     onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:PAINTING"))
@@ -8030,6 +8067,7 @@ class SceneEngine(
             oldCouple.noteWaiting = false
             visitorStore?.addNote(com.example.data.Visitors.today().year)
             shownNote = true
+            for (c in charactersBoyGirl) c.express(Expression.TEARY, 4.5f)
             audio.playPaperFlip()
             particles.spawnHeart(bx, by - 12f * p, Color(0xFFFF8FA3))
             onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:NOTE"))
@@ -8347,6 +8385,36 @@ class SceneEngine(
     private fun emote(c: PixelCharacter, e: EmoteType, seconds: Float) {
         c.emote = e
         c.emoteTimer = seconds
+    }
+
+    /**
+     * A face for what [c] is in the middle of (plan 12, B), held while it lasts and nothing else
+     * is showing: concentrating at the stove or with the rod, and a pout when [partner] sneaks a bite.
+     */
+    private fun holdSituationalExpression(c: PixelCharacter, partner: PixelCharacter) {
+        if (c.expressionTimer > SITUATIONAL_HOLD && c.expression != Expression.FOCUSED && c.expression != Expression.POUT) return
+        val look = when {
+            partner.pose == CharacterPose.EAT_SNEAK && c.pose != CharacterPose.EAT_SNEAK -> Expression.POUT
+            c.pose == CharacterPose.COOK || c.heldItem == HeldItem.ROD || c.heldItem == HeldItem.PAN -> Expression.FOCUSED
+            else -> return
+        }
+        if (c.expression != look) c.express(look, SITUATIONAL_HOLD) else c.expressionTimer = SITUATIONAL_HOLD
+    }
+
+    /** How each interaction spot shows on their face (plan 12, B). */
+    private fun expressionAt(action: SpotAction): Expression = when (action) {
+        SpotAction.SMELL_FLOWERS, SpotAction.SMELL_LAVENDER, SpotAction.LISTEN_CHIMES, SpotAction.SIT_GRASS,
+        SpotAction.LIGHT_CANDLE, SpotAction.WARM_HANDS, SpotAction.LOOK_SEA, SpotAction.LOOK_WINDOW -> Expression.BLISS
+        SpotAction.USE_TELESCOPE, SpotAction.LOOK_UP_TREE, SpotAction.ADMIRE_LANTERN, SpotAction.ADMIRE_FAIRY_LIGHTS,
+        SpotAction.LOOK_SKYLIGHT, SpotAction.SPOT_DOLPHINS -> Expression.STARRY
+        SpotAction.PEEK_OVEN, SpotAction.PEEK_BOX, SpotAction.READ_CHALKBOARD, SpotAction.BROWSE_BOOKS,
+        SpotAction.PEEK_BUCKET -> Expression.CURIOUS
+        SpotAction.STIR_POT, SpotAction.RINSE_DISHES, SpotAction.CHECK_CRATE, SpotAction.TEND_LANTERN -> Expression.FOCUSED
+        SpotAction.SNIFF_STEAMER, SpotAction.ORDER_COFFEE -> Expression.HEART_EYES
+        SpotAction.PET_PUP, SpotAction.SIT_POUF, SpotAction.POKE_MUSHROOMS -> Expression.LAUGH
+        SpotAction.FOG_WINDOW -> Expression.WINK
+        SpotAction.PICK_FLOWER, SpotAction.SIT_TABLE, SpotAction.WATER_PLANT, SpotAction.FILL_SAUCER,
+        SpotAction.MIST_PLANTS, SpotAction.STRUM_GUITAR -> Expression.GRIN
     }
 
     private fun talkLine(): StringResource = when {
