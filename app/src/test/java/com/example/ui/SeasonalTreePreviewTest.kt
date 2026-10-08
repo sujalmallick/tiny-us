@@ -40,8 +40,7 @@ class SeasonalTreePreviewTest {
             Triple(WeatherType.SNOW, "DAY", "winter"),
             Triple(WeatherType.RAIN, "DAY", "rain"),
             Triple(WeatherType.SUNNY, "SUNSET", "summer_sunset"),
-            Triple(WeatherType.AUTUMN, "NIGHT", "autumn_night"),
-            Triple(WeatherType.SUNNY, "DAY", "summer_heart")
+            Triple(WeatherType.AUTUMN, "NIGHT", "autumn_night")
         )
         for ((weather, mode, name) in shots) {
             val camera = WorldCamera.forScreen(cw, ch, SceneType.UNDER_TREE, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
@@ -54,11 +53,6 @@ class SeasonalTreePreviewTest {
             }
             var t = 0f
             while (t < 9f) { engine.update(1f / 20f, camera.worldW, camera.worldH); t += 1f / 20f }
-            if (name.endsWith("heart")) {
-                // The two of them stepped aside, so the carved heart on the trunk shows
-                engine.boy.worldX = 0.16f
-                engine.girl.worldX = 0.86f
-            }
             val bmp = Bitmap.createBitmap(cw.toInt(), ch.toInt(), Bitmap.Config.ARGB_8888)
             CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(android.graphics.Canvas(bmp)), Size(cw, ch)) {
                 drawWorld(engine, LowResWorldBuffer(), camera)
@@ -68,5 +62,28 @@ class SeasonalTreePreviewTest {
             bmp.recycle()
         }
         assertTrue(true)
+    }
+
+    /** The tree on its own in each season, so the carved heart on the trunk shows too. */
+    @Test
+    fun theTreeAlone() {
+        val dir = out ?: return
+        val p = 5f
+        val cellW = 760
+        val cellH = 820
+        val weathers = listOf(WeatherType.SAKURA, WeatherType.SUNNY, WeatherType.AUTUMN, WeatherType.SNOW)
+        val bmp = Bitmap.createBitmap(cellW * weathers.size, cellH, Bitmap.Config.ARGB_8888)
+        CanvasDrawScope().draw(Density(1f), LayoutDirection.Ltr, androidx.compose.ui.graphics.Canvas(android.graphics.Canvas(bmp)), Size(bmp.width.toFloat(), cellH.toFloat())) {
+            for ((i, weather) in weathers.withIndex()) {
+                val left = cellW * i.toFloat()
+                drawRect(androidx.compose.ui.graphics.Color(0xFF9CD6F5), androidx.compose.ui.geometry.Offset(left, 0f), Size(cellW.toFloat(), cellH.toFloat()))
+                val ground = cellH - 60f
+                drawRect(androidx.compose.ui.graphics.Color(if (weather == WeatherType.SNOW) 0xFFF1F5F9 else 0xFF7DC26A), androidx.compose.ui.geometry.Offset(left, ground), Size(cellW.toFloat(), 60f))
+                com.example.engine.WorldSprites.drawTree(this, left + cellW / 2f, ground, p, 3f, weather, mossStage = 2, gfInitial = 'M')
+                com.example.engine.WorldSprites.drawTreeSwing(this, left + cellW / 2f, ground, p, 3f, weather)
+            }
+        }
+        File(dir, "tree_alone.png").outputStream().use { bmp.compress(Bitmap.CompressFormat.PNG, 100, it) }
+        assertTrue(bmp.width > 0)
     }
 }

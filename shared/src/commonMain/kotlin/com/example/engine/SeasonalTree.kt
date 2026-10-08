@@ -33,8 +33,8 @@ import kotlin.random.Random
  *
  * It's built once for each season and light, one image pixel per game pixel, from a few placed
  * shapes: a gently curved trunk with a root flare, five curved branches (the low left one carries
- * the swing), and a score of leafy puffs closed into one canopy, each shaded on its own (lit from the
- * upper right, a dark rim underneath), with a few darker pockets where the branches show. Each frame draws that image in a few bands, the upper
+ * the swing), and a score of leafy puffs closed into one canopy, drawn at the characters' pixel size in
+ * the game's blocky way: few tones, lit on the upper right, dark underneath. Each frame draws that image in a few bands, the upper
  * ones nudged by the wind.
  */
 object SeasonalTree {
@@ -128,16 +128,6 @@ object SeasonalTree {
         intArrayOf(0, 65, 12), intArrayOf(-13, 67, 10), intArrayOf(14, 68, 10), intArrayOf(26, 71, 9), intArrayOf(-24, 71, 8)
     )
 
-    /** Darker pockets in the crown, where the branches show: (dx, height, radius). */
-    private val HOLES = listOf(
-        intArrayOf(-17, 72, 3), intArrayOf(16, 75, 3), intArrayOf(-4, 92, 2),
-        intArrayOf(-27, 88, 2), intArrayOf(26, 91, 2), intArrayOf(6, 104, 2)
-    )
-    /** Autumn's thinning leaves have a few more. */
-    private val AUTUMN_HOLES = listOf(
-        intArrayOf(-36, 84, 3), intArrayOf(36, 86, 3), intArrayOf(-8, 80, 3), intArrayOf(10, 100, 3),
-        intArrayOf(-24, 98, 2), intArrayOf(30, 76, 3), intArrayOf(-44, 74, 3)
-    )
 
     /** In autumn twigs show through the leaves only up to this height. */
     private const val AUTUMN_REACH = 105
@@ -152,10 +142,11 @@ object SeasonalTree {
     // ---------------------------------------------------------------- palettes
 
     private val CANOPY = mapOf(
-        Season.SUMMER to intArrayOf(0x1E4A2B, 0x2C6B35, 0x45923B, 0x74BC45, 0xB6E36A),
-        Season.RAIN to intArrayOf(0x18402A, 0x245C33, 0x3A7D3C, 0x5E9F48, 0x8FC36D),
-        Season.SPRING to intArrayOf(0xA8456E, 0xD0668F, 0xEC8FB0, 0xF8B9CF, 0xFFE3EC),
-        Season.AUTUMN to intArrayOf(0x6E2410, 0xA83F17, 0xDA6D1F, 0xF2A23A, 0xFFD27A)
+        // shade, leaf, sunlit, highlight: the game's own leaf colours
+        Season.SUMMER to intArrayOf(0x2D5A27, 0x40916C, 0x74C69D, 0xA7E0B8),
+        Season.RAIN to intArrayOf(0x24492A, 0x356F4F, 0x5A9E7A, 0x86C39E),
+        Season.SPRING to intArrayOf(0xC75D7B, 0xF291B0, 0xFFB5C2, 0xFFD5E0),
+        Season.AUTUMN to intArrayOf(0x8B1E1E, 0xD46A28, 0xF4B942, 0xFFD982)
     )
     /** Bark: shade, wood, sunlit side, groove. */
     private val WOOD = intArrayOf(0x45250F, 0x6B4226, 0x8E5C36, 0x37190A)
@@ -281,91 +272,87 @@ object SeasonalTree {
         return twigs
     }
 
+    /** The canopy is drawn at the characters' pixel size: one leaf cell is 2 x 2 image pixels. */
+    private const val HW = W / 2
+    private const val HV_MIN = -5
+    private const val HV_MAX = U_MAX / 2
+    private const val HH = HV_MAX - HV_MIN + 1
+    private fun inHalf(x: Int, v: Int) = x in 0 until HW && v in HV_MIN..HV_MAX
+    private fun hidx(x: Int, v: Int) = (v - HV_MIN) * HW + x
+
     /**
-     * The canopy's tones (-1 none, 0 deepest shade to 4 brightest). Each puff is shaded on its
-     * own, back to front: lit from the upper right, a dark rim along its underside and a little
-     * 2 x 2 leaf texture. Then the crown is closed, so no sky shows between the puffs.
+     * The canopy's tones on the leaf-cell grid (-1 none, 0 shade, 1 leaf, 2 sunlit, 3 highlight),
+     * in the game's own blocky way: each puff light on its upper right and dark along its
+     * underside, a couple of highlight notches, no texture noise; the crown closed so no sky
+     * shows between the puffs, and its very bottom in shade.
      */
-    private fun puffTone(x: Int, u: Int, cx: Int, cu: Int, r: Int, bump: Float): Int {
-        val ddx = (x - cx).toFloat()
-        val ddu = (u - cu).toFloat()
-        val nx = ddx / r
-        val nu = ddu / r
-        var v = nu * 0.75f + nx * 0.40f
-        v += (hash(x.floorDiv(2), (U_MAX - u).floorDiv(2), 1) - 0.5f) * 0.55f + (hash(x, u, 2) - 0.5f) * 0.2f
-        if (hypot(ddx, ddu) > r + bump - 1.2f && nu < 0.3f) v -= 0.5f
-        return when {
-            v > 0.62f -> 4
-            v > 0.20f -> 3
-            v > -0.22f -> 2
-            v > -0.62f -> 1
-            else -> 0
+    private fun buildLeafCells(): IntArray {
+        val cells = IntArray(HW * HH) { -1 }
+        for ((i, puff) in PUFFS.withIndex()) {
+            val cx = (BX + puff[0]) / 2f
+            val cv = puff[1] / 2f
+            val r = puff[2] / 2f
+            for (v in (cv - r - 2).toInt()..(cv + r + 2).toInt()) for (x in (cx - r - 2).toInt()..(cx + r + 2).toInt()) {
+                if (!inHalf(x, v)) continue
+                val ddx = x + 0.5f - cx
+                val ddv = v + 0.5f - cv
+                val d = hypot(ddx, ddv)
+                val bucket = ((atan2(ddv, ddx) + PI.toFloat()) / (2f * PI.toFloat()) * 12f).toInt() % 12
+                val bump = (hash(bucket, i, 3) - 0.5f) * 1.1f
+                if (d > r + bump) continue
+                val nx = ddx / r
+                val nv = ddv / r
+                val lit = nv * 0.8f + nx * 0.45f
+                var t = if (lit > 0.25f) 2 else if (lit > -0.45f) 1 else 0
+                if (d > r + bump - 1f && nv < 0.1f) t = 0
+                cells[hidx(x, v)] = t
+            }
         }
+        // Close small notches between puffs
+        val grown = BooleanArray(HW * HH)
+        for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+            if (cells[hidx(x, v)] < 0) continue
+            for (dv in -1..1) for (dx in -1..1) if (inHalf(x + dx, v + dv)) grown[hidx(x + dx, v + dv)] = true
+        }
+        for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+            val k = hidx(x, v)
+            if (cells[k] >= 0 || !grown[k]) continue
+            var closed = true
+            for (dv in -1..1) for (dx in -1..1) if (!inHalf(x + dx, v + dv) || !grown[hidx(x + dx, v + dv)]) closed = false
+            if (closed) cells[k] = 1
+        }
+        // A little block of the brightest leaves on each puff's upper right
+        for ((i, puff) in PUFFS.withIndex()) {
+            val cx = (BX + puff[0]) / 2f
+            val cv = puff[1] / 2f
+            val r = puff[2] / 2f
+            val hx = (cx + r * 0.25f).toInt()
+            val hv = (cv + r * 0.45f).toInt()
+            val third = if (hash(i, 0, 5) > 0.5f) intArrayOf(0, -1) else intArrayOf(1, 1)
+            for (o in arrayOf(intArrayOf(0, 0), intArrayOf(1, 0), third)) {
+                if (inHalf(hx + o[0], hv + o[1]) && cells[hidx(hx + o[0], hv + o[1])] == 2) cells[hidx(hx + o[0], hv + o[1])] = 3
+            }
+        }
+        // The crown's very bottom is always in shade
+        val bottom = ArrayList<Int>()
+        for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+            if (cells[hidx(x, v)] >= 0 && (!inHalf(x, v - 1) || cells[hidx(x, v - 1)] < 0)) bottom += hidx(x, v)
+        }
+        for (k in bottom) cells[k] = 0
+        return cells
     }
 
+    private val leafCells by lazy { buildLeafCells() }
+
+    /** The canopy at image resolution (-1 none, else 0..3), each leaf cell 2 x 2. */
     private fun buildCanopy(): IntArray {
         val tone = IntArray(W * H) { -1 }
-        val owner = IntArray(W * H) { -1 }
-        val bumps = FloatArray(W * H)
-        for ((i, puff) in PUFFS.withIndex()) {
-            val (dx, cu, r) = Triple(puff[0], puff[1], puff[2])
-            val cx = BX + dx
-            for (u in cu - r - 3..cu + r + 3) for (x in cx - r - 3..cx + r + 3) {
-                if (!inGrid(x, u)) continue
-                val ddx = (x - cx).toFloat()
-                val ddu = (u - cu).toFloat()
-                val bucket = ((atan2(ddu, ddx) + PI.toFloat()) / (2f * PI.toFloat()) * 22f).toInt() % 22
-                val bump = (hash(bucket, dx * 7 + cu, 3) - 0.5f) * 3f
-                if (hypot(ddx, ddu) > r + bump) continue
-                val k = idx(x, u)
-                tone[k] = puffTone(x, u, cx, cu, r, bump)
-                owner[k] = i
-                bumps[k] = bump
-            }
-        }
-        // Close the crown: every notch and gap between puffs smaller than the disk is filled and
-        // shaded as part of the nearest puff, so the canopy is one mass with an irregular edge.
-        val disk = ArrayList<IntArray>()
-        for (dx in -3..3) for (du in -3..3) if (dx * dx + du * du <= 10) disk += intArrayOf(dx, du)
-        val grown = BooleanArray(W * H)
-        for (u in U_MIN..U_MAX) for (x in 0 until W) {
-            if (owner[idx(x, u)] < 0) continue
-            for (o in disk) if (inGrid(x + o[0], u + o[1])) grown[idx(x + o[0], u + o[1])] = true
-        }
-        for (x in 0 until W) for (u in U_MIN..U_MAX) {
-            val k = idx(x, u)
-            if (owner[k] >= 0 || !grown[k]) continue
-            if (disk.any { !inGrid(x + it[0], u + it[1]) || !grown[idx(x + it[0], u + it[1])] }) continue
-            var best = -1
-            var bestD = 99
-            var bestBump = 0f
-            for (o in disk) {
-                if (!inGrid(x + o[0], u + o[1])) continue
-                val n = idx(x + o[0], u + o[1])
-                val d2 = o[0] * o[0] + o[1] * o[1]
-                if (owner[n] >= 0 && d2 < bestD) { best = owner[n]; bestD = d2; bestBump = bumps[n] }
-            }
-            if (best < 0) continue
-            val puff = PUFFS[best]
-            tone[k] = puffTone(x, u, BX + puff[0], puff[1], puff[2], bestBump)
-            owner[k] = best
-            bumps[k] = bestBump
+        for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+            val t = leafCells[hidx(x, v)]
+            if (t < 0) continue
+            for (oy in 0..1) for (ox in 0..1) if (inGrid(x * 2 + ox, v * 2 + oy)) tone[idx(x * 2 + ox, v * 2 + oy)] = t
         }
         return tone
-    }
-
-    /** The darker pockets in the crown where the branches show; autumn's thinner leaves have more. */
-    private fun pockets(season: Season): BooleanArray {
-        val out = BooleanArray(W * H)
-        val list = if (season == Season.AUTUMN) HOLES + AUTUMN_HOLES else HOLES
-        for (hole in list) {
-            val (dx, cu, r) = Triple(hole[0], hole[1], hole[2])
-            for (u in cu - r..cu + r) for (x in BX + dx - r - 1..BX + dx + r + 1) {
-                if (!inGrid(x, u) || canopy[idx(x, u)] < 0) continue
-                if (hypot((x - BX - dx).toFloat(), (u - cu).toFloat()) <= r + 0.4f) out[idx(x, u)] = true
-            }
-        }
-        return out
     }
 
     private val leafyWood by lazy { buildWood(bare = false) }
@@ -439,33 +426,24 @@ object SeasonalTree {
         if (season != Season.WINTER) {
             val pal = CANOPY.getValue(season)
             val tone = canopy
-            val pocket = pockets(season)
             for (u in U_MIN..U_MAX) for (x in 0 until W) {
-                val k = idx(x, u)
-                val t = tone[k]
-                if (t < 0) continue
-                if (pocket[k]) {
-                    // a pocket shows the branch behind it, or the deepest shade
-                    put(x, u, if (wood[k] >= 0) WOOD[wood[k]] else pal[0])
-                    continue
-                }
-                put(x, u, pal[t])
+                val t = tone[idx(x, u)]
+                if (t >= 0) put(x, u, pal[t])
             }
-            fun open(x: Int, u: Int) = inGrid(x, u) && tone[idx(x, u)] >= 0 && !pocket[idx(x, u)]
+            fun cell(x: Int, v: Int, rgb: Int) {
+                for (oy in 0..1) for (ox in 0..1) put(x * 2 + ox, v * 2 + oy, rgb)
+            }
             if (season == Season.SPRING) {
-                // Blossoms all over the sunlit puffs: five white petals round a warm heart
-                for (u in U_MIN..U_MAX) for (x in 0 until W) {
-                    if (!open(x, u) || tone[idx(x, u)] < 2 || hash(x, U_MAX - u, 11) <= 0.965f) continue
-                    for ((ax, au) in arrayOf(0 to 1, -1 to 0, 1 to 0, 0 to -1)) put(x + ax, u + au, 0xFFFFFF)
-                    put(x, u, if (hash(x, U_MAX - u, 12) > 0.5f) 0xFFC85A else 0xFF8FAB)
+                // Blossom: a few whole cells of white and deep pink among the pink
+                for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+                    val t = leafCells[hidx(x, v)]
+                    if (t >= 1 && hash(x, v, 11) > 0.93f) cell(x, v, if (hash(x, v, 12) > 0.4f) 0xFFF0F5 else 0xFF758F)
                 }
             }
             if (season == Season.SUMMER) {
-                // Ripe fruit among the leaves
-                for (u in U_MIN..U_MAX) for (x in 0 until W) {
-                    if (!open(x, u) || tone[idx(x, u)] !in 1..3 || hash(x, U_MAX - u, 13) <= 0.992f) continue
-                    put(x, u, 0xD62828); put(x + 1, u, 0xFF9A8A)
-                    put(x, u - 1, 0xA01A1A); put(x + 1, u - 1, 0xD62828)
+                // A few red fruit among the leaves
+                for (v in HV_MIN..HV_MAX) for (x in 0 until HW) {
+                    if (leafCells[hidx(x, v)] == 1 && hash(x, v, 13) > 0.95f) cell(x, v, 0xD62828)
                 }
             }
         } else {
