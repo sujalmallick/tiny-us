@@ -170,6 +170,18 @@ jobs:
           cp -r build/iosApp.xcarchive/Products/Applications/iosApp.app Payload/
           zip -r TinyUs-iOS-unsigned.ipa Payload
 
+      # Public proof (annotations need no login) that the widget extension is packed into the app.
+      - name: Check the widget is inside the app
+        run: |
+          appex=Payload/iosApp.app/PlugIns/TinyUsWidget.appex
+          if [ ! -d "$appex" ]; then echo "::error::The widget extension is missing from the app"; exit 1; fi
+          id=$(plutil -extract CFBundleIdentifier raw "$appex/Info.plist")
+          exe=$(plutil -extract CFBundleExecutable raw "$appex/Info.plist")
+          point=$(plutil -extract NSExtension.NSExtensionPointIdentifier raw "$appex/Info.plist")
+          minos=$(plutil -extract MinimumOSVersion raw "$appex/Info.plist")
+          test -f "$appex/$exe" || { echo "::error::The widget's executable $exe is missing"; exit 1; }
+          echo "::notice::Widget inside the app: $id ($point, iOS $minos+), executable $exe, $(du -sh "$appex" | cut -f1)"
+
       - name: Upload iOS IPA Artifact
         uses: actions/upload-artifact@v6
         with:

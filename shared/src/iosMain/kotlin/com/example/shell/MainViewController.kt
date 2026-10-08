@@ -1,6 +1,13 @@
 package com.example.shell
 
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
@@ -15,6 +22,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.withFrameNanos
 import androidx.compose.ui.window.ComposeUIViewController
 import com.example.engine.GameText
+import com.example.engine.IosWorldAudio
 import com.example.engine.WorldViewport
 import com.example.security.AppLock
 import com.example.security.IosLock
@@ -23,6 +31,7 @@ import com.example.security.LocalLockDevice
 import com.example.ui.AppLockScreen
 import com.example.ui.LocalPlatformActions
 import com.example.ui.MainScreen
+import com.example.ui.SplashScreen
 import com.example.ui.theme.MyApplicationTheme
 import kotlin.math.floor
 import kotlinx.coroutines.runBlocking
@@ -40,6 +49,8 @@ fun SharedMainViewController(): UIViewController {
     IosLock.install()
     LaunchDiagnostics.stage("starting the app")
     return ComposeUIViewController {
+        // The splash plays once per launch, as on Android (not again after a restore rebuilds the screens).
+        var showSplash by remember { mutableStateOf(true) }
         // A restore bumps the generation: every screen is rebuilt with freshly read data.
         key(IosAppShell.generation) {
             val platform = remember { IosMainPlatform() }
@@ -49,7 +60,20 @@ fun SharedMainViewController(): UIViewController {
                 CompositionLocalProvider(LocalPlatformActions provides actions, LocalLockDevice provides lockDevice) {
                     Box(Modifier.fillMaxSize()) {
                         // While locked, the lock screen replaces the whole app (dialogs included).
-                        if (AppLock.isLocked) AppLockScreen(IosLock.store) else MainScreen(platform = platform)
+                        if (AppLock.isLocked) {
+                            AppLockScreen(IosLock.store)
+                        } else {
+                            AnimatedContent(targetState = showSplash, transitionSpec = { fadeIn() togetherWith fadeOut() }, label = "splash") { splash ->
+                                if (splash) {
+                                    // Its own player for the chime: the splash releases it when it's done,
+                                    // and the world's shared player must keep going.
+                                    val audio = remember { IosWorldAudio().apply { isEnabled = platform.prefs.soundEnabled } }
+                                    SplashScreen(prefs = platform.prefs, audio = audio, onSplashComplete = { showSplash = false })
+                                } else {
+                                    MainScreen(platform = platform)
+                                }
+                            }
+                        }
                         ShellMessage(Modifier.align(Alignment.BottomCenter))
                     }
                 }
