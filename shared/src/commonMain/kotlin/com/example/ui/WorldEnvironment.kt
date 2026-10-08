@@ -154,22 +154,22 @@ fun drawEnvironment(
             drawDistantHills(scope, cw, ch * 0.66f, p, isNight, isSunset, isMorning, engine.weather)
             drawMeadowGround(scope, cw, ch, isNight, isSunset, timeSeconds, p, engine.weather)
             drawCloudShadows(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
-            // Summer daytime cool tree shade under the canopy
-            if (engine.weather == com.example.scene.WeatherType.SUNNY && !isNight && !isSunset) {
-                WorldSprites.drawTreeShade(scope, cw * 0.5f, ch * 0.69f, p, timeSeconds)
-            }
-            // Grand Pixel Tree with hanging breeze swing & bark growth
+            // The tree through the seasons, its shade, swing and bark carving
+            val treeX = cw * com.example.engine.SeasonalTree.SCENE_X
+            val treeGround = ch * com.example.engine.SeasonalTree.SCENE_GROUND
             WorldSprites.drawTree(
                 scope = scope,
-                baseX = cw * 0.5f,
-                groundY = ch * 0.69f,
+                baseX = treeX,
+                groundY = treeGround,
                 p = p,
                 timeSeconds = timeSeconds,
                 weather = engine.weather,
                 mossStage = engine.treeMossGrowthStage,
-                gfInitial = engine.girlfriendInitial
+                gfInitial = engine.girlfriendInitial,
+                isNight = isNight,
+                isSunset = isSunset
             )
-            WorldSprites.drawTreeSwing(scope, cw * 0.5f, ch * 0.69f, p, timeSeconds)
+            WorldSprites.drawTreeSwing(scope, treeX, treeGround, p, timeSeconds, engine.weather, isNight, isSunset)
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather, engine.gardenBlooms)
             // Ambient birds
             engine.birdSystem.drawBirds(scope, p)

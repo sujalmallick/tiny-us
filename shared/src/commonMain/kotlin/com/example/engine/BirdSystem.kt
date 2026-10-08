@@ -467,6 +467,9 @@ class BirdEntity {
 }
 
 class BirdSystem {
+    /** The weather now, for where on the tree a bird can sit. */
+    private var weatherNow = WeatherType.SUNNY
+
     companion object {
         const val MAX_POOL_SIZE = 3
         const val MAX_ACTIVE_BIRDS = 2
@@ -574,6 +577,8 @@ class BirdSystem {
                 }
             }
             SceneType.UNDER_TREE -> {
+                // In the snow the bare branches are the place to be
+                if (weatherNow == WeatherType.SNOW) return PerchSurface.TREE_BRANCH_RIGHT
                 when (Random.nextInt(4)) {
                     0 -> PerchSurface.TREE_BRANCH_RIGHT
                     1 -> PerchSurface.TREE_BRANCH_LEFT
@@ -603,13 +608,16 @@ class BirdSystem {
                 // Open lawn between flowers and characters
                 Pair(cw * (0.64f + Random.nextFloat() * 0.12f), ch * 0.70f)
             }
-            PerchSurface.TREE_BRANCH_RIGHT -> {
-                // Grand tree right foliage branch perch
-                Pair(cw * 0.50f + 28f * p, ch * 0.69f - 74f * p)
-            }
-            PerchSurface.TREE_BRANCH_LEFT -> {
-                // Grand tree left branch
-                Pair(cw * 0.50f - 24f * p, ch * 0.69f - 76f * p)
+            PerchSurface.TREE_BRANCH_RIGHT, PerchSurface.TREE_BRANCH_LEFT -> {
+                // On a branch of the tree on the hill, where there's open sky above it: the swing
+                // branch under the leaves, anywhere along the bare branches in winter
+                val perches = SeasonalTree.perches(weatherNow)
+                val perch = if (surface == PerchSurface.TREE_BRANCH_LEFT) perches.firstOrNull() else perches.randomOrNull()
+                if (perch != null) {
+                    SeasonalTree.perchAt(perch, cw * SeasonalTree.SCENE_X, ch * SeasonalTree.SCENE_GROUND, p)
+                } else {
+                    Pair(cw * 0.50f - 24f * p, ch * 0.69f - 76f * p)
+                }
             }
             PerchSurface.TREE_GROUND -> {
                 // Tree hill left meadow clearing
@@ -647,8 +655,9 @@ class BirdSystem {
             return
         }
 
-        // Spawn timer
-        if (isWeatherEligible(weather, isNight)) {
+        weatherNow = weather
+        // Spawn timer (a little bird comes to sit in the bare branches of the tree in the snow, too)
+        if (isWeatherEligible(weather, isNight) || (weather == WeatherType.SNOW && !isNight && scene == SceneType.UNDER_TREE)) {
             spawnTimer += dt
             if (spawnTimer >= nextSpawnInterval) {
                 spawnTimer = 0f
