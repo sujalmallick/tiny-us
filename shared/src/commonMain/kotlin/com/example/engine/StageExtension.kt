@@ -11,8 +11,8 @@ package com.example.engine
  *   courses) keep repeating, and the edge row's colour carries on;
  * - above the stage, columns that are one colour all the way through the band (a wall stripe, a
  *   lamp cord, a window mullion) carry on as columns;
- * - below the stage, band colours close to the ground's own are scattered thinly as texture
- *   (grass, gravel), leaving out the colours of props;
+ * - below the stage, the ground's own bottom rows (grass, gravel, terrace), cleaned of props, are
+ *   repeated downward with a sideways shift each time, darkening in soft steps toward the edge;
  * - above an outdoor night sky (starry), a few stars.
  */
 object StageExtension {
@@ -146,40 +146,61 @@ object StageExtension {
         }
     }
 
+    /**
+     * Continues the scene's own ground below the stage: the band's bottom rows that look like the
+     * ground (not a creek, rug or prop) are cleaned of any prop pixels and repeated downward, each
+     * repeat shifted sideways so copies never stack into columns. The fill then darkens in a few
+     * dithered steps toward the screen edge, like a foreground in shade.
+     */
     private fun fillBelow(px: IntArray, w: Int, h: Int, bottom: Int, band: Int) {
         val first = bottom - band
         val rows = IntArray(band) { dominant(px, w, first + it) }
-        val period = period(rows)
         val edge = rows[band - 1]
-        // Texture: band pixels that differ from their row's colour but stay close to it, taken only
-        // from rows that look like the ground being continued (a creek or a rug in the band must not
-        // be scattered across the fill as speckles).
-        val texture = ArrayList<Int>()
-        var total = 0
-        for (i in 0 until band) {
-            if (!close(rows[i], edge)) continue
-            val row = (first + i) * w
+        // The ground: the run of rows at the bottom of the band whose colour matches the edge's.
+        var g = band - 1
+        while (g > 0 && close(rows[g - 1], edge)) g--
+        var tileLen = band - g
+        // Keep whole repeats of a row pattern (plank seams, terrace bands) so it carries on in step.
+        val period = period(rows)
+        if (period in 1..tileLen) tileLen = (tileLen / period) * period
+        val start = band - tileLen
+        val tile = IntArray(tileLen * w)
+        for (k in 0 until tileLen) {
+            val i = start + k
+            val src = (first + i) * w
             for (x in 0 until w) {
-                total++
-                val c = px[row + x]
-                if (c != rows[i] && close(c, rows[i]) && texture.size < 256) texture += c
+                val c = px[src + x]
+                // The ground's own shades stay as texture; anything else (a prop poking in) becomes ground.
+                tile[k * w + x] = if (close(c, rows[i])) c else rows[i]
             }
         }
-        val density = if (total == 0) 0f else (texture.size.toFloat() / total).coerceAtMost(0.05f)
-        val threshold = (density * 1000).toInt()
+        val fillH = (h - bottom).coerceAtLeast(1)
         for (y in bottom until h) {
-            val d = y - bottom + 1
-            val base = if (period > 0) rows[band - period + (period - 1 + d) % period] else edge
+            val d = y - bottom
+            val k = d % tileLen
+            val cycle = d / tileLen
+            val shift = if (cycle == 0) 0 else hash(cycle, 7) % w
+            val level = minOf(SHADE_STEPS - 1, d * SHADE_STEPS / fillH)
+            val levelStart = (level * fillH + SHADE_STEPS - 1) / SHADE_STEPS
             val row = y * w
             for (x in 0 until w) {
-                var c = base
-                if (texture.isNotEmpty()) {
-                    val hv = hash(x, y)
-                    if (hv % 1000 < threshold) c = texture[(hv / 1000) % texture.size]
-                }
-                px[row + x] = c
+                // Soften each step with a checkerboard row or two of the lighter shade.
+                val l = if (level > 0 && d - levelStart < 2 && (x + y) % 2 == 0) level - 1 else level
+                px[row + x] = darken(tile[k * w + (x + shift) % w], l * SHADE_PER_STEP)
             }
         }
+    }
+
+    private const val SHADE_STEPS = 4
+    private const val SHADE_PER_STEP = 0.08f
+
+    private fun darken(c: Int, amount: Float): Int {
+        if (amount <= 0f) return c
+        val k = 1f - amount
+        val r = (((c shr 16) and 0xFF) * k).toInt()
+        val g = (((c shr 8) and 0xFF) * k).toInt()
+        val b = ((c and 0xFF) * k).toInt()
+        return (0xFF shl 24) or (r shl 16) or (g shl 8) or b
     }
 
     private const val NONE = 0
