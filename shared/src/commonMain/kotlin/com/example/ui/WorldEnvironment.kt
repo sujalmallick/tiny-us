@@ -113,6 +113,16 @@ fun drawEnvironment(
                 val chimney = com.example.scene.MeadowLayout.chimneyTop(cw, ch, p)
                 engine.particles.spawnChimneySmoke(chimney.x, chimney.y)
             }
+            // A birdhouse far off on the right, faded toward the sky
+            val farHouse = com.example.scene.CozyPropLayout.meadowFarBirdhouse(cw, ch, p)
+            val meadowHaze = when { isNight -> Color(0xFF181B34); isSunset -> Color(0xFFF7B2AD); else -> Color(0xFFBCE7FD) }
+            com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farBirdhouse, farHouse.x, farHouse.y, p, meadowHaze, 0.35f)
+            // A flower fence right of the cottage; the wild flowers grow in front of its foot
+            val fence = com.example.scene.CozyPropLayout.meadowFence(cw, ch)
+            com.example.engine.CozyProps.drawFlowerFence(
+                scope, fence.x, fence.y, p, com.example.scene.CozyPropLayout.MEADOW_FENCE_WIDTH,
+                engine.propProgress(engine.fenceRustleTimer, com.example.scene.SceneEngine.FENCE_RUSTLE_SECONDS)
+            )
             // Flowers with dynamic garden growth
             drawWildFlowers(scope, cw, ch * 0.70f, p, timeSeconds, engine.gardenStage, engine.flowerWiggleTimer, engine.weather, engine.gardenBlooms)
             // Curated picnic basket
@@ -638,7 +648,20 @@ fun drawEnvironment(
         EnvironmentType.SEASIDE_PIER -> drawSeasidePierScene(scope, cw, ch, p, timeSeconds, engine, isNight, isSunset, isMorning)
         EnvironmentType.PATH_NIGHT -> {
             drawSkyAndClouds(scope, cw, ch, isNight, isSunset, isMorning, timeSeconds, p, weather = engine.weather)
-            drawPathGround(scope, cw, ch, p, engine.weather, isWalk = true, timeSeconds = timeSeconds, isNight = isNight, isSunset = isSunset)
+            drawPathGround(
+                scope, cw, ch, p, engine.weather, isWalk = true, timeSeconds = timeSeconds, isNight = isNight, isSunset = isSunset,
+                creekRippleX = engine.creekRippleX,
+                creekRipple = engine.propProgress(engine.creekRippleTimer, com.example.scene.SceneEngine.CREEK_RIPPLE_SECONDS)
+            )
+            if (engine.weather != com.example.scene.WeatherType.SNOW) {
+                val bridge = com.example.scene.CozyPropLayout.walkFootbridge(cw, ch, p)
+                com.example.engine.CozyProps.drawFootbridge(scope, bridge.x, bridge.y, p)
+            }
+            // A bicycle leaning on the streetlamp (drawn first so the lamp post stands in front)
+            val bike = com.example.scene.CozyPropLayout.walkBicycle(cw, ch)
+            com.example.engine.drawCastShadow(scope, bike.x, bike.y, 26, p, sunProgress = celestialProgress(isNight = isNight, isSunset = isSunset, isMorning = isMorning), isOutdoor = true, isNight = isNight, weather = engine.weather)
+            com.example.engine.drawContactShadow(scope, bike.x, bike.y, 26, p)
+            com.example.engine.CozyProps.drawBicycle(scope, bike.x, bike.y, p, engine.propProgress(engine.bicycleBellTimer, com.example.scene.SceneEngine.BICYCLE_BELL_SECONDS))
             WorldSprites.drawStreetlamp(scope, cw * 0.65f, ch * 0.68f, engine.lampLit && (isNight || isSunset), p)
             WorldSprites.drawMailbox(scope, cw * 0.82f, ch * 0.68f, hasLetter = true, p)
             // Stargazing Vintage Telescope on the overlook

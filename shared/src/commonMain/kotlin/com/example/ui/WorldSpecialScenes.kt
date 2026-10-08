@@ -81,6 +81,7 @@ import com.example.scene.CouchPhase
 import com.example.scene.CatState
 import com.example.scene.CafeLayout
 import com.example.scene.CampfireLayout
+import com.example.scene.CozyPropLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -902,6 +903,11 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
         scope.pCircle(leaf, crown * 0.75f, Offset(tx, tBase - crown))
         if (!night && !snowing) scope.pCircle(Color(0x33FFFFFF), crown * 0.3f, Offset(tx - crown * 0.25f, tBase - crown * 1.2f))
     }
+    // A washing line far out in the garden, behind the picket fence
+    if (!raining) {
+        val line = com.example.scene.CozyPropLayout.sunroomFarClothesline(cw, ch, p)
+        com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farClothesline, line.x, line.y, p, hillFar, 0.3f)
+    }
     val fenceY = kneeTop - 11f * p
     val picket = if (night) Color(0xFF9AA5B4) else Color(0xFFF4F1EA)
     scope.px(picket, 0f, fenceY + 2f * p, cw, 1.2f * p)
@@ -1134,6 +1140,13 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
             scope.px(Color(0xFF70A66A), hx2 + 1f * p + sway * (1f + leaf * 0.12f), potY + 5f * p + leaf * 2.8f * p, 2.6f * p, 1.8f * p)
         }
     }
+    // A hanging flower basket between the first two hangers; a tap swings it
+    val basketHook = com.example.scene.CozyPropLayout.sunroomBasketHook(cw, ch, p)
+    scope.px(Color(0xFFB08968), basketHook.x - 2f * p, roofEave + 2f * p, 4f * p, 1f * p)
+    com.example.engine.CozyProps.drawHangingBasket(
+        scope, basketHook.x, basketHook.y, p,
+        engine.propProgress(engine.basketSwayTimer, com.example.scene.SceneEngine.BASKET_SWAY_SECONDS), time
+    )
     // Wind chime by the door frame
     val chimeX = cw * 0.06f
     scope.px(Color(0xFFB08968), chimeX - 4f * p, roofEave + 4f * p, 8f * p, 1f * p)
@@ -1341,8 +1354,12 @@ fun drawCampfireScene(
         else scope.px(if (isNight) Color(0xFF3B2A1E) else Color(0xFF7A4E2D), rx, ry, 2f * p, 2.6f * p)
     }
 
+    // A trail signpost far back in the clearing, in front of the pines, faded toward the mountains
+    val signpost = CozyPropLayout.campfireFarSignpost(cw, ch, p)
+    com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farSignpost, signpost.x, signpost.y, p, farMtn, 0.3f)
+
     // 5. Bare-earth clearing worn around the fire, with a footpath to the tent
-    val dirt = when { snowing -> Color(0xFF9C8E80); isNight -> Color(0xFF2E241E); isSunset -> Color(0xFF5A4232); else -> Color(0xFF8A6B4E) }
+    val dirt =when { snowing -> Color(0xFF9C8E80); isNight -> Color(0xFF2E241E); isSunset -> Color(0xFF5A4232); else -> Color(0xFF8A6B4E) }
     val dirtDark = when { snowing -> Color(0xFF85776A); isNight -> Color(0xFF241C17); isSunset -> Color(0xFF4A3528); else -> Color(0xFF735842) }
     val rowStep = 2.5f * p
     var dy = -clearRy

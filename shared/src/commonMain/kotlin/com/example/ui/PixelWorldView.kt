@@ -378,6 +378,11 @@ fun PixelWorldView(
                             EnvironmentType.SUNROOM -> {
                                 // The herb pots, the winter greenhouse (plan 09, E1).
                                 if (engine.cozy.onPotTap(tapOffset.x, tapOffset.y, w, h, pixelScale)) return@detectTapGestures
+                                // The hanging basket reaches into the skylight's band, so it is tested first.
+                                if (com.example.scene.CozyPropLayout.hitSunroomBasket(tapOffset, w, h, pixelScale)) {
+                                    engine.onTouchHangingBasket(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 if (tapOffset.y < h * 0.25f) {
                                     engine.onTouchSunroomSkylight(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
@@ -554,6 +559,11 @@ fun PixelWorldView(
                                 if (abs(tapOffset.x - chimes.x) < 22f * pixelScale &&
                                     abs(tapOffset.y - (chimes.y + 6f * pixelScale)) < 24f * pixelScale) {
                                     engine.onTouchWindChimes(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
+                                // Flower fence (before the flower patch, which takes the rest of the ground)
+                                if (com.example.scene.CozyPropLayout.hitMeadowFence(tapOffset, w, h, pixelScale)) {
+                                    engine.onTouchFlowerFence(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                                 // Flowers
@@ -805,6 +815,11 @@ fun PixelWorldView(
                                 }
                             }
                             EnvironmentType.PATH_NIGHT -> {
+                                // The bicycle leans inside the lamp's and mailbox's wide tap boxes, so it goes first.
+                                if (com.example.scene.CozyPropLayout.hitWalkBicycle(tapOffset, w, h, pixelScale)) {
+                                    engine.onTouchBicycle(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
                                 if (abs(tapOffset.x - w * 0.82f) < 24f * pixelScale && abs(tapOffset.y - h * 0.65f) < 24f * pixelScale) {
                                     engine.onTouchMailbox()
                                     return@detectTapGestures
@@ -834,6 +849,13 @@ fun PixelWorldView(
                                 val lavY = curbY + curbH * 0.36f
                                 if (abs(tapOffset.x - lavX) < 20f * pixelScale && abs(tapOffset.y - lavY) < 18f * pixelScale) {
                                     engine.onTouchLavenderPatch(tapOffset.x, tapOffset.y)
+                                    return@detectTapGestures
+                                }
+                                // The creek and its footbridge (no creek in snow); the mushrooms keep their own spot
+                                if (engine.weather != com.example.scene.WeatherType.SNOW &&
+                                    com.example.scene.CozyPropLayout.hitWalkCreek(tapOffset, w, h, pixelScale)
+                                ) {
+                                    engine.onTouchCreek(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                                 // Stepping river stones / glowing mushrooms (Cluster C)
