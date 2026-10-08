@@ -12,6 +12,7 @@ import com.example.engine.WorldCamera
 import com.example.engine.WorldViewport
 import androidx.compose.foundation.background
 import androidx.compose.foundation.gestures.detectTapGestures
+import com.example.scene.autonomy.SpotAction
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.border
 import androidx.compose.foundation.BorderStroke
@@ -267,6 +268,12 @@ fun PixelWorldView(
                         val pixelScale = WorldViewport.pixelScale(w)
                         val charPixelScale = WorldViewport.characterPixelScale(w, engine.usesLowResRenderer)
                         val ny = tapOffset.y / h
+                        // Plan 12, C: tapping something one of them can use sends the nearer one over to
+                        // use it (the thing's own response comes when they get there); when neither is
+                        // free, it responds straight away as before.
+                        fun goUse(action: SpotAction, act: () -> Unit) {
+                            if (!engine.sendToUse(action, w, h, act)) act()
+                        }
 
                         // The garden plots in the meadow come first: they sit low, where the
                         // couple's generous touch boxes would otherwise reach (plan 07, C5).
@@ -369,11 +376,11 @@ fun PixelWorldView(
                                     CafeProp.MOCHI -> engine.onTouchCat(w, h)
                                     CafeProp.BARISTA -> engine.onTouchCafeBarista(w, h)
                                     CafeProp.MENU -> engine.onTouchCafeMenu()
-                                    CafeProp.PUP -> engine.onTouchCafePup(w, h)
+                                    CafeProp.PUP -> goUse(SpotAction.PET_PUP) { engine.onTouchCafePup(w, h) }
                                     CafeProp.LATTE -> engine.onTouchCafeLatte(w, h)
                                     CafeProp.PASTRY -> engine.onTouchCafePastry(w, h)
                                     CafeProp.PASSERBY -> engine.onTouchCafePasserby(tapOffset.x, tapOffset.y)
-                                    CafeProp.WINDOW -> engine.onTouchCafeWindow(tapOffset.x, tapOffset.y, w, h)
+                                    CafeProp.WINDOW -> goUse(SpotAction.FOG_WINDOW) { engine.onTouchCafeWindow(tapOffset.x, tapOffset.y, w, h) }
                                     null -> Unit
                                 }
                                 if (cafeProp != null) return@detectTapGestures
@@ -386,12 +393,12 @@ fun PixelWorldView(
                                     return@detectTapGestures
                                 }
                                 if (kotlin.math.hypot(tapOffset.x - w * 0.20f, tapOffset.y - h * 0.72f) < 22f * pixelScale) {
-                                    engine.onTouchSunroomWateringCan(w, h)
+                                    goUse(SpotAction.WATER_PLANT) { engine.onTouchSunroomWateringCan(w, h) }
                                     return@detectTapGestures
                                 }
                                 // The potting bench and the plant shelf above it (clear of the couple standing in the middle)
                                 if (tapOffset.x > w * 0.64f && tapOffset.y in (h * 0.40f)..(h * 0.665f)) {
-                                    engine.onTouchSunroomPlants(w, h)
+                                    goUse(SpotAction.MIST_PLANTS) { engine.onTouchSunroomPlants(w, h) }
                                     return@detectTapGestures
                                 }
                             }
@@ -415,9 +422,9 @@ fun PixelWorldView(
                                 )
                                 when (campProp) {
                                     CampfireProp.MOCHI -> engine.onTouchCampMochi(w, h)
-                                    CampfireProp.FIRE -> engine.onTouchCampfire(w, h, tapOffset.x, tapOffset.y)
-                                    CampfireProp.GUITAR -> engine.onTouchCampGuitar(w, h)
-                                    CampfireProp.LANTERN -> engine.onTouchCampLantern(w, h)
+                                    CampfireProp.FIRE -> goUse(SpotAction.WARM_HANDS) { engine.onTouchCampfire(w, h, tapOffset.x, tapOffset.y) }
+                                    CampfireProp.GUITAR -> goUse(SpotAction.STRUM_GUITAR) { engine.onTouchCampGuitar(w, h) }
+                                    CampfireProp.LANTERN -> goUse(SpotAction.TEND_LANTERN) { engine.onTouchCampLantern(w, h) }
                                     null -> Unit
                                 }
                                 if (campProp != null) return@detectTapGestures
@@ -445,7 +452,7 @@ fun PixelWorldView(
                                     PierProp.TELESCOPE -> engine.onTouchPierTelescope(w, h)
                                     PierProp.BOAT -> engine.onTouchPierBoat(w, h, tapOffset.x, tapOffset.y)
                                     PierProp.CRAB -> engine.onTouchPierCrab(w, h)
-                                    PierProp.BUCKET -> engine.onTouchPierBucket(w, h)
+                                    PierProp.BUCKET -> goUse(SpotAction.PEEK_BUCKET) { engine.onTouchPierBucket(w, h) }
                                     PierProp.LIGHTS -> engine.onTouchPierLights(w, h, tapOffset.x)
                                     PierProp.SEA -> engine.onTouchPierSea(tapOffset.x, tapOffset.y)
                                     null -> Unit
@@ -556,7 +563,7 @@ fun PixelWorldView(
                                 val chimes = com.example.scene.MeadowLayout.windChimes(w, h, pixelScale)
                                 if (abs(tapOffset.x - chimes.x) < 22f * pixelScale &&
                                     abs(tapOffset.y - (chimes.y + 6f * pixelScale)) < 24f * pixelScale) {
-                                    engine.onTouchWindChimes(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.LISTEN_CHIMES) { engine.onTouchWindChimes(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Flowers
@@ -564,20 +571,20 @@ fun PixelWorldView(
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    engine.onTouchFlower(w, h)
+                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
                                     return@detectTapGestures
                                 }
                             }
                             EnvironmentType.TREE_HILL -> {
                                 if (abs(tapOffset.x - w * 0.5f) < 45f * pixelScale && tapOffset.y < h * 0.62f) {
-                                    engine.onTouchTree(w, h)
+                                    goUse(SpotAction.LOOK_UP_TREE) { engine.onTouchTree(w, h) }
                                     return@detectTapGestures
                                 }
                                 if (tapOffset.y > h * 0.66f) {
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    engine.onTouchFlower(w, h)
+                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
                                     return@detectTapGestures
                                 }
                             }
@@ -592,7 +599,7 @@ fun PixelWorldView(
                                     if (engine.homeEvolutionState.hasCopperTeakettle || engine.teakettleWhistleTimer > 0f) {
                                         engine.onTouchTeakettle(w, h, tapOffset.x, tapOffset.y)
                                     } else {
-                                        engine.onTouchPot(w, h)
+                                        goUse(SpotAction.STIR_POT) { engine.onTouchPot(w, h) }
                                     }
                                     return@detectTapGestures
                                 }
@@ -603,7 +610,7 @@ fun PixelWorldView(
                                 }
                                 // 4. Built-in Oven & Lower Cabinets
                                 if (abs(tapOffset.x - w * 0.65f) < 22f * pixelScale && abs(tapOffset.y - (h * 0.67f - 6f * pixelScale)) < 14f * pixelScale) {
-                                    engine.onTouchCabinet(w, h)
+                                    goUse(SpotAction.PEEK_OVEN) { engine.onTouchCabinet(w, h) }
                                     return@detectTapGestures
                                 }
                                 // 5. Retro Refrigerator
@@ -613,7 +620,7 @@ fun PixelWorldView(
                                 }
                                 // 6. Farmhouse Apron Sink (under window)
                                 if (abs(tapOffset.x - w * 0.28f) < 20f * pixelScale && abs(tapOffset.y - (h * 0.65f - 16f * pixelScale)) < 18f * pixelScale) {
-                                    engine.onTouchSink(w, h)
+                                    goUse(SpotAction.RINSE_DISHES) { engine.onTouchSink(w, h) }
                                     return@detectTapGestures
                                 }
                                 // 7. Kitchen Farmhouse Dining Table (center floor)
@@ -621,7 +628,7 @@ fun PixelWorldView(
                                 val juteY = h * 0.65f + floorH * 0.44f
                                 val tblY = juteY + 7f * pixelScale
                                 if (abs(tapOffset.x - w * 0.50f) < 28f * pixelScale && abs(tapOffset.y - (tblY + 8f * pixelScale)) < 16f * pixelScale) {
-                                    engine.onTouchKitchenTable(w, h)
+                                    goUse(SpotAction.SIT_TABLE) { engine.onTouchKitchenTable(w, h) }
                                     return@detectTapGestures
                                 }
                                 // 8. Wall Clock
@@ -675,7 +682,7 @@ fun PixelWorldView(
                                 // 15. Windowsill Herb Planter Watering
                                 if (abs(tapOffset.x - (w * 0.28f + 9f * pixelScale)) < 18f * pixelScale &&
                                     abs(tapOffset.y - (h * 0.65f - 52f * pixelScale)) < 18f * pixelScale) {
-                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.WATER_PLANT) { engine.onTouchPlantWatering(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                             }
@@ -716,7 +723,7 @@ fun PixelWorldView(
                                 if ((engine.homeEvolutionState.hasCornerMonstera || engine.plantWaterTimer > 0f) &&
                                     abs(tapOffset.x - w * 0.10f) < 22f * pixelScale &&
                                     abs(tapOffset.y - (h * 0.65f - 20f * pixelScale)) < 26f * pixelScale) {
-                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.WATER_PLANT) { engine.onTouchPlantWatering(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
 
@@ -763,7 +770,7 @@ fun PixelWorldView(
                                 val candleX = tableX + 13f * pixelScale
                                 val candleY = tableY - 4f * pixelScale
                                 if (abs(tapOffset.x - candleX) < 14f * pixelScale && abs(tapOffset.y - candleY) < 14f * pixelScale) {
-                                    engine.onTouchAromatherapyCandle(w, h, tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.LIGHT_CANDLE) { engine.onTouchAromatherapyCandle(w, h, tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 if (abs(tapOffset.x - tableX) < 28f * pixelScale && abs(tapOffset.y - tableY) < 16f * pixelScale) {
@@ -774,7 +781,7 @@ fun PixelWorldView(
                                 val pfX = w * 0.70f
                                 val pfY = h * 0.65f + 25f * pixelScale
                                 if (abs(tapOffset.x - pfX) < 16f * pixelScale && abs(tapOffset.y - pfY) < 16f * pixelScale) {
-                                    engine.onTouchPouf(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.SIT_POUF) { engine.onTouchPouf(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Mochi's Cozy Cardboard Box (bottom-left corner)
@@ -820,7 +827,7 @@ fun PixelWorldView(
                                 val teleX = w * 0.38f
                                 val teleGroundY = h * 0.68f
                                 if (abs(tapOffset.x - teleX) < 22f * pixelScale && abs(tapOffset.y - (teleGroundY - 20f * pixelScale)) < 26f * pixelScale) {
-                                    engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.USE_TELESCOPE) { engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 val curbY = h * 0.66f + 30f * pixelScale
@@ -829,19 +836,19 @@ fun PixelWorldView(
                                 val pagX = w * 0.20f
                                 val pagY = curbY + curbH * 0.38f
                                 if (abs(tapOffset.x - pagX) < 20f * pixelScale && abs(tapOffset.y - pagY) < 18f * pixelScale) {
-                                    engine.onTouchPagodaLantern(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.ADMIRE_LANTERN) { engine.onTouchPagodaLantern(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Night Lavender & Fireflies (Cluster B)
                                 val lavX = w * 0.80f
                                 val lavY = curbY + curbH * 0.36f
                                 if (abs(tapOffset.x - lavX) < 20f * pixelScale && abs(tapOffset.y - lavY) < 18f * pixelScale) {
-                                    engine.onTouchLavenderPatch(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.SMELL_LAVENDER) { engine.onTouchLavenderPatch(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Stepping river stones / glowing mushrooms (Cluster C)
                                 if (tapOffset.y > curbY + curbH * 0.60f) {
-                                    engine.onTouchMushrooms(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.POKE_MUSHROOMS) { engine.onTouchMushrooms(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                             }
@@ -850,14 +857,14 @@ fun PixelWorldView(
                                 val teleX = w * 0.25f
                                 val teleGroundY = h * 0.70f
                                 if (abs(tapOffset.x - teleX) < 22f * pixelScale && abs(tapOffset.y - (teleGroundY - 20f * pixelScale)) < 26f * pixelScale) {
-                                    engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.USE_TELESCOPE) { engine.onTouchTelescope(w, h, tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 if (tapOffset.y > h * 0.65f) {
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    engine.onTouchFlower(w, h)
+                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
                                     return@detectTapGestures
                                 }
                             }
@@ -873,7 +880,7 @@ fun PixelWorldView(
                                 val steamerCenterX = w * 0.50f - 13f * pixelScale
                                 val steamerCenterY = groundY - 37f * pixelScale
                                 if (abs(tapOffset.x - steamerCenterX) < 22f * pixelScale && abs(tapOffset.y - steamerCenterY) < 22f * pixelScale) {
-                                    engine.onTouchMomoSteamer(w, h)
+                                    goUse(SpotAction.SNIFF_STEAMER) { engine.onTouchMomoSteamer(w, h) }
                                     return@detectTapGestures
                                 }
                                 // Spicy chutney bowl on cart
@@ -890,14 +897,14 @@ fun PixelWorldView(
                                 val chkX = w * 0.28f
                                 val chkY = pathY + 12f * pixelScale
                                 if (abs(tapOffset.x - chkX) < 16f * pixelScale && abs(tapOffset.y - chkY) < 16f * pixelScale) {
-                                    engine.onTouchChalkboard(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.READ_CHALKBOARD) { engine.onTouchChalkboard(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Bamboo momo steamers crate (on sidewalk right of stall)
                                 val crateX = w * 0.74f
                                 val crateY = pathY + 12f * pixelScale
                                 if (abs(tapOffset.x - crateX) < 18f * pixelScale && abs(tapOffset.y - crateY) < 16f * pixelScale) {
-                                    engine.onTouchBambooCrate(tapOffset.x, tapOffset.y)
+                                    goUse(SpotAction.CHECK_CRATE) { engine.onTouchBambooCrate(tapOffset.x, tapOffset.y) }
                                     return@detectTapGestures
                                 }
                                 // Kitty milk saucer (beside cart on sidewalk)
@@ -1542,6 +1549,20 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             }
 
             fun drawMochi() {
+                // A move of their own (plan 12, A): a stretch, a sniff, a chase after a tail...
+                val move = engine.petMove
+                if (isCatInScene && !engine.mochiInBox && move != null) {
+                    if (PetSprites.drawsKind(engine.petKind)) {
+                        PetSprites.drawMove(this, engine.petKind, move, engine.petMoveTime, cw * engine.catWorldX, catY, pixelScale, engine.catFacingLeft)
+                    } else {
+                        drawCatMove(
+                            this, move, engine.petMoveTime, cw * engine.catWorldX, catY, pixelScale, engine.sceneTime,
+                            engine.catFacingLeft, isSnow,
+                            if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle
+                        )
+                    }
+                    return
+                }
                 // In her cardboard box only her peeking head shows, drawn with the box (plan 10, C).
                 if (isCatInScene && !engine.mochiInBox && PetSprites.drawsKind(engine.petKind)) {
                     // Whoever lives with them now (plan 10, E)

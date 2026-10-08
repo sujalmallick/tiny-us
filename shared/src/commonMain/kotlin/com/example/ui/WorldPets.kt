@@ -9,7 +9,9 @@ import com.example.engine.CastLight
 import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.scene.CatState
+import kotlin.math.PI
 import kotlin.math.abs
+import kotlin.math.cos
 import kotlin.math.roundToInt
 import kotlin.math.sin
 
@@ -218,6 +220,183 @@ object PetSprites {
         }
     }
 
+    // ── Plan 12, A: the pets' moves ───────────────────────────────────────
+
+    /**
+     * [rows] drawn like [draw], with the front of the head dipped [headDrop] rows (a sniff, a
+     * dig, a stretch) or raised when negative (a yawn), all on whole pixels.
+     */
+    private fun drawRows(scope: DrawScope, rows: List<String>, colors: Map<Char, Color>, cx: Float, groundY: Float, p: Float, flip: Boolean, lift: Float = 0f, headDrop: Int = 0, replace: Map<Char, Char> = emptyMap()) {
+        val w = rows.maxOf { it.length }
+        val left = cx - w * p / 2f
+        val top = groundY - rows.size * p - lift
+        for ((y, row) in rows.withIndex()) {
+            for ((x, ch0) in row.withIndex()) {
+                val ch = replace[ch0] ?: ch0
+                val c = colors[ch] ?: continue
+                val col = if (flip) w - 1 - x else x
+                val dy = if (headDrop != 0 && x >= w * 0.6f) headDrop else 0
+                scope.drawRect(c, Offset(left + col * p, top + (y + dy) * p), Size(p, p))
+            }
+        }
+    }
+
+    /** One pixel of [rows]' grid, for little extras drawn on top (a paw, a hole, a wing). */
+    private fun cell(scope: DrawScope, rows: List<String>, cx: Float, groundY: Float, p: Float, flip: Boolean, lift: Float, col: Int, row: Int, c: Color) {
+        val w = rows.maxOf { it.length }
+        val left = cx - w * p / 2f
+        val top = groundY - rows.size * p - lift
+        val x = if (flip) w - 1 - col else col
+        scope.drawRect(c, Offset(left + x * p, top + row * p), Size(p, p))
+    }
+
+    private class Look(val sit: List<String>, val walkA: List<String>, val walkB: List<String>, val rest: List<String>, val colors: Map<Char, Color>, val width: Float)
+
+    private fun lookOf(kind: PetKind): Look? = when (kind) {
+        PetKind.PUPPY -> Look(PUPPY_SIT, PUPPY_WALK_A, PUPPY_WALK_B, PUPPY_SLEEP, PUPPY_COLORS, 13f)
+        PetKind.BUNNY -> Look(BUNNY, BUNNY_HOP, BUNNY, BUNNY_SLEEP, BUNNY_COLORS, 8f)
+        PetKind.FOX -> Look(FOX_SIT, FOX_A, FOX_B, FOX_SLEEP, FOX_COLORS, 11f)
+        PetKind.HEDGEHOG -> Look(HEDGEHOG_A, HEDGEHOG_A, HEDGEHOG_B, HEDGEHOG_BALL, HEDGEHOG_COLORS, 8f)
+        PetKind.DUCK -> Look(DUCK_A, DUCK_A, DUCK_B, DUCK_SLEEP, DUCK_COLORS, 7f)
+        PetKind.OWL -> Look(OWL, OWL, OWL_FLAP, OWL_CLOSED, OWL_COLORS, 6f)
+        PetKind.CAT -> null
+    }
+
+    /**
+     * Draws [kind] (not the cat: see [drawCatMove]) doing [move], [t] seconds in, its feet on
+     * [groundY] at the world's pixel size [worldP].
+     */
+    fun drawMove(scope: DrawScope, kind: PetKind, move: com.example.scene.PetMove, t: Float, cx: Float, groundY: Float, worldP: Float, facingLeft: Boolean) {
+        val look = lookOf(kind) ?: return
+        val p = worldP * scaleOf(kind)
+        val f = (t / move.seconds).coerceIn(0f, 1f)
+        val beat = ((t * 8f).toInt() and 1) == 0
+        val ahead = if (facingLeft) -1f else 1f
+        drawContactShadow(scope, cx, groundY, (look.width).roundToInt(), p)
+        when (move) {
+            com.example.scene.PetMove.STRETCH -> {
+                // Front down low, a long reach, and up again
+                val drop = (sin(PI.toFloat() * f) * 2.4f).roundToInt()
+                drawRows(scope, look.walkA, look.colors, cx, groundY, p, facingLeft, headDrop = drop)
+            }
+            com.example.scene.PetMove.GROOM -> {
+                // A preen or a wash: the head dips to the chest, a beat at a time
+                val rows = if (kind == PetKind.OWL || kind == PetKind.DUCK) look.sit else look.sit
+                drawRows(scope, rows, look.colors, cx, groundY, p, facingLeft, headDrop = if (beat) 1 else 0)
+                if (kind == PetKind.BUNNY) {
+                    // Paws up to the face
+                    cell(scope, rows, cx, groundY, p, facingLeft, 0f, 6, if (beat) 2 else 3, Color(0xFFD9CFC4))
+                }
+            }
+            com.example.scene.PetMove.SCRATCH -> {
+                // Sitting, a back foot going at the ear
+                drawRows(scope, look.sit, look.colors, cx, groundY, p, facingLeft)
+                val w = look.sit.maxOf { it.length }
+                val foot = (w * 0.55f).toInt()
+                // the paw in a colour that shows against the head
+                val fur = when (kind) {
+                    PetKind.PUPPY -> look.colors.getValue('W')
+                    PetKind.FOX -> look.colors.getValue('d')
+                    else -> look.colors.values.first()
+                }
+                cell(scope, look.sit, cx, groundY, p, facingLeft, 0f, foot, if (beat) 1 else 2, fur)
+                cell(scope, look.sit, cx, groundY, p, facingLeft, 0f, foot - 1, if (beat) 2 else 3, fur)
+            }
+            com.example.scene.PetMove.CHASE_TAIL -> {
+                // Round and round: facing one way, then the other
+                val turn = ((t / 0.18f).toInt() and 1) == 0
+                val dx = sin(t * 11f) * 2f * p
+                drawRows(scope, if (beat) look.walkA else look.walkB, look.colors, cx + dx, groundY, p, turn, lift = abs(sin(t * 11f)) * p)
+            }
+            com.example.scene.PetMove.SNIFF -> {
+                // Nose down, sniffing in little dips
+                drawRows(scope, look.walkA, look.colors, cx, groundY, p, facingLeft, headDrop = if (((t * 5f).toInt() and 1) == 0) 1 else 2)
+            }
+            com.example.scene.PetMove.DIG -> {
+                // Head down, paws going, a hole getting deeper in front
+                val hole = (1 + f * 3f).toInt()
+                val w = look.walkA.maxOf { it.length }
+                for (i in 0 until hole) {
+                    scope.drawRect(Color(0xFF5A3A22), Offset(cx + ahead * (w / 2f + 0.5f) * p - p / 2f + ahead * i * p * 0.5f, groundY - p * 0.5f), Size(p, p * 0.8f))
+                }
+                drawRows(scope, if (beat) look.walkA else look.walkB, look.colors, cx, groundY, p, facingLeft, headDrop = 2)
+            }
+            com.example.scene.PetMove.POUNCE -> {
+                if (f < 0.35f) {
+                    // The crouch, a wiggle
+                    val wiggle = if (beat) p else 0f
+                    drawRows(scope, look.walkA, look.colors, cx + wiggle * 0.5f, groundY, p, facingLeft, headDrop = 1)
+                } else {
+                    // The leap, nose first at the end
+                    val g = (f - 0.35f) / 0.65f
+                    val lift = sin(PI.toFloat() * g) * 8f * p
+                    drawRows(scope, look.walkB, look.colors, cx + ahead * g * 8f * worldP, groundY, p, facingLeft, lift = lift, headDrop = if (g > 0.55f) 2 else -1)
+                }
+            }
+            com.example.scene.PetMove.SHAKE -> {
+                // A shiver from nose to tail
+                val dx = if (((t * 20f).toInt() and 1) == 0) p else -p
+                drawRows(scope, look.sit, look.colors, cx + dx, groundY, p, facingLeft)
+            }
+            com.example.scene.PetMove.YAWN -> {
+                // Head up and a big open yawn
+                val wide = f in 0.25f..0.75f
+                val rows = if (kind == PetKind.OWL) look.rest else look.sit
+                drawRows(scope, rows, look.colors, cx, groundY, p, facingLeft, headDrop = if (wide) -1 else 0)
+            }
+            com.example.scene.PetMove.FLOP -> {
+                // Over onto one side with a little bounce, and a contented lie
+                val bounce = if (f < 0.12f) sin(PI.toFloat() * f / 0.12f) * 2f * p else 0f
+                drawRows(scope, look.rest, look.colors, cx, groundY, p, facingLeft, lift = bounce)
+            }
+            com.example.scene.PetMove.HOP -> {
+                // Two happy hops
+                val lift = abs(sin(2f * PI.toFloat() * f)) * 5f * p
+                drawRows(scope, if (lift > p) look.walkA else look.sit, look.colors, cx, groundY, p, facingLeft, lift = lift)
+            }
+            com.example.scene.PetMove.HEAD_TURN -> {
+                // The owl's head goes right round: for a moment only the back of it shows
+                val back = f in 0.3f..0.7f
+                drawRows(scope, look.sit, look.colors, cx, groundY, p, if (f > 0.5f) !facingLeft else facingLeft,
+                    replace = if (back) mapOf('Y' to 'B', 'K' to 'B') else emptyMap())
+            }
+            com.example.scene.PetMove.FLAP -> {
+                // Wings out, a few flaps and a lift
+                val lift = sin(PI.toFloat() * f) * 4f * p
+                if (kind == PetKind.OWL) {
+                    drawRows(scope, if (beat) look.walkB else look.sit, look.colors, cx, groundY, p, facingLeft, lift = lift)
+                } else {
+                    drawRows(scope, look.walkA, look.colors, cx, groundY, p, facingLeft, lift = lift)
+                    // a wing raised over the back
+                    val wing = Color(0xFFF4F1EA)
+                    for (i in 1..3) cell(scope, look.walkA, cx, groundY, p, facingLeft, lift, i, if (beat) 1 else 2, wing)
+                }
+            }
+            com.example.scene.PetMove.PARADE -> {
+                // Mother duck waddles to and fro, her three ducklings marching after her
+                for (i in 3 downTo 0) {
+                    val phase = 2f * PI.toFloat() * f - i * 0.55f
+                    val x = cx + sin(phase) * 9f * p
+                    val left = cos(phase) < 0f
+                    if (i == 0) {
+                        drawRows(scope, if (beat) DUCK_A else DUCK_B, DUCK_COLORS, x, groundY, p, left)
+                    } else {
+                        drawContactShadow(scope, x, groundY, 4, p)
+                        drawRows(scope, if ((((t * 6f).toInt() + i) and 1) == 0) DUCKLING_A else DUCKLING_B, DUCK_COLORS, x, groundY, p, left)
+                    }
+                }
+            }
+            com.example.scene.PetMove.ROLL -> {
+                // Curled into a ball, rolling along (the engine carries it)
+                val spin = ((t * 10f).toInt() and 1) == 0
+                drawRows(scope, HEDGEHOG_BALL, HEDGEHOG_COLORS, cx, groundY, p, spin, lift = abs(sin(t * 12f)) * p)
+            }
+            com.example.scene.PetMove.ZOOMIES -> {
+                drawRows(scope, if (((t * 16f).toInt() and 1) == 0) look.walkA else look.walkB, look.colors, cx, groundY, p, facingLeft)
+            }
+        }
+    }
+
     /** True for the pets that are drawn by [drawPet] (everyone but Mochi). */
     fun drawsKind(kind: PetKind) = kind != PetKind.CAT
 }
@@ -235,4 +414,67 @@ fun drawPetVisitor(scope: DrawScope, engine: com.example.scene.SceneEngine, cw: 
         feet = ground - 13f * p
     }
     PetSprites.drawPet(scope, v.kind, x, feet, p, v.age, v.state, v.facingLeft, night = engine.timeOfDayPhase.isNight)
+}
+
+/**
+ * Mochi doing [move] (plan 12, A), drawn from her own poses: the crouch held still for a
+ * stretch, a paw to her face for a wash, a turn after her tail, a leap, a yawn, a flop onto her
+ * back, a hop. [t] is how far into the move she is; [time] the scene's clock.
+ */
+fun drawCatMove(
+    scope: DrawScope,
+    move: com.example.scene.PetMove,
+    t: Float,
+    cx: Float,
+    groundY: Float,
+    p: Float,
+    time: Float,
+    facingLeft: Boolean,
+    isSnow: Boolean,
+    collarStyle: Int
+) {
+    val f = (t / move.seconds).coerceIn(0f, 1f)
+    val ahead = if (facingLeft) -1f else 1f
+    fun cat(state: CatState, x: Float = cx, lift: Float = 0f, face: Boolean = facingLeft, clock: Float = time) =
+        com.example.engine.WorldSprites.drawCat(
+            scope = scope, cx = x, groundY = groundY - lift, p = p, timeSeconds = clock, catState = state,
+            isSleeping = false, isSnow = isSnow, facingLeft = face, collarStyle = collarStyle
+        )
+    // The sitting pose's face, for a paw or an open mouth over it
+    val headTop = groundY - 13f * p
+    when (move) {
+        com.example.scene.PetMove.STRETCH -> cat(CatState.PLAYFUL_POUNCE, clock = 0f)
+        com.example.scene.PetMove.GROOM -> {
+            cat(CatState.SITTING_PURR)
+            val up = sin(t * 10f) > 0f
+            val pawTop = headTop + (if (up) 2f else 3f) * p
+            scope.drawRect(Color(0xFFCED4DA), Offset(cx - 1.6f * p, pawTop), Size(3.2f * p, 3.4f * p))
+            scope.drawRect(Color(0xFFF8F9FA), Offset(cx - 1.2f * p, pawTop), Size(2.4f * p, 3f * p))
+            scope.drawRect(Color(0xFFFFCAD4), Offset(cx - 0.5f * p, pawTop + 0.4f * p), Size(p, 0.8f * p))
+            if (up) scope.drawRect(Color(0xFFFF8FA3), Offset(cx - 0.5f * p, headTop + 1.6f * p), Size(p, 0.8f * p))
+        }
+        com.example.scene.PetMove.CHASE_TAIL -> {
+            val turn = ((t / 0.18f).toInt() and 1) == 0
+            cat(CatState.WALK_FOLLOW, x = cx + sin(t * 11f) * 2f * p, face = turn, clock = time * 2f)
+        }
+        com.example.scene.PetMove.POUNCE -> if (f < 0.35f) {
+            cat(CatState.PLAYFUL_POUNCE)
+        } else {
+            val g = (f - 0.35f) / 0.65f
+            cat(CatState.WALK_FOLLOW, x = cx + ahead * g * 8f * p, lift = sin(PI.toFloat() * g) * 9f * p, clock = 0.2f)
+        }
+        com.example.scene.PetMove.YAWN -> {
+            cat(CatState.SITTING_PURR)
+            if (f in 0.2f..0.8f) {
+                scope.drawRect(Color(0xFF6B2737), Offset(cx - 1.1f * p, headTop + 2.6f * p), Size(2.2f * p, 1.8f * p))
+                scope.drawRect(Color(0xFFFF8FA3), Offset(cx - 0.6f * p, headTop + 3.4f * p), Size(1.2f * p, 0.9f * p))
+            }
+        }
+        com.example.scene.PetMove.SNIFF -> cat(CatState.PLAYFUL_POUNCE, clock = t * 0.25f)
+        com.example.scene.PetMove.SHAKE -> cat(CatState.SITTING_PURR, x = cx + if (((t * 20f).toInt() and 1) == 0) p else -p)
+        com.example.scene.PetMove.FLOP -> cat(CatState.BELLY_ROLL)
+        com.example.scene.PetMove.HOP -> cat(CatState.SITTING_PURR, lift = abs(sin(2f * PI.toFloat() * f)) * 5f * p)
+        com.example.scene.PetMove.ZOOMIES -> cat(CatState.WALK_FOLLOW, clock = time * 2f)
+        else -> cat(CatState.SITTING_PURR)
+    }
 }
