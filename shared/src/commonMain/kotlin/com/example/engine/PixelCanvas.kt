@@ -1520,8 +1520,9 @@ object PixelArtRenderer {
             px(14, 8, Color.White)
         }
 
-        // Face
+        // Face, with its jaw row down to the collar, so no gap shows between the head and the body
         fillRect(6, 8, 7, 4, skinColor)
+        fillRect(7, 12, 5, 1, skinColor)
         val happyShut = char.pose == CharacterPose.SIT_SNUGGLE || char.emotion == CharacterEmotion.LOVING || usePose(char)?.closesEyes == true
         if (happyShut) {
             // Sweet curved happy eyes ^_^, as standing

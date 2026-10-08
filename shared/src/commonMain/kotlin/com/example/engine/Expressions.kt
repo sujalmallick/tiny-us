@@ -52,11 +52,12 @@ fun expressionFor(emotion: CharacterEmotion): Expression = when (emotion) {
 /**
  * Paints [e] on the face of the 18 x 26 character sprite, replacing the usual eyes, cheeks and
  * mouth. [px] puts one sprite pixel at grid (x, y) and already handles facing and breathing, so
- * "forward" is always +x. [dy] is 1 for the seated sprite, whose face sits a row lower and has no
- * jaw row. [t] runs on for the little animations (twinkles, the tears, the sweat drop).
+ * "forward" is always +x. [dy] is 1 for the seated sprite, whose face sits a row lower. [t] runs
+ * on for the little animations (twinkles, the tears, the sweat drop).
  *
  * Every face keeps to the same rules, so each one reads at the size it's really shown:
- * - the face is symmetric about x = 9 (skin x 6..12, rows 7..10, the jaw row 11 at x 7..11);
+ * - the face is symmetric about x = 9 (skin x 6..12, rows 7..10, the jaw row 11 at x 7..11,
+ *   all a row lower when seated);
  * - open eyes are 2 x 2 at x 7-8 and 10-11, rows 8-9, with a catchlight top-left;
  * - shut eyes are the game's own arcs, raised to rows 7-8 so a clear row sits above the mouth;
  * - blush goes at x 6 and 12, never inside an eye;
@@ -80,11 +81,7 @@ internal fun drawExpressionFace(
     val tongue = Color(0xFFFF8FA3)
     val tearBlue = Color(0xFF7CC8FF)
     val white = Color.White
-    val hasJaw = dy == 0
-    fun p(x: Int, y: Int, c: Color) {
-        if (!hasJaw && y >= 11) return
-        px(x, y + dy, c)
-    }
+    fun p(x: Int, y: Int, c: Color) = px(x, y + dy, c)
     fun rect(x: Int, y: Int, w: Int, h: Int, c: Color) {
         for (i in 0 until w) for (j in 0 until h) p(x + i, y + j, c)
     }
@@ -113,16 +110,16 @@ internal fun drawExpressionFace(
     fun blushUnderArcs(c: Color) { rect(6, 9, 2, 1, c); rect(11, 9, 2, 1, c) }
     /** An open smile, red: a point on row 10, wide on the jaw. */
     fun openSmile() {
-        if (hasJaw) { p(9, 10, mouthRed); rect(8, 11, 3, 1, mouthRed) } else rect(8, 10, 3, 1, mouthRed)
+        p(9, 10, mouthRed); rect(8, 11, 3, 1, mouthRed)
     }
     /** A soft closed smile in rose. */
     fun softSmile() {
-        if (hasJaw) { p(8, 10, rose); p(9, 11, rose); p(10, 10, rose) } else p(9, 10, rose)
+        p(8, 10, rose); p(9, 11, rose); p(10, 10, rose)
     }
 
     // A clean face to paint on: the usual eyes, cheeks and mouth would show through otherwise.
     rect(6, 7, 7, 4, skin)
-    if (hasJaw) rect(7, 11, 5, 1, skin)
+    rect(7, 11, 5, 1, skin)
     p(6, 10, skinShadow); p(12, 10, skinShadow)
 
     when (e) {
@@ -137,7 +134,7 @@ internal fun drawExpressionFace(
             arcs()
             blushUnderArcs(rose)
             rect(8, 10, 3, 1, mouthRed)
-            if (hasJaw) rect(8, 11, 3, 1, ink)
+            rect(8, 11, 3, 1, ink)
         }
         Expression.SHY -> {
             // Eyes lowered, a deep blush, a tiny mouth
@@ -161,7 +158,7 @@ internal fun drawExpressionFace(
             rect(10, 8, 2, 2, ink); p(10, 8, shine)
             blush(coral, strong = true)
             softSmile()
-            if (hasJaw) p(9, 11, tongue)
+            p(9, 11, tongue)
         }
         Expression.STARRY -> {
             // Two little stars that twinkle between gold and white
@@ -198,7 +195,7 @@ internal fun drawExpressionFace(
             p(7, 8, skinShadow); p(8, 8, skinShadow); lids()
             p(10, 7, ink); p(11, 7, ink)
             blush(coral)
-            if (hasJaw) { p(9, 11, ink); p(10, 11, ink); p(11, 10, ink) } else { p(9, 10, ink); p(10, 10, ink) }
+            p(9, 11, ink); p(10, 11, ink); p(11, 10, ink)
         }
         Expression.WORRIED -> {
             // Wide eyes with small pupils, brows up in the middle, a little frown, a bead of sweat
@@ -208,7 +205,7 @@ internal fun drawExpressionFace(
             }
             p(8, 7, ink); p(10, 7, ink)
             blush(coral)
-            if (hasJaw) { p(8, 11, ink); p(9, 10, ink); p(10, 11, ink) } else p(9, 10, ink)
+            p(8, 11, ink); p(9, 10, ink); p(10, 11, ink)
             val drop = if (sin(t * 3f) > -0.3f) 1 else 0
             p(13, 7 + drop, tearBlue); p(13, 8 + drop, tearBlue)
         }
@@ -226,7 +223,7 @@ internal fun drawExpressionFace(
             // Brows knitted over eyes on the task, mouth set, the tip of the tongue out
             rect(7, 7, 2, 1, ink); rect(10, 7, 2, 1, ink)
             lowLids()
-            if (hasJaw) { rect(8, 11, 3, 1, ink); p(10, 10, tongue) } else p(9, 10, ink)
+            rect(8, 11, 3, 1, ink); p(10, 10, tongue)
         }
         Expression.BLISS -> {
             // Eyes softly shut in happy arcs, rosy cheeks, a small smile
