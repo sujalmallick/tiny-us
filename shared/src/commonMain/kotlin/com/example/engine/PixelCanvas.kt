@@ -912,7 +912,7 @@ object PixelArtRenderer {
         px(5, 8, skinShadow)
 
         // --- 3. Eyes with Pixel Sparkles ---
-        val isClosedEyes = char.isBlinking || usePose(char)?.closesEyes == true ||
+        val isClosedEyes = usePose(char)?.closesEyes == true ||
                 char.pose == CharacterPose.IDLE_BLINK ||
                 char.pose == CharacterPose.HUG ||
                 char.pose == CharacterPose.HEAD_PAT_RECEIVE ||
@@ -927,6 +927,10 @@ object PixelArtRenderer {
             px(10, 8, EyeDark)
             px(11, 7, EyeDark)
             px(12, 8, EyeDark)
+        } else if (char.isBlinking) {
+            // A blink: the lids come down
+            fillRect(7, 9, 2, 1, EyeDark)
+            fillRect(10, 9, 2, 1, EyeDark)
         } else if (char.pose == CharacterPose.SURPRISED || char.emotion == CharacterEmotion.SURPRISED) {
             // Wide surprised eyes with catchlights
             fillRect(7, 7, 2, 3, Color.White)
@@ -954,21 +958,30 @@ object PixelArtRenderer {
 
         // --- 4. Rosy Cheek Blush ---
         val blushSize = if (char.emotion == CharacterEmotion.LOVING || char.emotion == CharacterEmotion.SHY) 2 else 1
-        fillRect(6, 9, blushSize, 1, blushColor)
-        fillRect(11, 9, blushSize, 1, blushColor)
+        if (isClosedEyes) {
+            // The shut eyes sit a row higher, so the blush can spread under them
+            fillRect(6, 9, blushSize, 1, blushColor)
+            fillRect(13 - blushSize, 9, blushSize, 1, blushColor)
+        } else {
+            // Beside open eyes the blush keeps to the edges of the face, a row taller when strong
+            fillRect(6, 9, 1, blushSize, blushColor)
+            fillRect(12, 9, 1, blushSize, blushColor)
+        }
 
         // --- 5. Mouth ---
         if (char.pose == CharacterPose.SURPRISED || char.emotion == CharacterEmotion.SURPRISED) {
-            fillRect(8, 10, 2, 1, EyeDark) // tiny 'o'
+            // A little "o", open
+            px(9, 10, EyeDark)
+            px(9, 11, Color(0xFFC9184A))
         } else if (char.pose == CharacterPose.EAT_SNEAK) {
             px(9, 10, EyeDark)
-            px(10, 10, CookieBrown)
+            px(10, 11, CookieBrown)
         } else {
             px(9, 10, blushColor) // tiny smile
             px(8, 10, skinColor)
         }
         if (PixelArtRenderer.showsExpression(char)) {
-            drawExpressionFace(::px, char.expression, 0, skinColor, skinShadow, hairColor, char.isBlinking, char.expressionAge)
+            drawExpressionFace(::px, char.expression, 0, skinColor, skinShadow, char.isBlinking, char.expressionAge)
         }
 
         // --- 6. Sweater / Winter Coat / Torso ---
@@ -1509,22 +1522,33 @@ object PixelArtRenderer {
 
         // Face
         fillRect(6, 8, 7, 4, skinColor)
-        if (char.isBlinking || char.pose == CharacterPose.SIT_SNUGGLE || char.emotion == CharacterEmotion.LOVING || usePose(char)?.closesEyes == true) {
+        val happyShut = char.pose == CharacterPose.SIT_SNUGGLE || char.emotion == CharacterEmotion.LOVING || usePose(char)?.closesEyes == true
+        if (happyShut) {
+            // Sweet curved happy eyes ^_^, as standing
             px(7, 9, EyeDark)
             px(8, 8, EyeDark)
-            px(10, 8, EyeDark)
-            px(11, 9, EyeDark)
+            px(9, 9, EyeDark)
+            px(10, 9, EyeDark)
+            px(11, 8, EyeDark)
+            px(12, 9, EyeDark)
+            fillRect(6, 10, 2, 1, blushColor)
+            fillRect(11, 10, 2, 1, blushColor)
         } else {
-            fillRect(7, 9, 2, 2, EyeDark)
-            fillRect(10, 9, 2, 2, EyeDark)
-            px(7, 9, EyeSparkle)
-            px(10, 9, EyeSparkle)
+            if (char.isBlinking) {
+                fillRect(7, 10, 2, 1, EyeDark)
+                fillRect(10, 10, 2, 1, EyeDark)
+            } else {
+                fillRect(7, 9, 2, 2, EyeDark)
+                fillRect(10, 9, 2, 2, EyeDark)
+                px(7, 9, EyeSparkle)
+                px(10, 9, EyeSparkle)
+            }
+            px(6, 10, blushColor)
+            px(12, 10, blushColor)
         }
-        fillRect(5, 10, 2, 1, blushColor)
-        fillRect(11, 10, 2, 1, blushColor)
         px(9, 11, blushColor)
         if (showsExpression(char) && char.pose != CharacterPose.SIT_SNUGGLE) {
-            drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, hairColor, char.isBlinking, char.expressionAge)
+            drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, char.isBlinking, char.expressionAge)
         }
 
         // Torso & sitting posture
