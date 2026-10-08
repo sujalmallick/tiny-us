@@ -21,6 +21,7 @@ import com.example.engine.CharacterPose
 import com.example.engine.CharacterState
 import com.example.engine.Direction
 import com.example.engine.EmoteType
+import com.example.engine.Expression
 import com.example.engine.HeldItem
 import com.example.engine.ParticleSystem
 import com.example.engine.ParticleType
@@ -94,6 +95,14 @@ class SceneEngine(
         /** The leaves that fall from the tree on the hill, by season. */
         private val TREE_AUTUMN_LEAVES = arrayOf(Color(0xFFE06C1E), Color(0xFFC24118), Color(0xFFF2A23A), Color(0xFFFFC85A))
         private val TREE_SUMMER_LEAVES = arrayOf(Color(0xFF44913A), Color(0xFF73BB44))
+        /** They jog a little when the user sends them to something. */
+        private const val GO_USE_JOG = 1.5f
+        /** How long a situational face is held between frames that renew it. */
+        private const val SITUATIONAL_HOLD = 0.4f
+        /** The faces for each tap reaction, in the tap pickers' order. */
+        private val TAP_LOOKS = arrayOf(Expression.LAUGH, Expression.GRIN, Expression.SHY, Expression.HEART_EYES, Expression.BLISS, Expression.WINK)
+        /** How the one listening takes a line in a chat. */
+        private val TALK_LOOKS = arrayOf(Expression.LAUGH, Expression.GRIN, Expression.SMUG, Expression.WINK, Expression.SHY)
 
         /** How long a weather picked with the weather button stays before the season moves it on. */
         const val MANUAL_WEATHER_HOLD_SECONDS = 20f * 60f
@@ -851,6 +860,9 @@ class SceneEngine(
 
     fun loadScene(type: SceneType) {
         currentScene = type
+        cancelPetMove()
+        petTapCount = 0
+        goUse = null
         cozy.stopAll()
         boy.putAwayHeldItem()
         girl.putAwayHeldItem()
@@ -2116,6 +2128,8 @@ class SceneEngine(
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         updatePets(deltaSeconds)
         dropFromTheTree(deltaSeconds, canvasWidth, canvasHeight)
+        updatePetMove(deltaSeconds, canvasWidth, canvasHeight)
+        updateGoUse(deltaSeconds)
         updateVisitors(deltaSeconds)
         if (secretRevealIn > 0f) {
             secretRevealIn -= deltaSeconds
@@ -2127,6 +2141,15 @@ class SceneEngine(
         if (loftBookAutoClose > 0f) {
             loftBookAutoClose -= deltaSeconds
             if (loftBookAutoClose <= 0f) loftBookReading = false
+        }
+
+        // Passing expressions (plan 12, B); a laugh bobs them up and down
+        for (c in charactersBoyGirl) {
+            holdSituationalExpression(c, if (c === boy) girl else boy)
+            c.tickExpression(deltaSeconds)
+            if (c.expression == Expression.LAUGH && !c.isTransitioningPosition &&
+                (c.pose == CharacterPose.IDLE || c.pose == CharacterPose.IDLE_BLINK)
+            ) c.bounceOffset = maxOf(c.bounceOffset, abs(sin(c.expressionAge * 14f)) * 1.6f)
         }
 
         // Emote timers
@@ -3217,6 +3240,9 @@ class SceneEngine(
         lightningTimer = 0f
         nextLightningTime = 12f + Random.nextFloat() * 12f
         audio.playThunder()
+        for (c in charactersBoyGirl) {
+            if (c.pose != CharacterPose.SLEEP && c.pose != CharacterPose.SLEEP_YAWN) c.express(Expression.WORRIED, 2.8f)
+        }
     }
 
     // ── Feature 1: Mochi Matchmaker Engine ──────────────────────────────
@@ -3274,6 +3300,7 @@ class SceneEngine(
     }
 
     fun triggerMochiMatchmaker(cw: Float, ch: Float) {
+        cancelPetMove()
         mochiMatchmakerActive = true
         mochiMatchmakerVariant = mochiMatchmakerPicker.pick()
         mochiMatchmakerStep = 0
@@ -3494,6 +3521,16 @@ class SceneEngine(
                 catWorldY = catTargetY
                 catState = CatState.SITTING_PURR
                 catFacingLeft = foxVisit.x < catWorldX
+            } else if (petSpotAction != null) {
+                // Over at something in the scene (plan 12, A): a sniff at the flowers, a pounce at the bucket...
+                catWorldX = catTargetX
+                catWorldY = catTargetY
+                val action = petSpotAction!!
+                petSpotAction = null
+                catState = CatState.SITTING_PURR
+                catSleeping = false
+                catFacingLeft = petSpotFacesLeft
+                startPetMove(PetMoves.atSpot(action, petKind), cw, ch)
             } else {
                 // Arrived at roaming destination! Settle down comfortably
                 catWorldX = catTargetX
@@ -3525,6 +3562,7 @@ class SceneEngine(
      */
     fun commandCatWalkTo(targetX: Float, targetY: Float, cw: Float, ch: Float) {
         if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return
+        cancelPetMove()
         mochiMatchmakerActive = false
         val isOutdoor = isCurrentSceneOutdoor
         val clampedTargetY = if (isOutdoor) {
@@ -3561,7 +3599,7 @@ class SceneEngine(
     }
 
     private fun triggerAutonomousPetBehavior(cw: Float, ch: Float) {
-        if (catTreatInProgress) return
+        if (catTreatInProgress || petMove != null) return
         if (foxVisit.active || mochiErrand != null) return
         if (currentScene == SceneType.COZY_LOFT) {
             val states = listOf(
@@ -3598,6 +3636,19 @@ class SceneEngine(
         // If cat is already sleeping peacefully, let it sleep most of the time (70% chance to remain sleeping)
         if (catState == CatState.SLEEPING && Random.nextFloat() < 0.70f) {
             return
+        }
+
+        // Plan 12, A: something of its own now and then, or off to have a look at something
+        if (catState != CatState.SLEEPING && petMove == null) {
+            val roll = Random.nextFloat()
+            if (roll < 0.30f) {
+                val wet = isCurrentSceneOutdoor && (weather == WeatherType.RAIN || weather == WeatherType.SNOW)
+                val choices = PetMoves.movesFor(petKind).filter { it != PetMove.DIG || isCurrentSceneOutdoor } +
+                    (if (wet) listOf(PetMove.SHAKE, PetMove.SHAKE) else emptyList())
+                if (startPetMove(choices.random(Random), cw, ch)) return
+            } else if (roll < 0.48f && visitSomething()) {
+                return
+            }
         }
 
         // Cat chooses next mood: 25% chance to gently roam to a new spot (replaces frantic 55% constant wandering)
@@ -4957,6 +5008,7 @@ class SceneEngine(
                 boySpeechTimer = 3.2f
             }
         }
+        boy.express(TAP_LOOKS[idx % TAP_LOOKS.size], 2.8f)
     }
 
     fun onTouchGirl(cw: Float, ch: Float) {
@@ -5030,6 +5082,7 @@ class SceneEngine(
                 girlSpeechTimer = 3.2f
             }
         }
+        girl.express(TAP_LOOKS[(idx + 2) % TAP_LOOKS.size], 2.8f)
     }
 
     /**
@@ -5051,6 +5104,7 @@ class SceneEngine(
         boy.reactionTimer = 4.0f
         boy.pose = CharacterPose.JOY_JUMP
         boy.emotion = CharacterEmotion.LOVING
+        boy.express(Expression.HEART_EYES, 4f)
         boy.emote = EmoteType.HEART
         boy.emoteTimer = 3.5f
         boy.bounceOffset = 12f
@@ -5075,6 +5129,7 @@ class SceneEngine(
         girl.reactionTimer = 4.0f
         girl.pose = CharacterPose.JOY_JUMP
         girl.emotion = CharacterEmotion.SHY
+        girl.express(Expression.SHY, 4f)
         girl.emote = EmoteType.BLUSH
         girl.emoteTimer = 3.5f
         girl.bounceOffset = 12f
@@ -5157,6 +5212,8 @@ class SceneEngine(
                 girl.worldX = midX + 0.02f
                 boy.pose = CharacterPose.KISS
                 girl.pose = CharacterPose.KISS
+                boy.express(Expression.HEART_EYES, 7f)
+                girl.express(Expression.SHY, 7f)
                 boy.emote = EmoteType.HEART
                 girl.emote = EmoteType.BLUSH
                 boy.emoteTimer = 3.5f
@@ -5456,6 +5513,13 @@ class SceneEngine(
     fun onTouchCat(cw: Float, ch: Float) {
         grantRequest(RequestKind.MOCHI)
         careForMochi(1)
+        // Plan 12, A: after a few pats, a little trick
+        petTapCount++
+        if (petTapCount % 4 == 0 && catState != CatState.SLEEPING && startPetMove(PetMoves.trickFor(petKind), cw, ch)) {
+            showMessage(GameText.get(Res.string.pet_trick, petName), duration = 2.5f)
+            return
+        }
+        cancelPetMove()
         if (petKind != com.example.data.PetKind.CAT) {
             onTouchPet(cw, ch)
             return
@@ -6478,6 +6542,7 @@ class SceneEngine(
             MochiErrand.SAUCER -> if (currentScene == SceneType.MOMO_STALL) MOCHI_SAUCER_X to MOCHI_SAUCER_Y else return
         }
         mochiMatchmakerActive = false
+        cancelPetMove()
         mochiErrand = errand
         catTargetX = x
         catTargetY = y
@@ -7583,6 +7648,7 @@ class SceneEngine(
                 for (k in charactersBoyGirl) {
                     k.emotion = CharacterEmotion.SURPRISED
                     emote(k, EmoteType.SPARKLE, 2.4f)
+                    k.express(Expression.STARRY, 3.4f)
                 }
                 particles.spawnShootingStar(cw * 0.15f, ch * 0.08f)
                 particles.spawnShootingStar(cw * 0.35f, ch * 0.05f)
@@ -7641,6 +7707,8 @@ class SceneEngine(
                 if (agent.step == 0 && agent.stepTimer > 2.2f) {
                     speakerSpeech(partner, GameText.get(replyLinePicker.pick()), 1.8f)
                     emote(partner, if (rng.nextBoolean()) EmoteType.HEART else EmoteType.BLUSH, 1.6f)
+                    partner.express(TALK_LOOKS[rng.nextInt(TALK_LOOKS.size)], 2f)
+                    c.express(Expression.LAUGH, 1.6f)
                     agent.step++
                 }
             }
@@ -7735,6 +7803,7 @@ class SceneEngine(
         val x = cw * spot.x
         val y = ch * spot.y
         c.emotion = CharacterEmotion.HAPPY
+        c.express(expressionAt(spot.action), spot.dwellSeconds)
         when (spot.action) {
             SpotAction.SMELL_FLOWERS -> { particles.spawnPetals(x, y - 30f, 3); emote(c, EmoteType.HEART, 1.8f); audio.playStarTwinkle() }
             SpotAction.PICK_FLOWER -> { flowerWiggleTimer = 1.2f; particles.spawnPetals(x, y - 20f, 2); emote(c, EmoteType.SPARKLE, 1.8f) }
@@ -7791,17 +7860,20 @@ class SceneEngine(
         when (weather) {
             WeatherType.SNOW -> {
                 c.emotion = CharacterEmotion.HAPPY
+                c.express(Expression.LAUGH, 2.2f)
                 emote(c, EmoteType.SPARKLE, 2f)
                 particles.spawnSparkles(x, y - 90f, 4, Color(0xFFF2FAFF))
                 audio.playStarTwinkle()
             }
             WeatherType.SAKURA -> {
                 c.transitionPoseTo(CharacterPose.RECEIVE_FLOWER)
+                c.express(Expression.BLISS, 2.4f)
                 particles.spawnPetals(x, y - 90f, 3)
                 emote(c, EmoteType.HEART, 1.8f)
             }
             WeatherType.AUTUMN -> {
                 c.transitionPoseTo(CharacterPose.JOY_JUMP)
+                c.express(Expression.LAUGH, 2f)
                 c.bounceOffset = 4f
                 particles.kickGroundParticles(x, y, cw, ch, cw * 0.06f, c.direction == Direction.LEFT)
                 particles.spawnLeaf(x, y - 20f)
@@ -7809,7 +7881,9 @@ class SceneEngine(
             }
             WeatherType.RAIN -> {
                 c.emotion = CharacterEmotion.CURIOUS
-                emote(c, if (rng.nextBoolean()) EmoteType.DOTS else EmoteType.SWEAT, 1.6f)
+                val sweat = rng.nextBoolean()
+                emote(c, if (sweat) EmoteType.SWEAT else EmoteType.DOTS, 1.6f)
+                if (sweat) c.express(Expression.WORRIED, 2f)
                 particles.spawnRainSplash(x, y)
             }
             WeatherType.SUNNY -> {
@@ -7999,7 +8073,10 @@ class SceneEngine(
                     val painting = paintThemNow(today)
                     store.addPainting(painting)
                     shownPainting = painting
-                    for (c in charactersBoyGirl) emote(c, EmoteType.HEART, 2.2f)
+                    for (c in charactersBoyGirl) {
+                        emote(c, EmoteType.HEART, 2.2f)
+                        c.express(Expression.TEARY, 4f)
+                    }
                     audio.playHeartChime()
                     showMessage(GameText.get(Res.string.painter_done), duration = 4f)
                     onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:PAINTING"))
@@ -8087,6 +8164,7 @@ class SceneEngine(
             oldCouple.noteWaiting = false
             visitorStore?.addNote(com.example.data.Visitors.today().year)
             shownNote = true
+            for (c in charactersBoyGirl) c.express(Expression.TEARY, 4.5f)
             audio.playPaperFlip()
             particles.spawnHeart(bx, by - 12f * p, Color(0xFFFF8FA3))
             onProgress?.invoke(com.example.progress.ProgressEvent.VisitorKeepsake("visitor:NOTE"))
@@ -8121,6 +8199,7 @@ class SceneEngine(
         get() = if (petKind == com.example.data.PetKind.CAT) catName else petKind.defaultName
 
     private fun setPet(kind: com.example.data.PetKind) {
+        cancelPetMove()
         petKind = kind
         hedgehogCurled = false
         petHabitTimer = 0f
@@ -8141,6 +8220,216 @@ class SceneEngine(
         mochiInBox = false
         mochiErrand = null
         return true
+    }
+
+    // ── Plan 12, C: tap something and one of them goes over to use it ──────────
+
+    /** One of them on their way over to something the user tapped, and then using it. */
+    private class GoUse(val who: PixelCharacter, val spot: SceneSpot, val then: () -> Unit) {
+        var arrived = false
+        var useLeft = 0f
+    }
+
+    private var goUse: GoUse? = null
+
+    /** True while one of them is on their way to something the user tapped, or using it. */
+    val isGoingToUseSomething: Boolean get() = goUse != null
+
+    /**
+     * The user tapped something in the scene one of them can use ([action]): the nearer of the
+     * two who's free walks over at a happy jog, faces it, takes it in hand, and then [then]
+     * happens, the thing's own response, as if it had been tapped. False when neither is free,
+     * something else is on, or there's no such thing here; the caller then does [then] at once.
+     */
+    fun sendToUse(action: SpotAction, cw: Float, ch: Float, then: () -> Unit): Boolean {
+        if (isDreamMode || isWatchSceneActive || isSceneOpeningScriptActive() || birthdaySurprise.isRunning) return false
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        if (goUse != null || groundInteractionCharacter != null) return false
+        val spot = SceneSpots.forScene(currentScene).firstOrNull { it.action == action } ?: return false
+        // The nearer of the two who's free, and not one the other is standing in the way of
+        val who = charactersBoyGirl
+            .filter { isCharacterFree(it) }
+            .filter { c -> val other = if (c === boy) girl else boy; kotlin.math.hypot(other.worldX - spot.x, other.worldY - spot.y) > 0.06f }
+            .minByOrNull { kotlin.math.hypot(it.worldX - spot.x, it.worldY - spot.y) } ?: return false
+        val partner = if (who === boy) girl else boy
+        val speed = CharacterMotionTween.SHARED_WALKING_SPEED * GO_USE_JOG
+        val distance = kotlin.math.hypot(who.worldX - spot.x, who.worldY - spot.y)
+        if (distance > 0.015f) who.moveTo(spot.x, spot.y, speed = speed, arrivePose = CharacterPose.IDLE)
+        who.reactionTimer = distance / speed + spot.dwellSeconds + 1f
+        who.express(Expression.CURIOUS, distance / speed + 0.5f)
+        emote(who, EmoteType.EXCLAMATION, 0.9f)
+        // The other one looks to see what they're up to
+        partner.direction = if (spot.x < partner.worldX) Direction.LEFT else Direction.RIGHT
+        goUse = GoUse(who, spot, then)
+        audio.playFootstep()
+        return true
+    }
+
+    private fun updateGoUse(dt: Float) {
+        val g = goUse ?: return
+        val c = g.who
+        if (!g.arrived) {
+            if (c.isTransitioningPosition) return
+            g.arrived = true
+            c.direction = if (g.spot.faceLeft) Direction.LEFT else Direction.RIGHT
+            if (g.spot.pose != CharacterPose.IDLE) c.transitionPoseTo(g.spot.pose)
+            takeInHand(c, g.spot)
+            c.express(expressionAt(g.spot.action), g.spot.dwellSeconds)
+            g.useLeft = g.spot.dwellSeconds
+            g.then()
+            return
+        }
+        g.useLeft -= dt
+        if (g.useLeft <= 0f) {
+            if (g.spot.pose != CharacterPose.IDLE && c.pose == g.spot.pose) c.transitionPoseTo(CharacterPose.IDLE)
+            if (g.spot.action == SpotAction.PICK_FLOWER) c.hold(HeldItem.FLOWER, CARRIED_ITEM_SECONDS)
+            c.reactionTimer = 0f
+            goUse = null
+        }
+    }
+
+    /** What they take in hand at a spot, without the spot's own effects (the tap brings those). */
+    private fun takeInHand(c: PixelCharacter, spot: SceneSpot) {
+        when (spot.action) {
+            SpotAction.STIR_POT -> c.hold(HeldItem.PAN, spot.dwellSeconds + 0.4f)
+            SpotAction.WATER_PLANT -> c.hold(HeldItem.WATERING_CAN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            SpotAction.MIST_PLANTS -> c.hold(HeldItem.MISTER, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            SpotAction.TEND_LANTERN -> c.hold(HeldItem.LANTERN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            else -> Unit
+        }
+    }
+
+    // ── Plan 12, A: the pets' moves ─────────────────────────────────────────
+
+    /** What the pet who lives with them is doing just now, if anything of its own. */
+    var petMove: PetMove? = null
+        private set
+    /** Seconds into [petMove]. */
+    var petMoveTime = 0f
+        private set
+    /** The thing in the scene the pet is wandering over to, and which way it'll face there. */
+    private var petSpotAction: com.example.scene.autonomy.SpotAction? = null
+    private var petSpotFacesLeft = false
+    /** Pats since the scene began: every fourth brings a trick. */
+    private var petTapCount = 0
+
+    /**
+     * Starts [move] for the pet who lives with them; false when it isn't the moment (the loft and
+     * the scooter, an errand, the Friday fox, a treat, the matchmaker) or the pet doesn't do that.
+     */
+    fun startPetMove(move: PetMove, cw: Float, ch: Float): Boolean {
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        if (mochiInBox || mochiErrand != null || foxVisit.active || catTreatInProgress || mochiMatchmakerActive) return false
+        if (!PetMoves.canDo(petKind, move)) return false
+        if (move == PetMove.DIG && !isCurrentSceneOutdoor) return false
+        catSleeping = false
+        if (move == PetMove.ZOOMIES) {
+            // A dash across and back, drawn as a run
+            startMochiZoomies(cw)
+        } else {
+            if (move == PetMove.ROLL) {
+                // Off it rolls, a little way along
+                val dir = if (catFacingLeft) -1f else 1f
+                catTargetX = avoidCampfirePit((catWorldX + dir * 0.12f).coerceIn(0.10f, 0.90f), catWorldY)
+                catTargetY = catWorldY
+                catState = CatState.WALK_FOLLOW
+            } else {
+                // It stays where it is for the move
+                catTargetX = catWorldX
+                catTargetY = catWorldY
+                if (catState == CatState.WALK_FOLLOW || catState == CatState.SLEEPING) catState = CatState.SITTING_PURR
+            }
+            petMove = move
+            petMoveTime = 0f
+        }
+        val x = cw * catWorldX
+        val y = ch * catWorldY
+        when (move) {
+            PetMove.HOP, PetMove.FLOP -> particles.spawnHeart(x, y - 30f, Color(0xFFFF8FA3))
+            PetMove.PARADE -> particles.spawnMusicNote(x, y - 30f)
+            PetMove.CHASE_TAIL, PetMove.POUNCE -> audio.playBubblePop()
+            else -> Unit
+        }
+        // The two of them notice: a laugh at the silly ones, melting at the sweet ones
+        val delight = when (move) {
+            PetMove.CHASE_TAIL, PetMove.ZOOMIES, PetMove.POUNCE, PetMove.HOP, PetMove.ROLL, PetMove.PARADE, PetMove.DIG -> Expression.LAUGH
+            PetMove.FLOP, PetMove.YAWN, PetMove.STRETCH, PetMove.GROOM, PetMove.HEAD_TURN -> Expression.HEART_EYES
+            else -> null
+        }
+        if (delight != null) {
+            val watcher = charactersBoyGirl.minByOrNull { abs(it.worldX - catWorldX) }
+            if (watcher != null && abs(watcher.worldX - catWorldX) < 0.35f && watcher.expressionTimer <= 0f) {
+                watcher.express(delight, 2.4f)
+            }
+        }
+        return true
+    }
+
+    private fun cancelPetMove() {
+        petMove = null
+        petMoveTime = 0f
+        petSpotAction = null
+    }
+
+    /** Off to have a look at something in the scene; false where there's nothing to go to. */
+    private fun visitSomething(): Boolean {
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        val spots = com.example.scene.autonomy.SceneSpots.forScene(currentScene).filter {
+            // The box and the saucer are errands of their own
+            it.action != com.example.scene.autonomy.SpotAction.PEEK_BOX && it.action != com.example.scene.autonomy.SpotAction.FILL_SAUCER &&
+                abs(it.x - catWorldX) > 0.08f
+        }
+        val spot = spots.randomOrNull(Random) ?: return false
+        // A little closer to the thing than a person would stand
+        val toward = if (spot.faceLeft) -0.05f else 0.05f
+        catTargetY = (spot.y).coerceIn(0.66f, if (isCurrentSceneOutdoor) 0.74f else 0.72f)
+        catTargetX = avoidCampfirePit((spot.x + toward).coerceIn(0.10f, 0.90f), catTargetY)
+        catFacingLeft = catTargetX < catWorldX
+        catState = CatState.WALK_FOLLOW
+        catSleeping = false
+        petSpotAction = spot.action
+        petSpotFacesLeft = spot.faceLeft
+        return true
+    }
+
+    /** The move's little effects as it goes (earth flying, drops, puffs), and its end. */
+    private fun updatePetMove(dt: Float, cw: Float, ch: Float) {
+        val x = cw * catWorldX
+        val y = ch * catWorldY
+        val ahead = if (catFacingLeft) -1f else 1f
+        if (mochiZoomTimer > 0f && eventChance(6f, dt)) {
+            if (isCurrentSceneOutdoor) particles.spawnGrassPuff(x - ahead * 20f, y, 1) else particles.spawnSparkles(x - ahead * 20f, y - 6f, 1)
+        }
+        val move = petMove ?: return
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT || mochiErrand != null || mochiMatchmakerActive) {
+            cancelPetMove()
+            return
+        }
+        val before = petMoveTime
+        petMoveTime += dt
+        val p = WorldViewport.pixelScale(cw)
+        when (move) {
+            PetMove.SNIFF -> if (isCurrentSceneOutdoor && eventChance(1.5f, dt)) particles.spawnGrassPuff(x + ahead * 10f * p, y, 1)
+            PetMove.DIG -> if (eventChance(5f, dt)) particles.kickGroundParticles(x, y, cw, ch, cw * 0.03f, !catFacingLeft)
+            PetMove.SHAKE -> if (eventChance(12f, dt)) {
+                val dx = (Random.nextFloat() - 0.5f) * 16f * p
+                if (weather == WeatherType.RAIN) particles.spawnRainSplash(x + dx, y - 8f * p) else particles.spawnSparkles(x + dx, y - 8f * p, 1, Color(0xFFF2FAFF))
+            }
+            PetMove.CHASE_TAIL -> if (eventChance(3f, dt)) particles.spawnSparkles(x, y - 10f * p, 1)
+            PetMove.POUNCE -> if (before < move.seconds * 0.95f && petMoveTime >= move.seconds * 0.95f) {
+                // The landing
+                if (isCurrentSceneOutdoor) particles.spawnGrassPuff(x + ahead * 8f * p, y, 3) else particles.spawnSparkles(x + ahead * 8f * p, y - 4f, 3)
+            }
+            else -> Unit
+        }
+        if (petMoveTime >= move.seconds) {
+            if (move == PetMove.POUNCE) {
+                // It landed a little way ahead
+                catWorldX = (catWorldX + ahead * 8f * p / cw).coerceIn(0.08f, 0.92f)
+                catTargetX = catWorldX
+            }
+            cancelPetMove()
+        }
     }
 
     /**
@@ -8404,6 +8693,36 @@ class SceneEngine(
     private fun emote(c: PixelCharacter, e: EmoteType, seconds: Float) {
         c.emote = e
         c.emoteTimer = seconds
+    }
+
+    /**
+     * A face for what [c] is in the middle of (plan 12, B), held while it lasts and nothing else
+     * is showing: concentrating at the stove or with the rod, and a pout when [partner] sneaks a bite.
+     */
+    private fun holdSituationalExpression(c: PixelCharacter, partner: PixelCharacter) {
+        if (c.expressionTimer > SITUATIONAL_HOLD && c.expression != Expression.FOCUSED && c.expression != Expression.POUT) return
+        val look = when {
+            partner.pose == CharacterPose.EAT_SNEAK && c.pose != CharacterPose.EAT_SNEAK -> Expression.POUT
+            c.pose == CharacterPose.COOK || c.heldItem == HeldItem.ROD || c.heldItem == HeldItem.PAN -> Expression.FOCUSED
+            else -> return
+        }
+        if (c.expression != look) c.express(look, SITUATIONAL_HOLD) else c.expressionTimer = SITUATIONAL_HOLD
+    }
+
+    /** How each interaction spot shows on their face (plan 12, B). */
+    private fun expressionAt(action: SpotAction): Expression = when (action) {
+        SpotAction.SMELL_FLOWERS, SpotAction.SMELL_LAVENDER, SpotAction.LISTEN_CHIMES, SpotAction.SIT_GRASS,
+        SpotAction.LIGHT_CANDLE, SpotAction.WARM_HANDS, SpotAction.LOOK_SEA, SpotAction.LOOK_WINDOW -> Expression.BLISS
+        SpotAction.USE_TELESCOPE, SpotAction.LOOK_UP_TREE, SpotAction.ADMIRE_LANTERN, SpotAction.ADMIRE_FAIRY_LIGHTS,
+        SpotAction.LOOK_SKYLIGHT, SpotAction.SPOT_DOLPHINS -> Expression.STARRY
+        SpotAction.PEEK_OVEN, SpotAction.PEEK_BOX, SpotAction.READ_CHALKBOARD, SpotAction.BROWSE_BOOKS,
+        SpotAction.PEEK_BUCKET -> Expression.CURIOUS
+        SpotAction.STIR_POT, SpotAction.RINSE_DISHES, SpotAction.CHECK_CRATE, SpotAction.TEND_LANTERN -> Expression.FOCUSED
+        SpotAction.SNIFF_STEAMER, SpotAction.ORDER_COFFEE -> Expression.HEART_EYES
+        SpotAction.PET_PUP, SpotAction.SIT_POUF, SpotAction.POKE_MUSHROOMS -> Expression.LAUGH
+        SpotAction.FOG_WINDOW -> Expression.WINK
+        SpotAction.PICK_FLOWER, SpotAction.SIT_TABLE, SpotAction.WATER_PLANT, SpotAction.FILL_SAUCER,
+        SpotAction.MIST_PLANTS, SpotAction.STRUM_GUITAR -> Expression.GRIN
     }
 
     private fun talkLine(): StringResource = when {

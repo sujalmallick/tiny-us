@@ -1740,7 +1740,8 @@ object WorldSprites {
         scope.drawRect(boyLook.skin, Offset(boySeatX + 18 * p, boyTorsoY + 8 * p), Size(4.5f * p, 4.5f * p))
 
         // Boy Head leaning forward against girl's back
-        val boyHeadY = boyTorsoY - 14 * p
+        // The head sits right on the collar (it used to float a little above it)
+        val boyHeadY = boyTorsoY - 12 * p
         scope.drawRect(boyLook.skin, Offset(boySeatX - 2 * p, boyHeadY), Size(12 * p, 12 * p))
         val hairFlutter = sin(timeSeconds * 10f) * 1.8f * p
         scope.drawRect(boyLook.hair, Offset(boySeatX - 5 * p, boyHeadY - 3 * p), Size(15 * p, 6 * p))
@@ -1811,7 +1812,7 @@ object WorldSprites {
         scope.drawRect(girlDress.sweater, Offset(girlSeatX + 6 * p, girlTorsoY + 4 * p), Size(13 * p, 4 * p))
         scope.drawRect(girlLook.skin, Offset(girlSeatX + 17 * p, girlTorsoY + 5 * p), Size(4 * p, 4 * p))
 
-        val girlHeadY = girlTorsoY - 14 * p
+        val girlHeadY = girlTorsoY - 12 * p
         scope.drawRect(girlLook.skin, Offset(girlSeatX + 2 * p, girlHeadY), Size(11 * p, 12 * p))
 
         // Long wind-blown hair flowing back horizontally with fluttering ribbon
