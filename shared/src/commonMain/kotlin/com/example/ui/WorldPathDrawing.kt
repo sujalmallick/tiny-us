@@ -277,7 +277,8 @@ fun drawPathGround(
     if (isWalk && !isSnow) {
         com.example.engine.CozyProps.drawCreek(
             scope, 0f, com.example.scene.CozyPropLayout.walkCreekTop(ch, p), cw,
-            com.example.scene.CozyPropLayout.CREEK_ROWS, p, timeSeconds, creekRippleX, creekRipple
+            com.example.scene.CozyPropLayout.CREEK_ROWS, p, timeSeconds, creekRippleX, creekRipple,
+            com.example.engine.CozyProps.outdoorLight(isNight, isSunset)
         )
     }
 

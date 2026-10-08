@@ -53,6 +53,17 @@ class CozyPropsTest {
     }
 
     @Test
+    fun `props take the scene's light so they darken at night like everything else`() {
+        val red = androidx.compose.ui.graphics.Color(0xFFC4505E)
+        fun luma(c: androidx.compose.ui.graphics.Color) = 0.299f * c.red + 0.587f * c.green + 0.114f * c.blue
+        assertEquals(red, CozyProps.outdoorLight(isNight = false, isSunset = false).apply(red))
+        assertTrue(luma(CozyProps.outdoorLight(isNight = true, isSunset = false).apply(red)) < luma(red) * 0.75f)
+        assertTrue(luma(CozyProps.indoorLight(isNight = true).apply(red)) < luma(red))
+        // Lamps keep rooms brighter than the outdoors at night.
+        assertTrue(luma(CozyProps.indoorLight(true).apply(red)) > luma(CozyProps.outdoorLight(true, false).apply(red)))
+    }
+
+    @Test
     fun `far props are smaller than the close ones`() {
         assertTrue(CozyProps.farBirdhouse.height < CozyProps.hangingBasket.height)
         assertTrue(CozyProps.farClothesline.width < 30)

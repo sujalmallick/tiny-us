@@ -151,10 +151,13 @@ object StageExtension {
         val rows = IntArray(band) { dominant(px, w, first + it) }
         val period = period(rows)
         val edge = rows[band - 1]
-        // Texture: band pixels that differ from their row's colour but stay close to it.
+        // Texture: band pixels that differ from their row's colour but stay close to it, taken only
+        // from rows that look like the ground being continued (a creek or a rug in the band must not
+        // be scattered across the fill as speckles).
         val texture = ArrayList<Int>()
         var total = 0
         for (i in 0 until band) {
+            if (!close(rows[i], edge)) continue
             val row = (first + i) * w
             for (x in 0 until w) {
                 total++

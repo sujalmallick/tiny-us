@@ -378,7 +378,7 @@ object CozyPropLayout {
     fun sunroomFarClothesline(cw: Float, ch: Float, p: Float) = Offset(cw * 0.48f, ch * 0.575f - 13f * p)
 
     // Campfire: a trail signpost far back in the clearing, in front of the pines.
-    fun campfireFarSignpost(cw: Float, ch: Float, p: Float) = Offset(cw * 0.87f, ch * 0.50f + 10f * p)
+    fun campfireFarSignpost(cw: Float, ch: Float, p: Float) = Offset(cw * 0.79f, ch * 0.50f + 10f * p)
 
     // Living room: a pet bed and fish toy on the front row, between the knitting corner and the
     // record rack. Mochi's use of them lives with the pet behaviour (FEATURES).

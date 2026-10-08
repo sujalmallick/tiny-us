@@ -98,11 +98,34 @@ class PixelGrid(val width: Int, val height: Int) {
  */
 object CozyProps {
 
+    /**
+     * How a scene's light colours its props, the way the hand-drawn scene objects shift at night:
+     * every prop colour is pulled [amount] of the way toward [color]. Pass the scene's light so new
+     * props darken and cool with everything around them instead of glowing at full daylight colour.
+     */
+    class PropLight(val color: Color?, val amount: Float) {
+        fun apply(c: Color): Color = if (color != null && amount > 0f) lerp(c, color, amount) else c
+        companion object {
+            val DAY = PropLight(null, 0f)
+        }
+    }
+
+    /** Outdoor light: deep blue moonlight at night, a warm dusk at sunset, none by day. */
+    fun outdoorLight(isNight: Boolean, isSunset: Boolean): PropLight = when {
+        isNight -> PropLight(Color(0xFF141B30), 0.45f)
+        isSunset -> PropLight(Color(0xFF7A4E5E), 0.18f)
+        else -> PropLight.DAY
+    }
+
+    /** Indoor light: lamps keep rooms warm at night, so props only dim a little. */
+    fun indoorLight(isNight: Boolean): PropLight = if (isNight) PropLight(Color(0xFF3A2E3A), 0.22f) else PropLight.DAY
+
+    // Outlines are a soft dark brown rather than near-black, like the scenes' own objects.
     private val PALETTE: Map<Char, Color> = mapOf(
-        'k' to Color(0xFF3B2418), 'w' to Color(0xFF6B4226), 'W' to Color(0xFF8F5A32), 'L' to Color(0xFFC28447),
+        'k' to Color(0xFF4E3424), 'w' to Color(0xFF6B4226), 'W' to Color(0xFF8F5A32), 'L' to Color(0xFFC28447),
         'g' to Color(0xFF2F6B34), 'G' to Color(0xFF4F9A45), 'h' to Color(0xFF86C95E),
-        'p' to Color(0xFFF38FB0), 'P' to Color(0xFFFFD1E0), 'y' to Color(0xFFFFD166), 'v' to Color(0xFFB48EE0),
-        'r' to Color(0xFFD9485F), 'R' to Color(0xFF9C2F45),
+        'p' to Color(0xFFEE93B0), 'P' to Color(0xFFF8D3DF), 'y' to Color(0xFFF6CF6E), 'v' to Color(0xFFB08FD8),
+        'r' to Color(0xFFC4505E), 'R' to Color(0xFF8C3446),
         'b' to Color(0xFF4F86D1), 'B' to Color(0xFF9CC5FF), 'n' to Color(0xFF2D4F8A),
         's' to Color(0xFF7F7C78), 'S' to Color(0xFFB9B4AB),
         'c' to Color(0xFFF4E6CF), 'C' to Color(0xFFD6BF9C),
@@ -119,17 +142,22 @@ object CozyProps {
         top: Float,
         cell: Float,
         haze: Color? = null,
-        hazeAmount: Float = 0f
+        hazeAmount: Float = 0f,
+        light: PropLight = PropLight.DAY
     ) {
         for (run in grid.runs) {
             val base = PALETTE[run.ch] ?: continue
-            val c = if (haze != null && hazeAmount > 0f) lerp(base, haze, hazeAmount) else base
-            scope.drawRect(c, Offset(left + run.x * cell, top + run.y * cell), Size(run.length * cell, cell))
+            val hazed = if (haze != null && hazeAmount > 0f) lerp(base, haze, hazeAmount) else base
+            scope.drawRect(light.apply(hazed), Offset(left + run.x * cell, top + run.y * cell), Size(run.length * cell, cell))
         }
     }
 
-    private fun drawAnchored(scope: DrawScope, grid: PixelGrid, cx: Float, bottomY: Float, p: Float, haze: Color? = null, hazeAmount: Float = 0f) =
-        drawGrid(scope, grid, cx - grid.width * p / 2f, bottomY - grid.height * p, p, haze, hazeAmount)
+    private fun drawAnchored(
+        scope: DrawScope, grid: PixelGrid, cx: Float, bottomY: Float, p: Float,
+        haze: Color? = null, hazeAmount: Float = 0f, light: PropLight = PropLight.DAY
+    ) = drawGrid(scope, grid, cx - grid.width * p / 2f, bottomY - grid.height * p, p, haze, hazeAmount, light)
+
+    private fun pal(ch: Char, light: PropLight) = light.apply(PALETTE.getValue(ch))
 
     // ---------------------------------------------------------------- footbridge and creek
 
@@ -159,8 +187,8 @@ object CozyProps {
         g
     }
 
-    fun drawFootbridge(scope: DrawScope, cx: Float, bottomY: Float, p: Float) =
-        drawAnchored(scope, footbridge, cx, bottomY, p)
+    fun drawFootbridge(scope: DrawScope, cx: Float, bottomY: Float, p: Float, light: PropLight = PropLight.DAY) =
+        drawAnchored(scope, footbridge, cx, bottomY, p, light = light)
 
     /**
      * A shallow creek across [left]..[left]+[width], [rows] game pixels tall, with drifting glints.
@@ -175,11 +203,12 @@ object CozyProps {
         p: Float,
         time: Float,
         rippleX: Float,
-        rippleProgress: Float
+        rippleProgress: Float,
+        light: PropLight = PropLight.DAY
     ) {
-        val water = Color(0xFF3F74BD)
-        val edge = Color(0xFF9CC5FF)
-        val deep = Color(0xFF2D4F8A)
+        val water = light.apply(Color(0xFF3F6FA8))
+        val edge = light.apply(Color(0xFF8DB4DE))
+        val deep = light.apply(Color(0xFF2D4A78))
         scope.drawRect(water, Offset(left, top), Size(width, rows * p))
         scope.drawRect(edge, Offset(left, top), Size(width, p))
         scope.drawRect(deep, Offset(left, top + (rows - 1) * p), Size(width, p))
@@ -194,7 +223,7 @@ object CozyProps {
         if (rippleProgress in 0f..1f) {
             val r = (1f + rippleProgress * 7f) * p
             val midY = top + (rows / 2) * p
-            val ring = lerp(Color.White, water, rippleProgress)
+            val ring = lerp(light.apply(Color.White), water, rippleProgress)
             for (side in listOf(-1f, 1f)) {
                 scope.drawRect(ring, Offset(rippleX + side * r - p, midY), Size(2f * p, p))
                 scope.drawRect(ring, Offset(rippleX + side * r * 0.55f - p, midY - p), Size(2f * p, p))
@@ -226,17 +255,17 @@ object CozyProps {
     private val basketFlowers = listOf(Triple(21, 3, 'G'), Triple(22, 3, 'p'), Triple(23, 2, 'P'), Triple(24, 3, 'y'), Triple(25, 3, 'G'), Triple(26, 2, 'p'), Triple(27, 3, 'G'))
 
     /** [bellProgress] 0..1 while the bell rings (< 0 when idle): the basket flowers bob and the bell glints. */
-    fun drawBicycle(scope: DrawScope, cx: Float, groundY: Float, p: Float, bellProgress: Float) {
+    fun drawBicycle(scope: DrawScope, cx: Float, groundY: Float, p: Float, bellProgress: Float, light: PropLight = PropLight.DAY) {
         val left = cx - bicycle.width * p / 2f
         val top = groundY - bicycle.height * p
-        drawGrid(scope, bicycle, left, top, p)
+        drawGrid(scope, bicycle, left, top, p, light = light)
         val ringing = bellProgress in 0f..1f
         val bob = if (ringing && sin(bellProgress * PI.toFloat() * 6f) > 0f) -p else 0f
         for ((x, y, ch) in basketFlowers) {
-            scope.drawRect(PALETTE.getValue(ch), Offset(left + x * p, top + y * p + bob), Size(p, p))
+            scope.drawRect(pal(ch, light), Offset(left + x * p, top + y * p + bob), Size(p, p))
         }
         if (ringing && bellProgress < 0.7f) {
-            val glint = PALETTE.getValue('y')
+            val glint = PALETTE.getValue('y') // the bell's glint stays bright even at night
             scope.drawRect(glint, Offset(left + 15f * p, top + 2f * p), Size(p, p))
             scope.drawRect(glint, Offset(left + 16f * p, top + 1f * p), Size(p, p))
             scope.drawRect(glint, Offset(left + 15f * p, top + 5f * p), Size(p, p))
@@ -270,18 +299,18 @@ object CozyProps {
     fun flowerFence(width: Int): PixelGrid = fenceCache.getOrPut(width) { flowerFenceGrid(width) }
 
     /** [rustleProgress] 0..1 while petals are shaken loose (< 0 when idle): the blooms bob. */
-    fun drawFlowerFence(scope: DrawScope, cx: Float, groundY: Float, p: Float, widthPx: Int, rustleProgress: Float) {
+    fun drawFlowerFence(scope: DrawScope, cx: Float, groundY: Float, p: Float, widthPx: Int, rustleProgress: Float, light: PropLight = PropLight.DAY) {
         val grid = flowerFence(widthPx)
         val left = cx - grid.width * p / 2f
         val top = groundY - grid.height * p
-        drawGrid(scope, grid, left, top, p)
+        drawGrid(scope, grid, left, top, p, light = light)
         if (rustleProgress in 0f..1f) {
             val lift = if (sin(rustleProgress * PI.toFloat() * 5f) > 0f) p else 0f
             if (lift > 0f) {
                 var bx = 3
                 while (bx + 9 <= grid.width) {
-                    scope.drawRect(PALETTE.getValue('p'), Offset(left + (bx + 3) * p, top + 9f * p), Size(p, p))
-                    scope.drawRect(PALETTE.getValue('y'), Offset(left + (bx + 5) * p, top + 9f * p), Size(p, p))
+                    scope.drawRect(pal('p', light), Offset(left + (bx + 3) * p, top + 9f * p), Size(p, p))
+                    scope.drawRect(pal('y', light), Offset(left + (bx + 5) * p, top + 9f * p), Size(p, p))
                     bx += 13
                 }
             }
@@ -311,11 +340,11 @@ object CozyProps {
     }
 
     /** Hangs from ([cx], [hookY]). [swayProgress] 0..1 swings it after a tap and settles (< 0 when idle). */
-    fun drawHangingBasket(scope: DrawScope, cx: Float, hookY: Float, p: Float, swayProgress: Float, time: Float) {
+    fun drawHangingBasket(scope: DrawScope, cx: Float, hookY: Float, p: Float, swayProgress: Float, time: Float, light: PropLight = PropLight.DAY) {
         val idle = sin(time * 0.9f) * 0.4f
         val tap = if (swayProgress in 0f..1f) sin(swayProgress * PI.toFloat() * 4f) * (1f - swayProgress) * 2.5f else 0f
         val shift = (idle + tap).roundToInt() * p
-        drawGrid(scope, hangingBasket, cx - hangingBasket.width * p / 2f + shift, hookY, p)
+        drawGrid(scope, hangingBasket, cx - hangingBasket.width * p / 2f + shift, hookY, p, light = light)
     }
 
     // ---------------------------------------------------------------- pet bed and fish toy
@@ -350,14 +379,14 @@ object CozyProps {
         ))
     }
 
-    fun drawPetBed(scope: DrawScope, cx: Float, floorY: Float, p: Float) {
+    fun drawPetBed(scope: DrawScope, cx: Float, floorY: Float, p: Float, light: PropLight = PropLight.DAY) {
         drawContactShadow(scope, cx, floorY, petBed.width, p)
-        drawAnchored(scope, petBed, cx, floorY, p)
+        drawAnchored(scope, petBed, cx, floorY, p, light = light)
     }
 
-    fun drawFishToy(scope: DrawScope, cx: Float, floorY: Float, p: Float) {
+    fun drawFishToy(scope: DrawScope, cx: Float, floorY: Float, p: Float, light: PropLight = PropLight.DAY) {
         drawContactShadow(scope, cx, floorY, fishToy.width - 2, p)
-        drawAnchored(scope, fishToy, cx, floorY, p)
+        drawAnchored(scope, fishToy, cx, floorY, p, light = light)
     }
 
     // ---------------------------------------------------------------- far-away props
@@ -417,6 +446,6 @@ object CozyProps {
     }
 
     /** Draws a far-away prop bottom-centred at ([cx], [groundY]), faded [hazeAmount] of the way to [haze]. */
-    fun drawFar(scope: DrawScope, grid: PixelGrid, cx: Float, groundY: Float, p: Float, haze: Color, hazeAmount: Float) =
-        drawAnchored(scope, grid, cx, groundY, p, haze, hazeAmount)
+    fun drawFar(scope: DrawScope, grid: PixelGrid, cx: Float, groundY: Float, p: Float, haze: Color, hazeAmount: Float, light: PropLight = PropLight.DAY) =
+        drawAnchored(scope, grid, cx, groundY, p, haze, hazeAmount, light)
 }

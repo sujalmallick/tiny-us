@@ -1681,6 +1681,11 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             drawPierForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
         }
 
+        // 2a. Campfire: the fire's warm light falls on the couple and Mochi; dark plants frame the corners
+        if (engine.currentScene.environment == EnvironmentType.CAMPFIRE) {
+            drawCampfireForeground(this, cw, ch, pixelScale, engine.sceneTime, engine)
+        }
+
         // 2b. Foreground elements for Cozy Loft (patchwork quilt blanket over laps, coffee table, mugs, lantern, footstool, balcony railing, and Mochi curled on blanket)
         if (engine.currentScene.environment == EnvironmentType.COZY_LOFT) {
             LoftSprites.drawLoftForeground(

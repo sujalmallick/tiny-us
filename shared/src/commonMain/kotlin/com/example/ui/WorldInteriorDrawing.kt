@@ -833,9 +833,10 @@ fun drawLivingRoom(
 
     // A pet bed and a fish toy, right of the walkway (Mochi's use of them lives with the pet behaviour)
     val petBed = com.example.scene.CozyPropLayout.petBed(cw, ch, p)
-    com.example.engine.CozyProps.drawPetBed(scope, petBed.x, petBed.y, p)
+    val roomLight = com.example.engine.CozyProps.indoorLight(isNight)
+    com.example.engine.CozyProps.drawPetBed(scope, petBed.x, petBed.y, p, roomLight)
     val fishToy = com.example.scene.CozyPropLayout.fishToy(cw, ch, p)
-    com.example.engine.CozyProps.drawFishToy(scope, fishToy.x, fishToy.y, p)
+    com.example.engine.CozyProps.drawFishToy(scope, fishToy.x, fishToy.y, p, roomLight)
 
     // 5. Bottom-Left Corner: Mochi's Pet Lounge & Knitting Corner
     val cBoxX = cw * 0.17f
