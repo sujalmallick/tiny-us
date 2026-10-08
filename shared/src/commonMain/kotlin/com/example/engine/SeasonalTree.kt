@@ -119,21 +119,27 @@ object SeasonalTree {
 
     /** Leafy puffs, back to front: (dx, height, radius). */
     private val PUFFS = arrayOf(
-        intArrayOf(0, 116, 16), intArrayOf(-21, 109, 15), intArrayOf(22, 110, 15), intArrayOf(-9, 120, 9), intArrayOf(11, 121, 9),
-        intArrayOf(-38, 96, 13), intArrayOf(39, 98, 13),
-        intArrayOf(-12, 99, 15), intArrayOf(13, 100, 15),
-        intArrayOf(-30, 83, 12), intArrayOf(31, 86, 12), intArrayOf(0, 91, 14),
-        intArrayOf(-47, 83, 8), intArrayOf(48, 88, 8), intArrayOf(-17, 83, 10), intArrayOf(18, 85, 10),
+        intArrayOf(0, 110, 16), intArrayOf(-21, 103, 15), intArrayOf(22, 104, 15), intArrayOf(-9, 114, 9), intArrayOf(11, 115, 9),
+        intArrayOf(-38, 90, 13), intArrayOf(39, 92, 13),
+        intArrayOf(-12, 93, 15), intArrayOf(13, 94, 15),
+        intArrayOf(-30, 77, 12), intArrayOf(31, 80, 12), intArrayOf(0, 85, 14),
+        intArrayOf(-47, 77, 8), intArrayOf(48, 82, 8), intArrayOf(-17, 77, 10), intArrayOf(18, 79, 10),
         // Low over the fork, so no sky shows between the branches where they meet the leaves
-        intArrayOf(0, 71, 12), intArrayOf(-13, 73, 10), intArrayOf(14, 74, 10), intArrayOf(26, 77, 9), intArrayOf(-24, 77, 8)
+        intArrayOf(0, 65, 12), intArrayOf(-13, 67, 10), intArrayOf(14, 68, 10), intArrayOf(26, 71, 9), intArrayOf(-24, 71, 8)
     )
 
     /** In autumn these puffs turn red among the orange. */
     private val RED_PUFFS = intArrayOf(2, 7, 10, 14)
 
+    /** In autumn twigs show through the leaves only up to this height. */
+    private const val AUTUMN_REACH = 105
+
     /** The swing hangs from the left branch, its middle this far left of the trunk; seat this high. */
     private const val SWING_DX = -32
     private const val SEAT_U = 18
+    /** The swing only drifts in the breeze: at most this far each way (radians), slowly. */
+    private const val SWING_ARC = 0.07f
+    private const val SWING_SPEED = 0.9f
 
     // ---------------------------------------------------------------- palettes
 
@@ -195,8 +201,11 @@ object SeasonalTree {
         return xs to us
     }
 
-    /** The wood: -1 none, 0 shade, 1 wood, 2 sunlit, 3 bark groove. [bare] adds the smaller branches. */
-    private fun buildWood(bare: Boolean): IntArray {
+    /**
+     * The wood: -1 none, 0 shade, 1 wood, 2 sunlit, 3 bark groove. [bare] adds the smaller
+     * branches, up to [reach] high (in autumn the highest stay hidden in the leaves).
+     */
+    private fun buildWood(bare: Boolean, reach: Float = Float.MAX_VALUE): IntArray {
         val wood = IntArray(W * H) { -1 }
         for (u in -1..TRUNK_TOP) {
             val c = trunkCenter(max(u, 0))
@@ -233,6 +242,7 @@ object SeasonalTree {
         }
         if (bare) {
             for (s in SECONDARY) {
+                if (s[3] > reach) continue
                 val b = BRANCHES[s[0].toInt()]
                 val t = s[1]
                 val sx = bez(BX + b[0], BX + b[2], BX + b[4], t)
@@ -377,6 +387,7 @@ object SeasonalTree {
 
     private val leafyWood by lazy { buildWood(bare = false) }
     private val bareWood by lazy { buildWood(bare = true) }
+    private val autumnWood by lazy { buildWood(bare = true, reach = AUTUMN_REACH.toFloat()) }
     private val twigs by lazy { buildTwigs() }
     private val canopy by lazy { buildCanopy() }
 
@@ -394,7 +405,7 @@ object SeasonalTree {
     private val dropCells by lazy {
         val out = ArrayList<Int>()
         val tone = canopy.tone
-        for (u in 60..U_MAX) for (x in 0 until W) {
+        for (u in 45..U_MAX) for (x in 0 until W) {
             if (tone[idx(x, u)] >= 0 && (u - 1 < U_MIN || tone[idx(x, u - 1)] < 0)) out += (x - BX) * 1000 + u
         }
         out
@@ -426,12 +437,17 @@ object SeasonalTree {
             if (inGrid(x, u)) px[idx(x, u)] = lit(rgb, light)
         }
         val bare = season == Season.AUTUMN || season == Season.WINTER
-        val wood = if (bare) bareWood else leafyWood
+        val wood = when (season) {
+            Season.AUTUMN -> autumnWood
+            Season.WINTER -> bareWood
+            else -> leafyWood
+        }
         val twig = twigs
         fun isWood(x: Int, u: Int) = inGrid(x, u) && wood[idx(x, u)] >= 0
         fun isTwig(x: Int, u: Int) = inGrid(x, u) && twig[idx(x, u)]
 
-        if (bare) for (u in U_MIN..U_MAX) for (x in 0 until W) if (twig[idx(x, u)]) put(x, u, WOOD[0])
+        val twigTop = if (season == Season.AUTUMN) AUTUMN_REACH else U_MAX
+        if (bare) for (u in U_MIN..twigTop) for (x in 0 until W) if (twig[idx(x, u)]) put(x, u, WOOD[0])
         for (u in U_MIN..U_MAX) for (x in 0 until W) {
             val s = wood[idx(x, u)]
             if (s >= 0) put(x, u, WOOD[s])
@@ -618,24 +634,37 @@ object SeasonalTree {
         }
     }
 
-    /** The swing on the left branch, rocking a little; a cap of snow on its seat in winter. */
+    /**
+     * The swing, hanging from the left branch, drifting slowly in the breeze. The ropes stay tied
+     * where they meet the wood and slant as the seat moves; a cap of snow sits on it in winter.
+     */
     fun drawSwing(scope: DrawScope, baseX: Float, groundY: Float, p: Float, time: Float, weather: WeatherType, light: Light) {
         val left = ((baseX / p).roundToInt() - BX) * p
         val ground = (groundY / p).roundToInt() * p
         fun rowY(u: Int) = ground - (u + 1) * p
         fun c(rgb: Int) = Color(lit(rgb, light))
-        val sx = BX + SWING_DX + (sin(time * 1.6f) * 1.2f).roundToInt()
-        for ((side, rx) in intArrayOf(sx - 6, sx + 6).withIndex()) {
-            for (u in SEAT_U + 1 until ropeTops[side]) {
-                scope.drawRect(c(if (u % 3 != 0) 0xDDA15E else 0xB07D47), Offset(left + rx * p, rowY(u)), Size(p, p))
+        val pivot = BX + SWING_DX
+        // The breeze comes and goes (the same slow gusts that move the canopy); calm, it hardly moves
+        val gust = 0.25f + 0.75f * (0.5f + 0.5f * sin(time * 0.37f))
+        val angle = SWING_ARC * gust * sin(time * SWING_SPEED)
+        val length = (ropeTops[0] + ropeTops[1]) / 2f - SEAT_U
+        val swayX = (length * sin(angle)).roundToInt()
+        val seatU = SEAT_U + (length * (1f - cos(angle))).roundToInt()
+        for ((side, tieX) in intArrayOf(pivot - 6, pivot + 6).withIndex()) {
+            val tieU = ropeTops[side]
+            for (u in seatU + 1 until tieU) {
+                val f = (tieU - u).toFloat() / max(1, tieU - seatU)
+                val x = (tieX + swayX * f).roundToInt()
+                scope.drawRect(c(if (u % 3 != 0) 0xDDA15E else 0xB07D47), Offset(left + x * p, rowY(u)), Size(p, p))
             }
         }
-        scope.drawRect(c(0x8C5A35), Offset(left + (sx - 8) * p, rowY(SEAT_U)), Size(17 * p, p))
-        scope.drawRect(c(0x6B4226), Offset(left + (sx - 8) * p, rowY(SEAT_U - 1)), Size(17 * p, p))
-        scope.drawRect(c(0x45250F), Offset(left + (sx - 8) * p, rowY(SEAT_U - 2)), Size(17 * p, p))
+        val sx = pivot + swayX
+        scope.drawRect(c(0x8C5A35), Offset(left + (sx - 8) * p, rowY(seatU)), Size(17 * p, p))
+        scope.drawRect(c(0x6B4226), Offset(left + (sx - 8) * p, rowY(seatU - 1)), Size(17 * p, p))
+        scope.drawRect(c(0x45250F), Offset(left + (sx - 8) * p, rowY(seatU - 2)), Size(17 * p, p))
         if (Season.of(weather) == Season.WINTER) {
-            scope.drawRect(c(0xF4F8FC), Offset(left + (sx - 7) * p, rowY(SEAT_U + 1)), Size(15 * p, p))
-            scope.drawRect(c(0xFFFFFF), Offset(left + (sx - 4) * p, rowY(SEAT_U + 2)), Size(8 * p, p))
+            scope.drawRect(c(0xF4F8FC), Offset(left + (sx - 7) * p, rowY(seatU + 1)), Size(15 * p, p))
+            scope.drawRect(c(0xFFFFFF), Offset(left + (sx - 4) * p, rowY(seatU + 2)), Size(8 * p, p))
         }
     }
 
