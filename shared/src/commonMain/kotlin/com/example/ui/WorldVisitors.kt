@@ -7,11 +7,13 @@ import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.data.AvatarAppearance
 import com.example.data.Painting
 import com.example.engine.AvatarLook
+import com.example.engine.CastLight
 import com.example.engine.CharacterPose
 import com.example.engine.Direction
 import com.example.engine.HeldItem
 import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelCharacter
+import com.example.engine.SceneLight
 import com.example.engine.WorldViewport
 import com.example.scene.OldCoupleVisit
 import com.example.scene.PainterVisit
@@ -82,11 +84,7 @@ private fun drawPainterVisit(scope: DrawScope, engine: SceneEngine, cw: Float, c
     val pose = if (walking) listOf(CharacterPose.WALK_1, CharacterPose.WALK_2, CharacterPose.WALK_3, CharacterPose.WALK_4)[step] else CharacterPose.IDLE
     val painter = person(PAINTER_LOOK, false, pose, if (v.facingLeft) Direction.LEFT else Direction.RIGHT, 5)
     val px = cw * v.x
-    val isSunset = engine.timeOfDayPhase.isSunset
-    val isMorning = engine.timeOfDayPhase.isMorning
-    val isNight = engine.timeOfDayPhase.isNight
-    val sunProg = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
-    PixelArtRenderer.drawCharacter(scope, painter, px, ground, pixelSize = charP, sunProgress = sunProg, isOutdoor = true, isNight = isNight, weather = engine.weather)
+    PixelArtRenderer.drawCharacter(scope, painter, px, ground, pixelSize = charP, castLight = SceneLight.current)
     val c = charP * 1.1f
     val top = ground - 26f * c
     // A beret, worn at a tilt
@@ -160,12 +158,8 @@ private fun drawOldCouple(scope: DrawScope, engine: SceneEngine, cw: Float, ch: 
         man.hold(HeldItem.MUG, 10f); man.heldItemAge = v.age
         woman.hold(HeldItem.MUG, 10f); woman.heldItemAge = v.age + 0.7f
     }
-    val isSunset = engine.timeOfDayPhase.isSunset
-    val isMorning = engine.timeOfDayPhase.isMorning
-    val isNight = engine.timeOfDayPhase.isNight
-    val sunProg = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
-    PixelArtRenderer.drawCharacter(scope, man, manX, ground, pixelSize = charP, sunProgress = sunProg, isOutdoor = true, isNight = isNight, weather = engine.weather)
-    PixelArtRenderer.drawCharacter(scope, woman, womanX, ground, pixelSize = charP, sunProgress = sunProg, isOutdoor = true, isNight = isNight, weather = engine.weather)
+    PixelArtRenderer.drawCharacter(scope, man, manX, ground, pixelSize = charP, castLight = SceneLight.current)
+    PixelArtRenderer.drawCharacter(scope, woman, womanX, ground, pixelSize = charP, castLight = SceneLight.current)
     if (manPose != CharacterPose.HUG) {
         drawOldOutfit(scope, man, manX, ground, c, her = false)
         drawOldFace(scope, man, manX, ground, c, her = false)
@@ -264,16 +258,20 @@ fun drawPainting(
     val close = if (painting.together == "APART") 9f else 6f
     val boy = person(boyLook, false, boyPose, Direction.RIGHT, painting.boyOutfit)
     val girl = person(girlLook, true, girlPose, Direction.LEFT, painting.girlOutfit)
-    val pNight = painting.phase == "NIGHT"
-    val pSunProg = when (painting.phase) {
-        "MORNING" -> 0.12f
-        "SUNSET" -> 0.9f
-        else -> 0.45f
-    }
-    PixelArtRenderer.drawCharacter(scope, boy, left + w * 0.45f - close * cp, feet, pixelSize = cp, sunProgress = pSunProg, isOutdoor = true, isNight = pNight)
-    PixelArtRenderer.drawCharacter(scope, girl, left + w * 0.45f + close * cp, feet, pixelSize = cp, sunProgress = pSunProg, isOutdoor = true, isNight = pNight)
+    // Lit as that moment was: their shadows fall the way the sun fell then, and not at all by night
+    val light = CastLight(
+        sunProgress = when (painting.phase) {
+            "MORNING" -> 0.12f
+            "SUNSET" -> 0.9f
+            else -> 0.45f
+        },
+        night = painting.phase == "NIGHT",
+        weather = com.example.scene.WeatherType.entries.firstOrNull { it.name == painting.weather } ?: com.example.scene.WeatherType.SUNNY
+    )
+    PixelArtRenderer.drawCharacter(scope, boy, left + w * 0.45f - close * cp, feet, pixelSize = cp, castLight = light)
+    PixelArtRenderer.drawCharacter(scope, girl, left + w * 0.45f + close * cp, feet, pixelSize = cp, castLight = light)
     if (painting.mochi) {
-        com.example.engine.WorldSprites.drawCat(scope, left + w * 0.78f, feet, cp * 0.9f, catState = com.example.scene.CatState.SITTING_PURR, isSleeping = false, sunProgress = pSunProg, isOutdoor = true, isNight = pNight)
+        com.example.engine.WorldSprites.drawCat(scope, left + w * 0.78f, feet, cp * 0.9f, catState = com.example.scene.CatState.SITTING_PURR, isSleeping = false, castLight = light)
     }
     // A painter's touch: soft dabs of light across it
     for (i in 0 until 10) {

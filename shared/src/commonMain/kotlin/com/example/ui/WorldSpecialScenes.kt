@@ -72,6 +72,7 @@ import com.example.engine.PixelParticle
 import com.example.engine.CharacterMotionTween
 import com.example.engine.WorldSprites
 import com.example.engine.drawCastShadow
+import com.example.engine.drawPixelGlow
 import com.example.engine.drawContactShadow
 import com.example.engine.RoomTheme
 import com.example.scene.EnvironmentType
@@ -175,7 +176,7 @@ private fun drawFairyLights(scope: DrawScope, x0: Float, x1: Float, y: Float, sa
         val c = colors[i % colors.size]
         if (lit) {
             val twinkle = 0.65f + 0.35f * sin(time * 2.1f + i * 1.7f)
-            scope.pCircle(c.copy(alpha = 0.22f * twinkle), 3.6f * p, Offset(x, by + 2.2f * p))
+            drawPixelGlow(scope, c.copy(alpha = 0.22f * twinkle), 3.6f * p, Offset(x, by + 2.2f * p), p)
             scope.px(c.copy(alpha = twinkle), x - 0.9f * p, by + 0.8f * p, 1.8f * p, 2.4f * p)
         } else {
             scope.px(c.copy(alpha = 0.45f), x - 0.9f * p, by + 0.8f * p, 1.8f * p, 2.4f * p)
@@ -311,7 +312,7 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     scope.px(Color(0xFF1E2228), lampPostX - 4f * p, streetY - 48f * p, 8f * p, 2.5f * p)
     scope.px(if (lampOn) Color(0xFFFFE6A3) else Color(0xFF8E979C), lampPostX - 3f * p, streetY - 46f * p, 6f * p, 3f * p)
     if (lampOn) {
-        scope.pCircle(Color(0xFFFFD27A).copy(alpha = 0.28f), 16f * p, Offset(lampPostX, streetY - 44f * p))
+        drawPixelGlow(scope, Color(0xFFFFD27A).copy(alpha = 0.28f), 16f * p, Offset(lampPostX, streetY - 44f * p), p)
         scope.px(Color(0xFFFFD27A).copy(alpha = 0.10f), lampPostX - 10f * p, streetY - 43f * p, 20f * p, 43f * p)
     }
 
@@ -410,7 +411,7 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     scope.px(Color(0xFFF4E9D8), candleX + 1f * p, sillY - 4.5f * p, 4f * p, 4.5f * p)
     if (lampsBright) {
         val fl = sin(time * 9f) * 0.4f * p
-        scope.pCircle(Color(0xFFFFC46B).copy(alpha = 0.25f), 7f * p, Offset(candleX + 3f * p, sillY - 7f * p))
+        drawPixelGlow(scope, Color(0xFFFFC46B).copy(alpha = 0.25f), 7f * p, Offset(candleX + 3f * p, sillY - 7f * p), p)
         scope.px(Color(0xFFFFB347), candleX + 2.4f * p, sillY - 7.5f * p + fl, 1.2f * p, 2.2f * p)
     }
     scope.px(Color(0xFF3D5A80), win.right - 34f * p, sillY - 3f * p, 9f * p, 3f * p)
@@ -532,7 +533,7 @@ fun drawRainyCafeScene(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
         for (st in 0..3) {
             val sx = espX + 17f * p + sin(time * 6f + st) * 3f * p
             val sy = espY + 2f * p - ((time * 24f + st * 6f) % (24f * p))
-            scope.pCircle(Color(0xFFFFD166).copy(alpha = 0.5f), 3f * p, Offset(sx, sy))
+            drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = 0.5f), 3f * p, Offset(sx, sy), p)
         }
     }
     // Cake under a glass dome, tip jar and a little bell
@@ -692,7 +693,7 @@ private fun drawPendantLamp(scope: DrawScope, x: Float, bottomY: Float, p: Float
         val hw = (6f + t * 26f) * p
         scope.px(Color(0xFFFFE2A0).copy(alpha = a * (1f - t) * 0.35f), x - hw, bottomY - 2f * p + t * 40f * p, hw * 2f, 5f * p)
     }
-    scope.pCircle(Color(0xFFFFD166).copy(alpha = a), 10f * p + flicker, Offset(x, bottomY - 1f * p))
+    drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = a), 10f * p + flicker, Offset(x, bottomY - 1f * p), p)
     scope.pCircle(Color(0xFFFFF2C2), 1.8f * p, Offset(x, bottomY - 1.5f * p))
 }
 
@@ -816,7 +817,7 @@ fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, ti
     val tw = CafeLayout.tableW(p)
     val cx = tx + tw / 2f
     val floorY = ch * CafeLayout.SEAT_FEET_Y + 9f * p
-    drawCastShadow(scope, cx, floorY + 1.5f * p, 24, p, isOutdoor = false)
+    drawCastShadow(scope, cx, floorY + 1.5f * p, 24, p)
     drawContactShadow(scope, cx, floorY + 1.5f * p, 24, p)
     scope.px(Color(0xFF2B1D16), cx - 1.8f * p, ty + 3f * p, 3.6f * p, floorY - ty - 3f * p)
     scope.pRoundRect(Color(0xFF2B1D16), Offset(cx - 10f * p, floorY - 2f * p), Size(20f * p, 2.5f * p), CornerRadius(1.2f * p, 1.2f * p))
@@ -1145,7 +1146,7 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     // 10. Galvanised watering can on the floor (tap it for a cool mist)
     val canX = cw * 0.20f
     val canY = ch * 0.72f
-    drawCastShadow(scope, canX, canY + 5.5f * p, 16, p, isOutdoor = false)
+    drawCastShadow(scope, canX, canY + 5.5f * p, 16, p)
     drawContactShadow(scope, canX, canY + 5.5f * p, 16, p)
     scope.pRoundRect(Color(0xFF9DB4BC), Offset(canX - 7f * p, canY - 5f * p), Size(14f * p, 10f * p), CornerRadius(2f * p, 2f * p))
     scope.px(Color(0xFFBFD0D6), canX - 6f * p, canY - 4f * p, 12f * p, 1.5f * p)
@@ -1165,7 +1166,7 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     // Front of the room: a tea table, a floor cushion and garden boots by the door
     drawSunroomTeaTable(scope, cw * 0.70f, ch * 0.80f, p * 1.4f, time, night || dusk)
     val pouf = Offset(cw * 0.30f, ch * 0.815f)
-    drawCastShadow(scope, pouf.x, pouf.y + 5.5f * p, 30, p, isOutdoor = false)
+    drawCastShadow(scope, pouf.x, pouf.y + 5.5f * p, 30, p)
     drawContactShadow(scope, pouf.x, pouf.y + 5.5f * p, 30, p)
     scope.pRoundRect(Color(0xFF84A59D), Offset(pouf.x - 14f * p, pouf.y - 8f * p), Size(28f * p, 13f * p), CornerRadius(6f * p, 6f * p))
     scope.pRoundRect(Color(0xFF9CC5B9), Offset(pouf.x - 12f * p, pouf.y - 7f * p), Size(24f * p, 4f * p), CornerRadius(3f * p, 3f * p))
@@ -1373,6 +1374,9 @@ fun drawCampfireScene(
         scope.pOval(dirt, Offset(sx - (4f + t * 4f) * p, sy - 1.5f * p), Size((8f + t * 8f) * p, (3f + t * 2f) * p))
     }
 
+    // Clouds' shadows drift over the meadow
+    drawCloudShadows(scope, cw, ch, p, time, engine, isNight, isSunset, isMorning)
+
     // 6. A-frame canvas tent pitched on the ground, guy ropes pegged out
     val lanternLit = engine.campLanternLit
     val canvasLit = isNight && lanternLit
@@ -1380,10 +1384,8 @@ fun drawCampfireScene(
     val canvasShade = when { canvasLit -> Color(0xFFC98E4E); isNight -> Color(0xFF55513F); isSunset -> Color(0xFFA9876A); else -> Color(0xFFBBA67F) }
     val tentCx = tent.x + tentSize.x / 2f
     val tentBase = tent.y + tentSize.y
-    val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
-    val campfireX = cw * CampfireLayout.PIT_X
     val tentWidthPx = (tentSize.x / p + 8f).roundToInt()
-    drawCastShadow(scope, tentCx, tentBase, tentWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, localLightX = if (isNight) campfireX else null)
+    drawCastShadow(scope, tentCx, tentBase, tentWidthPx, p, heightPx = (tentSize.y / p).roundToInt())
     drawContactShadow(scope, tentCx, tentBase, tentWidthPx, p)
     scope.pixelTriangle(canvas, tentCx, tentBase, tentSize.x / 2f, tentSize.y, 2.5f * p)
     // shaded right-hand slope
@@ -1424,7 +1426,7 @@ fun drawCampfireScene(
     if (lanternLit) {
         val flicker = sin(time * 6f) * 1.5f * p
         val glowA = if (isNight || isSunset) 0.35f else 0.15f
-        scope.pCircle(Color(0xFFFFD166).copy(alpha = glowA), 18f * p + flicker, Offset(lantX, lantY + 5.5f * p))
+        drawPixelGlow(scope, Color(0xFFFFD166).copy(alpha = glowA), 18f * p + flicker, Offset(lantX, lantY + 5.5f * p), p)
         scope.px(Color(0xFFFFF3B0), lantX - 3f * p, lantY + 2f * p, 6f * p, 7f * p)
         scope.px(Color.White, lantX - 1f * p, lantY + 3.5f * p, 2f * p, 3.5f * p)
     } else {
@@ -1461,7 +1463,7 @@ fun drawCampfireScene(
     val bark = if (isNight) Color(0xFF3B2A20) else Color(0xFF5C4033)
     val barkHi = if (isNight) Color(0xFF55402F) else Color(0xFF7B5845)
     val logWidthPx = (logW / p + 4f).roundToInt()
-    drawCastShadow(scope, logX + logW / 2f, logY + logH, logWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, localLightX = if (isNight) campfireX else null)
+    drawCastShadow(scope, logX + logW / 2f, logY + logH, logWidthPx, p, heightPx = (logH / p).roundToInt() + 2)
     drawContactShadow(scope, logX + logW / 2f, logY + logH, logWidthPx, p)
     scope.pRoundRect(bark, Offset(logX, logY), Size(logW, logH), CornerRadius(4f * p, 4f * p))
     scope.px(barkHi, logX + 3f * p, logY + 1.2f * p, logW - 6f * p, 1.6f * p)
@@ -1526,7 +1528,7 @@ fun drawCampfireScene(
     val pulse = 1f + 0.04f * sin(time * 5f)
     for (ring in 0..2) { // stepped rings, brighter toward the flames
         val rr = glowR * pulse * (1f - ring * 0.3f)
-        scope.pOval(Color(0xFFFFB347).copy(alpha = glowA * 0.4f), Offset(pitX - rr, pitY - rr * 0.45f), Size(rr * 2f, rr * 0.9f))
+        drawPixelGlow(scope, Color(0xFFFFB347).copy(alpha = glowA * 0.4f), rr, Offset(pitX, pitY), p, squash = 0.45f)
     }
     val fireRadius = 14f * p
     // back stones, ember bed, then the burning logs
@@ -1636,7 +1638,7 @@ fun drawCampfireScene(
 
 /** A low table with a teapot and two cups; the pot steams, and a tealight glows in the evening. */
 private fun drawSunroomTeaTable(scope: DrawScope, cx: Float, baseY: Float, s: Float, time: Float, evening: Boolean) {
-    drawCastShadow(scope, cx, baseY, 36, s, isOutdoor = false)
+    drawCastShadow(scope, cx, baseY, 36, s)
     drawContactShadow(scope, cx, baseY, 36, s)
     scope.px(Color(0xFF6B4423), cx - 15f * s, baseY - 8f * s, 2f * s, 8f * s)
     scope.px(Color(0xFF6B4423), cx + 13f * s, baseY - 8f * s, 2f * s, 8f * s)
@@ -1668,7 +1670,7 @@ private fun drawSunroomTeaTable(scope: DrawScope, cx: Float, baseY: Float, s: Fl
 private fun drawCafeTableSet(scope: DrawScope, cx: Float, baseY: Float, s: Float, time: Float, evening: Boolean, reserved: Boolean) {
     val wood = Color(0xFF4A2D1D)
     val woodLight = Color(0xFF6B4423)
-    drawCastShadow(scope, cx, baseY, 52, s, isOutdoor = false)
+    drawCastShadow(scope, cx, baseY, 52, s)
     drawContactShadow(scope, cx, baseY, 52, s)
     for (side in 0..1) {
         val chX = cx + (if (side == 0) -20f else 12f) * s

@@ -47,7 +47,7 @@ object PierSprites {
         dozing: Boolean = false
     ) {
         // Crate, with his red thermos beside him
-        drawCastShadow(scope, cx, groundY, 18, p, isOutdoor = true, minGroundY = waterY)
+        drawCastShadow(scope, cx, groundY, 18, p, heightPx = 30)
         drawContactShadow(scope, cx, groundY, 18, p)
         scope.drawRect(CrateDark, Offset(cx - 8f * p, groundY - 8f * p), Size(16f * p, 8f * p))
         scope.drawRect(CrateWood, Offset(cx - 7f * p, groundY - 7f * p), Size(14f * p, 2.5f * p))

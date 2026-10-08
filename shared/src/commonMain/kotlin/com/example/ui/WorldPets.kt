@@ -5,6 +5,7 @@ import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import com.example.data.PetKind
+import com.example.engine.CastLight
 import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.scene.CatState
@@ -83,35 +84,10 @@ object PetSprites {
         }
     }
 
-    private fun shadow(
-        scope: DrawScope,
-        cx: Float,
-        groundY: Float,
-        width: Float,
-        p: Float,
-        sunProgress: Float? = null,
-        isOutdoor: Boolean = true,
-        isNight: Boolean = false,
-        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
-        localLightX: Float? = null,
-        minGroundY: Float? = null,
-        maxGroundY: Float? = null
-    ) {
+    private fun shadow(scope: DrawScope, cx: Float, groundY: Float, width: Float, p: Float, castLight: CastLight?) {
         val widthPx = (width / p).roundToInt()
-        drawCastShadow(
-            scope = scope,
-            centerX = cx,
-            groundY = groundY,
-            widthPx = widthPx,
-            p = p,
-            sunProgress = sunProgress,
-            isOutdoor = isOutdoor,
-            isNight = isNight,
-            weather = weather,
-            localLightX = localLightX,
-            minGroundY = minGroundY,
-            maxGroundY = maxGroundY
-        )
+        // In the world it also throws a shadow away from the light, about as long as it is tall
+        if (castLight != null) drawCastShadow(scope, cx, groundY, widthPx - 2, p, heightPx = widthPx * 3 / 4, light = castLight)
         drawContactShadow(scope, cx, groundY, widthPx, p)
     }
 
@@ -129,15 +105,10 @@ object PetSprites {
         state: CatState,
         facingLeft: Boolean,
         night: Boolean = false,
-        sunProgress: Float? = null,
-        isOutdoor: Boolean = true,
-        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
-        localLightX: Float? = null,
-        minGroundY: Float? = null,
-        maxGroundY: Float? = null
+        castLight: CastLight? = null
     ) {
         fun shadow(s: DrawScope, scx: Float, sgroundY: Float, swidth: Float, sp: Float) =
-            this.shadow(s, scx, sgroundY, swidth, sp, sunProgress, isOutdoor, night, weather, localLightX, minGroundY, maxGroundY)
+            this.shadow(s, scx, sgroundY, swidth, sp, castLight)
         val p = worldP * scaleOf(kind)
         val step = ((time * 5f).toInt() and 1) == 0
         val playing = state == CatState.PLAYFUL_POUNCE || state == CatState.BELLY_ROLL

@@ -334,6 +334,9 @@ object MeadowLayout {
 }
 
 object WeatherLayout {
+    /** How long a cloud's shadow takes to sweep across the couple when they stop to look up. */
+    const val CLOUD_PASS_SECONDS = 6f
+
     /**
      * Where rain puddles form in each outdoor scene (fractions of the scene): on the ground where
      * water would gather, clear of the props. Scenes not listed use the meadow spots.
