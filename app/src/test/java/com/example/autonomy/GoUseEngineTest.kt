@@ -44,6 +44,15 @@ class GoUseEngineTest {
         while (t < seconds) { engine.update(dt, cw, ch); t += dt }
     }
 
+    private fun runUntil(maxSeconds: Float, what: String, condition: () -> Boolean) {
+        var t = 0f
+        while (!condition()) {
+            assertTrue("Timed out waiting for $what", t < maxSeconds)
+            engine.update(dt, cw, ch)
+            t += dt
+        }
+    }
+
     @Test
     fun `the nearer one walks over, and the thing responds when they get there`() {
         engine.loadScene(SceneType.FLOWER)
@@ -54,12 +63,15 @@ class GoUseEngineTest {
         assertTrue(engine.sendToUse(SpotAction.LISTEN_CHIMES, cw, ch) { rang++ })
         assertEquals("Not until they're there", 0, rang)
         assertTrue(engine.isGoingToUseSomething)
-        run(8f)
+        runUntil(8f, "them to get to the chimes") { rang > 0 }
         assertEquals(1, rang)
         assertTrue("At the chimes", abs(nearer.worldX - spot.x) < 0.02f)
         assertEquals(if (spot.faceLeft) Direction.LEFT else Direction.RIGHT, nearer.direction)
+        run(spot.dwellSeconds * 0.5f)
+        assertEquals("Still facing it while they use it", if (spot.faceLeft) Direction.LEFT else Direction.RIGHT, nearer.direction)
         run(spot.dwellSeconds + 1f)
         assertFalse(engine.isGoingToUseSomething)
+        assertEquals("Only once", 1, rang)
     }
 
     @Test
@@ -68,13 +80,15 @@ class GoUseEngineTest {
         run(10f)
         var cooked = false
         assertTrue(engine.sendToUse(SpotAction.STIR_POT, cw, ch) { cooked = true })
-        run(8f)
-        assertTrue(cooked)
-        assertTrue(listOf(engine.boy, engine.girl).any { it.heldItem == HeldItem.PAN })
-        run(6f)
-        assertTrue(engine.sendToUse(SpotAction.SIT_TABLE, cw, ch) {})
-        run(8f)
-        assertTrue(listOf(engine.boy, engine.girl).any { it.pose == CharacterPose.SIT })
+        runUntil(8f, "them to get to the stove") { cooked }
+        run(0.3f)
+        assertTrue("The pan in hand", listOf(engine.boy, engine.girl).any { it.heldItem == HeldItem.PAN })
+        runUntil(10f, "them to finish at the stove") { !engine.isGoingToUseSomething }
+        var sat = false
+        assertTrue(engine.sendToUse(SpotAction.SIT_TABLE, cw, ch) { sat = true })
+        runUntil(8f, "them to get to the table") { sat }
+        run(0.5f)
+        assertTrue("Sitting at the table", listOf(engine.boy, engine.girl).any { it.pose == CharacterPose.SIT })
     }
 
     @Test
