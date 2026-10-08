@@ -85,6 +85,10 @@ class SceneEngine(
     private val onOpenDreamJournal: () -> Unit = {}
 ) {
     companion object {
+        /** The leaves that fall from the tree on the hill, by season. */
+        private val TREE_AUTUMN_LEAVES = arrayOf(Color(0xFFE06C1E), Color(0xFFC24118), Color(0xFFF2A23A), Color(0xFFFFC85A))
+        private val TREE_SUMMER_LEAVES = arrayOf(Color(0xFF44913A), Color(0xFF73BB44))
+
         /** How long a weather picked with the weather button stays before the season moves it on. */
         const val MANUAL_WEATHER_HOLD_SECONDS = 20f * 60f
 
@@ -2093,6 +2097,7 @@ class SceneEngine(
         tickSharing(deltaSeconds)
         updateFridayFox(deltaSeconds, canvasWidth, canvasHeight)
         updatePets(deltaSeconds)
+        dropFromTheTree(deltaSeconds, canvasWidth, canvasHeight)
         updateVisitors(deltaSeconds)
         if (secretRevealIn > 0f) {
             secretRevealIn -= deltaSeconds
@@ -5171,8 +5176,35 @@ class SceneEngine(
         treeTapReactionCount++
         audio.playLeafRustle()
         audio.playBirdChirp()
-        repeat(14) {
-            particles.spawnLeaf(cw * 0.5f + (Random.nextFloat() - 0.5f) * (cw * 0.4f), ch * 0.30f)
+        // A shake of the branches: whatever the season holds comes down from the canopy
+        repeat(if (weather == WeatherType.SNOW) 8 else 14) { dropOneFromTheTree(cw, ch) }
+    }
+
+    /**
+     * Now and then something falls from the tree on the hill: a petal in spring, a leaf in
+     * autumn, the odd leaf in summer, a little snow off a branch in winter.
+     */
+    private fun dropFromTheTree(dt: Float, cw: Float, ch: Float) {
+        if (currentScene != SceneType.UNDER_TREE || isDreamMode) return
+        val perSecond = when (weather) {
+            WeatherType.SAKURA -> 1.4f
+            WeatherType.AUTUMN -> 1.0f
+            WeatherType.SNOW -> 0.25f
+            WeatherType.SUNNY, WeatherType.RAIN -> 0.12f
+        }
+        if (eventChance(perSecond, dt)) dropOneFromTheTree(cw, ch)
+    }
+
+    private fun dropOneFromTheTree(cw: Float, ch: Float) {
+        val p = WorldViewport.pixelScale(cw)
+        val (dx, u) = com.example.engine.SeasonalTree.dropPoint(Random)
+        val x = cw * com.example.engine.SeasonalTree.SCENE_X + dx * p
+        val y = ch * com.example.engine.SeasonalTree.SCENE_GROUND - u * p
+        when (weather) {
+            WeatherType.SAKURA -> particles.spawnPetals(x, y, 1)
+            WeatherType.AUTUMN -> particles.spawnLeaf(x, y, TREE_AUTUMN_LEAVES[Random.nextInt(TREE_AUTUMN_LEAVES.size)])
+            WeatherType.SNOW -> particles.spawnSparkles(x, y, 2, Color(0xFFF4F8FC))
+            WeatherType.SUNNY, WeatherType.RAIN -> particles.spawnLeaf(x, y, TREE_SUMMER_LEAVES[Random.nextInt(TREE_SUMMER_LEAVES.size)])
         }
     }
 

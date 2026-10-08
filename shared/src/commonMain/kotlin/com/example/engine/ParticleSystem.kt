@@ -776,7 +776,8 @@ class ParticleSystem {
         )
     }
 
-    fun spawnLeaf(x: Float, y: Float) {
+    /** A leaf drifting down from ([x], [y]); [color] picks its colour, or a random one. */
+    fun spawnLeaf(x: Float, y: Float, color: Color? = null) {
         particles.add(
             obtainParticle(
                 x = x + Random.nextFloat() * 40f - 20f,
@@ -784,7 +785,7 @@ class ParticleSystem {
                 vx = 0.4f + Random.nextFloat() * 0.8f,
                 vy = 0.9f + Random.nextFloat() * 0.8f,
                 size = 6f + Random.nextFloat() * 3f,
-                color = LEAF_COLORS[Random.nextInt(LEAF_COLORS.size)],
+                color = color ?: LEAF_COLORS[Random.nextInt(LEAF_COLORS.size)],
                 maxLife = 130f + Random.nextFloat() * 50f,
                 type = ParticleType.LEAF,
                 phase = Random.nextFloat() * 6.28f
