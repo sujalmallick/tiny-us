@@ -1601,6 +1601,7 @@ object LoftSprites {
 
         // Contact shadow grounding the daybed on the floor. The cuddled couple are part of this
         // sofa sprite, so the shadow belongs to the sofa, not to their feet.
+        drawCastShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p, isOutdoor = false)
         drawContactShadow(scope, sofaStartX + sofaW / 2f, floorY, kotlin.math.round(sofaW / p + 2f).toInt(), p)
 
         // Sofa wooden turned legs
@@ -1714,6 +1715,7 @@ object LoftSprites {
         val tableY = floorY + 4 * p
 
         // Contact shadow grounding the coffee table on the floor
+        drawCastShadow(scope, cw * 0.55f, tableY + tableH, 36, p, isOutdoor = false)
         drawContactShadow(scope, cw * 0.55f, tableY + tableH, 36, p)
 
         // Table wooden legs
@@ -1783,6 +1785,7 @@ object LoftSprites {
         val stoolY = floorY + 8 * p
 
         // Contact shadow grounding the footstool on the floor
+        drawCastShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p, isOutdoor = false)
         drawContactShadow(scope, stoolX + stoolW / 2f, stoolY + stoolH, 14, p)
 
         scope.drawRect(DarkWoodBeam, Offset(stoolX + p, stoolY + 3.5f * p), Size(2f * p, 5.5f * p))
@@ -1882,6 +1885,7 @@ object LoftSprites {
         val standY = floorY - standH + 4 * p
 
         // Tiered wooden nightstand / audio rack
+        drawCastShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p, isOutdoor = false)
         drawContactShadow(scope, standX + standW / 2f, floorY + 4 * p, 16, p)
         scope.drawRect(Color(0xFF45240F), Offset(standX, standY), Size(standW, standH))
         scope.drawRect(Color(0xFF6B3A19), Offset(standX - p, standY), Size(standW + 2 * p, 2 * p))
@@ -1933,6 +1937,7 @@ object LoftSprites {
         // Potted houseplant on the floor beside the audio rack
         val plantX = standX + standW + 1.5f * p
         val plantY = floorY
+        drawCastShadow(scope, plantX + 2.75f * p, plantY, 7, p, isOutdoor = false)
         drawContactShadow(scope, plantX + 2.75f * p, plantY, 7, p)
         scope.drawRect(Color(0xFFB07D62), Offset(plantX, plantY - 5.5f * p), Size(5.5f * p, 5.5f * p))
         scope.drawRect(Color(0xFF2D6A4F), Offset(plantX - 1.5f * p, plantY - 10 * p), Size(8.5f * p, 5 * p))

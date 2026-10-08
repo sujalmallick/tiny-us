@@ -1498,6 +1498,10 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 engine.boy.direction = if (com.example.scene.CozyGames.BOBBER_X < engine.boy.worldX) com.example.engine.Direction.LEFT else com.example.engine.Direction.RIGHT
             }
 
+            val sunProg = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
+            val deckMinY = if (engine.currentScene.environment == EnvironmentType.SEASIDE_PIER) ch * com.example.scene.PierLayout.DECK_Y else null
+            val campfireLightX = if (engine.currentScene == com.example.scene.SceneType.CAMPFIRE) cw * 0.50f else null
+
             fun drawBoy() {
                 PixelArtRenderer.drawCharacter(
                     drawScope = this,
@@ -1508,7 +1512,13 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     isHoldingUmbrella = isHoldingUmbrella,
                     isSnow = isSnow,
                     isSpeaking = !engine.boySpeechText.isNullOrEmpty(),
-                    snapToPixel = lowRes
+                    snapToPixel = lowRes,
+                    sunProgress = sunProg,
+                    isOutdoor = isOutdoor,
+                    isNight = isNight,
+                    weather = engine.weather,
+                    localLightX = campfireLightX,
+                    minGroundY = deckMinY
                 )
             }
 
@@ -1522,7 +1532,13 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     isHoldingUmbrella = isHoldingUmbrella,
                     isSnow = isSnow,
                     isSpeaking = !engine.girlSpeechText.isNullOrEmpty(),
-                    snapToPixel = lowRes
+                    snapToPixel = lowRes,
+                    sunProgress = sunProg,
+                    isOutdoor = isOutdoor,
+                    isNight = isNight,
+                    weather = engine.weather,
+                    localLightX = campfireLightX,
+                    minGroundY = deckMinY
                 )
             }
 
@@ -1532,7 +1548,9 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     // Whoever lives with them now (plan 10, E)
                     PetSprites.drawPet(
                         this, engine.petKind, cw * engine.catWorldX, catY, pixelScale, engine.sceneTime,
-                        engine.catState, engine.catFacingLeft, night = engine.timeOfDayPhase.isNight
+                        engine.catState, engine.catFacingLeft, night = engine.timeOfDayPhase.isNight,
+                        sunProgress = sunProg, isOutdoor = isOutdoor, weather = engine.weather,
+                        localLightX = campfireLightX, minGroundY = deckMinY
                     )
                 } else if (isCatInScene && !engine.mochiInBox) {
                     WorldSprites.drawCat(
@@ -1544,7 +1562,13 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                         catState = engine.catState,
                         isSnow = isSnow,
                         facingLeft = engine.catFacingLeft,
-                        collarStyle = if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle
+                        collarStyle = if (engine.mochiPartyCollar) com.example.engine.WorldSprites.PARTY_COLLAR else engine.mochiCollarStyle,
+                        sunProgress = sunProg,
+                        isOutdoor = isOutdoor,
+                        isNight = isNight,
+                        weather = engine.weather,
+                        localLightX = campfireLightX,
+                        minGroundY = deckMinY
                     )
                 }
             }

@@ -4,6 +4,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.drawscope.DrawScope
+import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.scene.FoxVisit
 import com.example.scene.SceneEngine
@@ -66,6 +67,8 @@ fun drawFridayFox(scope: DrawScope, engine: SceneEngine, cw: Float, ch: Float, w
     }
 
     // A soft shadow on the grass
+    val sunProgress = celestialProgress(isNight = false, isSunset = engine.timeOfDayPhase.isSunset, isMorning = engine.timeOfDayPhase.isMorning)
+    drawCastShadow(scope, cx, bottom, 16, p, sunProgress = sunProgress, isOutdoor = true, isNight = engine.timeOfDayPhase.isNight, weather = engine.weather)
     drawContactShadow(scope, cx, bottom, 16, p)
 
     val trotting = fox.phase == FoxVisit.Phase.ARRIVING || fox.phase == FoxVisit.Phase.LEAVING

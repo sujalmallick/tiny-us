@@ -305,6 +305,33 @@ class ScenePreviewTest {
     }
 
     /**
+     * Renders outdoor scenes across the celestial cycle (morning, noon, late afternoon, sunset)
+     * to demonstrate the dynamic cast shadow skew and length progression. SCENE_PROGRESSION_DIR=dir.
+     */
+    @Test
+    fun writesSkyProgressionPreviewsWhenAsked() {
+        val out = File(System.getenv("SCENE_PROGRESSION_DIR") ?: return).apply { mkdirs() }
+        val scenes = listOf(SceneType.FLOWER, SceneType.SEASIDE_PIER)
+        val positions = listOf(
+            0.12f to "morning",
+            0.50f to "noon",
+            0.75f to "late_afternoon",
+            0.95f to "sunset"
+        )
+        for (scene in scenes) {
+            for ((progress, label) in positions) {
+                reallocateNightStars(42L)
+                val camera = WorldCamera.forScreen(cw, ch, scene, pixelRenderer = true, topReservePx = 0.09f * ch, bottomReservePx = 0.10f * ch)
+                val staged = engineFor(scene, if (progress > 0.85f) TimeOfDayPhase.SUNSET else TimeOfDayPhase.AFTERNOON, camera.worldW, camera.worldH)
+                celestialProgressOverride = progress
+                val pixel = render(cw, ch) { drawWorld(staged, LowResWorldBuffer(), camera) }
+                save(pixel, File(out, "${scene.name.lowercase()}_sky_${label}.png"))
+                pixel.recycle()
+            }
+        }
+    }
+
+    /**
      * Plan 10, B: every scene with the couple at each of its spots (him at one, her at the next), in
      * the spot's pose, so props in front of or behind them can be checked. SCENE_SPOTS_DIR=dir.
      */

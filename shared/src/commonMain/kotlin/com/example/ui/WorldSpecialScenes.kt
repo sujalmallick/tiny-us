@@ -71,6 +71,7 @@ import com.example.engine.PixelArtRenderer
 import com.example.engine.PixelParticle
 import com.example.engine.CharacterMotionTween
 import com.example.engine.WorldSprites
+import com.example.engine.drawCastShadow
 import com.example.engine.drawContactShadow
 import com.example.engine.RoomTheme
 import com.example.scene.EnvironmentType
@@ -815,6 +816,7 @@ fun drawCafeTableForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, ti
     val tw = CafeLayout.tableW(p)
     val cx = tx + tw / 2f
     val floorY = ch * CafeLayout.SEAT_FEET_Y + 9f * p
+    drawCastShadow(scope, cx, floorY + 1.5f * p, 24, p, isOutdoor = false)
     drawContactShadow(scope, cx, floorY + 1.5f * p, 24, p)
     scope.px(Color(0xFF2B1D16), cx - 1.8f * p, ty + 3f * p, 3.6f * p, floorY - ty - 3f * p)
     scope.pRoundRect(Color(0xFF2B1D16), Offset(cx - 10f * p, floorY - 2f * p), Size(20f * p, 2.5f * p), CornerRadius(1.2f * p, 1.2f * p))
@@ -1143,6 +1145,7 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     // 10. Galvanised watering can on the floor (tap it for a cool mist)
     val canX = cw * 0.20f
     val canY = ch * 0.72f
+    drawCastShadow(scope, canX, canY + 5.5f * p, 16, p, isOutdoor = false)
     drawContactShadow(scope, canX, canY + 5.5f * p, 16, p)
     scope.pRoundRect(Color(0xFF9DB4BC), Offset(canX - 7f * p, canY - 5f * p), Size(14f * p, 10f * p), CornerRadius(2f * p, 2f * p))
     scope.px(Color(0xFFBFD0D6), canX - 6f * p, canY - 4f * p, 12f * p, 1.5f * p)
@@ -1162,6 +1165,7 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
     // Front of the room: a tea table, a floor cushion and garden boots by the door
     drawSunroomTeaTable(scope, cw * 0.70f, ch * 0.80f, p * 1.4f, time, night || dusk)
     val pouf = Offset(cw * 0.30f, ch * 0.815f)
+    drawCastShadow(scope, pouf.x, pouf.y + 5.5f * p, 30, p, isOutdoor = false)
     drawContactShadow(scope, pouf.x, pouf.y + 5.5f * p, 30, p)
     scope.pRoundRect(Color(0xFF84A59D), Offset(pouf.x - 14f * p, pouf.y - 8f * p), Size(28f * p, 13f * p), CornerRadius(6f * p, 6f * p))
     scope.pRoundRect(Color(0xFF9CC5B9), Offset(pouf.x - 12f * p, pouf.y - 7f * p), Size(24f * p, 4f * p), CornerRadius(3f * p, 3f * p))
@@ -1376,7 +1380,11 @@ fun drawCampfireScene(
     val canvasShade = when { canvasLit -> Color(0xFFC98E4E); isNight -> Color(0xFF55513F); isSunset -> Color(0xFFA9876A); else -> Color(0xFFBBA67F) }
     val tentCx = tent.x + tentSize.x / 2f
     val tentBase = tent.y + tentSize.y
-    drawContactShadow(scope, tentCx, tentBase, (tentSize.x / p + 8f).roundToInt(), p)
+    val sunProgress = celestialProgress(isNight = false, isSunset = isSunset, isMorning = isMorning)
+    val campfireX = cw * CampfireLayout.PIT_X
+    val tentWidthPx = (tentSize.x / p + 8f).roundToInt()
+    drawCastShadow(scope, tentCx, tentBase, tentWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, localLightX = if (isNight) campfireX else null)
+    drawContactShadow(scope, tentCx, tentBase, tentWidthPx, p)
     scope.pixelTriangle(canvas, tentCx, tentBase, tentSize.x / 2f, tentSize.y, 2.5f * p)
     // shaded right-hand slope
     var sy = 0f
@@ -1452,7 +1460,9 @@ fun drawCampfireScene(
     val logH = 9f * p
     val bark = if (isNight) Color(0xFF3B2A20) else Color(0xFF5C4033)
     val barkHi = if (isNight) Color(0xFF55402F) else Color(0xFF7B5845)
-    drawContactShadow(scope, logX + logW / 2f, logY + logH, (logW / p + 4f).roundToInt(), p)
+    val logWidthPx = (logW / p + 4f).roundToInt()
+    drawCastShadow(scope, logX + logW / 2f, logY + logH, logWidthPx, p, sunProgress = sunProgress, isOutdoor = true, isNight = isNight, weather = engine.weather, localLightX = if (isNight) campfireX else null)
+    drawContactShadow(scope, logX + logW / 2f, logY + logH, logWidthPx, p)
     scope.pRoundRect(bark, Offset(logX, logY), Size(logW, logH), CornerRadius(4f * p, 4f * p))
     scope.px(barkHi, logX + 3f * p, logY + 1.2f * p, logW - 6f * p, 1.6f * p)
     var gx = logX + 6f * p
@@ -1626,6 +1636,7 @@ fun drawCampfireScene(
 
 /** A low table with a teapot and two cups; the pot steams, and a tealight glows in the evening. */
 private fun drawSunroomTeaTable(scope: DrawScope, cx: Float, baseY: Float, s: Float, time: Float, evening: Boolean) {
+    drawCastShadow(scope, cx, baseY, 36, s, isOutdoor = false)
     drawContactShadow(scope, cx, baseY, 36, s)
     scope.px(Color(0xFF6B4423), cx - 15f * s, baseY - 8f * s, 2f * s, 8f * s)
     scope.px(Color(0xFF6B4423), cx + 13f * s, baseY - 8f * s, 2f * s, 8f * s)
@@ -1657,6 +1668,7 @@ private fun drawSunroomTeaTable(scope: DrawScope, cx: Float, baseY: Float, s: Fl
 private fun drawCafeTableSet(scope: DrawScope, cx: Float, baseY: Float, s: Float, time: Float, evening: Boolean, reserved: Boolean) {
     val wood = Color(0xFF4A2D1D)
     val woodLight = Color(0xFF6B4423)
+    drawCastShadow(scope, cx, baseY, 52, s, isOutdoor = false)
     drawContactShadow(scope, cx, baseY, 52, s)
     for (side in 0..1) {
         val chX = cx + (if (side == 0) -20f else 12f) * s

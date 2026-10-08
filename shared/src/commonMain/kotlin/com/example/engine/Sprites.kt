@@ -390,6 +390,7 @@ object WorldSprites {
         val isSnow = weather == com.example.scene.WeatherType.SNOW
 
         // Low contact shadow separates the little house from the meadow.
+        drawCastShadow(scope, cx, groundY, 72, p, isOutdoor = true, isNight = isNight, weather = weather)
         drawContactShadow(scope, cx, groundY, 72, p)
 
         // Chimney on left side
@@ -543,7 +544,14 @@ object WorldSprites {
         isSleeping: Boolean = catState == com.example.scene.CatState.SLEEPING,
         isSnow: Boolean = false,
         facingLeft: Boolean = false,
-        collarStyle: Int = 0
+        collarStyle: Int = 0,
+        sunProgress: Float? = null,
+        isOutdoor: Boolean = true,
+        isNight: Boolean = false,
+        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
+        localLightX: Float? = null,
+        minGroundY: Float? = null,
+        maxGroundY: Float? = null
     ) {
         scope.withTransform({
             if (facingLeft) {
@@ -572,6 +580,23 @@ object WorldSprites {
                 com.example.scene.CatState.PLAYFUL_POUNCE -> 14
                 else -> 11
             }
+
+            // Light cast shadow (stepped pixel rows cast away from sun or local light)
+            drawCastShadow(
+                scope = scope,
+                centerX = cx,
+                groundY = groundY,
+                widthPx = catShadowWidth,
+                p = p,
+                sunProgress = sunProgress,
+                isOutdoor = isOutdoor,
+                isNight = isNight,
+                weather = weather,
+                localLightX = localLightX,
+                minGroundY = minGroundY,
+                maxGroundY = maxGroundY
+            )
+
             drawContactShadow(scope, cx, groundY, catShadowWidth, p)
 
             when (effectiveState) {
@@ -838,6 +863,7 @@ object WorldSprites {
         val top = groundY - h
 
         // Contact shadow grounding the couch
+        drawCastShadow(scope, centerX, groundY, 60, p, isOutdoor = false)
         drawContactShadow(scope, centerX, groundY, 60, p)
 
         // Couch Backrest
@@ -878,6 +904,7 @@ object WorldSprites {
         val top = groundY - counterH
 
         // Contact shadow grounding the kitchen counter
+        drawCastShadow(scope, counterX, groundY, 48, p, isOutdoor = false)
         drawContactShadow(scope, counterX, groundY, 48, p)
 
         // 1. Wall Backsplash tiles - subway tile pattern behind counter
@@ -1493,6 +1520,7 @@ object WorldSprites {
             val stoolW = 12 * p
             val stoolH = 14 * p
             val sy = groundY - stoolH
+            drawCastShadow(scope, sx + stoolW / 2f, groundY, 14, p, isOutdoor = true)
             drawContactShadow(scope, sx + stoolW / 2f, groundY, 14, p)
             // Seat
             scope.drawRect(Color(0xFFDDA15E), Offset(sx, sy), Size(stoolW, 3 * p))
@@ -1771,6 +1799,8 @@ object WorldSprites {
 
         // Contact tire shadows on asphalt road surface
         val roadContactY = groundY + 6.0f * p
+        drawCastShadow(scope, rearWheelX, roadContactY, 14, p, isOutdoor = true)
+        drawCastShadow(scope, frontWheelX, roadContactY, 14, p, isOutdoor = true)
         drawContactShadow(scope, rearWheelX, roadContactY, 14, p)
         drawContactShadow(scope, frontWheelX, roadContactY, 14, p)
 
@@ -2406,6 +2436,7 @@ object WorldSprites {
         val top = groundY - h
 
         // Contact shadow grounding the wardrobe
+        drawCastShadow(scope, cx, groundY, 36, p, isOutdoor = false)
         drawContactShadow(scope, cx, groundY, 36, p)
 
         // 1. Ornate Wooden Pediment / Crown Molding Header
@@ -2603,6 +2634,7 @@ object WorldSprites {
         val binTop = groundY - binH
 
         // Contact shadow grounding the dustbin
+        drawCastShadow(scope, cx, groundY, 12, p, isOutdoor = false)
         drawContactShadow(scope, cx, groundY, 12, p)
 
         // 1. Chrome Foot Pedal at bottom center
@@ -2755,6 +2787,7 @@ object WorldSprites {
         val potTop = groundY - potH
 
         // Contact shadow grounding the planter pot
+        drawCastShadow(scope, cornerX, groundY, 16, p, isOutdoor = false)
         drawContactShadow(scope, cornerX, groundY, 16, p)
 
         // Ceramic white planter pot
@@ -2994,6 +3027,7 @@ object WorldSprites {
         val bTop = groundY - bh
 
         // Ground shadow
+        drawCastShadow(scope, cx, groundY, 18, p, isOutdoor = true)
         drawContactShadow(scope, cx, groundY, 18, p)
 
         // Basket body (woven golden wicker)
@@ -3289,6 +3323,7 @@ object WorldSprites {
         val legSpread = 13 * p
 
         // Contact drop shadow
+        drawCastShadow(scope, cx, groundY, 30, p, isOutdoor = true)
         drawContactShadow(scope, cx, groundY, 30, p)
 
         // Tripod legs (rich mahogany wood with brass tips)
