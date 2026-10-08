@@ -89,6 +89,8 @@ class SceneEngine(
         /** The leaves that fall from the tree on the hill, by season. */
         private val TREE_AUTUMN_LEAVES = arrayOf(Color(0xFFE06C1E), Color(0xFFC24118), Color(0xFFF2A23A), Color(0xFFFFC85A))
         private val TREE_SUMMER_LEAVES = arrayOf(Color(0xFF44913A), Color(0xFF73BB44))
+        /** They jog a little when the user sends them to something. */
+        private const val GO_USE_JOG = 1.5f
         /** How long a situational face is held between frames that renew it. */
         private const val SITUATIONAL_HOLD = 0.4f
         /** The faces for each tap reaction, in the tap pickers' order. */
@@ -846,6 +848,7 @@ class SceneEngine(
         currentScene = type
         cancelPetMove()
         petTapCount = 0
+        goUse = null
         cozy.stopAll()
         boy.putAwayHeldItem()
         girl.putAwayHeldItem()
@@ -2108,6 +2111,7 @@ class SceneEngine(
         updatePets(deltaSeconds)
         dropFromTheTree(deltaSeconds, canvasWidth, canvasHeight)
         updatePetMove(deltaSeconds, canvasWidth, canvasHeight)
+        updateGoUse(deltaSeconds)
         updateVisitors(deltaSeconds)
         if (secretRevealIn > 0f) {
             secretRevealIn -= deltaSeconds
@@ -8159,6 +8163,83 @@ class SceneEngine(
         mochiInBox = false
         mochiErrand = null
         return true
+    }
+
+    // ── Plan 12, C: tap something and one of them goes over to use it ──────────
+
+    /** One of them on their way over to something the user tapped, and then using it. */
+    private class GoUse(val who: PixelCharacter, val spot: SceneSpot, val then: () -> Unit) {
+        var arrived = false
+        var useLeft = 0f
+    }
+
+    private var goUse: GoUse? = null
+
+    /** True while one of them is on their way to something the user tapped, or using it. */
+    val isGoingToUseSomething: Boolean get() = goUse != null
+
+    /**
+     * The user tapped something in the scene one of them can use ([action]): the nearer of the
+     * two who's free walks over at a happy jog, faces it, takes it in hand, and then [then]
+     * happens, the thing's own response, as if it had been tapped. False when neither is free,
+     * something else is on, or there's no such thing here; the caller then does [then] at once.
+     */
+    fun sendToUse(action: SpotAction, cw: Float, ch: Float, then: () -> Unit): Boolean {
+        if (isDreamMode || isWatchSceneActive || isSceneOpeningScriptActive() || birthdaySurprise.isRunning) return false
+        if (currentScene == SceneType.EVENING_RIDE || currentScene == SceneType.COZY_LOFT) return false
+        if (goUse != null || groundInteractionCharacter != null) return false
+        val spot = SceneSpots.forScene(currentScene).firstOrNull { it.action == action } ?: return false
+        // The nearer of the two who's free, and not one the other is standing in the way of
+        val who = charactersBoyGirl
+            .filter { isCharacterFree(it) }
+            .filter { c -> val other = if (c === boy) girl else boy; kotlin.math.hypot(other.worldX - spot.x, other.worldY - spot.y) > 0.06f }
+            .minByOrNull { kotlin.math.hypot(it.worldX - spot.x, it.worldY - spot.y) } ?: return false
+        val partner = if (who === boy) girl else boy
+        val speed = CharacterMotionTween.SHARED_WALKING_SPEED * GO_USE_JOG
+        val distance = kotlin.math.hypot(who.worldX - spot.x, who.worldY - spot.y)
+        if (distance > 0.015f) who.moveTo(spot.x, spot.y, speed = speed, arrivePose = CharacterPose.IDLE)
+        who.reactionTimer = distance / speed + spot.dwellSeconds + 1f
+        who.express(Expression.CURIOUS, distance / speed + 0.5f)
+        emote(who, EmoteType.EXCLAMATION, 0.9f)
+        // The other one looks to see what they're up to
+        partner.direction = if (spot.x < partner.worldX) Direction.LEFT else Direction.RIGHT
+        goUse = GoUse(who, spot, then)
+        audio.playFootstep()
+        return true
+    }
+
+    private fun updateGoUse(dt: Float) {
+        val g = goUse ?: return
+        val c = g.who
+        if (!g.arrived) {
+            if (c.isTransitioningPosition) return
+            g.arrived = true
+            c.direction = if (g.spot.faceLeft) Direction.LEFT else Direction.RIGHT
+            if (g.spot.pose != CharacterPose.IDLE) c.transitionPoseTo(g.spot.pose)
+            takeInHand(c, g.spot)
+            c.express(expressionAt(g.spot.action), g.spot.dwellSeconds)
+            g.useLeft = g.spot.dwellSeconds
+            g.then()
+            return
+        }
+        g.useLeft -= dt
+        if (g.useLeft <= 0f) {
+            if (g.spot.pose != CharacterPose.IDLE && c.pose == g.spot.pose) c.transitionPoseTo(CharacterPose.IDLE)
+            if (g.spot.action == SpotAction.PICK_FLOWER) c.hold(HeldItem.FLOWER, CARRIED_ITEM_SECONDS)
+            c.reactionTimer = 0f
+            goUse = null
+        }
+    }
+
+    /** What they take in hand at a spot, without the spot's own effects (the tap brings those). */
+    private fun takeInHand(c: PixelCharacter, spot: SceneSpot) {
+        when (spot.action) {
+            SpotAction.STIR_POT -> c.hold(HeldItem.PAN, spot.dwellSeconds + 0.4f)
+            SpotAction.WATER_PLANT -> c.hold(HeldItem.WATERING_CAN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            SpotAction.MIST_PLANTS -> c.hold(HeldItem.MISTER, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            SpotAction.TEND_LANTERN -> c.hold(HeldItem.LANTERN, spot.dwellSeconds + 0.6f, useSeconds = spot.dwellSeconds - 0.4f)
+            else -> Unit
+        }
     }
 
     // ── Plan 12, A: the pets' moves ─────────────────────────────────────────
