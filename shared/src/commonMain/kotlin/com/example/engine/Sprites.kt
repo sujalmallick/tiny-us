@@ -9,27 +9,6 @@ import kotlin.math.sin
 import kotlin.math.cos
 import kotlin.math.abs
 
-private val TREE_FLOWER_OFFSETS = arrayOf(
-    -20 to -16,
-    16 to -18,
-    -10 to 8,
-    22 to 6,
-    -28 to 2,
-    4 to -28,
-    28 to -8,
-    -14 to -4,
-    8 to 12,
-    -4 to 18
-)
-
-private val TREE_LEAF_ACCENT_OFFSETS = arrayOf(
-    -18 to -12,
-    18 to -14,
-    -12 to 10,
-    20 to 8,
-    2 to -24
-)
-
 private val COTTAGE_ICICLE_FRACS = floatArrayOf(0.08f, 0.22f, 0.38f, 0.52f, 0.68f, 0.82f, 0.94f)
 
 private val KITCHEN_SPICE_COLORS = arrayOf(Color(0xFFE63946), Color(0xFFE9C46A), Color(0xFF2A9D8F))
@@ -63,12 +42,6 @@ private val RIDE_SKY_DAY_SUMMER = listOf(Color(0xFF3B9FE2), Color(0xFF68BCE8), C
 object WorldSprites {
 
     // Foliage & Nature Colors
-    val TreeTrunk = Color(0xFF6B4226)
-    val TreeTrunkDark = Color(0xFF4A2810)
-    val LeavesDark = Color(0xFF2D5A27)
-    val LeavesMid = Color(0xFF40916C)
-    val LeavesLight = Color(0xFF74C69D)
-    val LeavesBlossomPink = Color(0xFFFFB5C2)
 
     // Furniture & Interior Colors
     val WoodFloor = Color(0xFFDDA15E)
@@ -92,6 +65,10 @@ object WorldSprites {
     val DoorWood = Color(0xFF7A4419)
     val BrassGold = Color(0xFFFFD166)
 
+    /**
+     * The tree on the hill, living through the seasons ([SeasonalTree]), with the heart and
+     * initials carved in its bark and the moss that grows over the years.
+     */
     fun drawTree(
         scope: DrawScope,
         baseX: Float,
@@ -102,140 +79,16 @@ object WorldSprites {
         mossStage: Int = 0,
         boyInitial: Char = 'Y',
         girlInitial: Char = 'M',
-        gfInitial: Char = girlInitial
+        gfInitial: Char = girlInitial,
+        isNight: Boolean = false,
+        isSunset: Boolean = false
     ) {
-        val trunkW = 18 * p
-        val trunkH = 68 * p
-        val trunkX = baseX - trunkW / 2f
-        val trunkY = groundY - trunkH
-
-        // Trunk & Roots
-        scope.drawRect(TreeTrunk, Offset(trunkX, trunkY), Size(trunkW, trunkH))
-        scope.drawRect(TreeTrunkDark, Offset(trunkX, trunkY), Size(4 * p, trunkH))
-        // Hand-placed bark grain follows the trunk, with a warm lit edge and a few dark knots.
-        scope.drawRect(Color(0xFF8B5A36), Offset(trunkX + 5 * p, trunkY + 5 * p), Size(1.2f * p, trunkH - 13 * p))
-        scope.drawRect(Color(0xFF7A4A2D), Offset(trunkX + 11 * p, trunkY + 11 * p), Size(1.1f * p, 18 * p))
-        scope.drawRect(Color(0xFF53321F), Offset(trunkX + 8 * p, trunkY + 24 * p), Size(2.4f * p, 1.2f * p))
-        scope.drawRect(Color(0xFF53321F), Offset(trunkX + 7 * p, trunkY + 26 * p), Size(1.2f * p, 1.2f * p))
-        scope.drawRect(Color(0xFF9B6840), Offset(trunkX + 5 * p, groundY - 8 * p), Size(2 * p, 4 * p))
-        // Root buttresses
-        scope.drawRect(TreeTrunk, Offset(trunkX - 8 * p, groundY - 10 * p), Size(8 * p, 10 * p))
-        scope.drawRect(TreeTrunkDark, Offset(trunkX - 8 * p, groundY - 4 * p), Size(8 * p, 4 * p))
-        scope.drawRect(TreeTrunk, Offset(trunkX + trunkW, groundY - 8 * p), Size(7 * p, 8 * p))
-
-        // Permanent carved heart with couple initials & ivy growth
+        val light = SeasonalTree.lightFor(isNight, isSunset)
+        SeasonalTree.draw(scope, baseX, groundY, p, timeSeconds, weather, light)
+        // Permanent carved heart with couple initials & ivy growth, in the same light as the bark
         val effectiveGirlInitial = if (gfInitial != girlInitial) gfInitial else girlInitial
-        drawTreeBarkCarving(scope, baseX, groundY, p, weather, mossStage, boyInitial, effectiveGirlInitial)
-
-        // Canopy wind sway
-        val sway = sin(timeSeconds * 1.5f) * 3f * p
-        val canopyCx = baseX + sway
-        val canopyCy = trunkY - 22 * p
-
-        val isSnow = weather == com.example.scene.WeatherType.SNOW
-        val isSakura = weather == com.example.scene.WeatherType.SAKURA
-        val isAutumn = weather == com.example.scene.WeatherType.AUTUMN
-
-        val leafDarkColor = when {
-            isSnow -> Color(0xFF1E3A2F)
-            isSakura -> Color(0xFFC75D7B)
-            isAutumn -> Color(0xFF8B1E1E)
-            else -> LeavesDark
-        }
-        val leafMidColor = when {
-            isSnow -> Color(0xFF2C5545)
-            isSakura -> Color(0xFFF291B0)
-            isAutumn -> Color(0xFFD46A28)
-            else -> LeavesMid
-        }
-        val leafLightColor = when {
-            isSnow -> Color(0xFF4A7C68)
-            isSakura -> Color(0xFFFFB5C2)
-            isAutumn -> Color(0xFFF4B942)
-            else -> LeavesLight
-        }
-
-        // Layered circular pixel clouds of leaves
-        fun leafCluster(cx: Float, cy: Float, radiusP: Float, color: Color) {
-            val r = radiusP * p
-            scope.drawRect(color, Offset(cx - r, cy - r), Size(r * 2, r * 2))
-            scope.drawRect(color, Offset(cx - r - 3 * p, cy - r + 3 * p), Size(3 * p, (r * 2) - 6 * p))
-            scope.drawRect(color, Offset(cx + r, cy - r + 3 * p), Size(3 * p, (r * 2) - 6 * p))
-            scope.drawRect(color, Offset(cx - r + 3 * p, cy - r - 3 * p), Size((r * 2) - 6 * p, 3 * p))
-            scope.drawRect(color, Offset(cx - r + 3 * p, cy + r), Size((r * 2) - 6 * p, 3 * p))
-
-            // A small highlight notch and underside shade break the canopy into pixel clusters.
-            val notch = (radiusP.toInt() % 3) * p
-            val leafGlint = when {
-                isSnow -> Color(0xFFDCECF0)
-                isSakura -> Color(0xFFFFD5E0)
-                isAutumn -> Color(0xFFFFD982)
-                else -> Color(0xFF9AD5A2)
-            }
-            scope.drawRect(leafGlint.copy(alpha = 0.72f), Offset(cx - r + (7 * p) + notch, cy - r + 7 * p), Size(4 * p, 2 * p))
-            scope.drawRect(Color(0x350D2418), Offset(cx + r - 7 * p, cy + r - 4 * p), Size(4 * p, 2 * p))
-
-            if (isSnow) {
-                // Fluffy snow caps on top of foliage cluster
-                val capW = (r * 2) - 4 * p
-                scope.drawRect(Color(0xFFE2EAF0), Offset(cx - r + 2 * p, cy - r - 2 * p), Size(capW, 4 * p))
-                scope.drawRect(Color.White, Offset(cx - r + 4 * p, cy - r - 4 * p), Size(capW - 4 * p, 3 * p))
-                scope.drawRect(Color.White, Offset(cx - 2 * p, cy - r + 2 * p), Size(3 * p, 2.5f * p))
-            }
-        }
-
-        // Back / Dark leaves layer
-        leafCluster(canopyCx - 26 * p, canopyCy + 8 * p, 22f, leafDarkColor)
-        leafCluster(canopyCx + 26 * p, canopyCy + 10 * p, 24f, leafDarkColor)
-        leafCluster(canopyCx, canopyCy - 18 * p, 28f, leafDarkColor)
-
-        // Mid foliage
-        leafCluster(canopyCx - 20 * p, canopyCy + 4 * p, 20f, leafMidColor)
-        leafCluster(canopyCx + 20 * p, canopyCy + 5 * p, 21f, leafMidColor)
-        leafCluster(canopyCx, canopyCy - 10 * p, 24f, leafMidColor)
-
-        // Front / Sun highlights
-        leafCluster(canopyCx - 12 * p, canopyCy - 8 * p, 15f, leafLightColor)
-        leafCluster(canopyCx + 14 * p, canopyCy - 4 * p, 16f, leafLightColor)
-        leafCluster(canopyCx, canopyCy + 6 * p, 16f, leafLightColor)
-
-        if (isSakura) {
-            // Blooming cherry blossoms with bright white-pink petals and golden pistils
-            val blossomPetal = Color(0xFFFFF0F5)
-            val blossomDeep = Color(0xFFFF758F)
-            TREE_FLOWER_OFFSETS.forEach { (ox, oy) ->
-                val fx = canopyCx + ox * p
-                val fy = canopyCy + oy * p
-                scope.drawRect(blossomDeep, Offset(fx - 2 * p, fy - 2 * p), Size(5 * p, 5 * p))
-                scope.drawRect(blossomPetal, Offset(fx - 3 * p, fy), Size(2 * p, 2 * p))
-                scope.drawRect(blossomPetal, Offset(fx + 2 * p, fy), Size(2 * p, 2 * p))
-                scope.drawRect(blossomPetal, Offset(fx, fy - 3 * p), Size(2 * p, 2 * p))
-                scope.drawRect(blossomPetal, Offset(fx, fy + 2 * p), Size(2 * p, 2 * p))
-                scope.drawRect(Color(0xFFFFE66D), Offset(fx, fy), Size(2 * p, 2 * p))
-            }
-        } else if (isAutumn) {
-            // Golden and amber autumn leaf highlights
-            val autumnGold = Color(0xFFFFD166)
-            val autumnScarlet = Color(0xFFD62828)
-            TREE_LEAF_ACCENT_OFFSETS.forEachIndexed { i, (ox, oy) ->
-                val lx = canopyCx + ox * p
-                val ly = canopyCy + oy * p
-                val col = if (i % 2 == 0) autumnGold else autumnScarlet
-                scope.drawRect(col, Offset(lx, ly), Size(4 * p, 4 * p))
-            }
-        } else if (isSnow) {
-            // Snow on branches and roots
-            scope.drawRect(Color.White, Offset(trunkX - 8 * p, groundY - 11 * p), Size(8 * p, 3 * p))
-            scope.drawRect(Color.White, Offset(trunkX + trunkW, groundY - 9 * p), Size(7 * p, 3 * p))
-            scope.drawRect(Color(0xFFE2EAF0), Offset(canopyCx + 26 * p, canopyCy + 18 * p), Size(7 * p, 2.5f * p))
-        } else {
-            // Pink cherry blossoms / sweet flower clusters for sunny days
-            val blossomColor = LeavesBlossomPink
-            scope.drawRect(blossomColor, Offset(canopyCx - 16 * p, canopyCy - 14 * p), Size(3 * p, 3 * p))
-            scope.drawRect(blossomColor, Offset(canopyCx + 18 * p, canopyCy + 2 * p), Size(3 * p, 3 * p))
-            scope.drawRect(blossomColor, Offset(canopyCx - 24 * p, canopyCy + 8 * p), Size(3 * p, 3 * p))
-            scope.drawRect(blossomColor, Offset(canopyCx + 8 * p, canopyCy - 22 * p), Size(3 * p, 3 * p))
-            scope.drawRect(blossomColor, Offset(canopyCx - 4 * p, canopyCy + 14 * p), Size(3 * p, 3 * p))
+        SeasonalTree.inLight(scope, light) {
+            drawTreeBarkCarving(scope, baseX, groundY, p, weather, mossStage, boyInitial, effectiveGirlInitial)
         }
     }
 
@@ -2032,69 +1885,17 @@ object WorldSprites {
         scope.drawRect(Color(0xFFFFFFFF), Offset(x + basketW - 4 * p, by + 3 * p), Size(2 * p, 2 * p))
     }
 
-    fun drawTreeSwing(scope: DrawScope, treeX: Float, groundY: Float, p: Float, timeSeconds: Float) {
-        val swingSway = sin(timeSeconds * 1.6f) * 3f * p
-        val ropeTopY = groundY - 82 * p
-        val seatY = groundY - 18 * p
-        val seatW = 14 * p
-        val sx = treeX + 22 * p + swingSway
-
-        // Two hanging jute ropes
-        scope.drawRect(Color(0xFFDDA15E), Offset(sx - 5 * p, ropeTopY), Size(1.5f * p, seatY - ropeTopY))
-        scope.drawRect(Color(0xFFDDA15E), Offset(sx + 5 * p, ropeTopY), Size(1.5f * p, seatY - ropeTopY))
-        // Wooden seat plank
-        scope.drawRect(Color(0xFF6B4226), Offset(sx - 7 * p, seatY), Size(seatW, 3 * p))
-        scope.drawRect(Color(0xFF4A2810), Offset(sx - 7 * p, seatY + 2 * p), Size(seatW, p))
-    }
-
-    /**
-     * Draws a soft, dappled pixel-art tree shade on the meadow grass under the canopy
-     * during sunny summer daytime.
-     */
-    fun drawTreeShade(
+    /** The swing on the tree's low left branch ([SeasonalTree.drawSwing]). */
+    fun drawTreeSwing(
         scope: DrawScope,
-        baseX: Float,
+        treeX: Float,
         groundY: Float,
-        p: Float = 3.5f,
-        timeSeconds: Float = 0f
-    ) {
-        val sway = sin(timeSeconds * 1.5f) * 2f * p
-        val shadeCx = baseX + sway * 0.4f
-        val shadeCy = groundY + 4 * p
-
-        // Tiered pixel shadow cast on meadow grass
-        val outerShadeColor = Color(0x3016331C)
-        val coreShadeColor = Color(0x450D2412)
-
-        // Outer soft shade layer
-        scope.drawRect(outerShadeColor, Offset(shadeCx - 46 * p, shadeCy - 4 * p), Size(92 * p, 16 * p))
-        scope.drawRect(outerShadeColor, Offset(shadeCx - 38 * p, shadeCy - 8 * p), Size(76 * p, 4 * p))
-        scope.drawRect(outerShadeColor, Offset(shadeCx - 38 * p, shadeCy + 12 * p), Size(76 * p, 4 * p))
-        scope.drawRect(outerShadeColor, Offset(shadeCx - 52 * p, shadeCy), Size(104 * p, 8 * p))
-
-        // Core deeper shade under dense trunk & canopy center
-        scope.drawRect(coreShadeColor, Offset(shadeCx - 32 * p, shadeCy - 3 * p), Size(64 * p, 12 * p))
-        scope.drawRect(coreShadeColor, Offset(shadeCx - 24 * p, shadeCy - 6 * p), Size(48 * p, 3 * p))
-        scope.drawRect(coreShadeColor, Offset(shadeCx - 24 * p, shadeCy + 9 * p), Size(48 * p, 3 * p))
-
-        // Dappled sunlight specks filtering through moving leaves
-        val dappleColor = Color(0x40FFF3B0)
-        val d1X = shadeCx - 24 * p + sway * 0.8f
-        val d1Y = shadeCy - p
-        scope.drawRect(dappleColor, Offset(d1X, d1Y), Size(3 * p, 2 * p))
-
-        val d2X = shadeCx + 18 * p - sway * 0.6f
-        val d2Y = shadeCy + 3 * p
-        scope.drawRect(dappleColor, Offset(d2X, d2Y), Size(2.5f * p, 2 * p))
-
-        val d3X = shadeCx - 8 * p + sway * 0.4f
-        val d3Y = shadeCy + 6 * p
-        scope.drawRect(dappleColor, Offset(d3X, d3Y), Size(2 * p, 1.5f * p))
-
-        val d4X = shadeCx + 30 * p + sway * 0.7f
-        val d4Y = shadeCy - 2 * p
-        scope.drawRect(dappleColor, Offset(d4X, d4Y), Size(2 * p, 2 * p))
-    }
+        p: Float,
+        timeSeconds: Float,
+        weather: com.example.scene.WeatherType = com.example.scene.WeatherType.SUNNY,
+        isNight: Boolean = false,
+        isSunset: Boolean = false
+    ) = SeasonalTree.drawSwing(scope, treeX, groundY, p, timeSeconds, weather, SeasonalTree.lightFor(isNight, isSunset))
 
     fun drawFairyJar(scope: DrawScope, x: Float, groundY: Float, p: Float, timeSeconds: Float) {
         val jarW = 10 * p
