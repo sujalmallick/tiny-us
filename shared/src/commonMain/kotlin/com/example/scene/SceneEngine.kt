@@ -86,6 +86,12 @@ class SceneEngine(
     private val onOpenDreamJournal: () -> Unit = {}
 ) {
     companion object {
+        // Cozy prop tap animations (seconds)
+        const val CREEK_RIPPLE_SECONDS = 1.2f
+        const val BICYCLE_BELL_SECONDS = 1.4f
+        const val FENCE_RUSTLE_SECONDS = 1.6f
+        const val BASKET_SWAY_SECONDS = 2.4f
+
         /** The leaves that fall from the tree on the hill, by season. */
         private val TREE_AUTUMN_LEAVES = arrayOf(Color(0xFFE06C1E), Color(0xFFC24118), Color(0xFFF2A23A), Color(0xFFFFC85A))
         private val TREE_SUMMER_LEAVES = arrayOf(Color(0xFF44913A), Color(0xFF73BB44))
@@ -513,6 +519,14 @@ class SceneEngine(
     var constellationConnectTimer: Float by mutableFloatStateOf(0f) // drives glowing constellation star connect lines (2.4 s)
     var activeConstellationIndex: Int by mutableIntStateOf(0)  // 0: none, 1: Two Hearts, 2: Teapot, 3: Starlight Trail
 
+    // Cozy pixel props (engine/CozyProps): each tap plays once, ignores repeat taps until done,
+    // and resets when the scene changes.
+    var creekRippleTimer: Float by mutableFloatStateOf(0f)     // creek ripple ring where it was tapped (WALK)
+    var creekRippleX: Float by mutableFloatStateOf(0f)
+    var bicycleBellTimer: Float by mutableFloatStateOf(0f)     // bicycle bell glint and basket bob (WALK)
+    var fenceRustleTimer: Float by mutableFloatStateOf(0f)     // flower fence blooms bob, petals drift (FLOWER)
+    var basketSwayTimer: Float by mutableFloatStateOf(0f)      // hanging basket swings and settles (SUNROOM)
+
     // Momo Stall tap-interaction animation timers
     var momoSignFlickerTimer: Float by mutableFloatStateOf(0f) // drives neon sign color cycling and glow pulse (1.4 s)
     var momoSteamerTimer: Float by mutableFloatStateOf(0f)     // drives bamboo lid rising, steam jet, and momo jumping (1.5 s)
@@ -913,6 +927,10 @@ class SceneEngine(
         magazineRackTimer = 0f
         pagodaGlowTimer = 0f
         lavenderSwayTimer = 0f
+        creekRippleTimer = 0f
+        bicycleBellTimer = 0f
+        fenceRustleTimer = 0f
+        basketSwayTimer = 0f
         mushroomBounceTimer = 0f
         constellationConnectTimer = 0f
         activeConstellationIndex = 0
@@ -2358,6 +2376,10 @@ class SceneEngine(
         if (lavenderSwayTimer > 0f) lavenderSwayTimer = (lavenderSwayTimer - deltaSeconds).coerceAtLeast(0f)
         if (mushroomBounceTimer > 0f) mushroomBounceTimer = (mushroomBounceTimer - deltaSeconds).coerceAtLeast(0f)
         if (constellationConnectTimer > 0f) constellationConnectTimer = (constellationConnectTimer - deltaSeconds).coerceAtLeast(0f)
+        if (creekRippleTimer > 0f) creekRippleTimer = (creekRippleTimer - deltaSeconds).coerceAtLeast(0f)
+        if (bicycleBellTimer > 0f) bicycleBellTimer = (bicycleBellTimer - deltaSeconds).coerceAtLeast(0f)
+        if (fenceRustleTimer > 0f) fenceRustleTimer = (fenceRustleTimer - deltaSeconds).coerceAtLeast(0f)
+        if (basketSwayTimer > 0f) basketSwayTimer = (basketSwayTimer - deltaSeconds).coerceAtLeast(0f)
 
         // Momo Stall tap-interaction countdowns
         if (momoSignFlickerTimer > 0f) momoSignFlickerTimer = (momoSignFlickerTimer - deltaSeconds).coerceAtLeast(0f)
@@ -6599,6 +6621,41 @@ class SceneEngine(
         girl.emotion = CharacterEmotion.HAPPY
         girl.emote = EmoteType.SPARKLE
         girl.emoteTimer = 1.8f
+    }
+
+    /** Progress 0..1 of a prop timer that runs for [duration] seconds, or -1 when it is idle. */
+    fun propProgress(timer: Float, duration: Float): Float = if (timer > 0f) 1f - timer / duration else -1f
+
+    fun onTouchCreek(touchX: Float, touchY: Float) {
+        if (creekRippleTimer > 0f) return
+        creekRippleTimer = CREEK_RIPPLE_SECONDS
+        creekRippleX = touchX
+        audio.playWaterDrip()
+        particles.spawnRainSplash(touchX, touchY)
+        particles.spawnSparkles(touchX, touchY - 6f, 4, Color(0xFFCFEFFF))
+    }
+
+    fun onTouchBicycle(touchX: Float, touchY: Float) {
+        if (bicycleBellTimer > 0f) return
+        bicycleBellTimer = BICYCLE_BELL_SECONDS
+        audio.playStarTwinkle()
+        particles.spawnSparkles(touchX, touchY - 10f, 4, Color(0xFFFFD166))
+        boy.emote = EmoteType.MUSIC_NOTE
+        boy.emoteTimer = 1.4f
+    }
+
+    fun onTouchFlowerFence(touchX: Float, touchY: Float) {
+        if (fenceRustleTimer > 0f) return
+        fenceRustleTimer = FENCE_RUSTLE_SECONDS
+        audio.playLeafRustle()
+        particles.spawnPetals(touchX, touchY - 8f, 5)
+    }
+
+    fun onTouchHangingBasket(touchX: Float, touchY: Float) {
+        if (basketSwayTimer > 0f) return
+        basketSwayTimer = BASKET_SWAY_SECONDS
+        audio.playLeafRustle()
+        particles.spawnPetals(touchX, touchY + 10f, 2)
     }
 
     fun onTouchMushrooms(touchX: Float, touchY: Float) {
