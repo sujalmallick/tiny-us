@@ -626,6 +626,40 @@ object SeasonalTree {
     }
 
     /**
+     * Where a bird can sit on the tree: the tops of branches with open sky above them, as
+     * (dx from the trunk, height of the bird's feet). Under the leaves only the swing branch
+     * shows; in winter the bare branches have room all over.
+     */
+    fun perches(weather: WeatherType): List<IntArray> = perchCache.getOrPut(Season.of(weather)) {
+        val season = Season.of(weather)
+        val wood = when (season) {
+            Season.AUTUMN -> autumnWood
+            Season.WINTER -> bareWood
+            else -> leafyWood
+        }
+        val columns = if (season == Season.WINTER) intArrayOf(-44, -33, -22, -15, 14, 22, 31, 41) else intArrayOf(-44, -33, -30)
+        val out = ArrayList<IntArray>()
+        for (dx in columns) {
+            val x = BX + dx
+            for (u in 45 until U_MAX - 3) {
+                if (wood[idx(x, u)] < 0 || wood[idx(x, u + 1)] >= 0) continue
+                val clear = season == Season.WINTER || (canopy[idx(x, u + 1)] < 0 && canopy[idx(x, u + 2)] < 0 && canopy[idx(x, u + 3)] < 0)
+                if (clear) { out += intArrayOf(dx, u + 1); break }
+            }
+        }
+        out
+    }
+
+    private val perchCache = HashMap<Season, List<IntArray>>()
+
+    /** The screen point for a [perch] from [perches], for the tree with its foot at ([baseX], [groundY]). */
+    fun perchAt(perch: IntArray, baseX: Float, groundY: Float, p: Float): Pair<Float, Float> {
+        val left = ((baseX / p).roundToInt() - BX) * p
+        val ground = (groundY / p).roundToInt() * p
+        return Pair(left + (BX + perch[0]) * p + p / 2f, ground - perch[1] * p)
+    }
+
+    /**
      * A place under the canopy for a petal or a leaf to fall from, as (dx, height) in tree pixels
      * from the foot of the trunk.
      */
