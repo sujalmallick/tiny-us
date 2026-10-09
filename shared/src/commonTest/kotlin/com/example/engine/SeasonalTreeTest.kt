@@ -12,6 +12,8 @@ class SeasonalTreeTest {
             assertTrue(perches.isNotEmpty(), "Somewhere to sit in $weather")
             // Above the trunk's fork, on a branch
             assertTrue(perches.all { it[1] > 45 }, "On the branches in $weather")
+            // Low enough that the wind never bends the branch out from under them
+            assertTrue(perches.all { it[1] <= 72 }, "On still branches in $weather")
         }
         // The bare winter branches have more room than the leafy ones
         assertTrue(SeasonalTree.perches(WeatherType.SNOW).size > SeasonalTree.perches(WeatherType.SUNNY).size)

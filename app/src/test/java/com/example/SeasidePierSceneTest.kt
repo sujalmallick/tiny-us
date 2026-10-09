@@ -45,8 +45,10 @@ class SeasidePierSceneTest {
         engine.weather = WeatherType.SUNNY
         engine.pierRng = Random(7)
         engine.dailyPromptProvider = { "What tiny thing made you smile today?" }
-        // Pin the time of day so Bao's day/night routine is deterministic.
+        // Pin the time of day so Bao's day/night routine is deterministic, and the clock's
+        // hour away from his four o'clock tea (when he won't fish).
         engine.updateAtmosphereMode("DAY")
+        engine.clockHourOverride = 10
         engine.loadScene(SceneType.SEASIDE_PIER)
     }
 

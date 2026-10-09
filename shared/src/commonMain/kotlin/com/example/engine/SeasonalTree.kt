@@ -60,19 +60,28 @@ object SeasonalTree {
         else -> Light.DAY
     }
 
-    /** Draws [block] in the tree's [light], so things drawn on the bark match it. */
-    fun inLight(scope: DrawScope, light: Light, block: () -> Unit) {
+    /**
+     * Draws [block] in the tree's [light], so things drawn on the bark match it; [bounds] is
+     * where it draws (the whole canvas when not given), so only that much is lit again.
+     */
+    fun inLight(scope: DrawScope, light: Light, bounds: Rect? = null, block: () -> Unit) {
         if (light == Light.DAY) { block(); return }
+        val canvas = scope.drawContext.canvas
+        canvas.saveLayer(bounds ?: Rect(Offset.Zero, scope.size), lightPaint(light))
+        block()
+        canvas.restore()
+    }
+
+    /** One paint for each light but the day's, made once (drawing is on one thread). */
+    private val lightPaints = HashMap<Light, Paint>()
+
+    private fun lightPaint(light: Light): Paint = lightPaints.getOrPut(light) {
         val m = if (light == Light.NIGHT) {
             floatArrayOf(0.42f, 0f, 0f, 0f, 0x14 * 0.30f, 0f, 0.46f, 0f, 0f, 0x1E * 0.30f, 0f, 0f, 0.55f, 0f, 0x48 * 0.35f, 0f, 0f, 0f, 1f, 0f)
         } else {
             floatArrayOf(0.92f, 0f, 0f, 0f, 0xFF * 0.12f, 0f, 0.84f, 0f, 0f, 0x7A * 0.10f, 0f, 0f, 0.78f, 0f, 0x40 * 0.06f, 0f, 0f, 0f, 1f, 0f)
         }
-        val paint = Paint().apply { colorFilter = ColorFilter.colorMatrix(ColorMatrix(m)) }
-        val canvas = scope.drawContext.canvas
-        canvas.saveLayer(Rect(Offset.Zero, scope.size), paint)
-        block()
-        canvas.restore()
+        Paint().apply { colorFilter = ColorFilter.colorMatrix(ColorMatrix(m)) }
     }
 
     /** Image size in game pixels. */
@@ -85,6 +94,8 @@ object SeasonalTree {
     private const val TRUNK_TOP = 52
     /** Rows higher than this bend in the wind. */
     private const val SWAY_FROM = 55
+    /** The highest row the sway never shifts (draw's bands: under half a pixel at the strongest gust). */
+    private const val STILL_TOP = 71
 
     /** Where the tree stands in its scene, as fractions of the world. */
     const val SCENE_X = 0.5f
@@ -642,6 +653,8 @@ object SeasonalTree {
         for (dx in columns) {
             val x = BX + dx
             for (u in 45 until U_MAX - 3) {
+                // Only where the wind doesn't bend the tree, or the bird would slide about on it
+                if (u > STILL_TOP) break
                 if (wood[idx(x, u)] < 0 || wood[idx(x, u + 1)] >= 0) continue
                 val clear = season == Season.WINTER || (canopy[idx(x, u + 1)] < 0 && canopy[idx(x, u + 2)] < 0 && canopy[idx(x, u + 3)] < 0)
                 if (clear) { out += intArrayOf(dx, u + 1); break }

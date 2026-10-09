@@ -119,34 +119,18 @@ class AppearanceVerificationTest {
         // -----------------------------------------------------------------------------
         val umbrellaCanvas = DebugPixelCanvas(400, 400)
         val umbrellaScope = CanvasDrawScope()
-        val boyX = 180f
-        val boyY = 280f
-        val girlX = 220f
-        val girlY = 280f
+        val boy = com.example.engine.PixelCharacter(isGirl = false, name = "Boy", worldX = 0.5f, worldY = 0.7f)
+        val grip = PixelArtRenderer.umbrellaGrip(boy, centerX = 180f, bottomY = 280f, pixelSize = p, snapToPixel = false, backHand = false)
 
         umbrellaScope.draw(Density(1f), LayoutDirection.Ltr, umbrellaCanvas, Size(400f, 400f)) {
-            WorldSprites.drawBoyHoldingUmbrella(
-                scope = this,
-                boyX = boyX,
-                boyY = boyY,
-                girlX = girlX,
-                girlY = girlY,
-                boyFacingRight = true,
-                p = p,
-                timeSeconds = 0f,
-                isSitting = false
-            )
+            WorldSprites.drawBoyHoldingUmbrella(scope = this, grip = grip, timeSeconds = 0f)
         }
 
-        // Calculations from drawBoyHoldingUmbrella:
-        // domeX = (boyX + girlX) / 2 = 200
-        // poleX = domeX = 200
-        // handY = boyY - 17.5 * p = 280 - 70 = 210
-        // Boy hand rect: Offset(poleX - 1.8 * p, handY - 1.5 * p) = Offset(192.8, 204), Size(3.6 * p, 3.2 * p) = Size(14.4, 12.8)
-        // Shadow is at Offset(poleX - 0.5 * p, handY - p) = Offset(198, 206)
-        // Therefore at x = 195, y = 208 it is pure boy skin
-        val umbrellaHandSampleX = 195
-        val umbrellaHandSampleY = 208
+        // His fist is two blocks wide round the pole, on the inside of it (facing right, the
+        // block left of the pole's column); its outer top block is the skin shadow. So the
+        // middle of the inner block's lower half is pure boy skin.
+        val umbrellaHandSampleX = (grip.poleX - grip.block / 2f).toInt()
+        val umbrellaHandSampleY = (grip.handTop + grip.block * 1.5f).toInt()
         val actualUmbrellaHand = umbrellaCanvas.getPixel(umbrellaHandSampleX, umbrellaHandSampleY)
         val actualUmbrellaHandHex = String.format("0x%08X", actualUmbrellaHand)
 

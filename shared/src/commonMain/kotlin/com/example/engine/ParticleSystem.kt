@@ -105,6 +105,10 @@ private val MUSIC_NOTE_COLORS = arrayOf(
     Color(0xFF70E000)
 )
 
+/** A digging pet's earth, and the snow it digs in winter. */
+private val EARTH_BITS = arrayOf(Color(0xFF7A4B2A), Color(0xFF5C3A21), Color(0xFF94633A))
+private val SNOW_BITS = arrayOf(Color(0xFFF4F8FC), Color(0xFFDCE8F2))
+
 private val GRASS_COLORS = arrayOf(
     Color(0xFF96D678),
     Color(0xFF7DC26A),
@@ -940,6 +944,30 @@ class ParticleSystem {
                     size = 3f + Random.nextFloat() * 2.5f,
                     color = GRASS_COLORS.random(Random),
                     maxLife = 35f + Random.nextFloat() * 15f,
+                    type = ParticleType.SPARKLE,
+                    phase = Random.nextFloat() * 6.28f
+                )
+            )
+        }
+    }
+
+    /**
+     * Earth (or snow) flung up behind a digging pet: little bits thrown back and up from its paws,
+     * away from where it faces ([towardLeft]: thrown to the left).
+     */
+    fun spawnEarth(x: Float, y: Float, count: Int, towardLeft: Boolean, snow: Boolean) {
+        val dir = if (towardLeft) -1f else 1f
+        val colors = if (snow) SNOW_BITS else EARTH_BITS
+        repeat(count) {
+            particles.add(
+                obtainParticle(
+                    x = x + Random.nextFloat() * 6f - 3f,
+                    y = y - Random.nextFloat() * 4f,
+                    vx = dir * (0.8f + Random.nextFloat() * 1.4f),
+                    vy = -(1.2f + Random.nextFloat() * 1.4f),
+                    size = 3f + Random.nextFloat() * 2f,
+                    color = colors.random(Random),
+                    maxLife = 22f + Random.nextFloat() * 12f,
                     type = ParticleType.SPARKLE,
                     phase = Random.nextFloat() * 6.28f
                 )
