@@ -98,14 +98,20 @@ class WorldCameraTest {
             }
         }
         StageExtension.fill(px, w, h, top, bottom)
+        // Below the stage everything settles into a soft foreground shade (a few 8% steps), so a
+        // colour there is the expected one at one of those shade steps.
+        fun shadeOf(c: Int, base: Int): Boolean = (0..3).any { l ->
+            val k = 1f - l * 0.08f
+            listOf(16, 8, 0).all { s -> ((c shr s) and 0xFF) == (((base shr s) and 0xFF) * k).toInt() }
+        }
         // Below: seams keep coming every fourth row.
         for (y in bottom until h) {
             val expected = if ((y - top) % 4 == 3) seam else wood
-            assertEquals("row $y", expected, px[y * w + 3])
+            assertTrue("row $y", shadeOf(px[y * w + 3], expected))
         }
         // The cord column runs up and down through the extension.
         assertEquals(cord, px[0 * w + 7])
-        assertEquals(cord, px[(h - 1) * w + 7])
+        assertTrue(shadeOf(px[(h - 1) * w + 7], cord))
         // Nothing is left transparent.
         assertTrue(px.none { it == 0 })
     }

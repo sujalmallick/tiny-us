@@ -105,7 +105,9 @@ fun drawPathGround(
     isWalk: Boolean = false,
     timeSeconds: Float = 0f,
     isNight: Boolean = true,
-    isSunset: Boolean = false
+    isSunset: Boolean = false,
+    creekRippleX: Float = 0f,
+    creekRipple: Float = -1f
 ) {
     val groundY = ch * 0.66f
     val isSnow = weather == com.example.scene.WeatherType.SNOW
@@ -270,6 +272,15 @@ fun drawPathGround(
         val py = t1Y + 3 * p + (idx % 3) * 4 * p
         scope.drawRect(pebColor, Offset(px, py), Size(4 * p, 2.5f * p))
         scope.drawRect(pebHighlight, Offset(px + 0.8f * p, py), Size(2.4f * p, 0.8f * p))
+    }
+
+    // Lantern Stroll creek along the bottom terrace; the stepping stones below cross it
+    if (isWalk && !isSnow) {
+        com.example.engine.CozyProps.drawCreek(
+            scope, 0f, com.example.scene.CozyPropLayout.walkCreekTop(ch, p), cw,
+            com.example.scene.CozyPropLayout.CREEK_ROWS, p, timeSeconds, creekRippleX, creekRipple,
+            com.example.engine.CozyProps.outdoorLight(isNight, isSunset)
+        )
     }
 
     // Lower terrace large flat stepping stones

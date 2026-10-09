@@ -82,6 +82,7 @@ import com.example.scene.CouchPhase
 import com.example.scene.CatState
 import com.example.scene.CafeLayout
 import com.example.scene.CampfireLayout
+import com.example.scene.CozyPropLayout
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -903,6 +904,14 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
         scope.pCircle(leaf, crown * 0.75f, Offset(tx, tBase - crown))
         if (!night && !snowing) scope.pCircle(Color(0x33FFFFFF), crown * 0.3f, Offset(tx - crown * 0.25f, tBase - crown * 1.2f))
     }
+    // A washing line far out in the garden, behind the picket fence
+    if (!raining) {
+        val line = com.example.scene.CozyPropLayout.sunroomFarClothesline(cw, ch, p)
+        com.example.engine.CozyProps.drawFar(
+            scope, com.example.engine.CozyProps.farClothesline, line.x, line.y, p,
+            if (snowing) Color(0xFFDDE4EA) else hillFar, 0.3f, com.example.engine.CozyProps.outdoorLight(night, dusk), snowing
+        )
+    }
     val fenceY = kneeTop - 11f * p
     val picket = if (night) Color(0xFF9AA5B4) else Color(0xFFF4F1EA)
     scope.px(picket, 0f, fenceY + 2f * p, cw, 1.2f * p)
@@ -1135,6 +1144,14 @@ fun drawCottageSunroom(scope: DrawScope, cw: Float, ch: Float, p: Float, time: F
             scope.px(Color(0xFF70A66A), hx2 + 1f * p + sway * (1f + leaf * 0.12f), potY + 5f * p + leaf * 2.8f * p, 2.6f * p, 1.8f * p)
         }
     }
+    // A hanging flower basket between the first two hangers; a tap swings it
+    val basketHook = com.example.scene.CozyPropLayout.sunroomBasketHook(cw, ch, p)
+    scope.px(Color(0xFFB08968), basketHook.x - 2f * p, roofEave + 2f * p, 4f * p, 1f * p)
+    com.example.engine.CozyProps.drawHangingBasket(
+        scope, basketHook.x, basketHook.y, p,
+        engine.propProgress(engine.basketSwayTimer, com.example.scene.SceneEngine.BASKET_SWAY_SECONDS), time,
+        com.example.engine.CozyProps.indoorLight(night)
+    )
     // Wind chime by the door frame
     val chimeX = cw * 0.06f
     scope.px(Color(0xFFB08968), chimeX - 4f * p, roofEave + 4f * p, 8f * p, 1f * p)
@@ -1268,10 +1285,22 @@ fun drawCampfireScene(
         mx += 3f * p
     }
 
-    // 3. Pine treeline: a small back row and a taller front row
-    val pineBack = when { isNight -> Color(0xFF0E1B15); isSunset -> Color(0xFF2B2230); else -> Color(0xFF2F5A43) }
-    val pineFront = when { isNight -> Color(0xFF0B1611); isSunset -> Color(0xFF231B27); else -> Color(0xFF244A36) }
-    val pineLight = when { isNight -> Color(0xFF14261D); isSunset -> Color(0xFF3A2D3C); else -> Color(0xFF3B6E52) }
+    // 3. Pine treeline: a hazy far forest, then a small back row and a taller front row
+    val pineBack = when { isNight -> Color(0xFF0E1B1C); isSunset -> Color(0xFF2B2230); else -> Color(0xFF2F5A43) }
+    val pineFront = when { isNight -> Color(0xFF0A1614); isSunset -> Color(0xFF231B27); else -> Color(0xFF244A36) }
+    val pineLight = when { isNight -> Color(0xFF15282A); isSunset -> Color(0xFF3A2D3C); else -> Color(0xFF3B6E52) }
+    val moonRim = Color(0xFF3E5F78) // cool moonlight catching the tops of things at night
+    // Far forest: rounded and pointed crowns fading into the mountains, for depth
+    val farForest = mix(nearMtn, pineBack, 0.45f)
+    var ffx = 0f
+    var ffi = 0
+    while (ffx < cw) {
+        val crown = (5f + nz(ffi, 81) * 7f + if (ffi % 3 == 0) 3f else 0f) * p
+        scope.px(farForest, ffx, horizon - crown, 3f * p + 0.5f, crown + 2f * p)
+        if (ffi % 3 == 0) scope.px(farForest, ffx + 1f * p, horizon - crown - 2f * p, 1f * p, 2f * p) // a pointed tip now and then
+        ffx += 3f * p
+        ffi++
+    }
     var bx = 0f
     var bi = 0
     while (bx < cw + 10f * p) {
@@ -1289,23 +1318,31 @@ fun drawCampfireScene(
         scope.pixelTriangle(pineFront, fx, base - 3f * p, h * 0.32f, h * 0.62f, 3f * p)
         scope.pixelTriangle(pineFront, fx, base - 3f * p - h * 0.32f, h * 0.24f, h * 0.55f, 3f * p)
         scope.px(pineLight, fx - h * 0.1f, base - 3f * p - h * 0.5f, 1.5f * p, h * 0.3f)
+        if (isNight && !snowing) {
+            // moonlight on the tip and down the left-hand boughs
+            scope.px(moonRim, fx - 0.5f * p, base - 3f * p - h * 0.86f, 1f * p, 2f * p)
+            scope.px(moonRim, fx - h * 0.12f, base - 3f * p - h * 0.62f, 1f * p, 1f * p)
+            scope.px(moonRim, fx - h * 0.2f, base - 3f * p - h * 0.36f, 1f * p, 1f * p)
+        }
         if (snowing) scope.pixelTriangle(Color(0xFFF1F4F8), fx, base - 3f * p - h * 0.62f, h * 0.08f, h * 0.25f, 2f * p)
         fx += (12f + nz(fi, 94) * 8f) * p
         fi++
     }
 
     // 4. Meadow: graded from distant to near, scattered tufts in several greens
-    val farGround = when { snowing -> Color(0xFFCFD8E0); isNight -> Color(0xFF16291F); isSunset -> Color(0xFF3B3424); else -> Color(0xFF4E7A45) }
-    val nearGround = when { snowing -> Color(0xFFEAF0F5); isNight -> Color(0xFF1F3A2A); isSunset -> Color(0xFF5A4E33); else -> Color(0xFF6E9E58) }
+    val farGround = when { snowing -> Color(0xFFCFD8E0); isNight -> Color(0xFF132A28); isSunset -> Color(0xFF3B3424); else -> Color(0xFF4E7A45) }
+    val nearGround = when { snowing -> Color(0xFFEAF0F5); isNight -> Color(0xFF1A3A32); isSunset -> Color(0xFF5A4E33); else -> Color(0xFF6E9E58) }
     val groundTop = horizon + 4f * p
     for (b in 0 until 12) {
         val t = b / 11f
         val y0 = groundTop + (ch - groundTop) * b / 12f
         scope.px(mix(farGround, nearGround, t), 0f, y0, cw, (ch - groundTop) / 12f + 1f)
     }
-    val tuftDark = if (snowing) Color(0xFFB7C4CE) else if (isNight) Color(0xFF10211A) else Color(0xFF3F6B39)
-    val tuftMid = if (snowing) Color(0xFFC9D4DC) else if (isNight) Color(0xFF244533) else Color(0xFF5E8F4C)
-    val tuftLight = if (snowing) Color(0xFFDCE4EA) else if (isNight) Color(0xFF2E563F) else Color(0xFF8DBA68)
+    val tuftDark = if (snowing) Color(0xFFB7C4CE) else if (isNight) Color(0xFF0C1F1C) else Color(0xFF3F6B39)
+    val tuftMid = if (snowing) Color(0xFFC9D4DC) else if (isNight) Color(0xFF1F4238) else Color(0xFF5E8F4C)
+    val tuftLight = if (snowing) Color(0xFFDCE4EA) else if (isNight) Color(0xFF2C5847) else Color(0xFF8DBA68)
+    // A tall pine just inside the right edge frames the campsite
+    drawCampfireFramingTrees(scope, cw, groundTop, p, isNight, isSunset, snowing, moonRim)
     val pitX = cw * CampfireLayout.PIT_X
     val pitY = ch * CampfireLayout.PIT_Y
     val clearRx = cw * 0.21f
@@ -1341,9 +1378,15 @@ fun drawCampfireScene(
         if (i % 2 == 0) scope.pOval(if (isNight) Color(0xFF3A4048) else Color(0xFF8D99A6), Offset(rx, ry), Size(4f * p, 2.5f * p))
         else scope.px(if (isNight) Color(0xFF3B2A1E) else Color(0xFF7A4E2D), rx, ry, 2f * p, 2.6f * p)
     }
+    // Small finds on the grass, kept off the clearing and the props: mushrooms, fallen branches, mossy rocks
+    if (!snowing) drawCampfireGroundDetails(scope, cw, ch, p, isNight, moonRim)
+
+    // A trail signpost far back in the clearing, in front of the pines, faded toward the mountains
+    val signpost = CozyPropLayout.campfireFarSignpost(cw, ch, p)
+    com.example.engine.CozyProps.drawFar(scope, com.example.engine.CozyProps.farSignpost, signpost.x, signpost.y, p, farMtn, 0.3f, com.example.engine.CozyProps.outdoorLight(isNight, isSunset), snowing)
 
     // 5. Bare-earth clearing worn around the fire, with a footpath to the tent
-    val dirt = when { snowing -> Color(0xFF9C8E80); isNight -> Color(0xFF2E241E); isSunset -> Color(0xFF5A4232); else -> Color(0xFF8A6B4E) }
+    val dirt =when { snowing -> Color(0xFF9C8E80); isNight -> Color(0xFF2E241E); isSunset -> Color(0xFF5A4232); else -> Color(0xFF8A6B4E) }
     val dirtDark = when { snowing -> Color(0xFF85776A); isNight -> Color(0xFF241C17); isSunset -> Color(0xFF4A3528); else -> Color(0xFF735842) }
     val rowStep = 2.5f * p
     var dy = -clearRy
@@ -1353,9 +1396,11 @@ fun drawCampfireScene(
         if (k > 0f) {
             val hw = clearRx * kotlin.math.sqrt(k) + (nz(dr, 131) - 0.5f) * 6f * p
             scope.px(dirt, pitX - hw, pitY + dy, hw * 2f, rowStep + 0.5f)
-            // a ragged, grassier fringe so the bare earth blends into the meadow
-            scope.px(tuftMid.copy(alpha = 0.55f), pitX - hw - 1.5f * p, pitY + dy, 2.5f * p, rowStep + 0.5f)
-            scope.px(tuftMid.copy(alpha = 0.55f), pitX + hw - 1f * p, pitY + dy, 2.5f * p, rowStep + 0.5f)
+            // a ragged, dithered grass fringe (staggered pixel blocks) so the bare earth blends into the meadow
+            val fringeIn = if (dr % 2 == 0) 0f else 1f * p
+            scope.px(tuftMid, pitX - hw - 1f * p + fringeIn, pitY + dy, 2f * p, rowStep + 0.5f)
+            scope.px(tuftMid, pitX + hw - 1f * p - fringeIn, pitY + dy, 2f * p, rowStep + 0.5f)
+            if (dr % 3 == 1) scope.px(dirtDark, pitX - hw * 0.4f, pitY + dy, 2f * p, 1f * p) // a few scuffed patches
         }
         dy += rowStep
         dr++
@@ -1438,6 +1483,7 @@ fun drawCampfireScene(
     // 7. Firewood stack with an axe in a chopping stump
     val woodX = cw * 0.13f
     val woodY = ch * 0.795f
+    drawContactShadow(scope, woodX + 10f * p, woodY + 3f * p, 28, p)
     for (row in 0..2) {
         val n = 4 - row
         for (l in 0 until n) {
@@ -1450,6 +1496,7 @@ fun drawCampfireScene(
     }
     val stumpX = cw * 0.06f
     val stumpY = ch * 0.83f
+    drawContactShadow(scope, stumpX, stumpY + 1f * p, 14, p)
     scope.px(if (isNight) Color(0xFF3B2A1E) else Color(0xFF6B4A2E), stumpX - 6f * p, stumpY - 6f * p, 12f * p, 7f * p)
     scope.pOval(if (isNight) Color(0xFF5A4232) else Color(0xFFC8A47A), Offset(stumpX - 6f * p, stumpY - 8f * p), Size(12f * p, 4f * p))
     scope.pLine(Color(0xFF8B5E34), Offset(stumpX + 1f * p, stumpY - 7f * p), Offset(stumpX + 7f * p, stumpY - 17f * p), strokeWidth = 1.4f * p)
@@ -1488,6 +1535,7 @@ fun drawCampfireScene(
     val guitar = CampfireLayout.guitar(cw, ch, p)
     val gtrX = guitar.x
     val gtrY = guitar.y
+    drawContactShadow(scope, gtrX + 0.5f * p, gtrY + 12f * p, 10, p)
     scope.pLine(Color(0xFF5D4037), Offset(gtrX + 4f * p, gtrY - 14f * p), Offset(gtrX, gtrY + 4f * p), strokeWidth = 2.2f * p)
     scope.px(Color(0xFF3E2723), gtrX + 3f * p, gtrY - 18f * p, 4f * p, 5f * p)
     scope.pOval(Color(0xFFBA6E32), Offset(gtrX - 5f * p, gtrY - 1f * p), Size(11f * p, 13f * p))
@@ -1505,6 +1553,7 @@ fun drawCampfireScene(
     val blkY = ch * CampfireLayout.BLANKET_Y
     val blkW = 38f * p
     val blkH = 18f * p
+    drawContactShadow(scope, blkX + blkW / 2f, blkY + blkH + 1f * p, 40, p)
     scope.pRoundRect(Color(0xFFB71C1C), Offset(blkX, blkY), Size(blkW, blkH), CornerRadius(3f * p, 3f * p))
     for (i in 0..3) scope.px(Color(0xFF1B2A32).copy(alpha = 0.5f), blkX + 4f * p + i * 9f * p, blkY, 2.5f * p, blkH)
     for (j in 0..1) scope.px(Color(0xFF1B2A32).copy(alpha = 0.5f), blkX, blkY + 4f * p + j * 7f * p, blkW, 2.5f * p)
@@ -1517,18 +1566,20 @@ fun drawCampfireScene(
     // A red cooler and a tin mug nearby
     val coolX = cw * 0.84f
     val coolY = ch * 0.80f
+    drawContactShadow(scope, coolX + 8f * p, coolY, 18, p)
     scope.pRoundRect(if (isNight) Color(0xFF6E2A2A) else Color(0xFFC0392B), Offset(coolX, coolY - 9f * p), Size(16f * p, 9f * p), CornerRadius(1.5f * p, 1.5f * p))
     scope.px(if (isNight) Color(0xFFB8B8B8) else Color(0xFFF4F1EA), coolX - 0.5f * p, coolY - 11f * p, 17f * p, 2.5f * p)
     scope.px(Color(0xFF555555), coolX + 6f * p, coolY - 12.5f * p, 4f * p, 1.2f * p)
     scope.px(if (isNight) Color(0xFF5A7EA0) else Color(0xFF6A9BC3), coolX - 6f * p, coolY - 4f * p, 4f * p, 4f * p)
 
     // 11. The fire: warm light pooling on the ground (strong at night, faint by day)
-    val glowR = if (isNight) 70f * p else if (isSunset) 52f * p else 34f * p
-    val glowA = if (isNight) 0.30f else if (isSunset) 0.20f else 0.08f
-    val pulse = 1f + 0.04f * sin(time * 5f)
-    for (ring in 0..2) { // stepped rings, brighter toward the flames
-        val rr = glowR * pulse * (1f - ring * 0.3f)
-        drawPixelGlow(scope, Color(0xFFFFB347).copy(alpha = glowA * 0.4f), rr, Offset(pitX, pitY), p, squash = 0.45f)
+    // Four stepped rings, each warmer and brighter toward the flames; the pulse steps rather than glides
+    val glowR = if (isNight) 62f * p else if (isSunset) 50f * p else 34f * p
+    val glowScale = if (isNight) 1f else if (isSunset) 0.65f else 0.25f
+    val pulse = 1f + 0.03f * (((time * 6f).toInt() % 3) - 1)
+    for (ring in 0..3) {
+        val rr = glowR * pulse * (1f - ring * 0.22f)
+        drawPixelGlow(scope, FIRE_POOL_COLORS[ring].copy(alpha = FIRE_POOL_ALPHAS[ring] * glowScale), rr, Offset(pitX, pitY), p, squash = 0.42f)
     }
     val fireRadius = 14f * p
     // back stones, ember bed, then the burning logs
@@ -1549,23 +1600,9 @@ fun drawCampfireScene(
     scope.pLine(Color(0xFF3B2A20), Offset(pitX + 9f * p, pitY + 2f * p), Offset(pitX - 2f * p, pitY - 9f * p), strokeWidth = 2.8f * p)
     scope.pLine(Color(0xFF4A3528), Offset(pitX, pitY + 3f * p), Offset(pitX, pitY - 10f * p), strokeWidth = 2.6f * p)
 
-    // Layered flames that lick upward
-    val fa = sin(time * 12f) * 2f * p
-    val fb = sin(time * 16f + 1.5f) * 2.5f * p
-    val fc = sin(time * 9f + 0.7f) * 1.8f * p
-    scope.pOval(Color(0xFFD62828), Offset(pitX - 8f * p, pitY - 8f * p + fc), Size(16f * p, 10f * p))
-    scope.pOval(Color(0xFFE85D04), Offset(pitX - 7f * p, pitY - 11f * p + fa), Size(14f * p, 12f * p))
-    scope.pOval(Color(0xFFF48C06), Offset(pitX - 5f * p, pitY - 14f * p + fb), Size(10f * p, 12f * p))
-    scope.pOval(Color(0xFFF48C06), Offset(pitX - 9f * p + fc, pitY - 10f * p), Size(5f * p, 8f * p))
-    scope.pOval(Color(0xFFF48C06), Offset(pitX + 4f * p - fc, pitY - 11f * p), Size(5f * p, 9f * p))
-    scope.pOval(Color(0xFFFFBA08), Offset(pitX - 3f * p, pitY - 16f * p + fa * 0.8f), Size(6f * p, 10f * p))
-    scope.pCircle(Color(0xFFFFF3B0), 2f * p, Offset(pitX, pitY - 13f * p + fb * 0.5f))
+    // Layered pixel-cluster flames: a hot pale core, yellow and orange bands, dark-red tips that flick
     val flare = (engine.campfireEmbersTimer / 2.8f).coerceIn(0f, 1f)
-    if (flare > 0f) {
-        val flareH = 18f * p * flare
-        scope.pOval(Color(0xFFF48C06).copy(alpha = 0.85f), Offset(pitX - 5f * p, pitY - 14f * p - flareH + fb), Size(10f * p, 12f * p + flareH))
-        scope.pOval(Color(0xFFFFBA08).copy(alpha = 0.9f), Offset(pitX - 3f * p, pitY - 16f * p - flareH * 0.8f + fa), Size(6f * p, 10f * p + flareH * 0.8f))
-    }
+    drawPixelFlames(scope, pitX, pitY + 1f * p, p, time, flare)
     // front stones
     for (stone in 0..9) {
         val ang = stone * 36f * (kotlin.math.PI.toFloat() / 180f)
@@ -1576,12 +1613,27 @@ fun drawCampfireScene(
         scope.pOval(Color(0x33FFB347), Offset(sx - 2.5f * p, syy - 2.6f * p), Size(5f * p, 1.6f * p))
     }
 
-    // Embers rising, and a ribbon of smoke drifting with the breeze
-    for (e in 0..6) {
-        val ex = pitX + sin(time * 3f + e * 1.8f) * (6f + e * 2f) * p
-        val ey = (pitY - 16f * p) - ((time * (18f + e * 4f) + e * 15f) % (46f * p))
-        val eAlpha = (1f - (pitY - ey) / (62f * p)).coerceIn(0f, 1f)
-        scope.px(Color(0xFFFFD166).copy(alpha = eAlpha), ex, ey, 1.2f * p, 1.2f * p)
+    // Warm firelight on the sides facing the fire: the log's front, the tent's near slope, the blanket, the cooler
+    if (isNight || isSunset) {
+        val warm = Color(0xFFFF9F45).copy(alpha = if (isNight) 0.55f else 0.3f)
+        val warmHot = Color(0xFFFFC56B).copy(alpha = if (isNight) 0.6f else 0.32f)
+        scope.px(warmHot, logX + logW * 0.3f, logY + logH - 2f * p, logW * 0.4f, 1f * p)
+        scope.px(warm, logX + logW * 0.18f, logY + logH - 3f * p, logW * 0.64f, 1f * p)
+        for (k in 0..4) scope.px(warm, tentCx + tentSize.x * (0.30f + k * 0.04f), tentBase - tentSize.y * (0.40f - k * 0.08f), 1f * p, 2f * p)
+        scope.px(warm, blkX, blkY + 1f * p, 1f * p, blkH - 2f * p)
+        scope.px(warm, blkX + 1f * p, blkY, blkW * 0.35f, 1f * p)
+        scope.px(warm, coolX, coolY - 8f * p, 1f * p, 7f * p)
+        scope.px(warm, woodX + 20f * p, woodY - 8f * p, 1f * p, 9f * p)
+    }
+
+    // Embers popping upward in pixel sparks, and a ribbon of smoke drifting with the breeze
+    for (e in 0..11) {
+        val rise = (time * (16f + e * 3f) + e * 11f) % (52f * p)
+        val ex = pitX + (sin(time * 2.4f + e * 1.7f) * (4f + (e % 5) * 2.5f)).roundToInt() * p
+        val ey = (pitY - 14f * p) - rise
+        val eAlpha = (1f - rise / (52f * p)).coerceIn(0f, 1f)
+        val ember = if (e % 3 == 0) Color(0xFFFF7B2E) else Color(0xFFFFD166)
+        scope.px(ember.copy(alpha = eAlpha), ex, ey, 1f * p, 1f * p)
     }
     val smokeA = if (isNight) 0.05f else 0.13f
     for (s in 0..5) {
@@ -1633,6 +1685,167 @@ fun drawCampfireScene(
             val side = if (leaf % 2 == 0) -1f else 1f
             scope.pLine(fern, Offset(bx2, ch), Offset(bx2 + side * (4f + leaf * 3f) * p + sway, ch - h + leaf * 2f * p), strokeWidth = 1.6f * p)
         }
+    }
+}
+
+/**
+ * Campfire flames as stacked pixel rows: side tongues first, the tall centre tongue last. Each tongue
+ * has an orange-to-dark-red outline and a pale-to-amber core; heights and tips flick on a stepped
+ * clock so the motion stays pixel-crisp. [flare] (0..1) lifts the flames after a tap.
+ */
+// Campfire constants, built once rather than every frame.
+private val FIRE_POOL_COLORS = listOf(Color(0xFF7A3A12), Color(0xFFA9541A), Color(0xFFD9822B), Color(0xFFF5B64A))
+private val FIRE_POOL_ALPHAS = floatArrayOf(0.16f, 0.16f, 0.17f, 0.20f)
+/** x offset, height, half-width (game pixels) per flame tongue; the centre tongue is last so it sits on top. */
+private val FLAME_TONGUES = arrayOf(
+    floatArrayOf(-7f, 7f, 2.5f), floatArrayOf(7f, 6f, 2.5f),
+    floatArrayOf(-4f, 11f, 3.5f), floatArrayOf(4f, 12f, 3.5f),
+    floatArrayOf(0f, 17f, 5f)
+)
+private val CAMP_MUSHROOMS = floatArrayOf(0.30f, 0.90f, 0.335f, 0.915f, 0.93f, 0.90f) // x, y pairs
+private val CAMP_BRANCHES = floatArrayOf(0.20f, 0.88f, 16f, 0.66f, 0.93f, 14f) // x, y, length triples
+private val CAMP_ROCKS = floatArrayOf(0.40f, 0.95f, 7f, 0.60f, 0.965f, 9f, 0.74f, 0.62f, 5f, 0.955f, 0.86f, 6f) // x, y, width triples
+private val FIRE_GLOW_ON_COUPLE = floatArrayOf(38f, 0.035f, 28f, 0.04f, 18f, 0.05f) // radius, alpha pairs
+
+private fun drawPixelFlames(scope: DrawScope, cx: Float, baseY: Float, p: Float, time: Float, flare: Float) {
+    val frame = (time * 9f).toInt()
+    val outerLow = Color(0xFFF77F00)
+    val outerMid = Color(0xFFE85D04)
+    val tip = Color(0xFFC1121F)
+    val coreLow = Color(0xFFFFF6C8)
+    val coreMid = Color(0xFFFFD166)
+    val coreHigh = Color(0xFFFCBF49)
+    for (i in FLAME_TONGUES.indices) {
+        val tg = FLAME_TONGUES[i]
+        val isCentre = i == FLAME_TONGUES.lastIndex
+        val flick = ((frame + i * 3) % 3) - 1
+        val h = (tg[1] + flick + flare * (if (isCentre) 12f else 5f)).toInt().coerceAtLeast(3)
+        val sway = ((frame / 2 + i) % 3) - 1
+        for (r in 0 until h) {
+            val t = r / h.toFloat()
+            val half = ((1f - t) * tg[2]).roundToInt()
+            val dx = tg[0] + if (t > 0.55f) sway.toFloat() else 0f
+            val outer = when { t < 0.45f -> outerLow; t < 0.8f -> outerMid; else -> tip }
+            val y = baseY - (r + 1) * p
+            scope.px(outer, cx + (dx - half) * p, y, (half * 2 + 1) * p, p)
+            val coreHalf = half - (if (t < 0.25f) 1 else 2)
+            if (coreHalf >= 0 && t < 0.75f) {
+                val core = when { t < 0.35f -> coreLow; t < 0.6f -> coreMid; else -> coreHigh }
+                scope.px(core, cx + (dx - coreHalf) * p, y, (coreHalf * 2 + 1) * p, p)
+            }
+        }
+    }
+}
+
+/** A tall pine on the right edge, framing the campsite. */
+private fun drawCampfireFramingTrees(
+    scope: DrawScope, cw: Float, groundTop: Float, p: Float,
+    isNight: Boolean, isSunset: Boolean, snowing: Boolean, moonRim: Color
+) {
+    val trunk = if (isNight) Color(0xFF1E1712) else Color(0xFF4A3426)
+    val leafDark = when { snowing -> Color(0xFF9FB1A8); isNight -> Color(0xFF0B1A16); isSunset -> Color(0xFF2A2A22); else -> Color(0xFF2E5A36) }
+    val leafMid = when { snowing -> Color(0xFFDCE6EA); isNight -> Color(0xFF12261F); isSunset -> Color(0xFF3B3828); else -> Color(0xFF3F7444) }
+
+    // A tall pine just inside the right edge, in four tiers
+    val pineX = cw - 4f * p
+    val pineH = 80f * p
+    val pineBase = groundTop + 14f * p
+    scope.px(trunk, pineX - 1.5f * p, pineBase - 8f * p, 3f * p, 8f * p)
+    for (tier in 0..3) {
+        val tierBase = pineBase - 6f * p - tier * pineH * 0.2f
+        val halfW = (16f - tier * 3.2f) * p
+        scope.pixelTriangle(leafDark, pineX, tierBase, halfW, pineH * 0.32f, 3f * p)
+        scope.px(leafMid, pineX - halfW * 0.45f, tierBase - pineH * 0.12f, 2f * p, 3f * p)
+        if (isNight && !snowing) scope.px(moonRim, pineX - halfW * 0.55f, tierBase - pineH * 0.14f, 1f * p, 1f * p)
+        if (snowing) scope.px(Color(0xFFF1F4F8), pineX - halfW * 0.5f, tierBase - pineH * 0.1f, halfW, 1f * p)
+    }
+    if (isNight && !snowing) scope.px(moonRim, pineX - 0.5f * p, pineBase - 6f * p - pineH * 0.92f, 1f * p, 2f * p)
+}
+
+/** Mushrooms, fallen branches and mossy rocks on the grass, placed clear of the clearing and the props. */
+private fun drawCampfireGroundDetails(scope: DrawScope, cw: Float, ch: Float, p: Float, isNight: Boolean, moonRim: Color) {
+    val cap = if (isNight) Color(0xFF8E2A2A) else Color(0xFFD64545)
+    val stem = if (isNight) Color(0xFFB9AE9A) else Color(0xFFF1E6D2)
+    val spot = if (isNight) Color(0xFFCFC6B6) else Color.White
+    for (m in CAMP_MUSHROOMS.indices step 2) {
+        val x = cw * CAMP_MUSHROOMS[m]
+        val y = ch * CAMP_MUSHROOMS[m + 1]
+        scope.px(stem, x - 0.5f * p, y - 3f * p, 1.5f * p, 3f * p)
+        scope.px(cap, x - 2.5f * p, y - 5f * p, 5f * p, 2f * p)
+        scope.px(cap, x - 1.5f * p, y - 6f * p, 3f * p, 1f * p)
+        scope.px(spot, x - 1f * p, y - 5f * p, 1f * p, 1f * p)
+        scope.px(spot, x + 1f * p, y - 5f * p, 1f * p, 1f * p)
+    }
+    val branch = if (isNight) Color(0xFF2B1F17) else Color(0xFF6B4A2E)
+    val branchHi = if (isNight) Color(0xFF3D2C20) else Color(0xFF8B6440)
+    for (b in CAMP_BRANCHES.indices step 3) {
+        val x = cw * CAMP_BRANCHES[b]
+        val y = ch * CAMP_BRANCHES[b + 1]
+        val len = CAMP_BRANCHES[b + 2]
+        scope.px(branchHi, x + 1f * p, y, (len - 2f) * p, 1f * p)
+        scope.px(branch, x, y + 1f * p, len * p, 1f * p)
+        scope.px(branch, x + len * 0.6f * p, y - 2f * p, 1f * p, 2f * p)
+        scope.px(branch, x + len * 0.6f * p + 1f * p, y - 3f * p, 1f * p, 1f * p)
+    }
+    val rock = if (isNight) Color(0xFF2E3A40) else Color(0xFF7D8A92)
+    val rockHi = if (isNight) moonRim else Color(0xFFA9B4BA)
+    val moss = if (isNight) Color(0xFF1F4238) else Color(0xFF5E8F4C)
+    for (r in CAMP_ROCKS.indices step 3) {
+        val x = cw * CAMP_ROCKS[r]
+        val y = ch * CAMP_ROCKS[r + 1]
+        val w = CAMP_ROCKS[r + 2]
+        scope.px(rock, x - w / 2f * p, y - 3f * p, w * p, 3f * p)
+        scope.px(rock, x - (w / 2f - 1f) * p, y - 4f * p, (w - 2f) * p, 1f * p)
+        scope.px(rockHi, x - (w / 2f - 1f) * p, y - 4f * p, 2f * p, 1f * p)
+        scope.px(moss, x - w / 2f * p, y - 1f * p, 2f * p, 1f * p)
+    }
+}
+
+/**
+ * Drawn after the characters: the fire's warm light falling on the couple, Mochi and the log, floating
+ * ash, and dark plants framing the bottom corners nearest the viewer.
+ */
+fun drawCampfireForeground(scope: DrawScope, cw: Float, ch: Float, p: Float, time: Float, engine: SceneEngine) {
+    val phase = engine.timeOfDayPhase
+    val isNight = phase.isNight
+    val isSunset = phase.isSunset
+    val snowing = engine.weather == WeatherType.SNOW
+    val pitX = cw * CampfireLayout.PIT_X
+    val pitY = ch * CampfireLayout.PIT_Y
+    if (isNight || isSunset) {
+        val k = if (isNight) 1f else 0.5f
+        val step = ((time * 6f).toInt() % 3) * 0.01f
+        // Small and gentle: just enough to warm the faces and fur nearest the fire, not a visible disc
+        for (g in FIRE_GLOW_ON_COUPLE.indices step 2) {
+            val alpha = (FIRE_GLOW_ON_COUPLE[g + 1] + step) * k
+            drawPixelGlow(scope, Color(0xFFFF9A3C).copy(alpha = alpha), FIRE_GLOW_ON_COUPLE[g] * p, Offset(pitX, pitY - 10f * p), p)
+        }
+        for (i in 0 until 6) {
+            val t = ((time * 0.35f) + i / 6f) % 1f
+            val ax = pitX + (sin(time * 0.9f + i * 2.1f) * (18f + i * 4f)).roundToInt() * p
+            val ay = pitY - 20f * p - t * 44f * p
+            scope.px(Color(0xFFFFE0A3).copy(alpha = (1f - t) * 0.8f * k), ax, ay, 1f * p, 1f * p)
+        }
+    }
+    val sil = when { snowing -> Color(0xFF7E918A); isNight -> Color(0xFF06110F); isSunset -> Color(0xFF1A1714); else -> Color(0xFF1F3B2C) }
+    val silHi = when { snowing -> Color(0xFF93A69E); isNight -> Color(0xFF0C1F1A); isSunset -> Color(0xFF26211C); else -> Color(0xFF2C5038) }
+    // Left corner: a round bush and grass blades
+    scope.pCircle(sil, 9f * p, Offset(2f * p, ch - 2f * p))
+    scope.pCircle(sil, 7f * p, Offset(13f * p, ch))
+    scope.pCircle(silHi, 4f * p, Offset(0f, ch - 7f * p))
+    for (b in 0 until 7) {
+        val bx = (3f + b * 3.2f) * p
+        val h = (6f + nz(b, 181) * 9f) * p
+        val lean = if (b % 2 == 0) -1f else 1f
+        scope.pLine(sil, Offset(bx, ch), Offset(bx + lean * 2f * p + sin(time * 1.1f + b) * 0.8f * p, ch - h), strokeWidth = 1f * p)
+    }
+    // Right corner: a fern clump and a low bush
+    scope.pCircle(sil, 8f * p, Offset(cw - 6f * p, ch))
+    scope.pCircle(silHi, 3.5f * p, Offset(cw - 3f * p, ch - 5f * p))
+    for (leaf in 0..5) {
+        val side = if (leaf % 2 == 0) -1f else 1f
+        val fx = cw - 14f * p
+        scope.pLine(sil, Offset(fx, ch), Offset(fx + side * (3f + leaf * 2.5f) * p + sin(time * 1.2f + leaf) * 0.8f * p, ch - (16f - leaf * 1.5f) * p), strokeWidth = 1.2f * p)
     }
 }
 

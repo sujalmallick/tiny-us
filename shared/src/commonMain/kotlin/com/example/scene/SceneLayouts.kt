@@ -333,6 +333,61 @@ object MeadowLayout {
     }
 }
 
+/**
+ * Where the cozy pixel props (engine/CozyProps) stand in each scene. Drawing and taps both read
+ * from here, so a tap always lands on what is drawn. Bottom-centre anchors, canvas pixels.
+ */
+object CozyPropLayout {
+    // Lantern Stroll: a creek along the bottom terrace (the stepping stones cross it), a footbridge
+    // over it, and a bicycle leaning on the streetlamp.
+    const val CREEK_ROWS = 6
+    fun walkCurbY(ch: Float, p: Float) = ch * 0.66f + 30f * p
+    fun walkCreekTop(ch: Float, p: Float): Float {
+        val curb = walkCurbY(ch, p)
+        return curb + (ch - curb) * 0.60f + 3f * p
+    }
+    /** Right of the glowing mushrooms (its left end clears their caps on the narrowest stage). */
+    fun walkFootbridge(cw: Float, ch: Float, p: Float) = Offset(cw * 0.70f, walkCreekTop(ch, p) + (CREEK_ROWS + 1) * p)
+    /** The glowing mushrooms sit in the creek; taps near them stay theirs. */
+    fun walkMushrooms(cw: Float) = cw * 0.50f
+    fun hitWalkCreek(tap: Offset, cw: Float, ch: Float, p: Float): Boolean {
+        val top = walkCreekTop(ch, p)
+        return tap.y in (top - 2f * p)..(top + (CREEK_ROWS + 2) * p) && abs(tap.x - walkMushrooms(cw)) > 14f * p
+    }
+    fun walkBicycle(cw: Float, ch: Float) = Offset(cw * 0.555f, ch * 0.68f)
+    fun hitWalkBicycle(tap: Offset, cw: Float, ch: Float, p: Float): Boolean {
+        val b = walkBicycle(cw, ch)
+        return abs(tap.x - b.x) < 13f * p && tap.y in (b.y - 20f * p)..(b.y + 2f * p)
+    }
+
+    // Meadow: a flower fence to the right of the cottage, and a birdhouse far off on the right.
+    const val MEADOW_FENCE_WIDTH = 28
+    fun meadowFence(cw: Float, ch: Float) = Offset(cw * 0.71f, ch * 0.69f)
+    fun hitMeadowFence(tap: Offset, cw: Float, ch: Float, p: Float): Boolean {
+        val f = meadowFence(cw, ch)
+        return abs(tap.x - f.x) < (MEADOW_FENCE_WIDTH / 2f + 1f) * p && tap.y in (f.y - 17f * p)..(f.y + 2f * p)
+    }
+    fun meadowFarBirdhouse(cw: Float, ch: Float, p: Float) = Offset(cw * 0.93f, MeadowLayout.groundY(ch) - 2f * p)
+
+    // Sunroom: a hanging basket from the eave between the first two macrame hangers, and a washing
+    // line far out in the garden behind the picket fence.
+    fun sunroomBasketHook(cw: Float, ch: Float, p: Float) = Offset(cw * 0.27f, ch * 0.20f + 2f * p)
+    fun hitSunroomBasket(tap: Offset, cw: Float, ch: Float, p: Float): Boolean {
+        val hook = sunroomBasketHook(cw, ch, p)
+        return abs(tap.x - hook.x) < 10f * p && tap.y in (hook.y + 3f * p)..(hook.y + 16f * p)
+    }
+    fun sunroomFarClothesline(cw: Float, ch: Float, p: Float) = Offset(cw * 0.48f, ch * 0.575f - 13f * p)
+
+    // Campfire: a trail signpost far back in the clearing, in front of the pines.
+    fun campfireFarSignpost(cw: Float, ch: Float, p: Float) = Offset(cw * 0.79f, ch * 0.50f + 10f * p)
+
+    // Living room: a pet bed and fish toy on the front row, between the knitting corner and the
+    // record rack. Mochi's use of them lives with the pet behaviour (FEATURES).
+    fun livingRoomFrontRowBottom(ch: Float, p: Float): Float = ch * 0.65f + ch * 0.35f * 0.75f + 13f * p
+    fun petBed(cw: Float, ch: Float, p: Float) = Offset(cw * 0.62f, livingRoomFrontRowBottom(ch, p))
+    fun fishToy(cw: Float, ch: Float, p: Float) = Offset(cw * 0.47f, livingRoomFrontRowBottom(ch, p))
+}
+
 object WeatherLayout {
     /** How long a cloud's shadow takes to sweep across the couple when they stop to look up. */
     const val CLOUD_PASS_SECONDS = 6f
