@@ -614,7 +614,9 @@ class BirdSystem {
                 val perches = SeasonalTree.perches(weatherNow)
                 val perch = if (surface == PerchSurface.TREE_BRANCH_LEFT) perches.firstOrNull() else perches.randomOrNull()
                 if (perch != null) {
-                    SeasonalTree.perchAt(perch, cw * SeasonalTree.SCENE_X, ch * SeasonalTree.SCENE_GROUND, p)
+                    // Standing on it: the feet (2 to 3.8 below the bird) gripping the top row of the wood
+                    val (bx, top) = SeasonalTree.perchAt(perch, cw * SeasonalTree.SCENE_X, ch * SeasonalTree.SCENE_GROUND, p)
+                    Pair(bx, top - 2.8f * p)
                 } else {
                     Pair(cw * 0.50f - 24f * p, ch * 0.69f - 76f * p)
                 }

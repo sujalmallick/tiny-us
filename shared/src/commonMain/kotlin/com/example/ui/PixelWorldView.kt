@@ -270,7 +270,9 @@ fun PixelWorldView(
                         val ny = tapOffset.y / h
                         // Plan 12, C: tapping something one of them can use sends the nearer one over to
                         // use it (the thing's own response comes when they get there); when neither is
-                        // free, it responds straight away as before.
+                        // free, it responds straight away as before. The kitchen's stove, oven, sink and
+                        // table, the flowers and the watering stay as they were: they set the two of them
+                        // up themselves.
                         fun goUse(action: SpotAction, act: () -> Unit) {
                             if (!engine.sendToUse(action, w, h, act)) act()
                         }
@@ -581,7 +583,7 @@ fun PixelWorldView(
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
+                                    engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
                             }
@@ -594,7 +596,7 @@ fun PixelWorldView(
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
+                                    engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
                             }
@@ -609,7 +611,7 @@ fun PixelWorldView(
                                     if (engine.homeEvolutionState.hasCopperTeakettle || engine.teakettleWhistleTimer > 0f) {
                                         engine.onTouchTeakettle(w, h, tapOffset.x, tapOffset.y)
                                     } else {
-                                        goUse(SpotAction.STIR_POT) { engine.onTouchPot(w, h) }
+                                        engine.onTouchPot(w, h)
                                     }
                                     return@detectTapGestures
                                 }
@@ -620,7 +622,7 @@ fun PixelWorldView(
                                 }
                                 // 4. Built-in Oven & Lower Cabinets
                                 if (abs(tapOffset.x - w * 0.65f) < 22f * pixelScale && abs(tapOffset.y - (h * 0.67f - 6f * pixelScale)) < 14f * pixelScale) {
-                                    goUse(SpotAction.PEEK_OVEN) { engine.onTouchCabinet(w, h) }
+                                    engine.onTouchCabinet(w, h)
                                     return@detectTapGestures
                                 }
                                 // 5. Retro Refrigerator
@@ -630,7 +632,7 @@ fun PixelWorldView(
                                 }
                                 // 6. Farmhouse Apron Sink (under window)
                                 if (abs(tapOffset.x - w * 0.28f) < 20f * pixelScale && abs(tapOffset.y - (h * 0.65f - 16f * pixelScale)) < 18f * pixelScale) {
-                                    goUse(SpotAction.RINSE_DISHES) { engine.onTouchSink(w, h) }
+                                    engine.onTouchSink(w, h)
                                     return@detectTapGestures
                                 }
                                 // 7. Kitchen Farmhouse Dining Table (center floor)
@@ -638,7 +640,7 @@ fun PixelWorldView(
                                 val juteY = h * 0.65f + floorH * 0.44f
                                 val tblY = juteY + 7f * pixelScale
                                 if (abs(tapOffset.x - w * 0.50f) < 28f * pixelScale && abs(tapOffset.y - (tblY + 8f * pixelScale)) < 16f * pixelScale) {
-                                    goUse(SpotAction.SIT_TABLE) { engine.onTouchKitchenTable(w, h) }
+                                    engine.onTouchKitchenTable(w, h)
                                     return@detectTapGestures
                                 }
                                 // 8. Wall Clock
@@ -692,7 +694,7 @@ fun PixelWorldView(
                                 // 15. Windowsill Herb Planter Watering
                                 if (abs(tapOffset.x - (w * 0.28f + 9f * pixelScale)) < 18f * pixelScale &&
                                     abs(tapOffset.y - (h * 0.65f - 52f * pixelScale)) < 18f * pixelScale) {
-                                    goUse(SpotAction.WATER_PLANT) { engine.onTouchPlantWatering(tapOffset.x, tapOffset.y) }
+                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
                             }
@@ -733,7 +735,7 @@ fun PixelWorldView(
                                 if ((engine.homeEvolutionState.hasCornerMonstera || engine.plantWaterTimer > 0f) &&
                                     abs(tapOffset.x - w * 0.10f) < 22f * pixelScale &&
                                     abs(tapOffset.y - (h * 0.65f - 20f * pixelScale)) < 26f * pixelScale) {
-                                    goUse(SpotAction.WATER_PLANT) { engine.onTouchPlantWatering(tapOffset.x, tapOffset.y) }
+                                    engine.onTouchPlantWatering(tapOffset.x, tapOffset.y)
                                     return@detectTapGestures
                                 }
 
@@ -886,7 +888,7 @@ fun PixelWorldView(
                                     if (tapOffset.y > h * 0.75f &&
                                         engine.onTouchWalkableGround(tapOffset.x, tapOffset.y, w, h)
                                     ) return@detectTapGestures
-                                    goUse(SpotAction.SMELL_FLOWERS) { engine.onTouchFlower(w, h) }
+                                    engine.onTouchFlower(w, h)
                                     return@detectTapGestures
                                 }
                             }
@@ -1526,7 +1528,6 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
         } else {
             val isHoldingUmbrella = engine.weather == com.example.scene.WeatherType.RAIN && isOutdoor
             val isSnow = engine.weather == com.example.scene.WeatherType.SNOW && isOutdoor
-            val isSitting = engine.boy.pose == com.example.engine.CharacterPose.SIT
 
             // Ensure proper facing direction when kissing or hugging
             val origBoyDir = engine.boy.direction
@@ -1540,6 +1541,21 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 engine.boy.direction = if (com.example.scene.CozyGames.BOBBER_X < engine.boy.worldX) com.example.engine.Direction.LEFT else com.example.engine.Direction.RIGHT
             }
 
+            // In the rain he holds the umbrella up in the hand on her side when she's beside him,
+            // so it covers them both, and its pole runs through that fist wherever he sways or
+            // hops to.
+            val girlGap = effectiveGirlX - effectiveBoyX
+            val girlBeside = isHoldingUmbrella && abs(girlGap) < 26f * charPixelScale * PixelArtRenderer.CHARACTER_SCALE_FACTOR
+            val umbrellaBackHand = girlBeside && abs(girlGap) > 3f * charPixelScale &&
+                (girlGap > 0f) != (engine.boy.direction == com.example.engine.Direction.RIGHT)
+            val umbrellaGrip = if (isHoldingUmbrella) {
+                PixelArtRenderer.umbrellaGrip(engine.boy, snap(effectiveBoyX), snap(effectiveBoyY), charPixelScale * boyDepthScale, lowRes, umbrellaBackHand)
+            } else null
+            val girlSits = engine.girl.pose == com.example.engine.CharacterPose.SIT || engine.girl.pose == com.example.engine.CharacterPose.SIT_SNUGGLE
+            val shareHeadTop = if (girlBeside) {
+                snap(effectiveGirlY) - (if (girlSits) 21f else 26f) * charPixelScale * girlDepthScale * PixelArtRenderer.CHARACTER_SCALE_FACTOR
+            } else null
+
             fun drawBoy() {
                 PixelArtRenderer.drawCharacter(
                     drawScope = this,
@@ -1551,7 +1567,8 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                     isSnow = isSnow,
                     isSpeaking = !engine.boySpeechText.isNullOrEmpty(),
                     snapToPixel = lowRes,
-                    castLight = SceneLight.current
+                    castLight = SceneLight.current,
+                    umbrellaBackHand = umbrellaBackHand
                 )
             }
 
@@ -1609,18 +1626,14 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
                 }
             }
 
-            // The umbrella's pole goes behind the couple; its canopy and the hand are drawn after them.
-            if (isHoldingUmbrella) {
+            // The umbrella's pole and handle go behind the couple (his own fist in front of the
+            // pole); its canopy is drawn after them.
+            if (umbrellaGrip != null) {
                 WorldSprites.drawBoyHoldingUmbrella(
                     scope = this,
-                    boyX = effectiveBoyX,
-                    boyY = effectiveBoyY,
-                    girlX = effectiveGirlX,
-                    girlY = effectiveGirlY,
-                    boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
-                    p = charPixelScale,
+                    grip = umbrellaGrip,
                     timeSeconds = engine.sceneTime,
-                    isSitting = isSitting,
+                    shareHeadTop = shareHeadTop,
                     boyLook = engine.boy.look,
                     part = WorldSprites.UmbrellaPart.POLE
                 )
@@ -1664,17 +1677,12 @@ fun DrawScope.drawWorldFrame(engine: SceneEngine, lowRes: Boolean = false) {
             }
 
             // Cozy couple umbrella in rain weather (boy holds umbrella over girl)
-            if (isHoldingUmbrella) {
+            if (umbrellaGrip != null) {
                 WorldSprites.drawBoyHoldingUmbrella(
                     scope = this,
-                    boyX = effectiveBoyX,
-                    boyY = effectiveBoyY,
-                    girlX = effectiveGirlX,
-                    girlY = effectiveGirlY,
-                    boyFacingRight = engine.boy.direction == com.example.engine.Direction.RIGHT,
-                    p = charPixelScale,
+                    grip = umbrellaGrip,
                     timeSeconds = engine.sceneTime,
-                    isSitting = isSitting,
+                    shareHeadTop = shareHeadTop,
                     boyLook = engine.boy.look,
                     part = WorldSprites.UmbrellaPart.CANOPY
                 )

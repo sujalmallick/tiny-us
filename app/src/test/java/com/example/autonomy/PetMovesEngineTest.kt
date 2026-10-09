@@ -66,8 +66,15 @@ class PetMovesEngineTest {
                 if (!move.travels || move == PetMove.ROLL) {
                     if (move != PetMove.ZOOMIES) assertEquals(move, engine.petMove)
                 }
-                run(move.seconds + 0.3f)
-                assertNull("$kind's $move is over", engine.petMove)
+                // Over by the end (it may well find something else to do straight after)
+                var t = 0f
+                var over = false
+                while (t < move.seconds + 0.3f) {
+                    engine.update(dt, cw, ch)
+                    t += dt
+                    if (engine.petMove != move) over = true
+                }
+                assertTrue("$kind's $move is over", over)
             }
         }
     }
@@ -94,16 +101,27 @@ class PetMovesEngineTest {
     }
 
     @Test
-    fun `a few pats bring a trick`() {
-        engine.loadScene(SceneType.FLOWER)
-        run(9f)
-        var pats = 0
-        while (engine.petMove == null && pats < 12) {
+    fun `a few pats bring a trick, from every pet`() {
+        // The hedgehog curls up at each pat, so it's given a moment to uncurl between them
+        for (kind in listOf(PetKind.CAT, PetKind.PUPPY, PetKind.BUNNY, PetKind.FOX, PetKind.DUCK, PetKind.HEDGEHOG)) {
+            engine.choosePet(kind)
+            engine.loadScene(SceneType.FLOWER)
+            run(9f)
+            val trick = PetMoves.trickFor(kind)
+            // (a pat also ends any move of its own it's busy with)
+            var pats = 0
+            while (engine.petMove != trick && pats < 12) {
+                engine.onTouchCat(cw, ch)
+                pats++
+                if (kind == PetKind.HEDGEHOG && engine.petMove != trick) run(2.6f)
+            }
+            assertEquals("$kind's trick", trick, engine.petMove)
+            assertTrue("$kind: from the fourth pat, the first it's awake for (pat $pats)", pats in 4..8)
+            // Another pat while it's at it doesn't cut it short
             engine.onTouchCat(cw, ch)
-            pats++
+            assertEquals("$kind's trick plays out", trick, engine.petMove)
+            run(trick.seconds + 0.3f)
         }
-        assertEquals("Every fourth pat, when she's awake", PetMoves.trickFor(PetKind.CAT), engine.petMove)
-        assertEquals(0, pats % 4)
     }
 
     @Test

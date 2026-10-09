@@ -87,7 +87,9 @@ object WorldSprites {
         SeasonalTree.draw(scope, baseX, groundY, p, timeSeconds, weather, light)
         // Permanent carved heart with couple initials & ivy growth, in the same light as the bark
         val effectiveGirlInitial = if (gfInitial != girlInitial) gfInitial else girlInitial
-        SeasonalTree.inLight(scope, light) {
+        // (the carving and its ivy reach about ten pixels round its middle)
+        val carving = androidx.compose.ui.geometry.Rect(baseX - 10f * p, groundY - 41f * p, baseX + 13f * p, groundY - 17f * p)
+        SeasonalTree.inLight(scope, light, carving) {
             drawTreeBarkCarving(scope, baseX, groundY, p, weather, mossStage, boyInitial, effectiveGirlInitial)
         }
     }
@@ -1965,53 +1967,48 @@ object WorldSprites {
     enum class UmbrellaPart { POLE, CANOPY, ALL }
 
     /**
-     * The boy holding an umbrella over the couple, drawn as pixel art in the characters' own grid
-     * (one block is one character sprite pixel). Draw [UmbrellaPart.POLE] before the characters
-     * and [UmbrellaPart.CANOPY] after them, so the pole never crosses a face.
+     * The boy holding an umbrella, drawn as pixel art in the characters' own grid (one block is
+     * one character sprite pixel), its pole running through his raised fist at [grip] (from
+     * PixelArtRenderer.umbrellaGrip). With [shareHeadTop], the top of her head when she's
+     * beside him on that side, it spreads wider and clears her head too. Draw
+     * [UmbrellaPart.POLE] (the pole, his fist and the handle) before the characters and
+     * [UmbrellaPart.CANOPY] after them, so the pole never crosses a face.
      */
     fun drawBoyHoldingUmbrella(
         scope: DrawScope,
-        boyX: Float,
-        boyY: Float,
-        girlX: Float,
-        girlY: Float,
-        boyFacingRight: Boolean,
-        p: Float,
+        grip: UmbrellaGrip,
         timeSeconds: Float,
-        isSitting: Boolean = false,
+        shareHeadTop: Float? = null,
         boyLook: AvatarLook = AvatarLook.DEFAULT_A,
         part: UmbrellaPart = UmbrellaPart.ALL
     ) {
-        // One block = one character sprite pixel (drawCharacter enlarges its pixel size by 10%).
-        val q = p * 1.1f
-        fun snap(v: Float) = kotlin.math.round(v / q) * q
+        val q = grip.block
         fun block(c: Color, bx: Float, by: Float, w: Float = 1f, h: Float = 1f) =
             scope.drawRect(c, Offset(bx, by), Size(w * q, h * q))
 
-        val girlClose = abs(girlX - boyX) < 38f * p
-        // Centred over both when they're close, otherwise over the boy.
-        val cx = snap(if (girlClose) (boyX + girlX) / 2f else boyX + (if (boyFacingRight) 5f else -5f) * q)
-        val bob = if (sin(timeSeconds * 2.2f) > 0.6f) -q else 0f // a gentle one-block bob
-        val top = snap(minOf(boyY, girlY) - (if (isSitting) 29f else 34f) * q) + bob
-        val r = if (girlClose) 14 else 10 // canopy half-width in blocks
-        val handY = snap(boyY - (if (isSitting) 12f else 16f) * q)
+        val cx = grip.poleX
+        val bob = if (sin(timeSeconds * 2.2f) > 0.6f) -q else 0f // a gentle one-block lift
+        // Eight blocks above his head (and hers, when she shares it), however he moves
+        val top = minOf(grip.headTop, shareHeadTop ?: grip.headTop) - 8 * q + bob
+        val r = if (shareHeadTop != null) 14 else 11 // canopy half-width in blocks
+        val handTop = grip.handTop
 
-        val pole = Color(0xFF2B2D42)
         if (part != UmbrellaPart.CANOPY) {
-            block(pole, cx, top + q, 1f, (handY - top - q) / q + 1f)
+            // The pole, down through his fist (the sprite's own hand covers it there)
+            block(Color(0xFF2B2D42), cx, top + q, 1f, (handTop - top) / q + 1f)
+            // The wooden J handle below his fist, curling back towards him
+            val woodDark = Color(0xFF582F0E)
+            val woodLight = Color(0xFF7F4F24)
+            val hook = grip.inward
+            block(woodLight, cx, handTop + 2 * q, 1f, 2f)
+            block(woodDark, cx, handTop + 4 * q)
+            block(woodDark, cx + hook * q, handTop + 4 * q)
+            block(woodDark, cx + hook * 2 * q, handTop + 3 * q)
+            // His fist, just as the sprite draws it
+            block(boyLook.skin, if (hook < 0) cx - q else cx, handTop, 2f, 2f)
+            block(boyLook.skinShadow, cx, handTop)
         }
         if (part == UmbrellaPart.POLE) return
-
-        // Hand on the pole, and the wooden J handle below it.
-        val woodDark = Color(0xFF582F0E)
-        val woodLight = Color(0xFF7F4F24)
-        val hook = if (boyFacingRight) -1 else 1
-        block(woodLight, cx, handY + q, 1f, 2f)
-        block(woodDark, cx, handY + 3 * q)
-        block(woodDark, cx + hook * q, handY + 3 * q)
-        block(woodDark, cx + hook * 2 * q, handY + 2 * q)
-        block(boyLook.skin, cx - q, handY - q, 3f, 2f)
-        block(boyLook.skinShadow, cx, handY, 1f, 1f)
 
         // Canopy: rows widening from the apex into a rounded dome.
         val profile = floatArrayOf(0.22f, 0.45f, 0.62f, 0.75f, 0.85f, 0.92f, 0.97f, 1f)
@@ -2061,10 +2058,6 @@ object WorldSprites {
             block(Color(0xFFA8DADC), cx - 4 * q, top - q - kotlin.math.round(bounce * 4f) * q)
             block(Color(0xFFA8DADC), cx + 5 * q, top - kotlin.math.round(bounce * 3f) * q)
         }
-    }
-
-    fun drawCoupleUmbrella(scope: DrawScope, cx: Float, topY: Float, p: Float, timeSeconds: Float) {
-        drawBoyHoldingUmbrella(scope, cx - 8 * p, topY + 28 * p, cx + 8 * p, topY + 28 * p, true, p, timeSeconds, false)
     }
 
     fun drawCozyBed(

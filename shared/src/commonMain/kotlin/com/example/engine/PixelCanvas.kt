@@ -107,6 +107,13 @@ object CharacterMotionTween {
     }
 }
 
+/**
+ * Where the boy's fist is round the umbrella's pole, on screen: [poleX] is the left edge of the
+ * pole's column, [handTop] the top of his fist, [headTop] the top of his sprite, [block] one of
+ * his sprite pixels, and [inward] which way (-1 or 1) is back towards him, for the handle's curl.
+ */
+class UmbrellaGrip(val poleX: Float, val handTop: Float, val headTop: Float, val block: Float, val inward: Int)
+
 data class PixelCharacter(
     val isGirl: Boolean,
     var name: String,
@@ -641,7 +648,8 @@ object PixelArtRenderer {
         isSnow: Boolean = false,
         isSpeaking: Boolean = false,
         snapToPixel: Boolean = false,
-        castLight: CastLight? = null
+        castLight: CastLight? = null,
+        umbrellaBackHand: Boolean = false
     ) {
         // Feature 1: uniform +10% scale applied here once, covering all scenes and all poses
         val p = pixelSize * CHARACTER_SCALE_FACTOR
@@ -695,14 +703,14 @@ object PixelArtRenderer {
 
         when (char.pose) {
             CharacterPose.SIT, CharacterPose.SIT_SNUGGLE -> {
-                drawSittingCharacter(drawScope, char, startX, startY + 5 * p, p, flip, isHoldingUmbrella, isSnow)
+                drawSittingCharacter(drawScope, char, startX, startY + 5 * p, p, flip, isHoldingUmbrella, isSnow, umbrellaBackHand)
             }
             CharacterPose.SLEEP, CharacterPose.SLEEP_YAWN -> {
                 // Asleep sitting up, slumped a row lower: the same head and clothes as ever
                 drawSittingCharacter(drawScope, char, startX, startY + 6 * p, p, flip, false, isSnow)
             }
             else -> {
-                drawStandingCharacter(drawScope, char, startX, startY, p, flip, isHoldingUmbrella, isSnow)
+                drawStandingCharacter(drawScope, char, startX, startY, p, flip, isHoldingUmbrella, isSnow, umbrellaBackHand)
             }
         }
 
@@ -761,7 +769,8 @@ object PixelArtRenderer {
         p: Float,
         flip: Boolean,
         isHoldingUmbrella: Boolean = false,
-        isSnow: Boolean = false
+        isSnow: Boolean = false,
+        umbrellaBackHand: Boolean = false
     ) {
         val look = char.look
         // Clothing silhouette follows the chosen look, not the character slot.
@@ -1092,8 +1101,20 @@ object PixelArtRenderer {
         if (!isSnow) OutfitDetails.torso(::px, isGirl, char.outfitIndex, girlDress, boyOutfit, sitting = false, twinkle = twinkle)
 
         // --- 7. Arms & Actions ---
-        if (isHoldingUmbrella && !char.isGirl) {
-            // Boy raised arm reaching up and outward towards umbrella handle centered between couple
+        if (isHoldingUmbrella && !char.isGirl && umbrellaBackHand) {
+            // The umbrella held up in his back hand, on her side when she's behind him; the pole
+            // runs through this fist (see umbrellaGrip)
+            fillRect(4, 12, 2, 3, sweaterColor)
+            fillRect(3, 11, 2, 2, sweaterColor)
+            fillRect(1, 10, 2, 2, sweaterColor)
+            fillRect(0, 9, 2, 2, handColor)
+            px(0, 9, skinShadow)
+            // Front arm resting at his side
+            fillRect(12, 13, 2, 4, sweaterColor)
+            fillRect(13, 17, 1, 1, handColor)
+        } else if (isHoldingUmbrella && !char.isGirl) {
+            // Boy raised arm reaching up and outward to the umbrella; the pole runs through this
+            // fist (see umbrellaGrip)
             fillRect(12, 12, 2, 3, sweaterColor)
             fillRect(13, 11, 2, 2, sweaterColor)
             fillRect(15, 10, 2, 2, sweaterColor)
@@ -1249,6 +1270,11 @@ object PixelArtRenderer {
             val umbrellaArm = isHoldingUmbrella && !char.isGirl
             when {
                 char.pose == CharacterPose.COOK && char.heldItem == HeldItem.PAN -> Unit // drawn with the arms
+                umbrellaArm && umbrellaBackHand -> {
+                    // The umbrella's in his back hand, so whatever else he has goes in the front one
+                    fillRect(13, 17, 1, 1, handColor)
+                    drawHeldItem(scope, char, startX, startY - char.breathingOffset, p, flip, 13, 17, raised = false, backHand = false)
+                }
                 umbrellaArm || char.pose in BACK_HAND_POSES -> {
                     fillRect(4, 17, 1, 1, handColor)
                     drawHeldItem(scope, char, startX, startY - char.breathingOffset, p, flip, 4, 17, raised = false, backHand = true)
@@ -1440,7 +1466,8 @@ object PixelArtRenderer {
         p: Float,
         flip: Boolean,
         isHoldingUmbrella: Boolean = false,
-        isSnow: Boolean = false
+        isSnow: Boolean = false,
+        umbrellaBackHand: Boolean = false
     ) {
         val look = char.look
         // Clothing silhouette follows the chosen look, not the character slot.
@@ -1582,9 +1609,6 @@ object PixelArtRenderer {
         } else {
             px(9, 11, blushColor)
         }
-        if (showsExpression(char) && char.pose != CharacterPose.SIT_SNUGGLE) {
-            drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, char.isBlinking, char.expressionAge)
-        }
 
         // Torso & sitting posture
         fillRect(6, 13, 7, 4, sweaterColor)
@@ -1651,8 +1675,23 @@ object PixelArtRenderer {
             OutfitDetails.cuffs(::px, isGirl, girlDress, boyOutfit, sitting = true)
         }
 
-        if (isHoldingUmbrella && !char.isGirl) {
-            // Boy sitting with raised arm reaching up and outward towards umbrella handle
+        // A passing expression, after the hood's collar and the scarf (which lie on the jaw row a
+        // seated face's mouth reaches down to)
+        if (showsExpression(char) && char.pose != CharacterPose.SIT_SNUGGLE) {
+            drawExpressionFace(::px, char.expression, 1, skinColor, skinShadow, char.isBlinking, char.expressionAge)
+        }
+
+        if (isHoldingUmbrella && !char.isGirl && umbrellaBackHand) {
+            // Sitting, the umbrella up in his back hand, on her side
+            fillRect(4, 12, 2, 3, sweaterColor)
+            fillRect(3, 11, 2, 2, sweaterColor)
+            fillRect(1, 10, 2, 2, handColor)
+            px(1, 10, skinShadow)
+            // Front arm resting on lap
+            fillRect(11, 14, 2, 3, sweaterColor)
+            fillRect(10, 16, 2, 1, handColor)
+        } else if (isHoldingUmbrella && !char.isGirl) {
+            // Boy sitting with raised arm reaching up and outward to the umbrella
             fillRect(12, 12, 2, 3, sweaterColor)
             fillRect(13, 11, 2, 2, sweaterColor)
             fillRect(15, 10, 2, 2, handColor)
@@ -2005,6 +2044,39 @@ object PixelArtRenderer {
      * no bud was drawn since the last call, and then no cord is drawn.
      */
     @Suppress("UNUSED_PARAMETER")
+    /**
+     * Where the boy's raised fist holds the umbrella when [drawCharacter] draws him at
+     * ([centerX], [bottomY]) with [pixelSize] and [snapToPixel]: worked out just as the sprite is
+     * placed (his sway, a jump, his breath, sitting a few rows lower, either hand), so the pole
+     * always runs through his fist.
+     */
+    fun umbrellaGrip(
+        char: PixelCharacter,
+        centerX: Float,
+        bottomY: Float,
+        pixelSize: Float,
+        snapToPixel: Boolean,
+        backHand: Boolean
+    ): UmbrellaGrip {
+        val p = pixelSize * CHARACTER_SCALE_FACTOR
+        fun place(v: Float) = if (snapToPixel) kotlin.math.round(v / p) * p else v
+        val startX = place(centerX - 9 * p + char.idleSwayOffset)
+        val sitting = char.pose == CharacterPose.SIT || char.pose == CharacterPose.SIT_SNUGGLE
+        val top = place(bottomY - 26 * p - char.bounceOffset) + (if (sitting) 5 * p else 0f) - char.breathingOffset
+        // The fist's outer column and top row on his grid (the umbrella arms above)
+        val column = when {
+            sitting && backHand -> 1
+            sitting -> 16
+            backHand -> 0
+            else -> 17
+        }
+        val row = if (sitting) 10 else 9
+        val flip = char.direction == Direction.LEFT
+        val poleX = startX + (if (flip) 17 - column else column) * p
+        val inward = if (poleX + p / 2f > startX + 9 * p) -1 else 1
+        return UmbrellaGrip(poleX = poleX, handTop = top + row * p, headTop = top, block = p, inward = inward)
+    }
+
     fun getEarphoneAttachmentOffset(
         char: PixelCharacter,
         centerX: Float,

@@ -51,6 +51,8 @@ class MochiAndGiftsEngineTest {
         repeat(40) {
             e.onTouchCat(1080f, 2400f)
             if (e.sceneMessage?.contains("slow") == true) blinks++
+            // A moment between pats, for the message to go (and any trick they bring to end)
+            repeat(80) { e.update(0.05f, 1080f, 2400f) }
         }
         assertTrue("slow blinks: $blinks", blinks in 3..30)
     }
